@@ -1,0 +1,136 @@
+{
+  "$schema": "./rockmap/roadmap.schema.json",
+  "title": "agent cli",
+  "subtitle": "terminal-first multi-agent cockpit — real Claude TUI front and center, thin file rail, tabs = projects",
+  "loop": "Tab = project. Panes = agents, each in its own worktree. Real TUI everywhere. Ship config before code — build the Tauri app only against frictions the trials prove.",
+  "columns": [
+    { "id": "now", "label": "Now", "color": "#4ade80" },
+    { "id": "next", "label": "Next", "color": "#60a5fa" },
+    { "id": "later", "label": "Later", "color": "#c084fc" }
+  ],
+  "tiers": [
+    { "id": "rock", "label": "Rocks · foundational & risky", "color": "#f59e0b" },
+    { "id": "pebble", "label": "Pebbles · features", "color": "#60a5fa" },
+    { "id": "sand", "label": "Sand · glue & polish", "color": "#4ade80" }
+  ],
+  "tracks": [
+    { "id": "trial", "label": "Trials", "color": "#2dd4bf", "border": "#164a44", "bg": "#06140f" },
+    { "id": "config", "label": "Cockpit config", "color": "#60a5fa", "border": "#1e3a5c", "bg": "#0a1320" },
+    { "id": "build", "label": "Build (endgame)", "color": "#e07a4f", "border": "#5c2e1e", "bg": "#1a0f0a" },
+    { "id": "research", "label": "Research", "color": "#7a8898", "border": "#2a323e", "bg": "#10141b" }
+  ],
+  "launches": [
+    { "id": "v0", "label": "v0 — config ship" },
+    { "id": "v1", "label": "v1 — after real use" },
+    { "id": "v2", "label": "v2 — only if earned" }
+  ],
+  "models": [],
+  "cards": [
+    {
+      "id": "R1",
+      "title": "Zellij cockpit spike",
+      "column": "now",
+      "tier": "rock",
+      "track": "trial",
+      "size": "L",
+      "launch": "v0",
+      "blocker": true,
+      "summary": "KDL layout in Ghostty: tabs per project (indx, brutal, prova, gripe), yazi file rail, claude/codex panes each in their own worktree. Zellij persistence — no tmux wrapper. The closest match to the stated experience.",
+      "done": "One week of daily use across 2+ projects with 3+ agent panes; every friction logged in ERRORS.md/PARKED.md.",
+      "closes": "decides R3"
+    },
+    {
+      "id": "R2",
+      "title": "Superconductor daily-driver trial",
+      "column": "now",
+      "tier": "rock",
+      "track": "trial",
+      "size": "M",
+      "launch": "v0",
+      "summary": "Already installed (super.engineering). Its workspace-tabs + worktree-per-task model is exactly the ask; its chat UI instead of the claude TUI is the open question. Closed source, v0.1.0 nightly.",
+      "done": "Clear keep/kill verdict after real use: does losing the terminal CLI view actually hurt?",
+      "closes": "decides R3"
+    },
+    {
+      "id": "P1",
+      "title": "Ship v0 cockpit config",
+      "column": "next",
+      "tier": "rock",
+      "track": "config",
+      "size": "M",
+      "launch": "v0",
+      "blocker": true,
+      "summary": "Winner of the trials becomes the shipped artifact: zellij KDL layout(s) + install script + README in this repo. Zero application code.",
+      "done": "Fresh shell: one command → cockpit with 4 project tabs, agents running, surviving a restart."
+    },
+    {
+      "id": "P2",
+      "title": "Worktree helper",
+      "column": "next",
+      "tier": "pebble",
+      "track": "config",
+      "size": "S",
+      "launch": "v1",
+      "summary": "One keystroke: new agent pane = git worktree add + claude launched inside it, named and disposable. The 'same repo, parallel tasks' half of the mixed workflow.",
+      "done": "From any project tab: new-worktree-agent in <5s; cleanup command removes worktree + branch."
+    },
+    {
+      "id": "P3",
+      "title": "Zed stripped fallback config",
+      "column": "later",
+      "tier": "pebble",
+      "track": "config",
+      "size": "S",
+      "launch": "v2",
+      "gated": true,
+      "summary": "Verified settings.json/keymap/tasks for Zed as window-per-project cockpit (no project tabs exist in Zed — top community request). Kept as documented fallback, not the main path.",
+      "done": "Config documented in docs/; applied in <1h if ever wanted."
+    },
+    {
+      "id": "R3",
+      "title": "Tauri 2 native harness",
+      "column": "later",
+      "tier": "rock",
+      "track": "build",
+      "size": "XL",
+      "launch": "v2",
+      "gated": true,
+      "summary": "The endgame, only if both trials fail on real frictions. Seed from hashmark's Tauri scaffold + Warp design spec (color algebra, fonts, 358 icons); new core = portable-pty → xterm.js; workspace tabs + worktree-per-task model stolen from Superconductor.",
+      "done": "v0 scope written from the trials' logged frictions — not imagined features — before any code.",
+      "closes": "closes the gap no OSS app fills (native-light, real PTY, thin rail)"
+    },
+    {
+      "id": "S2",
+      "title": "Mine Superconductor bundle for UX patterns",
+      "column": "later",
+      "tier": "sand",
+      "track": "research",
+      "size": "S",
+      "launch": "v2",
+      "summary": "resources/super.engineering.app (GPUI, closed source) — settings keys already reveal the feature map: workspace tab placement, stacked shells, worktree sort, branch cleanup automation. Document what's worth stealing for R3.",
+      "gated": true
+    }
+  ],
+  "shipped": [
+    {
+      "id": "S0",
+      "title": "Research: OSS landscape + Zed verification",
+      "track": "research",
+      "size": "M",
+      "launch": "v0",
+      "summary": "July 2026 survey: every purpose-built Claude Code GUI reimplements the UI, is deprecated, closed, or Electron-heavy. Zed: no project tabs, terminals die on quit, git panel single-repo. Zellij+yazi delivers ~90% of the spec at zero build cost.",
+      "done": "Findings drove the trial-first roadmap; rejected options documented with reasons.",
+      "shipped": "2026-07-07"
+    },
+    {
+      "id": "S1",
+      "title": "Repo + roadmap board + interactive cockpit demo",
+      "track": "config",
+      "size": "S",
+      "launch": "v0",
+      "summary": "Private repo with rockmap vendored, this board, the Superconductor bundle in resources/, and an interactive HTML demo of the zellij cockpit experience.",
+      "done": "Pushed to github.com/jpoindexter/agent-cli (private).",
+      "shipped": "2026-07-07"
+    }
+  ]
+}

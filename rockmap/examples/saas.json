@@ -1,0 +1,85 @@
+{
+  "$schema": "../roadmap.schema.json",
+  "title": "Acme — Build Map",
+  "subtitle": "a tiny SaaS, shipped lean · source of truth: ROADMAP.md",
+  "loop": "The loop: Sign up → Connect → Get value → Upgrade · the rule: ship one slice end-to-end before the next.",
+  "columns": [
+    { "id": "now", "label": "Now", "color": "#4ade80" },
+    { "id": "next", "label": "Next", "color": "#60a5fa" },
+    { "id": "later", "label": "Later", "color": "#c084fc" }
+  ],
+  "tiers": [
+    { "id": "rock", "label": "Rocks · foundational & risky", "color": "#f59e0b" },
+    { "id": "pebble", "label": "Pebbles · features", "color": "#60a5fa" },
+    { "id": "sand", "label": "Sand · glue & polish", "color": "#4ade80" }
+  ],
+  "tracks": [
+    { "id": "auth", "label": "Auth", "color": "#2dd4bf", "border": "#164a44", "bg": "#06140f" },
+    { "id": "core", "label": "Core", "color": "#fb923c", "border": "#4a2c08", "bg": "#170d02" },
+    { "id": "billing", "label": "Billing", "color": "#4ade80", "border": "#1e4a32", "bg": "#08160e" },
+    { "id": "platform", "label": "Platform", "color": "#7a8898", "border": "#2a323e", "bg": "#10141b" },
+    { "id": "polish", "label": "Polish", "color": "#64748b", "border": "#1e2737", "bg": "#0d1117" }
+  ],
+  "launches": [
+    { "id": "v1", "label": "v1 — launch" },
+    { "id": "v2", "label": "v2 — later" }
+  ],
+  "cards": [
+    {
+      "id": "R1", "title": "Auth + sessions", "column": "now", "tier": "rock", "track": "auth",
+      "size": "L", "launch": "v1", "blocker": true,
+      "summary": "Email + OAuth sign-in, secure session cookies, per-user data scoping in SQL. Everything authed depends on this.",
+      "done": "A user signs up, signs out, signs back in; no route returns another user's data.",
+      "closes": "closes RISK-1"
+    },
+    {
+      "id": "R2", "title": "The one core action", "column": "now", "tier": "rock", "track": "core",
+      "size": "M", "launch": "v1", "blocker": true,
+      "summary": "The single thing the product exists to do, working end-to-end against real data — no mocks.",
+      "done": "A real user completes the core action and sees a real result."
+    },
+    {
+      "id": "P1", "title": "Dashboard", "column": "next", "tier": "pebble", "track": "core",
+      "size": "M", "launch": "v1",
+      "summary": "Show the user their state after the core action: history, status, next step.",
+      "done": "Returning user lands on a dashboard reflecting their real data."
+    },
+    {
+      "id": "B1", "title": "Stripe subscription + paywall", "column": "next", "tier": "rock", "track": "billing",
+      "size": "M", "launch": "v1", "blocker": true,
+      "summary": "Checkout, webhook-verified entitlements (never trust the client), paywall on the premium path.",
+      "done": "A sandbox purchase grants access; no offline/cross-user path grants it."
+    },
+    {
+      "id": "S1", "title": "Deploy + health check", "column": "next", "tier": "sand", "track": "platform",
+      "size": "S", "launch": "v1",
+      "summary": "Live HTTPS URL, env-based secrets, green health endpoint, basic error tracking.",
+      "done": "Production URL serves the app; secrets live in the host, nothing committed."
+    },
+    {
+      "id": "P2", "title": "Team workspaces", "column": "later", "tier": "pebble", "track": "core",
+      "size": "L", "launch": "v2",
+      "summary": "Invite teammates, shared data, roles. Deferred until single-user value is proven.",
+      "done": "An owner invites a member who sees shared workspace data."
+    },
+    {
+      "id": "P3", "title": "Public API", "column": "later", "tier": "pebble", "track": "platform",
+      "size": "M", "launch": "v2", "gated": true,
+      "summary": "Token-auth REST API for the core resource. Gated on a real customer asking for it.",
+      "done": "A documented, token-authed endpoint returns the user's resource."
+    },
+    {
+      "id": "S2", "title": "Onboarding polish", "column": "later", "tier": "sand", "track": "polish",
+      "size": "S", "launch": "v2",
+      "summary": "Empty states, first-run checklist, a11y pass. After the core loop converts.",
+      "done": "First-run users hit a guided empty state, not a blank screen."
+    }
+  ],
+  "shipped": [
+    {
+      "id": "R0", "title": "Repo + CI + test baseline", "track": "platform", "size": "S", "launch": "v1",
+      "summary": "Monorepo, green test runner in CI, formatter + linter wired.",
+      "done": "CI runs green on push.", "shipped": "2026-01-04"
+    }
+  ]
+}

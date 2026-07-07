@@ -1,0 +1,8 @@
+# generated output (commit your source JSON, not the HTML)
+roadmap.html
+examples/*.html
+
+# os / editor
+.DS_Store
+*.log
+node_modules/

@@ -1,0 +1,38 @@
+{
+  "name": "rockmap",
+  "version": "0.1.0",
+  "description": "Generate a single-file, interactive roadmap board from one JSON file. Zero dependencies.",
+  "type": "module",
+  "bin": {
+    "rockmap": "build-roadmap.mjs"
+  },
+  "main": "build-roadmap.mjs",
+  "scripts": {
+    "build": "node build-roadmap.mjs",
+    "example": "node build-roadmap.mjs examples/saas.json examples/saas.html"
+  },
+  "keywords": [
+    "roadmap",
+    "kanban",
+    "now-next-later",
+    "planning",
+    "static-site",
+    "html",
+    "zero-dependency"
+  ],
+  "author": "Jason Poindexter",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jpoindexter/rockmap.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "build-roadmap.mjs",
+    "roadmap.json",
+    "roadmap.schema.json",
+    "examples/"
+  ]
+}
