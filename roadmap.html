@@ -56,96 +56,91 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 .t-rock h3{color:#f59e0b;border-left-color:#f59e0b}
 .t-pebble h3{color:#60a5fa;border-left-color:#60a5fa}
 .t-sand h3{color:#4ade80;border-left-color:#4ade80}
-.l-trial{color:#2dd4bf;border-color:#164a44;background:#06140f}
-.l-config{color:#60a5fa;border-color:#1e3a5c;background:#0a1320}
-.l-build{color:#e07a4f;border-color:#5c2e1e;background:#1a0f0a}
+.l-core{color:#2dd4bf;border-color:#164a44;background:#06140f}
+.l-ui{color:#60a5fa;border-color:#1e3a5c;background:#0a1320}
 .l-research{color:#7a8898;border-color:#2a323e;background:#10141b}</style>
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">terminal-first multi-agent cockpit — real Claude TUI front and center, thin file rail, tabs = projects &middot; 6 slices &middot; 7 shipped</p>
-<p class="loop">cmux (native, real terminal panes, real inline VS Code) + a real cmux.json config. Fork or build fresh only if config genuinely fails — decided after trying it, not before. Zellij/Superconductor trials parked, see PARKED.md.</p>
-<div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Trials</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Cockpit config</span><span><i style="border-color:#5c2e1e;background:#1a0f0a"></i>Build (endgame)</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research</span><span style="color:#f87171">🔒 launch blocker</span><span style="color:#7a8898">⊘ gated</span></div>
+<p class="meta">native macOS cockpit — real agents in real terminal panes, built on Ghostty's engine, none of the IDE chrome &middot; 9 slices &middot; 4 shipped</p>
+<p class="loop">Open app → pick folder → real claude/codex in a real terminal pane (libghostty-vt) → tabs=projects, panes=agents, file rail, inline editor. Build our own, leveraging open-source components. libghostty-vt verified. v0 = ONE live pane.</p>
+<div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Core (terminal + shell)</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>UI (rail, editor, chrome)</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
-<label for="track-filter">Track:</label><select id="track-filter"><option value="all">All track</option><option value="trial">Trials</option><option value="config">Cockpit config</option><option value="build">Build (endgame)</option><option value="research">Research</option></select>
-<label for="launch-filter">Launch:</label><select id="launch-filter"><option value="all">All launch</option><option value="v0">v0 — config ship</option><option value="v1">v1 — after real use</option><option value="v2">v2 — only if earned</option></select>
+<label for="track-filter">Track:</label><select id="track-filter"><option value="all">All track</option><option value="core">Core (terminal + shell)</option><option value="ui">UI (rail, editor, chrome)</option><option value="research">Research &amp; spikes</option></select>
+<label for="launch-filter">Launch:</label><select id="launch-filter"><option value="all">All launch</option><option value="v0">v0 — one live pane</option><option value="v1">v1 — tabs + panes</option><option value="v2">v2 — rail + editor</option><option value="v3">v3 — worktrees + polish</option></select>
 <label for="priority-filter">Priority:</label><select id="priority-filter"><option value="all">All priority</option><option value="rock">Rocks</option><option value="pebble">Pebbles</option><option value="sand">Sand</option></select>
 <label for="size-filter">Size:</label><select id="size-filter"><option value="all">All size</option><option value="L">L</option><option value="M">M</option><option value="S">S</option></select>
 </div>
 <div class="board" style="--cols:3">
 <div class="col" data-status="now"><h2 class="s-now">Now</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="config" data-id="R4" data-size="S" data-tier="rock" data-launch="v0">
-<div class="hd"><span class="sz">S</span><span class="ttl">R4 &middot; Try cmux's real appearance config — IN PROGRESS</span><span class="lens l-config">Cockpit config</span></div>
-<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">cmux.json sidebarAppearance.*/workspaceColors.* tokens (tint, corner radius, material, blend mode, tab colors) — verified real and shipped, not a fork requirement. Applying flow-app-shell + flow-navigation guidance: check workspaceColors.indicatorStyle beyond its .leftRail default (spec wants a filled active-state, not just a stripe), sidebar width against the 240-280px/56-72px-collapsed norm.</p>
-<details><summary>Done criteria</summary><p class="done">Jason confirms it reads as 'clean and modern,' or names specifically what still doesn't.</p></details><div class="closes">decides R3 and the fork question</div></div>
+<div class="card" data-track="core" data-id="SPIKE2" data-size="L" data-tier="rock" data-launch="v0">
+<div class="hd"><span class="sz">L</span><span class="ttl">SPIKE2 &middot; Render + input loop — the rock</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">Extend the parsing spike (which is proven): pty → libghostty-vt → CANVAS PAINT + KEYBOARD ROUNDTRIP in a real window. Proves the three things parsing didn't — rendering to pixels, input encoding back to the pty, and fullscreen-TUI correctness (claude's own alt-screen UI) at terminal speed. Do this BEFORE scaffolding the app.</p>
+<details><summary>Done criteria</summary><p class="done">Type in a canvas-rendered pane running a real shell; output appears; arrow keys + ctrl-c work; claude's TUI renders correctly; no visible lag on fast output.</p></details><div class="closes">de-risks the entire app</div></div>
 </div>
 </div>
 <div class="col" data-status="next"><h2 class="s-next">Next</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="config" data-id="P1" data-size="M" data-tier="rock" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">P1 &middot; Ship v0 cockpit config</span><span class="lens l-config">Cockpit config</span></div>
-<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">A real, versioned cmux.json in this repo, once R4 lands. cmux itself is already installed — zero application code needed unless R4 fails.</p>
-<details><summary>Done criteria</summary><p class="done">Fresh shell: cmux + this repo's cmux.json → cockpit with real project workspaces, agents running, surviving a restart.</p></details></div>
-</div>
-<div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="config" data-id="P2" data-size="S" data-tier="pebble" data-launch="v1">
-<div class="hd"><span class="sz">S</span><span class="ttl">P2 &middot; Worktree helper</span><span class="lens l-config">Cockpit config</span></div>
-<div class="badges"><span class="me ver">v1</span></div><p class="sum">One keystroke: new agent pane = git worktree add + claude launched inside it, named and disposable. The 'same repo, parallel tasks' half of the mixed workflow.</p>
-<details><summary>Done criteria</summary><p class="done">From any project tab: new-worktree-agent in &lt;5s; cleanup command removes worktree + branch.</p></details></div>
+<div class="card" data-track="core" data-id="SCAFFOLD" data-size="M" data-tier="rock" data-launch="v0">
+<div class="hd"><span class="sz">M</span><span class="ttl">SCAFFOLD &middot; Tauri 2 app scaffold</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">Tauri 2 + React/TS/Vite frontend + Rust backend. Native window, IPC channel wired backend↔frontend. Empty but real — the container the SPIKE-2 pipeline drops into.</p>
+<details><summary>Done criteria</summary><p class="done">Native window opens; a message round-trips backend↔frontend over IPC; builds clean with the pinned Zig toolchain.</p></details></div>
+<div class="card" data-track="core" data-id="CORE" data-size="M" data-tier="rock" data-launch="v0">
+<div class="hd"><span class="sz">M</span><span class="ttl">CORE &middot; One agent pane (v0 done)</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">Native folder picker → spawn claude in that cwd → one interactive terminal pane using the SPIKE-2 pipeline. Persist the last folder, reopen on relaunch. This IS v0.</p>
+<details><summary>Done criteria</summary><p class="done">Open app → pick folder → run claude → type and see output, feels like a real terminal. Relaunch reopens the folder.</p></details></div>
 </div>
 </div>
 <div class="col" data-status="later"><h2 class="s-later">Later</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="build" data-id="R3" data-size="XL" data-tier="rock" data-launch="v2">
-<div class="hd"><span class="sz">XL</span><span class="ttl">R3 &middot; Tauri 2 native harness</span><span class="lens l-build">Build (endgame)</span></div>
-<div class="badges"><span class="me ver">v2</span><span class="me gate">⊘</span></div><p class="sum">The endgame — gated harder now: fires only if BOTH R4 (cmux's real config) AND a scoped cmux fork attempt fail, per DECISIONS.md. Weigh the fork's own named risks first (Sparkle auto-update silently overwriting local changes, multi-platform monorepo scope, Xcode/Zig/Rust toolchain fragility — docs/blind-audit-cmux-fork-decision-2026-07-07.html). Seed from hashmark's Tauri scaffold + Warp design spec (color algebra, fonts, 358 icons) if it ever fires.</p>
-<details><summary>Done criteria</summary><p class="done">v0 scope written from the trials' logged frictions — not imagined features — before any code.</p></details><div class="closes">closes the gap no OSS app fills (native-light, real PTY, thin rail)</div></div>
+<div class="card" data-track="ui" data-id="TABS" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">TABS &middot; Tabs = projects</span><span class="lens l-ui">UI (rail, editor, chrome)</span></div>
+<div class="badges"><span class="me ver">v1</span></div><p class="sum">Add/switch project folders as tabs, multiple projects in one window. Native folder-open per tab.</p>
+<details><summary>Done criteria</summary><p class="done">Open 3 project folders as tabs; switch between them; each keeps its own state.</p></details></div>
+<div class="card" data-track="core" data-id="PANES" data-size="L" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">L</span><span class="ttl">PANES &middot; Multiple panes per tab</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v1</span></div><p class="sum">Grid of terminal panes per tab, each its own pty/agent. Pane focus, new pane (n), close pane (x). Watch memory/CPU with N concurrent agents (see ARCHITECTURE.md).</p>
+<details><summary>Done criteria</summary><p class="done">3 agent panes visible at once in one tab, each interactive; n adds, x closes, focus moves.</p></details></div>
+<div class="card" data-track="ui" data-id="EDITOR" data-size="L" data-tier="rock" data-launch="v2">
+<div class="hd"><span class="sz">L</span><span class="ttl">EDITOR &middot; Inline editor pane (CodeMirror)</span><span class="lens l-ui">UI (rail, editor, chrome)</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Double-click a file in the rail → CodeMirror 6 editor pane, inline in the grid, real syntax highlighting. This is the 'looks like VSCode's editor' requirement — built directly, not via code serve-web.</p>
+<details><summary>Done criteria</summary><p class="done">Double-click a .tsx file → it opens in an editor pane with line numbers + syntax highlighting, editable, save works.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="config" data-id="P3" data-size="S" data-tier="pebble" data-launch="v2">
-<div class="hd"><span class="sz">S</span><span class="ttl">P3 &middot; Zed stripped fallback config</span><span class="lens l-config">Cockpit config</span></div>
-<div class="badges"><span class="me ver">v2</span><span class="me gate">⊘</span></div><p class="sum">Verified settings.json/keymap/tasks for Zed as window-per-project cockpit (no project tabs exist in Zed — top community request). Kept as documented fallback, not the main path.</p>
-<details><summary>Done criteria</summary><p class="done">Config documented in docs/; applied in &lt;1h if ever wanted.</p></details></div>
+<div class="card" data-track="ui" data-id="THEME" data-size="S" data-tier="pebble" data-launch="v1">
+<div class="hd"><span class="sz">S</span><span class="ttl">THEME &middot; mono-ghost theme + session persistence</span><span class="lens l-ui">UI (rail, editor, chrome)</span></div>
+<div class="badges"><span class="me ver">v1</span></div><p class="sum">Apply the already-approved mono-ghost palette (ghostty/config has the values). Persist tabs + panes across restarts.</p>
+<details><summary>Done criteria</summary><p class="done">App looks like the approved demo; relaunch restores tabs and panes.</p></details></div>
+<div class="card" data-track="ui" data-id="RAIL" data-size="M" data-tier="pebble" data-launch="v2">
+<div class="hd"><span class="sz">M</span><span class="ttl">RAIL &middot; File rail + preview</span><span class="lens l-ui">UI (rail, editor, chrome)</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Yazi-style file tree with inline preview, per the demo's left rail. Git status indicators.</p>
+<details><summary>Done criteria</summary><p class="done">Rail shows the project tree; selecting a file previews it; dirty files marked.</p></details></div>
+<div class="card" data-track="core" data-id="WORKTREE" data-size="M" data-tier="pebble" data-launch="v3">
+<div class="hd"><span class="sz">M</span><span class="ttl">WORKTREE &middot; Worktree helper</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v3</span></div><p class="sum">One keystroke: new pane = git worktree add + agent launched inside it, named and disposable. The 'multiple agents on one repo, parallel' workflow.</p>
+<details><summary>Done criteria</summary><p class="done">From a project tab: new-worktree-agent in &lt;5s; cleanup removes the worktree + branch.</p></details></div>
 </div>
-<div class="tg t-sand"><h3>Sand · glue &amp; polish</h3>
-<div class="card" data-track="research" data-id="S2" data-size="S" data-tier="sand" data-launch="v2">
-<div class="hd"><span class="sz">S</span><span class="ttl">S2 &middot; Mine Superconductor bundle for UX patterns</span><span class="lens l-research">Research</span></div>
-<div class="badges"><span class="me ver">v2</span><span class="me gate">⊘</span></div><p class="sum">Settings-key notes + screenshot (kept in resources/ — the actual binary was removed from git, see DECISIONS.md 2026-07-07: you can't mine UX patterns from a compiled binary, so committing it had no benefit). Only runs if R3 actually fires, not scheduled by default — was previously a guaranteed step regardless of trial outcome.</p>
 </div>
 </div>
-</div>
-</div>
-<details class="sh-section" open><summary>✅ Shipped (7)</summary>
+<details class="sh-section" open><summary>✅ Shipped (4)</summary>
 <div class="sh-grid">
-<div class="card s-shipped" data-track="trial" data-id="R0" data-size="S" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">S</span><span class="ttl">R0 &middot; Editor-fidelity spike</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">1-2h test: hx sample.tsx next to the VSCode screenshot. Verdict: PASS — real tree-sitter syntax highlighting, line numbers, distinct enough for real editing. Superseded by cmux's real inline VS Code, but the verdict (TUI editors can look real) held up.</p>
-<details><summary>Done criteria</summary><p class="done">Verdict logged in DECISIONS.md. ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="trial" data-id="R1" data-size="M" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">R1 &middot; Zellij cockpit trial — parked before completion</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">Real KDL config built (zellij/agent.kdl) and the spike passed, but Jason rejected the static-config interaction model directly before the week-long trial ran: 'this should work like vscode — you open, pick a folder.' Not a wasted build — config stays in the repo, cheap to revisit. See PARKED.md and DECISIONS.md.</p>
-<details><summary>Done criteria</summary><p class="done">Honestly: not completed. Parked on direct user feedback, not on trial results. ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="trial" data-id="S4" data-size="M" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">S4 &middot; cmux found, verified in source, adopted</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">Superconductor and hashmark evaluated and rejected first (closed source / missing file explorer + single-agent-view). cmux (manaflow-ai, GPL-3.0, native Swift+AppKit on libghostty) verified directly in source: real NSOpenPanel folder-picker, real inline VS Code via code serve-web, real multi-agent split panes.</p>
-<details><summary>Done criteria</summary><p class="done">Logged in DECISIONS.md with full evidence trail. ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="research" data-id="S5" data-size="M" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">S5 &middot; Blind-spot audit of the fork-cmux decision</span><span class="lens l-research">Research</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">16-framework audit of 'cmux is best to fork.' Found the verdict was reached on asymmetric evidence (source-verified cmux vs. web-searched alternatives). More importantly: caught and corrected a false claim — cmux's chrome IS config-themeable (sidebarAppearance.*/workspaceColors.* in cmux.json), verified firsthand against real source, not just relayed. Likely makes the fork question moot.</p>
-<details><summary>Done criteria</summary><p class="done">docs/blind-audit-cmux-fork-decision-2026-07-07.html. DECISIONS.md and ERRORS.md corrected same-day. ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="research" data-id="S0" data-size="M" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">S0 &middot; Research: OSS landscape + Zed verification</span><span class="lens l-research">Research</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">July 2026 survey: every purpose-built Claude Code GUI reimplements the UI, is deprecated, closed, or Electron-heavy. Zed: no project tabs, terminals die on quit, git panel single-repo. Zellij+yazi delivers ~90% of the spec at zero build cost.</p>
-<details><summary>Done criteria</summary><p class="done">Findings drove the trial-first roadmap; rejected options documented with reasons. ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="config" data-id="S1" data-size="S" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">S</span><span class="ttl">S1 &middot; Repo + roadmap board + interactive cockpit demo</span><span class="lens l-config">Cockpit config</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">Private repo with rockmap vendored, this board, and an interactive HTML demo of the zellij cockpit experience. Note: the demo shipped before any real trial hours were logged — flagged in the 2026-07-07 blind-spot audit as the project's central risk; see ERRORS.md.</p>
-<details><summary>Done criteria</summary><p class="done">Pushed to github.com/jpoindexter/agent-cli (private). ✓ 2026-07-07</p></details></div>
-<div class="card s-shipped" data-track="trial" data-id="S3" data-size="M" data-tier="" data-launch="v0">
-<div class="hd"><span class="sz">M</span><span class="ttl">S3 &middot; Audit remediation</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span></div><p class="sum">Scaffolded PRD/ROADMAP/DECISIONS/PARKED/ERRORS. Installed zellij, yazi, helix (Ghostty already present) and built the editor-fidelity spike (spike/). Sequenced R1/R2, named the R3 threshold, re-gated S2. Removed the 117MB Superconductor binary from git (kept 548K of notes/icon). Pruned an orphaned worktree in indx; flagged its branch ambiguity for Jason instead of guessing.</p>
-<details><summary>Done criteria</summary><p class="done">All 16 audit findings addressed or explicitly deferred with a named owner (Jason, for the one judgment call). ✓ 2026-07-07</p></details></div>
+<div class="card s-shipped" data-track="research" data-id="S-OSS" data-size="M" data-tier="" data-launch="v0">
+<div class="hd"><span class="sz">M</span><span class="ttl">S-OSS &middot; OSS landscape survey + tool evaluations</span><span class="lens l-research">Research &amp; spikes</span></div>
+<div class="badges"><span class="me ver">v0</span></div><p class="sum">July 2026: surveyed the field (zellij, Superconductor, hashmark, cmux, Mux0, Supacode). zellij trialed then parked (static-config model, not 'open a folder'). Superconductor/hashmark/cmux evaluated in depth. All reference only — the decision is build-our-own.</p>
+<details><summary>Done criteria</summary><p class="done">Drove the build-our-own direction. Rejected options documented in PARKED.md/DECISIONS.md with reasons. ✓ 2026-07-07</p></details></div>
+<div class="card s-shipped" data-track="research" data-id="S-EDITOR" data-size="S" data-tier="" data-launch="v0">
+<div class="hd"><span class="sz">S</span><span class="ttl">S-EDITOR &middot; Editor-fidelity spike (helix)</span><span class="lens l-research">Research &amp; spikes</span></div>
+<div class="badges"><span class="me ver">v0</span></div><p class="sum">hx sample.tsx next to the VSCode screenshot — confirmed a real editor with tree-sitter highlighting reads right. Informs the EDITOR slice (now CodeMirror in-app, not a TUI editor).</p>
+<details><summary>Done criteria</summary><p class="done">PASS, logged in DECISIONS.md. ✓ 2026-07-07</p></details></div>
+<div class="card s-shipped" data-track="research" data-id="S-AUDIT" data-size="M" data-tier="" data-launch="v0">
+<div class="hd"><span class="sz">M</span><span class="ttl">S-AUDIT &middot; Blind-spot audits (drift + fork decision)</span><span class="lens l-research">Research &amp; spikes</span></div>
+<div class="badges"><span class="me ver">v0</span></div><p class="sum">Two 16-framework /blind sweeps caught real drift: demo-replaced-the-trial, and an asymmetric 'cmux is best' verdict. Second audit corrected a false claim (cmux chrome IS themeable) and, with Jason's pushback, steered back to build-our-own. docs/blind-audit-*.html.</p>
+<details><summary>Done criteria</summary><p class="done">Findings logged in ERRORS.md; direction corrected. ✓ 2026-07-07</p></details></div>
+<div class="card s-shipped" data-track="core" data-id="S-SPIKE1" data-size="M" data-tier="" data-launch="v0">
+<div class="hd"><span class="sz">M</span><span class="ttl">S-SPIKE1 &middot; libghostty-vt parsing spike — PASSED</span><span class="lens l-core">Core (terminal + shell)</span></div>
+<div class="badges"><span class="me ver">v0</span></div><p class="sum">spike-ghostty-vt/: real pty (portable-pty) → real 'ls -la -G' → real ANSI codes → libghostty-vt Terminal::vt_write parses → cell-by-cell readback matches exactly. Proves the terminal ENGINE choice (Ghostty's real parser in a Rust backend, not xterm.js). Caught the Zig 0.15.2 pin requirement.</p>
+<details><summary>Done criteria</summary><p class="done">Compiles + runs correctly, verified 2026-07-07. Logged in DECISIONS.md. ✓ 2026-07-07</p></details></div>
 </div>
 </details>
 <script>(function(){

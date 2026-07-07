@@ -108,3 +108,21 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Why:** Per blind-spot audit — you can't mine UX patterns from a compiled binary, so committing the actual executable had no benefit, only downside (licensing exposure if repo is ever made public or shared; permanently bloats git LFS history).
 
 **Reversible?** The removal is reversible (can re-add). The historical LFS object stays in git history either way — full purge would need a history rewrite, not done here since this is a private repo with no other clones/collaborators to disrupt.
+
+## 2026-07-07 — Full stack locked
+
+**Choice:** Tauri 2 (native shell, Rust backend) + React/TS/Vite (frontend) + `libghostty-vt` 0.2.0 (terminal engine) + `portable-pty` (ptys) + Canvas 2D (terminal render, v0) + CodeMirror 6 (editor, v2) + `tauri-plugin-sql`/SQLite (persistence). Toolchain: Zig pinned to 0.15.2. Full rationale in ARCHITECTURE.md.
+
+**Alternatives considered:** xterm.js for terminal rendering (rejected — reimplements VT parsing weakly + adds a webview render layer, closer to the "vscode shit" rejected; libghostty-vt gives real Ghostty parsing in the same Rust backend). Monaco for the editor (heavier than CodeMirror for an inline pane). Native Swift/AppKit (Jason isn't a Swift dev; Tauri matches his actual stack).
+
+**Why:** Terminal fidelity is the product's core value, so the engine (libghostty-vt) matters most and is verified. Everything else is the stack Jason already ships in (indx/hashmark/brutal).
+
+**Reversible?** Per the anti-drift rule: locked until v0 ships. Switching before then = explicitly throwing away the work. After v0, a change needs its own DECISIONS entry.
+
+## 2026-07-07 — Repeatedly converting "evaluate X" into "adopt X" in the plan (logged, corrected)
+
+**Choice:** Named as a recurring failure this session (also in ERRORS.md): "check out cmux" → wrote "adopt cmux + config" into PRD/ROADMAP as the plan, twice, without Jason ever choosing it. Corrected to build-our-own on his direct pushback ("why are you pushing cmux we are trying to build our own"). The `demo/cockpit-demo.html` caption stated the real instruction all along — leverage open-source *projects* as components, build our own app.
+
+**Why it matters:** The mechanical tool-streak hook (added this session, `~/.claude/settings.json`) is a partial backstop, but the specific failure here was writing a not-yet-chosen option into the source-of-truth docs as decided. Fix: an evaluation writes to PARKED or a DECISIONS "considering" note, never to PRD/ROADMAP scope, until Jason picks it.
+
+**Reversible?** N/A — this is a process note, not a technical choice.

@@ -1,27 +1,43 @@
 # ROADMAP — agent cli
 
-Source of truth: `roadmap.json` → `roadmap.html` (rockmap board). This file is the plain-text index — rebuild the board after editing `roadmap.json`:
+Source of truth: `roadmap.json` → `roadmap.html` (rockmap board). Rebuild after editing:
 
 ```bash
 node rockmap/build-roadmap.mjs roadmap.json roadmap.html
 ```
 
-## v0 — Shippable to one user (Jason)
+Sequential, not parallel — each slice gates the next. Ship ugly first. One feature end-to-end before the next.
 
-1. ~~**Editor-fidelity spike**~~ — **PASSED 2026-07-07.** See DECISIONS.md.
-2. ~~**R1: Zellij cockpit trial**~~ — **PARKED 2026-07-07**, not abandoned mid-trial for no reason: Jason rejected the static-config interaction model directly ("this should work like vscode — you open, pick a folder"). Real config kept at `zellij/`, cheap to revisit. See PARKED.md.
-3. **cmux adopted** — verified in source 2026-07-07 (native folder-picker, real terminal panes, real inline VS Code, multi-agent split panes). See DECISIONS.md.
-4. **Blind-spot audit of the fork decision** — **DONE 2026-07-07.** `docs/blind-audit-cmux-fork-decision-2026-07-07.html`. Found and corrected a false claim: cmux's chrome is config-themeable via `cmux.json`, likely making a fork unnecessary.
-5. **Try cmux's real appearance config — IN PROGRESS.** `sidebarAppearance.*`/`workspaceColors.*` tokens, applying flow-app-shell + flow-navigation guidance (indicator style, sidebar width/collapse, chrome-vs-content material). Jason to confirm it reads as "clean and modern."
-6. **Decide: config satisfies, or fork-vs-build-fresh** — blocked on step 5's verdict. If forking: weigh the named risks first (Sparkle auto-update clobber, monorepo scope, toolchain fragility — see the audit doc).
-7. **P1: Ship v0** — a real, versioned `cmux.json` config in this repo, once step 5/6 lands.
+## Done so far (research + verification — see DECISIONS.md)
 
-## v1 — after real use
+- ~~OSS landscape survey~~ · ~~zellij trial (parked — wrong interaction model)~~ · ~~Superconductor/hashmark/cmux evaluated~~ · ~~editor-fidelity spike (PASS)~~ · ~~cmux fork-decision audit~~
+- ~~**libghostty-vt spike — PASSED 2026-07-07.**~~ Real pty → real Ghostty parsing → correct cell readback (`spike-ghostty-vt/`). Proves the terminal *engine* choice.
 
-- P2: Worktree helper (one keystroke = new git worktree + agent launched in it)
+## v0 — The core loop works (one folder, one live terminal pane)
 
-## v2 — only if earned
+The whole app in one vertical slice. If this works, everything else is composition; if it doesn't, nothing else matters.
 
-- R3: Tauri 2 native harness — gated harder now than before: fires only if *both* cmux's config *and* a scoped cmux fork fail. See DECISIONS.md for the exact threshold.
-- P3: Zed stripped-down fallback config (documented, not built)
-- S2: Mine Superconductor bundle for UX patterns — **only if R3 actually fires**, not scheduled by default.
+1. **SPIKE-2: Render + input loop** *(the rock — do before scaffolding)*. Extend the spike: pty → libghostty-vt → **canvas paint** + **keyboard roundtrip** in a real window. Done = type in a canvas-rendered pane running a real shell, see output, arrow keys + ctrl-c work, `claude`'s fullscreen TUI renders correctly. This proves rendering + input + TUI + perf — the three things the parsing spike didn't.
+2. **SCAFFOLD: Tauri 2 app**. Native window, React/Vite frontend, Rust backend, IPC channel wired. Nothing fancy — an empty window that can round-trip a message backend↔frontend.
+3. **CORE: One agent pane**. Folder picker (native Tauri dialog) → spawn `claude` in that cwd → one interactive terminal pane using the SPIKE-2 pipeline. Persist the last folder; reopen it on relaunch.
+
+**v0 done:** open the app, pick a folder, run `claude` in the pane, type and see output — feels like a real terminal.
+
+## v1 — Cockpit shape (tabs + multiple panes)
+
+- Tabs = projects (add/switch folders, multi-project in one window)
+- Multiple panes per tab in a grid, each its own pty/agent
+- Pane focus, new pane (`n`), close pane (`x`)
+- mono-ghost theme applied (palette already approved, `ghostty/config`)
+- Session persistence (reopen tabs + panes where you left off)
+
+## v2 — The rail and the editor
+
+- File tree rail (yazi-style) with inline preview
+- Double-click a file → CodeMirror editor pane, inline in the grid (real syntax highlighting — the "looks like VSCode's editor" requirement, built directly)
+- Git status indicators in the rail
+
+## v3 — Worktrees + whatever real use surfaces
+
+- Worktree helper: one keystroke = new git worktree + agent launched in it (the "3 agents on one repo, parallel" workflow)
+- Polish, settings, empty states — only what daily use proves necessary

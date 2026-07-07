@@ -1,47 +1,52 @@
 # PRD — agent cli
 
-**One-liner:** A terminal-first multi-agent coding cockpit — real Claude Code TUI front and center, thin file rail, tabs = projects, each tab holding N agent panes, plus the real VS Code inline when actually needed.
+**One-liner:** A native macOS app that runs real coding agents (Claude Code, Codex) in real terminal panes — tabs = projects, a file rail, an inline editor — built on Ghostty's terminal engine, with none of the IDE chrome.
 
-**2026-07-07 — this doc is current.** Pivoted to [cmux](https://github.com/manaflow-ai/cmux) — see DECISIONS.md for the full trail (zellij trial → rejected for being a static config, not an app → Superconductor/hashmark evaluated and rejected → cmux found, verified in source, adopted). A 16-framework blind-spot audit (`docs/blind-audit-cmux-fork-decision-2026-07-07.html`) then corrected an earlier false claim: cmux's chrome IS config-themeable (`~/.config/cmux/cmux.json` — `sidebarAppearance.*`, `workspaceColors.*`), which likely makes forking unnecessary.
+**Direction locked 2026-07-07** (see DECISIONS.md for the full trail): build our own app, leveraging open-source *components* (Ghostty's terminal engine, Tauri, CodeMirror) — not adopting a finished third-party app. cmux/Superconductor/hashmark were evaluated and are reference only. The core architecture (`libghostty-vt` in a Rust backend parsing a real pty) is **verified working** — see `spike-ghostty-vt/`.
 
 ## Problem
 
-Jason works across 5-10 active projects, sometimes with 3+ Claude/Codex sessions open on one project, sometimes one agent per project. His current setup is N separate VSCode windows, one per project — heavy, and none of it is the terminal CLI experience he actually likes using.
+Jason works across 5-10 active projects — sometimes 3+ agent sessions on one project, sometimes one agent per project. Current setup is N separate VSCode windows, one per project: heavy, and none of it is the terminal CLI experience he actually likes. Existing tools each miss something: cmux (great, but someone else's app + can't fully own the look), zellij (static config, no "open a folder"), Superconductor (closed source, chat UI not real terminal), hashmark (his own, but reimplements the chat UI and shows one agent at a time).
 
 ## User
 
-Jason. Solo dev, senior, ND (dyslexia/ADHD/aphantasia) — needs concrete and testable over speculative, dislikes deciding aesthetics from a text description (proven: rejected two color-scheme defaults in a row before picking one by looking at it).
+Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and testable over speculative; decides aesthetics by seeing, not describing (proven: rejected two color schemes before picking one by eye). Stack fluency: Node/ESM/TS, React, Tauri 2, Rust-adjacent (indx/hashmark/brutal all Tauri). **Not** a Swift/AppKit dev — a reason building native-in-Tauri beats forking a Swift app.
 
 ## v0 done criteria
 
-- [x] cmux verified in source as satisfying the core shape — native folder-picker, real terminal panes (real claude/codex CLIs, real pty), real inline VS Code, multi-agent split panes. 2026-07-07.
-- [ ] cmux's real appearance config (`sidebarAppearance.*`, `workspaceColors.*` in `cmux.json`) satisfies "clean and modern" — tokens verified to exist in source; Jason to confirm the applied result actually looks right.
-- [ ] If config doesn't satisfy: decide fork-cmux vs. build-fresh, weighed against the blind-audit's named fork risks (Sparkle auto-update silently overwriting local changes, multi-platform monorepo scope, Xcode/Zig/Rust toolchain) — not skipped to fork by default.
-- [ ] Ship as: cmux (already installed) + a real, versioned `cmux.json` config in this repo — zero Swift/Tauri code unless config genuinely fails the visual bar.
+**Done (one sentence): open the app, pick a project folder, and run a real `claude` session in a terminal pane that renders via libghostty-vt and takes keyboard input — it reads and feels like a real terminal.**
+
+- [ ] The render+input loop is proven: pty → libghostty-vt → canvas paint → keyboard back to pty, in a real window, feeling like a real terminal (the one remaining unproven rock — the spike proved *parsing* only).
+- [ ] Tauri app scaffold: native window, Rust backend, React frontend, IPC channel established.
+- [ ] Folder picker → spawn `claude` in that cwd → one interactive terminal pane, fullscreen-TUI-clean (claude's own UI renders correctly).
+- [ ] Survives: quit and relaunch reopens the last folder.
 
 ## In scope (v0)
 
-- cmux as daily driver — real terminal panes, real inline VS Code, native folder-picker, tabs=projects via Workspaces→Surfaces→Split-panes.
-- `cmux.json` appearance config tuned to Jason's taste (mono-ghost direction, per the demo palette already approved).
-- Fork-vs-build-fresh decision, made only *after* config is actually tried — not assumed upfront.
+- One native window, one folder, one live interactive terminal pane running a real agent.
+- The full terminal pipeline (pty ↔ libghostty-vt ↔ canvas ↔ input) as a reusable component.
+
+Everything else — tabs, multiple panes, file rail, editor, worktrees — is v1+ (see ROADMAP). v0 is deliberately the single vertical slice that proves the whole thing works.
 
 ## Out of scope → PARKED.md
 
-- Zellij + Ghostty + yazi trial (real KDL config exists at `zellij/`, cheap to revisit, not the active path)
-- Superconductor daily-driver trial (closed source; cmux's real config surface makes this moot)
-- Tauri native rewrite (gated — only if cmux's config *and* a scoped fork both fail, see DECISIONS.md)
-- Zed stripped-down fallback config
-- Worktree helper keybinding
-- Mining Superconductor's UX patterns
+- Tabs / multi-project (v1)
+- Multiple simultaneous panes / grid (v1)
+- File rail + preview (v2)
+- Inline editor pane (v2)
+- Worktree helper (v3)
+- Windows/Linux (macOS first; Tauri makes this portable later, not now)
 
 ## Constraints
 
-- Zero application code in v0 unless the config path genuinely fails.
-- Must work with Jason's existing multi-project workflow (indx, brutal, hashmark, prova, gripe, lint, Portfolio) without corrupting any of their git state.
-- Claude Code's global `"tui": "fullscreen"` setting means agent panes run a fullscreen alt-screen app — lower risk in cmux's native split-pane model than it was under a nested terminal multiplexer, but still worth watching for focus/keybind conflicts.
+- **Stack locked** (DECISIONS.md 2026-07-07): Tauri 2 + React/TS/Vite frontend + Rust backend; `libghostty-vt` terminal engine; `portable-pty`; CodeMirror 6 for the eventual editor. Switching before v0 ships = "yes, throw away the work."
+- Toolchain: Zig **pinned to 0.15.2** (Homebrew default 0.16.0 breaks the libghostty-vt build). Documented in `spike-ghostty-vt/README.md`.
+- Must coexist with Jason's existing projects (indx, brutal, hashmark, prova, gripe, lint) without touching their git state.
+- Ship ugly first: no theming, animation, settings UI, or empty-states polish until the core loop works end-to-end.
 
 ## Non-goals
 
-- Not a general-purpose terminal emulator replacement.
-- Not building a custom code editor — cmux's inline VS Code (real `code serve-web`, your actual installed VS Code) already covers "looks like VSCode's," because it *is* VS Code.
-- Not forking cmux's Swift source before trying its real config surface — see DECISIONS.md 2026-07-07 correction.
+- Not a general-purpose terminal emulator (it hosts agents; it's not iTerm).
+- Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app is the cockpit around them, never a chat-UI replacement.
+- Not a from-scratch VT parser — that's what libghostty-vt is for.
+- Not multi-platform, multi-user, or plugin-capable before there's a real daily-use track record.

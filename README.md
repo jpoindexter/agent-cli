@@ -1,23 +1,28 @@
 # agent cli
 
-Terminal-first multi-agent cockpit. Real CLI agents (claude, codex) running in real terminal panes, a file rail, **tabs = projects**, each tab holding N agent panes — plus the real VS Code, inline, when you actually need it. Not a lookalike of either.
+A native macOS app that runs real coding agents (Claude Code, Codex) in real terminal panes — tabs = projects, a file rail, an inline editor — built on Ghostty's terminal engine, with none of the IDE chrome.
 
-## Current state — running [cmux](https://github.com/manaflow-ai/cmux)
+## Current state — building it (direction locked 2026-07-07)
 
-Pivoted 2026-07-07 (see `DECISIONS.md`) after finding cmux: native macOS, Swift/AppKit, built on libghostty. Verified in its own source, not docs — `⌘O` opens a real native folder picker and creates a workspace; the "Open Folder in VS Code (Inline)" panel runs `code serve-web` and opens your **actual installed VS Code** in a browser pane next to the terminal; Workspaces → Surfaces → Split panes gives real simultaneous multi-agent panes running actual CLI tools in a real pty. Closes every gap the earlier zellij/hashmark/Superconductor comparison found.
+**Build our own app, leveraging open-source components** — not adopting a finished third-party app. cmux/Superconductor/hashmark/zellij were all evaluated and are reference only (see `DECISIONS.md` for the full trail, `PARKED.md` for what's shelved).
 
-- **Terminal-pane theme:** `ghostty/config` — OKLCH-derived, contrast-verified mono-ghost palette (cmux inherits Ghostty's config for terminal rendering). `cd ghostty && cp config ~/.config/ghostty/config`.
-- **Chrome theme — bigger finding:** stock cmux chrome was rejected ("horrible... should be clean and modern"). A [16-framework audit](docs/blind-audit-cmux-fork-decision-2026-07-07.html) caught a false claim I'd made — cmux's sidebar/tab chrome **is** config-themeable, no fork needed. Real tokens in `~/.config/cmux/cmux.json`: `sidebarAppearance.*` (tint, corner radius, material, blend mode), `workspaceColors.*` (tab colors, selection, active-indicator style). Trying this now — see `ROADMAP.md` step R4.
-- **zellij work** (`zellij/agent.kdl`) is not deleted — cheap fallback if needed — but is no longer the shipped path. See `PARKED.md`.
-- **Superconductor** (closed source) and the **Tauri rewrite** (gated harder now — needs both the config *and* a scoped fork to fail) are parked — see `PARKED.md`.
+The core architecture is **verified working** — `spike-ghostty-vt/` proves a real pty → `libghostty-vt` (Ghostty's actual parsing engine, in a Rust backend) → correct cell readback. That's the terminal-engine bet, de-risked.
 
-Read `PRD.md`, `ROADMAP.md`, `DECISIONS.md`, `PARKED.md`, `ERRORS.md` at the start of any session on this project.
+**Next up (v0):** the render+input loop (`SPIKE-2` — canvas paint + keyboard roundtrip, the one remaining rock), then the Tauri app scaffold, then one live agent pane. See `ROADMAP.md`.
+
+- **Stack:** Tauri 2 + React/TS/Vite + `libghostty-vt` + `portable-pty` + Canvas 2D + CodeMirror 6 (editor, v2). Full design in `ARCHITECTURE.md`. Locked (`DECISIONS.md`).
+- **Toolchain gotcha:** Zig must be pinned to **0.15.2** (`brew install zig@0.15`) — the default 0.16 breaks the libghostty-vt build. See `spike-ghostty-vt/README.md`.
+- **Theme:** mono-ghost palette approved (`ghostty/config` has the values); applied in v1, not before the core loop works.
+
+Read `PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `DECISIONS.md`, `PARKED.md`, `ERRORS.md` at the start of any session on this project.
 
 ## In this repo
 
 | Path | What |
 |---|---|
 | `PRD.md` / `ROADMAP.md` / `DECISIONS.md` / `PARKED.md` / `ERRORS.md` | Planning docs — source of truth |
+| `ARCHITECTURE.md` | Stack, data flow, the render+input rock, risks |
+| `spike-ghostty-vt/` | **Verified** libghostty-vt-in-Rust spike — the terminal engine proof |
 | `roadmap.json` / `roadmap.html` | The plan as a rockmap board — open `roadmap.html` in a browser |
 | `ghostty/config` | **The theme** — contrast-verified mono-ghost palette cmux inherits for terminal rendering |
 | `spike/` | The editor-fidelity test — `cd spike && hx sample.tsx` (passed 2026-07-07; superseded by cmux's real inline VS Code, kept for reference) |
