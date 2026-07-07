@@ -67,6 +67,16 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 
 **Reversible?** Yes — theme is config-only, no app code changed. zellij work not deleted.
 
+## 2026-07-07 — Correction: cmux's chrome IS config-themeable; fork question likely moot
+
+**What happened:** Earlier this entry claimed cmux's native sidebar/tab-bar chrome "isn't config-themeable" and would need Swift source edits. A `/blind` audit (`docs/blind-audit-cmux-fork-decision-2026-07-07.html`) flagged this as unverified. Re-cloned cmux and read the real source directly: `Packages/macOS/CmuxSettings/Sources/CmuxSettings/Keys/SidebarAppearanceCatalogSection.swift` and `WorkspaceColorsCatalogSection.swift` are real, shipped files exposing `tintColorHex`, `lightModeTintColorHex`/`darkModeTintColorHex`, `tintOpacity`, `blurOpacity`, `cornerRadius`, `material`, `blendMode`, `preset`, `selectionColorHex`, `customColors` — all settable via `~/.config/cmux/cmux.json`, zero Swift editing.
+
+**Choice:** try cmux's real appearance config before considering a fork. The earlier claim was simply wrong — I hadn't searched the settings catalog deeply enough before asserting it.
+
+**Why:** verified firsthand against the actual source, not relayed from a subagent.
+
+**Reversible?** Yes — this is a correction to a prior DECISIONS.md entry, not a new irreversible commitment.
+
 ## 2026-07-07 — Trials run sequentially, not in parallel
 
 **Choice:** R1 (zellij) runs its full week first; R2 (Superconductor) starts only after R1 concludes.

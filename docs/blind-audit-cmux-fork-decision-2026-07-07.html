@@ -1,0 +1,181 @@
+<title>cmux fork decision — blind-spot audit</title>
+<style>
+  :root {
+    --bg: #0c0c0e; --panel: #141417; --panel-2: #1a1a1e; --line: #26262b;
+    --ink: #eaeaef; --dim: #8d8d96; --faint: #55555c;
+    --accent: #5fb8ae; --accent-dim: #3d7a72;
+    --block: #d9614f; --watch: #d1974a; --note: #6b8fc4; --done: #6fae7a; --fix: #7cbd89;
+    --mono: ui-monospace, 'SF Mono', 'Berkeley Mono', Menlo, Consolas, monospace;
+    --sans: -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--ink); margin: 0; font-family: var(--sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  body { padding: 0 24px 96px; }
+  a { color: var(--accent); }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  header { display: flex; flex-direction: column; gap: 14px; padding: 28px 0 24px; border-bottom: 1px solid var(--line); }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: center; }
+  .eyebrow .sep { color: var(--faint); }
+  h1 { font-family: var(--mono); font-size: clamp(20px, 3.2vw, 27px); font-weight: 600; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  .verdict { font-size: 16.5px; color: var(--ink); max-width: 64ch; text-wrap: balance; }
+  .verdict b { color: var(--accent); font-weight: 600; }
+  .verdict code { font-family: var(--mono); font-size: 13px; background: var(--panel-2); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--line); }
+
+  .callout-fix { margin-top: 6px; padding: 18px 20px; border-radius: 10px; background: linear-gradient(180deg, var(--panel), var(--panel-2)); border: 1px solid var(--accent-dim); }
+  .callout-fix .eyebrow { color: var(--accent); margin-bottom: 8px; }
+  .callout-fix p { margin: 0; font-size: 15px; }
+  .callout-fix .cmd { display: block; margin-top: 10px; font-family: var(--mono); font-size: 12.5px; background: #000; border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; color: var(--accent); overflow-x: auto; white-space: pre; }
+
+  section { margin-top: 36px; }
+  .sec-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 4px; }
+  h2 { font-family: var(--mono); font-size: 14px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; margin: 0; }
+  .sec-sub { color: var(--dim); font-size: 14px; margin: 0 0 16px; max-width: 62ch; }
+
+  .card { display: grid; grid-template-columns: 3px 1fr; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
+  .card .stripe { background: var(--stripe, var(--faint)); }
+  .card.fixed { --stripe: var(--fix); } .card.block { --stripe: var(--block); } .card.watch { --stripe: var(--watch); } .card.note { --stripe: var(--note); }
+  .card-body { padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 7px; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .chip { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em; text-transform: uppercase; padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap; }
+  .chip.fixed { background: color-mix(in srgb, var(--fix) 18%, transparent); color: var(--fix); }
+  .chip.block { background: color-mix(in srgb, var(--block) 18%, transparent); color: var(--block); }
+  .chip.watch { background: color-mix(in srgb, var(--watch) 18%, transparent); color: var(--watch); }
+  .chip.note { background: color-mix(in srgb, var(--note) 18%, transparent); color: var(--note); }
+  .title { font-weight: 600; font-size: 15px; color: var(--ink); text-wrap: balance; }
+  .body-text { font-size: 13.5px; color: var(--dim); line-height: 1.55; }
+  .body-text code { font-family: var(--mono); font-size: 12px; background: var(--panel-2); padding: 1px 5px; border-radius: 3px; color: var(--ink); border: 1px solid var(--line); }
+  .meta-row { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--faint); margin-top: 2px; }
+  .meta-row b { color: var(--dim); font-weight: 600; }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .tag { font-family: var(--mono); font-size: 9.5px; color: var(--faint); border: 1px solid var(--line); padding: 1px 6px; border-radius: 10px; }
+
+  .residual { border: 1px dashed var(--line); border-radius: 8px; padding: 16px 18px; font-size: 14px; color: var(--dim); display: flex; flex-direction: column; gap: 8px; }
+  .residual li { margin-left: 18px; }
+  footer { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--faint); font-family: var(--mono); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  @media (max-width: 560px) { body { padding: 0 16px 72px; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">agent cli <span class="sep">/</span> blind-spot audit <span class="sep">/</span> 2026-07-07</div>
+    <h1>The fork question dissolved mid-audit — verified firsthand, not just claimed.</h1>
+    <p class="verdict">The verdict "cmux is best to fork" was reached on thin, asymmetric evidence. But the audit surfaced something bigger: <b>cmux's chrome is already config-themeable</b> — a claim I made earlier this session ("would require editing compiled Swift") was wrong, and I re-verified it myself against the real source, not a subagent's word.</p>
+  </header>
+
+  <div class="callout-fix">
+    <div class="eyebrow">try this before anything else</div>
+    <p>Real, shipped keys in <code>~/.config/cmux/cmux.json</code> — confirmed by reading <code>SidebarAppearanceCatalogSection.swift</code> and <code>WorkspaceColorsCatalogSection.swift</code> directly. No Swift editing required.</p>
+    <span class="cmd">{
+  "sidebarAppearance": {
+    "tintColor": "#0b0b0c",
+    "cornerRadius": 8,
+    "material": "sidebar",
+    "blurOpacity": 1.0
+  },
+  "workspaceColors": {
+    "selectionColor": "#5fb8ae"
+  }
+}</span>
+  </div>
+
+  <section>
+    <div class="sec-head"><h2>Findings — severity ranked</h2></div>
+
+    <div class="card fixed">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">cmux's chrome IS config-themeable — my earlier claim was wrong</span><span class="chip fixed">verified firsthand</span></div>
+        <div class="body-text">I said cmux's native chrome "isn't config-themeable" and would need Swift edits. Re-cloned and read the real source: <code>tintColorHex</code>, <code>lightModeTintColorHex</code>/<code>darkModeTintColorHex</code>, <code>tintOpacity</code>, <code>blurOpacity</code>, <code>cornerRadius</code>, <code>material</code>, <code>blendMode</code>, <code>preset</code>, plus workspace <code>selectionColorHex</code>/<code>customColors</code> — all real, shipped, settable via config. This may make the entire fork question moot.</div>
+        <div class="meta-row"><b>damage avoided:</b> weeks forking a codebase that didn't need it &nbsp;·&nbsp; <b>confidence:</b> confirmed, not estimated</div>
+        <div class="tags"><span class="tag">chestertons-fence</span><span class="tag">unknown-unknowns</span><span class="tag">firsthand re-check</span></div>
+      </div>
+    </div>
+
+    <div class="card watch">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">"cmux is best" was reached with asymmetric, confirmation-shaped verification</span><span class="chip watch">methodology gap</span></div>
+        <div class="body-text">cmux got a real clone-and-grep; Mux0/Supacode got two web searches and README snippets. The queries themselves never tried to disconfirm ("cmux UI criticism," "Mux0 screenshots") — a test that can't fail isn't a test. The "more stars = easier to fork" assumption may even be <b style="color:var(--ink)">backwards</b> — more stars often means more opinionated design already baked in, harder to strip.</div>
+        <div class="meta-row"><b>damage:</b> could've picked wrong fork base &nbsp;·&nbsp; <b>now:</b> partly moot per Finding 1</div>
+        <div class="tags"><span class="tag">premortem</span><span class="tag">outside-view</span><span class="tag">inversion</span><span class="tag">falsification</span><span class="tag">ladder-of-inference</span><span class="tag">+4 more (same evidence)</span></div>
+      </div>
+    </div>
+
+    <div class="card watch">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">The actual complaint (visual design) was never compared between candidates</span><span class="chip watch">gap</span></div>
+        <div class="body-text">No screenshots, no chrome-source read, for Mux0 or Supacode, on either side. The stars/activity comparison that <i>was</i> run couldn't have addressed the thing Jason was actually asking about.</div>
+        <div class="meta-row"><b>status:</b> moot for cmux now (Finding 1) &nbsp;·&nbsp; still open if cmux's tokens don't satisfy</div>
+        <div class="tags"><span class="tag">consider-the-opposite</span><span class="tag">falsification</span><span class="tag">calibration</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">Right after being told "stop evaluating tools," the next move was another tool-evaluation writeup</span><span class="chip note">behavior pattern</span></div>
+        <div class="body-text">Answering the direct question was correct. Producing a 4-way comparison doc was the same shape of activity just named as the problem — likely pressure to resolve the rebuke fast, not genuine falsification-seeking.</div>
+        <div class="meta-row"><b>note:</b> this audit is ~10 more agent calls of evaluation — named explicitly in Residual, not exempted</div>
+        <div class="tags"><span class="tag">steelman</span><span class="tag">bias-blind-spot</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">If a fork happens anyway, these are real, checked risks</span><span class="chip note">conditional</span></div>
+        <div class="body-text">Sparkle auto-update polls manaflow's real appcast via an EdDSA key baked into <code>Info.plist</code> — an unmodified fork <b style="color:var(--ink)">silently self-updates and overwrites local changes</b> unless the feed keys are stripped. Repo is a multi-platform monorepo (<code>ios/ web/ webviews/ workers/ daemon/</code>), 922 Swift references to "Sidebar" alone. Toolchain: Xcode 16+, Zig, Rust, with active build fragility in CI. Notarization for multi-machine distribution needs a restricted WebAuthn entitlement Apple must grant.</div>
+        <div class="meta-row"><b>relevance:</b> only if Finding 1's tokens don't satisfy and a fork is still pursued</div>
+        <div class="tags"><span class="tag">unknown-unknowns</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">cmux's native-AppKit choice and theming architecture were deliberate, and burned once already</span><span class="chip note">fence, still standing</span></div>
+        <div class="body-text">README: the author rejected Electron/Tauri specifically for performance before going native — that reason still applies to any rewrite. GitHub issue #3511: custom palette theming already caused white-on-white invisible text from appearance-state coupling; the real fix (merged) was architectural separation, not more custom painting.</div>
+        <div class="meta-row"><b>caution:</b> going past the shipped tokens reopens a bug class already fixed once</div>
+        <div class="tags"><span class="tag">chestertons-fence</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">"Horrible" was never pinned to a concrete, testable criterion</span><span class="chip note">undefined target</span></div>
+        <div class="body-text">No contrast complaint, no layout complaint — an unspecified reaction. Even with real config tokens now available, there's nothing concrete to tune toward yet.</div>
+        <div class="meta-row"><b>next step:</b> name 2-3 specific things wrong, testable against the real tint/corner-radius/material tokens</div>
+        <div class="tags"><span class="tag">chestertons-fence</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="title">Corrected confidence</span><span class="chip note">calibration</span></div>
+        <div class="body-text">Pre-Finding-1: ~20-30% that a fork specifically was necessary or would land in reasonable time for a non-Swift solo dev. Post-Finding-1: revise sharply toward "some fix exists without forking" (~70-80%, untested), and revise "a fork was ever necessary" down further.</div>
+        <div class="tags"><span class="tag">calibration</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Residual</h2></div>
+    <div class="residual">
+      <div>Finding 1 confirms the keys <i>exist</i> — not that using them looks "clean and modern" to Jason. Untested, and per Finding 7 the target isn't defined yet.</div>
+      <div>Mux0's and Supacode's own theming systems were never checked with equal rigor — if cmux's tokens don't satisfy, the "best base" comparison is still on asymmetric footing.</div>
+      <div>Maintainer stance on forks (license permits it; community reception unknown) — not checked.</div>
+      <div><b style="color:var(--ink)">Self-audit caveat:</b> this audit graded its own evidence. Findings 2–4 converge from the same transcript facts across many frameworks — flagged as same-model repetition, not 9x independent corroboration. Finding 1 is the one item verified firsthand against real source, not relayed.</div>
+      <div><b style="color:var(--ink)">This audit is itself ~10 more evaluation-shaped agent calls</b>, arriving right after Finding 4's warning about that exact pattern. Explicitly requested via <code>/blind</code>, not self-initiated — the material difference — but worth naming so it doesn't quietly become the next thing this critique is aimed at.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>16/16 frameworks · 10 agents · 1 firsthand re-verification</span>
+    <span>self-directed audit — spot-check Finding 1 yourself before acting on it</span>
+  </footer>
+
+</div>
