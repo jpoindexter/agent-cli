@@ -70,6 +70,8 @@
   .pane .phd { display: flex; justify-content: space-between; padding: 5px 10px 3px; font-size: 10px; color: var(--dim); flex-shrink: 0; }
   .pane .phd .agent.claude { color: var(--claude); font-weight: 600; }
   .pane .phd .agent.codex { color: var(--codex); font-weight: 600; }
+  .pane .phd .agent.editor { color: var(--ok); font-weight: 600; }
+  .pane .ebar { padding: 3px 10px; background: #131315; border-top: 1px solid var(--line); color: var(--dim); font-size: 10px; flex-shrink: 0; }
   .pane .out { flex: 1; padding: 2px 10px 8px; overflow-y: auto; font-size: 12px; white-space: pre-wrap; word-break: break-word; }
   .pane .out .dim { color: var(--dim); } .pane .out .ok { color: var(--ok); }
   .pane .out .cl { color: var(--claude); font-weight: 600; } .pane .out .cx { color: var(--codex); font-weight: 600; }
@@ -91,7 +93,7 @@
 
 <div class="hint">
   <b>This is the experience, simulated.</b>
-  <kbd>1</kbd>–<kbd>4</kbd> switch project tab · <kbd>←</kbd><kbd>→</kbd> move pane focus · <kbd>n</kbd> new agent in a fresh worktree · <kbd>x</kbd> close pane · click anything
+  <kbd>1</kbd>–<kbd>4</kbd> switch project tab · <kbd>←</kbd><kbd>→</kbd> move focus · <kbd>n</kbd> new agent in a fresh worktree · <kbd>e</kbd> edit selected file in a pane · <kbd>x</kbd> close pane · click anything
 </div>
 
 <div class="window" id="win">
@@ -251,8 +253,9 @@ function renderGrid() {
   g.style.gridTemplateRows = t.r;
   g.innerHTML = p.panes.map((pane, i) =>
     `<div class="pane ${i === focusIdx ? 'focus' : ''}" data-pi="${i}">
-      <div class="phd"><span><span class="agent ${pane.agent}">${pane.agent === 'claude' ? '✳ claude' : '◆ codex'}</span> <span>— wt: ${pane.wt}</span></span><span>${pane.task}</span></div>
+      <div class="phd"><span><span class="agent ${pane.agent}">${{ claude: '✳ claude', codex: '◆ codex', editor: '✎ micro' }[pane.agent]}</span> <span>— ${pane.agent === 'editor' ? pane.wt : 'wt: ' + pane.wt}</span></span><span>${pane.task}</span></div>
       <div class="out" id="out-${active}-${i}"></div>
+      ${pane.agent === 'editor' ? '<div class="ebar">^S save · ^Q quit (closes pane) · mouse works</div>' : ''}
     </div>`).join('');
   document.querySelectorAll('.pane').forEach(el =>
     el.addEventListener('click', () => { focusIdx = +el.dataset.pi; paintFocus(); }));
@@ -322,6 +325,18 @@ document.addEventListener('keydown', e => {
       ['ok', '● worktree ready'],
       ['cl', '✳ Claude Code v2.1'],
       ['dim', '> _']
+    ]});
+    focusIdx = p.panes.length - 1;
+    renderGrid(); renderStatus(); paintFocus();
+  }
+  if (e.key === 'e') {
+    const f = p.files.find(x => x.sel) || p.files[0];
+    const name = f.n.trim();
+    p.panes.push({ agent: 'editor', wt: name, task: 'yazi → e', script: [
+      ['dim', `# ${name} — opened from the rail in your $EDITOR`],
+      ['plain', p.preview.body],
+      ['dim', ''],
+      ['ok', 'edit here, or for big jobs: $ zed ' + name + '  (escape hatch to GUI)']
     ]});
     focusIdx = p.panes.length - 1;
     renderGrid(); renderStatus(); paintFocus();
