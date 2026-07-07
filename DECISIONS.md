@@ -14,6 +14,8 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 
 **Reversible?** Yes — zero app code committed to this choice yet.
 
+**Update 2026-07-07 — editor-fidelity spike verdict: PASS.** Jason ran `hx spike/sample.tsx`, compared against his VSCode screenshot: line numbers/gutter present, real tree-sitter syntax highlighting with distinct colors for keywords/strings/types/comments/JSX tags, readable and usable for real editing. Confidence in "zellij is the right first trial" restored to ~85%. R1 (the real week-long trial) starts now — `zellij/agent.kdl`.
+
 ## 2026-07-07 — R3 (Tauri rewrite) firing threshold
 
 **Choice:** R3 only fires if the zellij and/or Superconductor trials surface frictions matching this list. Decided *before* either trial starts, specifically to prevent a post-hoc, sunk-cost-biased call.

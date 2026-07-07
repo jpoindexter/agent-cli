@@ -10,10 +10,10 @@ node rockmap/build-roadmap.mjs roadmap.json roadmap.html
 
 Sequential, not parallel — each step gates the next.
 
-1. **Editor-fidelity spike** (1-2h) — open a real file in helix/micro at real terminal font next to the VSCode screenshot. Resolves the riskiest unknown before either trial starts.
-2. **R1: Zellij cockpit trial** (1 week, blocker) — KDL layout in Ghostty, tabs=projects, yazi rail, agent panes in worktrees. Every friction logged in ERRORS.md same-day, not from memory.
-3. **R2: Superconductor daily-driver trial** (1 week, blocker, runs *after* R1 — not concurrent) — keep/kill verdict on losing the terminal CLI view for its chat UI.
-4. **P1: Ship v0 cockpit config** — winner becomes `zellij KDL layout(s) + install script + README`.
+1. ~~**Editor-fidelity spike**~~ — **PASSED 2026-07-07.** See DECISIONS.md.
+2. **R1: Zellij cockpit trial — IN PROGRESS**, started 2026-07-07. `zellij/agent.kdl`, tabs=projects (indx, brutal, hashmark, prova), yazi rail, agent panes. One week of daily use. Every friction logged in ERRORS.md same-day, not from memory.
+3. **R2: Superconductor daily-driver trial** (1 week, blocker, runs *after* R1 concludes — not concurrent) — keep/kill verdict on losing the terminal CLI view for its chat UI.
+4. **P1: Ship v0 cockpit config** — winner becomes `zellij KDL layout(s) + install script + README`. (R1's config already exists at `zellij/` — P1 is confirming it after a real week, not building it from scratch.)
 
 ## v1 — after real use
 

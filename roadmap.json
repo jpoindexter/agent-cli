@@ -27,28 +27,15 @@
   "models": [],
   "cards": [
     {
-      "id": "R0",
-      "title": "Editor-fidelity spike",
-      "column": "now",
-      "tier": "rock",
-      "track": "trial",
-      "size": "S",
-      "launch": "v0",
-      "blocker": true,
-      "summary": "1-2h, not a week: open a real file in helix at real terminal font next to the VSCode screenshot. Tools installed (zellij/yazi/helix via brew, Ghostty already present); spike/ has the file and instructions. Resolves the riskiest unknown before either trial starts — added after the blind-spot audit found this was riding undecided inside a 7-day trial.",
-      "done": "Verdict logged in DECISIONS.md: does a TUI editor satisfy 'I expected it to look like VSCode's,' per the threshold already written there.",
-      "closes": "gates R1"
-    },
-    {
       "id": "R1",
-      "title": "Zellij cockpit trial",
+      "title": "Zellij cockpit trial — IN PROGRESS",
       "column": "now",
       "tier": "rock",
       "track": "trial",
       "size": "L",
       "launch": "v0",
       "blocker": true,
-      "summary": "KDL layout in Ghostty: tabs per project (indx, brutal, prova, gripe), yazi file rail, claude/codex panes each in their own worktree. Zellij persistence — no tmux wrapper. Runs only after R0 passes.",
+      "summary": "R0 spike passed 2026-07-07 (see DECISIONS.md) — trial started. Real KDL layout live at zellij/agent.kdl: tabs per project (indx, brutal, hashmark, prova), yazi file rail, one claude pane per tab to start (zellij's native pane-splitting handles adding more — no pre-built worktree automation yet, that's P2).",
       "done": "One week of daily use across 2+ projects with 3+ agent panes; every friction logged in ERRORS.md same-day, not from memory.",
       "closes": "decides R3 — threshold in DECISIONS.md"
     },
@@ -126,6 +113,16 @@
     }
   ],
   "shipped": [
+    {
+      "id": "R0",
+      "title": "Editor-fidelity spike",
+      "track": "trial",
+      "size": "S",
+      "launch": "v0",
+      "summary": "1-2h test: hx sample.tsx next to the VSCode screenshot. Verdict: PASS — real tree-sitter syntax highlighting, line numbers, distinct enough for real editing.",
+      "done": "Verdict logged in DECISIONS.md. Unblocked R1 — the zellij trial started same day.",
+      "shipped": "2026-07-07"
+    },
     {
       "id": "S0",
       "title": "Research: OSS landscape + Zed verification",

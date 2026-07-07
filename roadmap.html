@@ -63,7 +63,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">terminal-first multi-agent cockpit — real Claude TUI front and center, thin file rail, tabs = projects &middot; 8 slices &middot; 3 shipped</p>
+<p class="meta">terminal-first multi-agent cockpit — real Claude TUI front and center, thin file rail, tabs = projects &middot; 7 slices &middot; 4 shipped</p>
 <p class="loop">Tab = project. Panes = agents, each in its own worktree. Real TUI everywhere. Ship config before code — build the Tauri app only against frictions the trials prove.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Trials</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Cockpit config</span><span><i style="border-color:#5c2e1e;background:#1a0f0a"></i>Build (endgame)</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research</span><span style="color:#f87171">🔒 launch blocker</span><span style="color:#7a8898">⊘ gated</span></div>
 <div class="filters">
@@ -75,13 +75,9 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="board" style="--cols:3">
 <div class="col" data-status="now"><h2 class="s-now">Now</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="trial" data-id="R0" data-size="S" data-tier="rock" data-launch="v0">
-<div class="hd"><span class="sz">S</span><span class="ttl">R0 &middot; Editor-fidelity spike</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">1-2h, not a week: open a real file in helix at real terminal font next to the VSCode screenshot. Tools installed (zellij/yazi/helix via brew, Ghostty already present); spike/ has the file and instructions. Resolves the riskiest unknown before either trial starts — added after the blind-spot audit found this was riding undecided inside a 7-day trial.</p>
-<details><summary>Done criteria</summary><p class="done">Verdict logged in DECISIONS.md: does a TUI editor satisfy 'I expected it to look like VSCode's,' per the threshold already written there.</p></details><div class="closes">gates R1</div></div>
 <div class="card" data-track="trial" data-id="R1" data-size="L" data-tier="rock" data-launch="v0">
-<div class="hd"><span class="sz">L</span><span class="ttl">R1 &middot; Zellij cockpit trial</span><span class="lens l-trial">Trials</span></div>
-<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">KDL layout in Ghostty: tabs per project (indx, brutal, prova, gripe), yazi file rail, claude/codex panes each in their own worktree. Zellij persistence — no tmux wrapper. Runs only after R0 passes.</p>
+<div class="hd"><span class="sz">L</span><span class="ttl">R1 &middot; Zellij cockpit trial — IN PROGRESS</span><span class="lens l-trial">Trials</span></div>
+<div class="badges"><span class="me ver">v0</span><span class="me lock">🔒</span></div><p class="sum">R0 spike passed 2026-07-07 (see DECISIONS.md) — trial started. Real KDL layout live at zellij/agent.kdl: tabs per project (indx, brutal, hashmark, prova), yazi file rail, one claude pane per tab to start (zellij's native pane-splitting handles adding more — no pre-built worktree automation yet, that's P2).</p>
 <details><summary>Done criteria</summary><p class="done">One week of daily use across 2+ projects with 3+ agent panes; every friction logged in ERRORS.md same-day, not from memory.</p></details><div class="closes">decides R3 — threshold in DECISIONS.md</div></div>
 </div>
 </div>
@@ -124,8 +120,12 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 </div>
 </div>
-<details class="sh-section" open><summary>✅ Shipped (3)</summary>
+<details class="sh-section" open><summary>✅ Shipped (4)</summary>
 <div class="sh-grid">
+<div class="card s-shipped" data-track="trial" data-id="R0" data-size="S" data-tier="" data-launch="v0">
+<div class="hd"><span class="sz">S</span><span class="ttl">R0 &middot; Editor-fidelity spike</span><span class="lens l-trial">Trials</span></div>
+<div class="badges"><span class="me ver">v0</span></div><p class="sum">1-2h test: hx sample.tsx next to the VSCode screenshot. Verdict: PASS — real tree-sitter syntax highlighting, line numbers, distinct enough for real editing.</p>
+<details><summary>Done criteria</summary><p class="done">Verdict logged in DECISIONS.md. Unblocked R1 — the zellij trial started same day. ✓ 2026-07-07</p></details></div>
 <div class="card s-shipped" data-track="research" data-id="S0" data-size="M" data-tier="" data-launch="v0">
 <div class="hd"><span class="sz">M</span><span class="ttl">S0 &middot; Research: OSS landscape + Zed verification</span><span class="lens l-research">Research</span></div>
 <div class="badges"><span class="me ver">v0</span></div><p class="sum">July 2026 survey: every purpose-built Claude Code GUI reimplements the UI, is deprecated, closed, or Electron-heavy. Zed: no project tabs, terminals die on quit, git panel single-repo. Zellij+yazi delivers ~90% of the spec at zero build cost.</p>
