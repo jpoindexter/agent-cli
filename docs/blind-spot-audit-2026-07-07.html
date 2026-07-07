@@ -1,0 +1,284 @@
+<title>agent cli — audit → action</title>
+<style>
+  :root {
+    --bg: #0c0c0e; --panel: #141417; --panel-2: #1a1a1e; --line: #26262b;
+    --ink: #eaeaef; --dim: #8d8d96; --faint: #55555c;
+    --accent: #5fb8ae; --accent-dim: #3d7a72;
+    --block: #d9614f; --watch: #d1974a; --note: #6b8fc4; --done: #6fae7a;
+    --mono: ui-monospace, 'SF Mono', 'Berkeley Mono', Menlo, Consolas, monospace;
+    --sans: -apple-system, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--bg); color: var(--ink); margin: 0;
+    font-family: var(--sans); font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  body { padding: 0 24px 96px; }
+  ::selection { background: var(--accent-dim); color: #fff; }
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  /* ---- header band ---- */
+  header {
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 28px 0 24px; border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--dim); display: flex; gap: 10px; align-items: center;
+  }
+  .eyebrow .sep { color: var(--faint); }
+  h1 {
+    font-family: var(--mono); font-size: clamp(22px, 3.4vw, 30px); font-weight: 600;
+    margin: 0; letter-spacing: -0.01em; text-wrap: balance; color: var(--ink);
+  }
+  .verdict {
+    font-size: 17px; color: var(--ink); max-width: 62ch; text-wrap: balance;
+  }
+  .verdict b { color: var(--accent); font-weight: 600; }
+
+  .statrow {
+    display: flex; gap: 0; margin-top: 4px; border: 1px solid var(--line); border-radius: 8px;
+    overflow: hidden; background: var(--panel);
+  }
+  .stat {
+    flex: 1; padding: 12px 16px; border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: none; }
+  .stat .n {
+    font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 20px;
+    font-weight: 600; color: var(--ink); display: block;
+  }
+  .stat .l { font-size: 12px; color: var(--dim); }
+
+  /* ---- section structure ---- */
+  section { margin-top: 40px; }
+  .sec-head {
+    display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px;
+  }
+  .sec-num {
+    font-family: var(--mono); font-size: 12px; color: var(--faint); letter-spacing: 0.08em;
+  }
+  h2 {
+    font-family: var(--mono); font-size: 15px; font-weight: 600; letter-spacing: 0.02em;
+    text-transform: uppercase; margin: 0; color: var(--ink);
+  }
+  .sec-sub { color: var(--dim); font-size: 14.5px; margin: 0 0 18px; max-width: 60ch; }
+
+  /* ---- action cards ---- */
+  .card {
+    display: grid; grid-template-columns: 3px 1fr; gap: 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .card .stripe { background: var(--stripe, var(--faint)); }
+  .card.block { --stripe: var(--block); }
+  .card.watch { --stripe: var(--watch); }
+  .card.note  { --stripe: var(--note); }
+  .card-body { padding: 14px 18px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .card-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .chip {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 4px; font-weight: 600; white-space: nowrap;
+  }
+  .chip.block { background: color-mix(in srgb, var(--block) 18%, transparent); color: var(--block); }
+  .chip.watch { background: color-mix(in srgb, var(--watch) 18%, transparent); color: var(--watch); }
+  .chip.note  { background: color-mix(in srgb, var(--note) 18%, transparent); color: var(--note); }
+  .action { font-weight: 600; font-size: 15.5px; color: var(--ink); text-wrap: balance; }
+  .why { font-size: 14px; color: var(--dim); }
+  .why code {
+    font-family: var(--mono); font-size: 12.5px; background: var(--panel-2);
+    padding: 1px 5px; border-radius: 3px; color: var(--ink); border: 1px solid var(--line);
+  }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-family: var(--mono); font-size: 10px; color: var(--faint); border: 1px solid var(--line);
+    padding: 1px 6px; border-radius: 10px;
+  }
+
+  /* ---- retrospective section ---- */
+  .retro {
+    border: 1px dashed var(--line); border-radius: 8px; padding: 16px 18px; margin-bottom: 10px;
+  }
+  .retro .action { font-weight: 600; margin-bottom: 4px; }
+  .retro .why { font-size: 14px; }
+
+  /* ---- closing callout ---- */
+  .callout {
+    margin-top: 44px; padding: 22px 24px; border-radius: 10px;
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--accent-dim);
+  }
+  .callout .eyebrow { color: var(--accent); }
+  .callout p { margin: 8px 0 0; font-size: 15.5px; max-width: 58ch; text-wrap: balance; }
+  .callout .cmd {
+    display: inline-block; margin-top: 12px; font-family: var(--mono); font-size: 13px;
+    background: #000; border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; color: var(--accent);
+  }
+
+  footer {
+    margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--faint); font-family: var(--mono);
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 560px) {
+    body { padding: 0 16px 72px; }
+    .statrow { flex-direction: column; }
+    .stat { border-right: none; border-bottom: 1px solid var(--line); }
+    .stat:last-child { border-bottom: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">agent cli <span class="sep">/</span> blind-spot audit <span class="sep">/</span> 2026-07-07</div>
+    <h1>16 frameworks agree on the same thing: the trial hasn't started.</h1>
+    <p class="verdict">Six commits shipped a demo, a roadmap board, and three color themes. <b>Zero</b> zellij config exists, and the tools aren't installed. Below is the ordered fix — what to do before continuing, what to fix in the plan, and what to leave for later.</p>
+    <div class="statrow">
+      <div class="stat"><span class="n">0</span><span class="l">of 3 trial tools installed</span></div>
+      <div class="stat"><span class="n">0 / 5</span><span class="l">mandated docs scaffolded</span></div>
+      <div class="stat"><span class="n">~55%</span><span class="l">corrected confidence in "zellij wins"</span></div>
+      <div class="stat"><span class="n">1–2h</span><span class="l">cost of the one test that matters</span></div>
+    </div>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><h2>Do before continuing</h2></div>
+    <p class="sec-sub">Blocking. Cheap. Nothing after this section means anything until these are done.</p>
+
+    <div class="card block">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Run the editor-fidelity spike — 1 to 2 hours, not a week</span><span class="chip block">highest leverage</span></div>
+        <div class="why">Open a real file in <code>micro</code> or <code>helix</code> at your actual terminal font, side by side with the VSCode screenshot you sent. This is the single riskiest unknown in the whole plan and it's fully testable in an afternoon — don't let it ride inside a 7-day trial.</div>
+        <div class="tags"><span class="tag">red-team</span><span class="tag">consider-the-opposite</span></div>
+      </div>
+    </div>
+
+    <div class="card block">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Install zellij, yazi, and Ghostty</span><span class="chip block">not started</span></div>
+        <div class="why"><code>which zellij yazi ghostty</code> returns nothing. The "primary trial" has no tooling on the machine yet — this is step zero, and it isn't tracked as a task anywhere.</div>
+        <div class="tags"><span class="tag">unknown-unknowns</span></div>
+      </div>
+    </div>
+
+    <div class="card block">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Scaffold PRD.md, DECISIONS.md, PARKED.md, ERRORS.md</span><span class="chip block">unexecutable as-is</span></div>
+        <div class="why">R1's own done-criterion says "every friction logged in <code>ERRORS.md</code>/<code>PARKED.md</code>" — neither file exists. Your own CLAUDE.md mandates this scaffold on any new project; it never happened here.</div>
+        <div class="tags"><span class="tag">chestertons-fence</span><span class="tag">premortem</span></div>
+      </div>
+    </div>
+
+    <div class="card watch">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Fix indx before using it as the test project</span><span class="chip watch">environment drift</span></div>
+        <div class="why">indx is checked out on <code>codex/happy-path-agent-ux</code> — 5 weeks stale, not <code>feature/tolaria-shell</code> as your portfolio notes claim — with 5 other branches and two divergent on-disk copies. hashmark already left one <code>prunable</code> orphaned worktree from this exact pattern.</div>
+        <div class="tags"><span class="tag">unknown-unknowns</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><h2>Fix in the plan</h2></div>
+    <p class="sec-sub">Structural. Do these before writing more config, not after.</p>
+
+    <div class="card watch">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Run R1 and R2 sequentially, not in parallel</span><span class="chip watch">signal contamination</span></div>
+        <div class="why">Both trials are in the <code>now</code> column at once. Daily-driving two competing cockpits in the same week means every friction is confounded with tool-switching cost — you won't be able to tell which tool caused what.</div>
+        <div class="tags"><span class="tag">inversion</span></div>
+      </div>
+    </div>
+
+    <div class="card watch">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Write the R3 threshold now, before either trial starts</span><span class="chip watch">self-gradeable gate</span></div>
+        <div class="why">R1's done-text asks mid-sentence "does that friction alone justify the Tauri build?" — decided after a week of sunk cost, when you're least objective. Name 2–3 frictions that would justify R3 and 2–3 that wouldn't, in DECISIONS.md, today.</div>
+        <div class="tags"><span class="tag">premortem</span><span class="tag">red-team</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Give R2 a blocker flag too, or accept it gets dropped</span><span class="chip note">asymmetric gate</span></div>
+        <div class="why">Only R1 has <code>"blocker": true</code>. Under time pressure, R2 (the Superconductor trial) can silently disappear without technically violating the plan.</div>
+        <div class="tags"><span class="tag">inversion</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Notice: 2 of 3 paths already lead back to Tauri</span><span class="chip note">gate isn't 3-way</span></div>
+        <div class="why">S2 ("mine Superconductor for patterns") is scheduled regardless of which trial wins, since a closed-source win can't be forked — it routes back to R3 anyway. Corrected odds R3 happens regardless of trial evidence: <b style="color:var(--ink)">~40–50%</b>, not "only if both trials fail."</div>
+        <div class="tags"><span class="tag">inversion</span><span class="tag">outside-view</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><h2>Lower stakes, worth a look</h2></div>
+    <p class="sec-sub">Not blocking anything. Fix when convenient.</p>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Reconsider the 117MB Superconductor binary in git LFS</span><span class="chip note">licensing exposure</span></div>
+        <div class="why">It's a signed, closed-source executable, committed for "UX reference" — but you can't mine UX patterns from a compiled binary. Blocks making this repo public or shareable later, for no actual benefit. A screenshot would have covered it.</div>
+        <div class="tags"><span class="tag">inversion</span></div>
+      </div>
+    </div>
+
+    <div class="card note">
+      <div class="stripe"></div>
+      <div class="card-body">
+        <div class="card-top"><span class="action">Add a done-criterion tied to actual shipping velocity</span><span class="chip note">wrong metric</span></div>
+        <div class="why">Nothing here measures whether the cockpit helps you ship across your stalled portfolio (gripe: 3 weeks stalled). You could build a great pane manager and still not decide what to work on.</div>
+        <div class="tags"><span class="tag">premortem</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><h2>What already went sideways</h2></div>
+    <p class="sec-sub">Owning this plainly, not re-litigating it.</p>
+
+    <div class="retro">
+      <div class="action">The demo became the deliverable.</div>
+      <div class="why">Six commits in 23 minutes — typing animation, three themes, a fake editor pane, a roadmap board — while zero real zellij config exists. I should have named this as scope drift after the second unrequested addition and didn't. <span class="tags" style="display:inline-flex; margin-left:6px;"><span class="tag">bias-blind-spot</span><span class="tag">chestertons-fence</span></span></div>
+    </div>
+
+    <div class="retro">
+      <div class="action">The "zellij is closest match" call went stale and was never rechecked.</div>
+      <div class="why">It was made before you said you expected VSCode-level editor fidelity, and before you rejected two color schemes. Both are signals a TUI structurally can't fully answer, and neither triggered a re-check. Corrected confidence: <b style="color:var(--ink)">~55%</b>, not the ~90% my silence implied. <span class="tags" style="display:inline-flex; margin-left:6px;"><span class="tag">calibration</span><span class="tag">curse-of-knowledge</span></span></div>
+    </div>
+  </section>
+
+  <div class="callout">
+    <div class="eyebrow">if you do one thing today</div>
+    <p>Skip back to config for a moment. Open a real file in a TUI editor at your real terminal font, next to your VSCode screenshot, and look at it for five minutes. That single cheap test resolves more risk than the rest of this plan combined.</p>
+    <div class="cmd">brew install helix zellij yazi ghostty</div>
+  </div>
+
+  <footer>
+    <span>16/16 frameworks · blind-spot audit</span>
+    <span>self-directed audit — convergence across independent frames, not external adjudication</span>
+  </footer>
+
+</div>
