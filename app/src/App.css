@@ -461,6 +461,50 @@ body,
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.32);
 }
 
+.editor-error__title {
+  margin-bottom: 3px;
+  color: #fff0f3;
+  font-weight: 750;
+}
+
+.editor-error__body,
+.editor-error__recovery {
+  overflow-wrap: anywhere;
+}
+
+.editor-error__recovery {
+  margin-top: 5px;
+  color: #ffabb8;
+}
+
+.editor-error__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.editor-error__button {
+  border: 1px solid #7f3c49;
+  border-radius: 5px;
+  background: #32121a;
+  color: #ffe4e9;
+  cursor: default;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  padding: 0 8px;
+}
+
+.editor-error__button:hover:not(:disabled) {
+  background: #421823;
+}
+
+.editor-error__button:disabled {
+  color: #a66c76;
+}
+
 .editor-empty {
   display: grid;
   min-height: 0;

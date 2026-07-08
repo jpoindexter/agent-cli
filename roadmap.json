@@ -300,13 +300,13 @@
     {
       "id": "SAVE-ERROR-RECOVERY",
       "title": "Save failure recovery",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "files",
       "size": "S",
       "launch": "v0_5",
       "summary": "Save failures need a recovery flow, not only a red message. The buffer must remain safe and the next action must be obvious.",
-      "done": "Failed saves keep the edited buffer in place, show a scoped editor error with the human cause, expose explicit Retry and Open externally actions where applicable, avoid duplicate save spam while saving, and return to Saved only after the real write succeeds."
+      "done": "Verified 2026-07-08: failed saves keep the edited buffer, show a scoped Save failed alert with the human error, expose Retry and Open externally, disable duplicate retry/save while a write is running, and clear the error only when the real write path succeeds. Covered by npm build/test and screenshot proof in docs/qa/editor-parity/save-error.png."
     },
     {
       "id": "EDITOR-RESPONSIVE-QA",

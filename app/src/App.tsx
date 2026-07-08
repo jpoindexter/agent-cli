@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open } from "@tauri-apps/plugin-dialog";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
 import type { EditorView, ViewUpdate } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
@@ -12,6 +13,7 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import { Tree } from "react-arborist";
 import type { NodeRendererProps, TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
+import { EditorSaveError } from "./EditorSaveError";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
@@ -189,6 +191,7 @@ function App() {
   const [editorLoading, setEditorLoading] = useState(false);
   const [editorSaving, setEditorSaving] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
+  const [editorRecoveryError, setEditorRecoveryError] = useState<string | null>(null);
   const [editorBytes, setEditorBytes] = useState<number | null>(null);
   const [editorCursor, setEditorCursor] = useState<CursorPosition>({ line: 1, column: 1 });
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
@@ -235,6 +238,7 @@ function App() {
     setEditorText("");
     setSavedEditorText("");
     setEditorError(null);
+    setEditorRecoveryError(null);
     setEditorBytes(null);
     setEditorCursor({ line: 1, column: 1 });
   };
@@ -357,6 +361,7 @@ function App() {
     setEditorLoading(true);
     setEditorSaving(false);
     setEditorError(null);
+    setEditorRecoveryError(null);
     setEditorBytes(null);
     setEditorCursor({ line: 1, column: 1 });
     try {
@@ -379,6 +384,7 @@ function App() {
       setSavedEditorText("");
       setEditorBytes(null);
       setEditorError(String(err));
+      setEditorRecoveryError(null);
     } finally {
       if (editorLoadSeq.current === seq) setEditorLoading(false);
     }
@@ -405,6 +411,7 @@ function App() {
     if (!editorDirty) return true;
     setEditorSaving(true);
     setEditorError(null);
+    setEditorRecoveryError(null);
     try {
       const result = await invoke<TextFileResponse>("write_text_file", {
         root,
@@ -420,6 +427,16 @@ function App() {
       return false;
     } finally {
       setEditorSaving(false);
+    }
+  };
+
+  const openSelectedFileExternally = async () => {
+    if (!selectedFile) return;
+    setEditorRecoveryError(null);
+    try {
+      await openPath(selectedFile.path);
+    } catch (err) {
+      setEditorRecoveryError(`Could not open ${selectedFile.name} externally: ${err}`);
     }
   };
 
@@ -902,7 +919,16 @@ function App() {
                 }
               }}
             >
-              {editorError ? <div className="editor-error">{editorError}</div> : null}
+              {editorError ? (
+                <EditorSaveError
+                  message={editorError}
+                  recoveryError={editorRecoveryError}
+                  saving={editorSaving}
+                  canOpenExternally={Boolean(selectedFile)}
+                  onRetry={() => void saveEditorFile()}
+                  onOpenExternally={() => void openSelectedFileExternally()}
+                />
+              ) : null}
               <CodeMirror
                 key={selectedFile.path}
                 value={editorText}

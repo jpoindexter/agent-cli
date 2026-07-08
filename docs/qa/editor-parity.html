@@ -150,7 +150,14 @@
             <span class="editor-crumb"><span class="editor-crumb__separator">/</span><span class="editor-crumb__current">App.tsx</span></span>
           </nav>
           <div class="editor-code">
-            <div class="editor-error">Could not save file App.tsx: permission denied. Buffer is still intact.</div>
+            <div class="editor-error" role="alert">
+              <div class="editor-error__title">Save failed</div>
+              <div class="editor-error__body">Could not save file App.tsx: permission denied. Buffer is still intact.</div>
+              <div class="editor-error__actions">
+                <button class="editor-error__button" type="button">Retry</button>
+                <button class="editor-error__button" type="button">Open externally</button>
+              </div>
+            </div>
             <div class="cm-theme">
               <div class="cm-editor">
                 <pre class="qa-lines" aria-label="Editor code sample"><span class="qa-line"><span class="qa-line-number">38</span><span class="qa-code"><span class="qa-keyword">const</span> editorLanguage = <span class="qa-function">languageLabelForPath</span>(selectedFile.path);</span></span><span class="qa-line qa-line--active"><span class="qa-line-number">39</span><span class="qa-code"><span class="qa-keyword">const</span> activeFileMissing = fileTree.length &gt; 0 &amp;&amp; !contains;</span></span><span class="qa-line"><span class="qa-line-number">40</span><span class="qa-code"></span></span><span class="qa-line"><span class="qa-line-number">41</span><span class="qa-code"><span class="qa-comment">// Preserve orientation while agents continue running below.</span></span></span><span class="qa-line"><span class="qa-line-number">42</span><span class="qa-code"><span class="qa-keyword">return</span> <span class="qa-string">"Keelhouse editor parity"</span>;</span></span></pre>

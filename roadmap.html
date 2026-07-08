@@ -144,6 +144,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">S</span><span class="ttl">EDITOR-VIEW-STATE &middot; Per-file editor view state</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Switching files should not throw away the user's place. Cursor, selection, scroll, and focus are part of the editor experience.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: per-file view state captures selection anchor/head, scrollTop, and focus intent. Native smoke set first.ts to Ln 5, Col 9, switched to second.ts, switched back, restored the same line/column, then ArrowDown advanced to Ln 6, Col 1, proving CodeMirror focus was restored. Proof screenshots: docs/qa/editor-view-state/restore.png and docs/qa/editor-view-state/focus-restored.png.</p></details></div>
+<div class="card" data-track="files" data-id="SAVE-ERROR-RECOVERY" data-size="S" data-tier="pebble" data-launch="v0_5">
+<div class="hd"><span class="sz">S</span><span class="ttl">SAVE-ERROR-RECOVERY &middot; Save failure recovery</span><span class="lens l-files">Files + editor</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Save failures need a recovery flow, not only a red message. The buffer must remain safe and the next action must be obvious.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: failed saves keep the edited buffer, show a scoped Save failed alert with the human error, expose Retry and Open externally, disable duplicate retry/save while a write is running, and clear the error only when the real write path succeeds. Covered by npm build/test and screenshot proof in docs/qa/editor-parity/save-error.png.</p></details></div>
 </div>
 </div>
 <div class="col" data-status="now"><h2 class="s-now">Now</h2>
@@ -208,10 +212,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">Stage file, unstage file, discard file with confirmation, and copy diff are available from file status/diff surfaces.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="files" data-id="SAVE-ERROR-RECOVERY" data-size="S" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">S</span><span class="ttl">SAVE-ERROR-RECOVERY &middot; Save failure recovery</span><span class="lens l-files">Files + editor</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Save failures need a recovery flow, not only a red message. The buffer must remain safe and the next action must be obvious.</p>
-<details><summary>Done criteria</summary><p class="done">Failed saves keep the edited buffer in place, show a scoped editor error with the human cause, expose explicit Retry and Open externally actions where applicable, avoid duplicate save spam while saving, and return to Saved only after the real write succeeds.</p></details></div>
 <div class="card" data-track="quality" data-id="EDITOR-RESPONSIVE-QA" data-size="S" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">S</span><span class="ttl">EDITOR-RESPONSIVE-QA &middot; Editor responsive screenshot QA</span><span class="lens l-quality">Quality + shipping</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The userflow audit called out screenshot proof for editor states and small desktop widths before claiming parity.</p>
