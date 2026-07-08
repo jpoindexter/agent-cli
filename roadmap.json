@@ -378,13 +378,13 @@
     {
       "id": "EDITOR-TABS",
       "title": "Open files and dirty-state tabs",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "files",
       "size": "S",
       "launch": "v0_5",
       "summary": "Let the user bounce between a few files without losing place. This is the minimum editor workflow, not a full IDE tab system.",
-      "done": "Multiple open files appear as tabs; dirty files are marked; close prompts only when unsaved changes would be lost."
+      "done": "Verified 2026-07-08: multiple open files appear as tabs with close controls; switching tabs preserves in-memory drafts; dirty files are marked in tabs and the rail; dirty tab close confirms before discard; rename/delete keeps open tabs aligned. Covered by npm build/test, editorTabs helper tests, screenshot QA, and visual selected/narrow inspection."
     },
     {
       "id": "AGENT-PROFILES",

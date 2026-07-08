@@ -41,6 +41,16 @@ import {
   saveDraftAndContinueNavigation,
   shouldPromptForDirtyDraft,
 } from "./draftProtection";
+import {
+  dirtyEditorTabPaths,
+  removeEditorBuffersWithin,
+  removeEditorTab,
+  removeEditorTabsWithin,
+  retargetEditorBuffers,
+  retargetEditorTabs,
+  upsertEditorTab,
+} from "./editorTabs";
+import type { EditorBufferSnapshot } from "./editorTabs";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -64,6 +74,12 @@ type TextFileResponse = { path: string; content: string; bytes: number; modified
 type FileOpResponse = { path: string };
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
+type EditorBuffer = EditorBufferSnapshot & {
+  bytes: number | null;
+  modifiedMs: number | null;
+  error: string | null;
+  recoveryError: string | null;
+};
 type PendingNavigation =
   | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
   | { kind: "workspace"; path: string };
@@ -89,12 +105,12 @@ const formatBytes = (bytes: number | null) => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
-const markDirtyFile = (nodes: FileTreeNode[], dirtyPath: string | null): FileTreeNode[] => {
-  if (!dirtyPath) return nodes;
+const markDirtyFile = (nodes: FileTreeNode[], dirtyPaths: Set<string>): FileTreeNode[] => {
+  if (dirtyPaths.size === 0) return nodes;
   return nodes.map((node) => ({
     ...node,
-    dirty: node.path === dirtyPath,
-    children: node.children ? markDirtyFile(node.children, dirtyPath) : undefined,
+    dirty: dirtyPaths.has(node.path),
+    children: node.children ? markDirtyFile(node.children, dirtyPaths) : undefined,
   }));
 };
 
@@ -165,6 +181,7 @@ function App() {
   const selectedFileRef = useRef<FileTreeNode | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
+  const editorBuffersRef = useRef<Record<string, EditorBuffer>>({});
   const pendingEditorFocusRef = useRef(false);
   const editorLoadSeq = useRef(0);
   const latest = useRef<Snapshot | null>(null);
@@ -182,6 +199,8 @@ function App() {
   const [treeRefreshNonce, setTreeRefreshNonce] = useState(0);
   const [railHeight, setRailHeight] = useState(240);
   const [selectedFile, setSelectedFile] = useState<FileTreeNode | null>(null);
+  const [editorTabs, setEditorTabs] = useState<FileTreeNode[]>([]);
+  const [editorBufferRevision, setEditorBufferRevision] = useState(0);
   const [editorText, setEditorText] = useState("");
   const [savedEditorText, setSavedEditorText] = useState("");
   const [editorLoading, setEditorLoading] = useState(false);
@@ -196,6 +215,11 @@ function App() {
   const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const [fileContextMenu, setFileContextMenu] = useState<FileContextMenu | null>(null);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
+  const dirtyTabPaths = useMemo(
+    () => dirtyEditorTabPaths(editorTabs, editorBuffersRef.current, selectedFile?.path ?? null, editorDirty),
+    [editorBufferRevision, editorDirty, editorTabs, selectedFile],
+  );
+  const dirtyTabPathSet = useMemo(() => new Set(dirtyTabPaths), [dirtyTabPaths]);
   const editorSaveConflict = editorError?.startsWith("File changed on disk since it was opened") ?? false;
   const activeFileMissing = useMemo(
     () => selectedFile != null && fileTree.length > 0 && !fileTreeContainsPath(fileTree, selectedFile.path),
@@ -207,8 +231,8 @@ function App() {
   );
   const editorLanguage = selectedFile ? languageLabelForPath(selectedFile.path) : "No file";
   const visibleFileTree = useMemo(
-    () => markDirtyFile(fileTree, editorDirty && selectedFile ? selectedFile.path : null),
-    [fileTree, editorDirty, selectedFile],
+    () => markDirtyFile(fileTree, dirtyTabPathSet),
+    [fileTree, dirtyTabPathSet],
   );
 
   const refreshFileTree = () => setTreeRefreshNonce((value) => value + 1);
@@ -252,6 +276,9 @@ function App() {
   const resetEditor = () => {
     editorViewRef.current = null;
     editorLoadSeq.current += 1;
+    editorBuffersRef.current = {};
+    setEditorTabs([]);
+    setEditorBufferRevision((value) => value + 1);
     setSelectedFile(null);
     setEditorText("");
     setSavedEditorText("");
@@ -273,6 +300,20 @@ function App() {
       scrollTop: view.scrollDOM.scrollTop,
       focused: view.hasFocus,
     };
+  };
+
+  const captureCurrentEditorBuffer = () => {
+    const file = selectedFileRef.current;
+    if (!file) return;
+    editorBuffersRef.current[file.path] = {
+      text: editorText,
+      savedText: savedEditorText,
+      bytes: editorBytes,
+      modifiedMs: editorModifiedMs,
+      error: editorError,
+      recoveryError: editorRecoveryError,
+    };
+    setEditorBufferRevision((value) => value + 1);
   };
 
   const persistActiveFile = async (workspace: string, filePath: string) => {
@@ -336,7 +377,18 @@ function App() {
   };
 
   const requestOpenWorkspace = async (path: string) => {
-    if (shouldPromptForDirtyDraft(editorDirty, selectedFileRef.current?.path ?? null, { kind: "workspace", path })) {
+    if (dirtyTabPaths.length > 1) {
+      const ok = window.confirm(`Switch workspace and discard ${dirtyTabPaths.length} unsaved editor tabs?`);
+      if (!ok) return false;
+    } else if (dirtyTabPaths.length === 1) {
+      const dirtyTab = editorTabs.find((tab) => tab.path === dirtyTabPaths[0]);
+      if (dirtyTab && dirtyTab.path !== selectedFileRef.current?.path) {
+        await openEditorFileDirect(dirtyTab);
+      }
+      setDraftDialogError(null);
+      setPendingNavigation({ kind: "workspace", path });
+      return false;
+    } else if (shouldPromptForDirtyDraft(editorDirty, selectedFileRef.current?.path ?? null, { kind: "workspace", path })) {
       setDraftDialogError(null);
       setPendingNavigation({ kind: "workspace", path });
       return false;
@@ -373,12 +425,29 @@ function App() {
     const root = workspacePathRef.current ?? workspacePath;
     if (!root) return;
     captureCurrentEditorViewState();
+    captureCurrentEditorBuffer();
     pendingEditorFocusRef.current = options.focusEditor ?? false;
     const seq = editorLoadSeq.current + 1;
     editorLoadSeq.current = seq;
+    setEditorTabs((tabs) => upsertEditorTab(tabs, file));
     setSelectedFile(file);
-    setEditorLoading(true);
     setEditorSaving(false);
+    const buffered = editorBuffersRef.current[file.path];
+    if (buffered) {
+      setEditorLoading(false);
+      setEditorText(buffered.text);
+      setSavedEditorText(buffered.savedText);
+      setEditorBytes(buffered.bytes);
+      setEditorModifiedMs(buffered.modifiedMs);
+      setEditorError(buffered.error);
+      setEditorRecoveryError(buffered.recoveryError);
+      const restoredForContent = clampEditorViewState(editorViewStatesRef.current[file.path], buffered.text.length);
+      setEditorCursor(restoredForContent ? cursorFromText(buffered.text, restoredForContent.head) : { line: 1, column: 1 });
+      await persistActiveFile(root, file.path);
+      if (options.focusEditor) requestAnimationFrame(() => editorViewRef.current?.focus());
+      return;
+    }
+    setEditorLoading(true);
     setEditorError(null);
     setEditorRecoveryError(null);
     setEditorBytes(null);
@@ -387,6 +456,15 @@ function App() {
     try {
       const result = await invoke<TextFileResponse>("read_text_file", { root, path: file.path });
       if (editorLoadSeq.current !== seq || result.path !== file.path) return;
+      editorBuffersRef.current[file.path] = {
+        text: result.content,
+        savedText: result.content,
+        bytes: result.bytes,
+        modifiedMs: result.modifiedMs,
+        error: null,
+        recoveryError: null,
+      };
+      setEditorBufferRevision((value) => value + 1);
       setEditorText(result.content);
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
@@ -401,6 +479,15 @@ function App() {
       }
     } catch (err) {
       if (editorLoadSeq.current !== seq) return;
+      editorBuffersRef.current[file.path] = {
+        text: "",
+        savedText: "",
+        bytes: null,
+        modifiedMs: null,
+        error: String(err),
+        recoveryError: null,
+      };
+      setEditorBufferRevision((value) => value + 1);
       setEditorText("");
       setSavedEditorText("");
       setEditorBytes(null);
@@ -414,14 +501,9 @@ function App() {
 
   const requestOpenEditorFile = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
     const currentPath = selectedFileRef.current?.path ?? null;
-    if (!shouldPromptForDirtyDraft(editorDirty, currentPath, { kind: "file", path: file.path }) && currentPath === file.path) {
+    if (currentPath === file.path) {
       if (options.focusEditor) requestAnimationFrame(() => editorViewRef.current?.focus());
       return true;
-    }
-    if (shouldPromptForDirtyDraft(editorDirty, currentPath, { kind: "file", path: file.path })) {
-      setDraftDialogError(null);
-      setPendingNavigation({ kind: "file", file, options });
-      return false;
     }
     await openEditorFileDirect(file, options);
     return true;
@@ -441,12 +523,30 @@ function App() {
         content: editorText,
         expectedModifiedMs: options.force ? null : editorModifiedMs,
       });
+      editorBuffersRef.current[selectedFile.path] = {
+        text: result.content,
+        savedText: result.content,
+        bytes: result.bytes,
+        modifiedMs: result.modifiedMs,
+        error: null,
+        recoveryError: null,
+      };
+      setEditorBufferRevision((value) => value + 1);
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
       setEditorModifiedMs(result.modifiedMs);
       return true;
     } catch (err) {
       const message = String(err);
+      editorBuffersRef.current[selectedFile.path] = {
+        text: editorText,
+        savedText: savedEditorText,
+        bytes: editorBytes,
+        modifiedMs: editorModifiedMs,
+        error: message,
+        recoveryError: editorRecoveryError,
+      };
+      setEditorBufferRevision((value) => value + 1);
       setEditorError(message);
       return false;
     } finally {
@@ -540,10 +640,16 @@ function App() {
     setFileOpError(null);
     try {
       const result = await invoke<FileOpResponse>("rename_workspace_path", { root, path: node.path, name });
+      setEditorTabs((tabs) => retargetEditorTabs(tabs, node.path, result.path, basename));
+      editorBuffersRef.current = retargetEditorBuffers(editorBuffersRef.current, node.path, result.path);
+      editorViewStatesRef.current = retargetEditorBuffers(editorViewStatesRef.current, node.path, result.path);
+      setEditorBufferRevision((value) => value + 1);
       refreshFileTree();
       if (affectedSelectedFile && selectedFile) {
         const nextSelectedPath =
           selectedFile.path === node.path ? result.path : `${result.path}${selectedFile.path.slice(node.path.length)}`;
+        selectedFileRef.current = null;
+        setSelectedFile(null);
         await openEditorFileDirect(fileNodeFromPath(nextSelectedPath, "file"), { focusEditor: true });
       }
     } catch (err) {
@@ -564,9 +670,21 @@ function App() {
     setFileOpError(null);
     try {
       await invoke("delete_workspace_path", { root, path: node.path });
+      const nextTabs = removeEditorTabsWithin(editorTabs, node.path);
+      editorBuffersRef.current = removeEditorBuffersWithin(editorBuffersRef.current, node.path);
+      editorViewStatesRef.current = removeEditorBuffersWithin(editorViewStatesRef.current, node.path);
+      setEditorTabs(nextTabs);
+      setEditorBufferRevision((value) => value + 1);
       if (affectedSelectedFile) {
-        if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
-        resetEditor();
+        const nextTab = nextTabs[0] ?? null;
+        if (nextTab) {
+          selectedFileRef.current = null;
+          setSelectedFile(null);
+          await openEditorFileDirect(nextTab, { focusEditor: true });
+        } else {
+          if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
+          resetEditor();
+        }
       }
       refreshFileTree();
     } catch (err) {
@@ -592,6 +710,32 @@ function App() {
       await revealItemInDir(node.path);
     } catch (err) {
       setFileOpError(`Could not reveal ${node.name}: ${err}`);
+    }
+  };
+
+  const tabIsDirty = (path: string) => dirtyTabPathSet.has(path);
+
+  const closeEditorTab = async (tab: FileTreeNode) => {
+    captureCurrentEditorViewState();
+    captureCurrentEditorBuffer();
+    if (tabIsDirty(tab.path) && !window.confirm(`Close ${tab.name} and discard unsaved changes?`)) return;
+    const result = removeEditorTab(editorTabs, selectedFileRef.current?.path ?? null, tab.path);
+    setEditorTabs(result.tabs);
+    delete editorBuffersRef.current[tab.path];
+    delete editorViewStatesRef.current[tab.path];
+    setEditorBufferRevision((value) => value + 1);
+    if (!result.nextActivePath) {
+      if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
+      resetEditor();
+      return;
+    }
+    if (result.nextActivePath !== selectedFileRef.current?.path) {
+      const nextTab = result.tabs.find((candidate) => candidate.path === result.nextActivePath);
+      if (nextTab) {
+        selectedFileRef.current = null;
+        setSelectedFile(null);
+        await openEditorFileDirect(nextTab, { focusEditor: true });
+      }
     }
   };
 
@@ -950,11 +1094,23 @@ function App() {
       <aside className="file-rail" aria-label="Project files">
         <div className="panel-title panel-title--with-action">
           <span>Files</span>
-          <button className="rail-open-button" type="button" disabled={!workspacePath} onClick={() => void createFileInRail()}>
-            New File
+          <button
+            className="rail-open-button"
+            type="button"
+            disabled={!workspacePath}
+            title="New file"
+            onClick={() => void createFileInRail()}
+          >
+            File
           </button>
-          <button className="rail-open-button" type="button" disabled={!workspacePath} onClick={() => void createFolderInRail()}>
-            New Folder
+          <button
+            className="rail-open-button"
+            type="button"
+            disabled={!workspacePath}
+            title="New folder"
+            onClick={() => void createFolderInRail()}
+          >
+            Folder
           </button>
           <button className="rail-open-button" type="button" onClick={pickWorkspace}>
             Open
@@ -1032,12 +1188,51 @@ function App() {
       <main className="workbench">
         <section className="editor-area" aria-label="Editor">
           <div className="editor-tabbar">
-            <div
-              className={`editor-tab ${editorDirty ? "editor-tab--dirty" : ""} ${selectedFile ? "editor-tab--active" : ""}`}
-              title={selectedFile?.path}
-            >
-              <span className="editor-tab__name">{selectedFile ? selectedFile.name : "No file open"}</span>
-              {editorDirty ? <span className="editor-tab__dirty" aria-label="Unsaved changes" /> : null}
+            <div className="editor-tabs" role="tablist" aria-label="Open files">
+              {editorTabs.length > 0 ? (
+                editorTabs.map((tab) => {
+                  const active = selectedFile?.path === tab.path;
+                  const dirty = tabIsDirty(tab.path);
+                  return (
+                    <div
+                      className={`editor-tab ${dirty ? "editor-tab--dirty" : ""} ${active ? "editor-tab--active" : ""}`}
+                      role="tab"
+                      aria-selected={active}
+                      title={tab.path}
+                      key={tab.path}
+                    >
+                      <button
+                        className="editor-tab__activate"
+                        type="button"
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          void requestOpenEditorFile(tab, { focusEditor: true });
+                        }}
+                      >
+                        <span className="editor-tab__name">{tab.name}</span>
+                        {dirty ? <span className="editor-tab__dirty" aria-label="Unsaved changes" /> : null}
+                      </button>
+                      <button
+                        className="editor-tab__close"
+                        type="button"
+                        aria-label={`Close ${tab.name}`}
+                        title={`Close ${tab.name}`}
+                        onPointerDown={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void closeEditorTab(tab);
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="editor-tab editor-tab--empty">
+                  <span className="editor-tab__name">No file open</span>
+                </div>
+              )}
             </div>
             {selectedFile ? (
               <div className="editor-actions">

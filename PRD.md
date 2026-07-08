@@ -96,10 +96,10 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 **Done:** one project can be used without opening VS Code for the basic loop: browse files, edit/save files, and run one real agent terminal.
 
 - [x] File rail lists the workspace with ignores and live updates.
-- [ ] Editor opens source files with line numbers, syntax highlighting, find/replace, dirty state, tabs, path context, save, and external-change warnings.
+- [x] Editor opens source files with line numbers, syntax highlighting, find/replace, dirty state, tabs, path context, save, and external-change warnings.
 - [x] Editor navigation preserves active-file orientation: rail highlight/reveal, editor title/path, watcher refresh, and workspace restore stay synchronized.
 - [x] Unsaved editor work is protected: per-file view state is restored, dirty drafts survive file/project switches, save failures keep the buffer, and recovery actions are explicit.
-- [ ] Editor parity is screenshot-verified for selected, dirty, save-error, no-file, and narrow-width states.
+- [x] Editor parity is screenshot-verified for selected, dirty, save-error, no-file, and narrow-width states.
 - [ ] Terminal pane remains robust and responsive while browsing/editing files.
 - [x] Recent projects and last workspace make reopening cheap.
 - [ ] Common file/editor/terminal actions are reachable through VS Code-style shortcuts, menu bar entries, and right-click/Control-click context menus.
