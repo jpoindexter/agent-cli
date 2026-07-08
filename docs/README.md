@@ -2,6 +2,13 @@
 
 Keelhouse is the product name. The repo, package, binary, app identifier, and local-state slug remain `agent-cli` until an explicit migration.
 
+## Naming
+
+- Product name: **Keelhouse**
+- Category: native agent workbench
+- Repo/package/storage slug: `agent-cli`
+- Naming source of truth: `product-positioning.md`
+
 ## Start Here
 
 - `../README.md`: product overview, local run commands, and repository map.
@@ -20,6 +27,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `shortcuts.md`: active v0.5 shortcut map and planned exceptions.
 - `context-menus.md`: right-click/Control-click coverage and deferred browser/git surfaces.
 - `chrome-polish-system.md`: current token/state system and deferred chrome surfaces.
+- `icon-system.md`: SVG icon family, status mapping, and QA fixture coverage.
 
 ## Quality References
 

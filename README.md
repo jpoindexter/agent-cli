@@ -1,18 +1,27 @@
 # Keelhouse
 
-Keelhouse is a lean native macOS workbench for real CLI coding agents. It keeps the VS Code parts Jason actually uses: project/session rail, file explorer, robust editor, browser preview, and real Claude/Codex terminal panes. It drops extension/plugin bloat, debugger/IDE sprawl, and account/chat chrome.
+Keelhouse is a lean native macOS workbench for real CLI coding agents. It keeps the VS Code parts Jason actually uses: project/session rail, file explorer, robust editor, browser preview, and real Claude/Codex terminal panes. It drops extension/plugin bloat, debugger sprawl, and account/chat chrome.
 
 The repo/package slug remains `agent-cli` for now; **Keelhouse** is the locked product name.
 
-## Product Positioning
+## What It Is
 
-Keelhouse is the stable structure around heavy agent work: projects, files, terminal panes, browser context, sessions, and review surfaces stay aligned while real CLI agents do the work. It is intentionally not named after "AI", "chat", or "terminal" because the product is the whole workbench, not one pane.
+Keelhouse is the stable structure around heavy agent work: projects, files, terminal panes, browser context, sessions, and review surfaces stay aligned while real CLI agents do the work.
 
-Read the short product language guide in `docs/product-positioning.md`.
+Use this language consistently:
+
+- **Category:** native agent workbench
+- **Audience:** one developer running multiple CLI agents across multiple projects
+- **Promise:** keep terminal-agent speed without paying the VS Code window/resource tax
+- **Non-goals:** not a VS Code clone, generic terminal, plugin marketplace, or custom chat UI
+
+Read the product language guide in `docs/product-positioning.md`.
 
 ## Status
 
-Direction is locked: build our own app using open-source components, not a fork of cmux, Superconductor, hashmark, or zellij. The terminal foundation is verified: real pty -> `libghostty-vt` in Rust -> Tauri IPC -> Canvas 2D, with keyboard, paste, selection/copy, scrollback, folder picker, persisted workspace, agent launch, file rail, watcher, recent projects, and basic CodeMirror editing already working.
+Direction is locked: build our own app using open-source components, not a fork of cmux, Superconductor, hashmark, or zellij. The terminal foundation is verified: real pty -> `libghostty-vt` in Rust -> Tauri IPC -> Canvas 2D.
+
+Already working: keyboard input, paste, selection/copy, scrollback, folder picker, persisted workspace, agent launch profiles, file rail, watcher, recent projects, CodeMirror editing, tabs, save protection, context menus, composer routing, shortcut docs, and chrome token polish.
 
 Current active slice: see `STATE.md`. The roadmap source is `roadmap.json`, rendered to `roadmap.html`; `ROADMAP.md` is the readable companion.
 
@@ -27,7 +36,7 @@ Current active slice: see `STATE.md`. The roadmap source is `roadmap.json`, rend
 
 Keelhouse is not a VS Code clone, generic terminal emulator, general browser, plugin marketplace, or custom chat UI.
 
-## Run Locally
+## Quick Start
 
 ```bash
 cd app
@@ -44,6 +53,16 @@ cd app/src-tauri && PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" cargo test
 ```
 
 Zig must stay pinned to `0.15.2`; Homebrew's default `0.16` breaks the Ghostty bridge build.
+
+## Work From The Docs
+
+For product or implementation decisions, read these in order:
+
+1. `PRD.md` — scope, non-goals, and done criteria.
+2. `ROADMAP.md` — execution sequence and current product slices.
+3. `STATE.md` — latest verified handoff and next card.
+4. `DECISIONS.md` — append-only decision history.
+5. `docs/README.md` — topic index for deeper notes.
 
 ## Repository Map
 
@@ -68,6 +87,7 @@ Zig must stay pinned to `0.15.2`; Homebrew's default `0.16` breaks the Ghostty b
 | `STATE.md` | Current handoff, verified slices, next step |
 | `DECISIONS.md` | Append-only decision log |
 | `docs/product-positioning.md` | Name, one-liner, language rules |
+| `docs/chrome-polish-system.md` / `docs/icon-system.md` | Current chrome token and icon contracts |
 | `docs/shortcuts.md` | Active shortcut map and planned exceptions |
 | `docs/*-parity.md` / `docs/*-scope.md` | Focused research and parity criteria |
 
