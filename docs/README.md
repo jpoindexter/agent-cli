@@ -28,6 +28,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `context-menus.md`: right-click/Control-click coverage and deferred browser/git surfaces.
 - `chrome-polish-system.md`: current token/state system and deferred chrome surfaces.
 - `icon-system.md`: SVG icon family, status mapping, and QA fixture coverage.
+- `accessibility-basics.md`: v0.5 keyboard, focus, and accessible-name baseline.
 
 ## Quality References
 

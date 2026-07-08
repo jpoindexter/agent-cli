@@ -478,13 +478,13 @@
     {
       "id": "ACCESSIBILITY-BASICS",
       "title": "Keyboard and focus accessibility baseline",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "S",
       "launch": "v0_5",
       "summary": "A dense tool still needs visible focus, keyboard reachability, and labelled controls so it can be used without pointer precision.",
-      "done": "Core chrome controls are keyboard reachable, focus rings are visible, and rail/editor/pane controls expose useful labels."
+      "done": "Verified 2026-07-09: current v0.5 chrome has explicit labels for rail actions, workspace root, agent profile picker, terminal canvas, and composer draft; editor tabs put tab semantics on the actual focusable buttons; the terminal canvas is tabbable and has a visible focus ring; context menus focus the first enabled item, support Arrow Up/Down, and close with Escape. Full modal trapping, canvas transcript screen-reader review, and future browser/git/settings/multi-pane surfaces remain deferred."
     },
     {
       "id": "PROJECT-RAIL",

@@ -1,4 +1,4 @@
-import { type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -204,6 +204,7 @@ function App() {
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
   const editorBuffersRef = useRef<Record<string, EditorBuffer>>({});
+  const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const pendingEditorFocusRef = useRef(false);
   const editorLoadSeq = useRef(0);
   const latest = useRef<Snapshot | null>(null);
@@ -293,15 +294,23 @@ function App() {
       });
     };
     const closeMenu = () => setContextMenu(null);
+    const closeMenuOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setContextMenu(null);
+    };
     window.addEventListener("file-tree-context-menu", onContextMenu);
     window.addEventListener("pointerdown", closeMenu);
-    window.addEventListener("keydown", closeMenu);
+    window.addEventListener("keydown", closeMenuOnEscape);
     return () => {
       window.removeEventListener("file-tree-context-menu", onContextMenu);
       window.removeEventListener("pointerdown", closeMenu);
-      window.removeEventListener("keydown", closeMenu);
+      window.removeEventListener("keydown", closeMenuOnEscape);
     };
   }, [editorDirty, selectedFile, workspacePath]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+    contextMenuRef.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  }, [contextMenu]);
 
   useEffect(() => {
     if (!selectedFile || fileTree.length === 0) return;
@@ -925,6 +934,27 @@ function App() {
     if (!item.disabled) item.onSelect();
   };
 
+  const moveContextMenuFocus = (event: ReactKeyboardEvent<HTMLDivElement>, direction: 1 | -1) => {
+    const buttons = Array.from(contextMenuRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
+    if (buttons.length === 0) return;
+    event.preventDefault();
+    const currentIndex = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    const fallbackIndex = direction === 1 ? 0 : buttons.length - 1;
+    const nextIndex = currentIndex === -1 ? fallbackIndex : (currentIndex + direction + buttons.length) % buttons.length;
+    buttons[nextIndex]?.focus();
+  };
+
+  const handleContextMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setContextMenu(null);
+    } else if (event.key === "ArrowDown") {
+      moveContextMenuFocus(event, 1);
+    } else if (event.key === "ArrowUp") {
+      moveContextMenuFocus(event, -1);
+    }
+  };
+
   const fileNodeContextMenuItems = (node: FileTreeNode): ContextMenuItem[] => [
     menuItem("file.new", "New File", () => void createFileInRail(node), { icon: "filePlus" }),
     menuItem("folder.new", "New Folder", () => void createFolderInRail(node), { icon: "folderPlus" }),
@@ -1432,6 +1462,7 @@ function App() {
             type="button"
             disabled={!workspacePath}
             title="New file"
+            aria-label="Create new file"
             onClick={() => void createFileInRail()}
           >
             <AppIcon name="filePlus" />
@@ -1442,12 +1473,19 @@ function App() {
             type="button"
             disabled={!workspacePath}
             title="New folder"
+            aria-label="Create new folder"
             onClick={() => void createFolderInRail()}
           >
             <AppIcon name="folderPlus" />
             <span>Folder</span>
           </button>
-          <button className="rail-open-button" type="button" title={shortcutTitle("workspace.open", "Open folder")} onClick={pickWorkspace}>
+          <button
+            className="rail-open-button"
+            type="button"
+            title={shortcutTitle("workspace.open", "Open folder")}
+            aria-label="Open folder"
+            onClick={pickWorkspace}
+          >
             <AppIcon name="folderOpen" />
             <span>Open</span>
           </button>
@@ -1456,6 +1494,7 @@ function App() {
           <button
             className="rail-root__button"
             type="button"
+            aria-label={workspacePath ? `Workspace ${basename(workspacePath)}` : "No workspace selected"}
             onContextMenu={(event) => openContextMenu(event, workspaceContextMenuItems())}
           >
             <AppIcon name={workspacePath ? "workspace" : "folderOpen"} />
@@ -1553,8 +1592,6 @@ function App() {
                   return (
                     <div
                       className={`editor-tab ${dirty ? "editor-tab--dirty" : ""} ${active ? "editor-tab--active" : ""}`}
-                      role="tab"
-                      aria-selected={active}
                       title={tab.path}
                       key={tab.path}
                       onContextMenu={(event) => openContextMenu(event, editorTabContextMenuItems(tab))}
@@ -1562,6 +1599,9 @@ function App() {
                       <button
                         className="editor-tab__activate"
                         type="button"
+                        role="tab"
+                        aria-selected={active}
+                        aria-label={`${tab.name}${dirty ? ", unsaved changes" : ""}`}
                         onPointerDown={(event) => {
                           if (event.button !== 0) return;
                           event.preventDefault();
@@ -1709,6 +1749,7 @@ function App() {
             <label className="terminal-profile-picker">
               <span className="terminal-profile-picker__label">Profile</span>
               <select
+                aria-label="Agent profile"
                 value={launchProfile.id}
                 disabled={launchProfileChanging}
                 onChange={(event) => void switchLaunchProfile(launchProfileById(event.currentTarget.value))}
@@ -1721,8 +1762,19 @@ function App() {
               </select>
             </label>
           </div>
-          <div ref={terminalHostRef} className="terminal-host" onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}>
-            <canvas ref={canvasRef} className="term" />
+          <div
+            ref={terminalHostRef}
+            className="terminal-host"
+            onPointerDown={() => canvasRef.current?.focus()}
+            onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}
+          >
+            <canvas
+              ref={canvasRef}
+              className="term"
+              tabIndex={0}
+              role="application"
+              aria-label={`${launchProfile.label} terminal pane. Type to send keyboard input to the active process.`}
+            />
           </div>
           <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
             <div className="agent-composer__target" title={workspacePath ?? ""}>
@@ -1736,6 +1788,7 @@ function App() {
             </div>
             <textarea
               className="agent-composer__input"
+              aria-label="Agent composer draft"
               value={composerDraft}
               rows={2}
               placeholder="Send to selected agent. Use >save, >find, >open, or >clear for app actions."
@@ -1787,10 +1840,13 @@ function App() {
       ) : null}
       {contextMenu ? (
         <div
+          ref={contextMenuRef}
           className="context-menu"
           style={{ left: contextMenu.x, top: contextMenu.y }}
+          aria-label="Context menu"
           role="menu"
           onPointerDown={(event) => event.stopPropagation()}
+          onKeyDown={handleContextMenuKeyDown}
         >
           {contextMenu.items.map((item) => (
             <button
