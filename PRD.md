@@ -38,6 +38,12 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Provide only practical customization: color themes, font/terminal/editor settings, ignored folders, agent commands, model/provider/API configuration, MCP servers, credentials/auth checks, permission defaults, environment variables, and keybinding overrides.
 - Recover from quit/crash by restoring project/session metadata without pretending dead agent processes are still alive.
 
+## Settings Parity
+
+Use Codex's settings structure as a reference for navigation density, iconography, search, and grouping, but only keep categories that serve this app's workbench job. Kept categories: General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees.
+
+Drop categories that imply an account/chat product or novelty feature: Profile, Pets, Usage & billing, Archived chats, and Chat Settings. Park Appshots and Computer use as future visual-context/permissioned automation ideas; they should not appear in the settings UI until browser preview and agent hooks are already real. Detailed mapping lives in `docs/settings-parity.md`.
+
 ## User
 
 Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and testable over speculative; decides aesthetics by seeing, not describing (proven: rejected two color schemes before picking one by eye). Stack fluency: Node/ESM/TS, React, Tauri 2, Rust-adjacent (indx/hashmark/brutal all Tauri). **Not** a Swift/AppKit dev — a reason building native-in-Tauri beats forking a Swift app.
@@ -105,3 +111,4 @@ The file rail and editor are not optional product garnish; they are the reason t
 - Not a full VS Code clone: no extension marketplace, plugin system, debugger, LSP-first IDE layer, remote SSH, or full git client before the lean workflow is daily-drivable. Color themes and focused settings are allowed; plugins are not.
 - Not an arbitrary agent plugin host: built-in MCP/API hooks may expose app-owned commands, but agents should not run unreviewed extension code inside the app.
 - Not a task database: pane names/status/transcripts exist only to orient agent work, not to become project management software.
+- Not a Codex settings clone: copy the useful structure, search, icons, and developer/AI connection surfaces; do not copy account, billing, pets, archived-chat, or custom-chat settings.

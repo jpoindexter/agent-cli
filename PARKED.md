@@ -43,3 +43,9 @@ Deferred ideas. Promote, never delete.
 **Captured:** 2026-07-07 (from blind-spot audit)
 **Why parked:** No current done-criterion checks whether the cockpit actually increases shipping velocity across Jason's broader stalled portfolio (e.g. gripe, stalled ~3 weeks) — it only checks whether the cockpit itself works. Real gap, but adding a portfolio-wide metric is out of scope for a tool-selection trial.
 **Cost to revisit:** Cheap — add a line to P1's done-criteria once v0 ships and there's a baseline to compare against.
+
+## Appshots / Computer use settings parity
+
+**Captured:** 2026-07-08
+**Why parked:** Codex exposes Appshots and Computer use settings, but this app should not inherit them blindly. Appshots may become visual context capture for browser/app screenshots sent to agents. Computer use may become permissioned agent-controlled app/browser actions. Both depend on browser preview and agent hooks being real first.
+**Cost to revisit:** Medium — promote only after `BROWSER-PREVIEW` and `AGENT-HOOKS`; require explicit approvals, attribution logs, and no broad desktop automation.

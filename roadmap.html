@@ -66,7 +66,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 50 slices &middot; 6 shipped</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 51 slices &middot; 6 shipped</p>
 <p class="loop">Open project folder → inspect/edit files → preview web output → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported explorer/editor/browser/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
@@ -266,6 +266,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">TERMINAL-FIND &middot; Find in terminal scrollback</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">Agent output can be long. Search inside terminal scrollback is necessary for reviewing logs and prior agent output.</p>
 <details><summary>Done criteria</summary><p class="done">Find text in the active pane scrollback, jump next/previous, and preserve terminal focus behavior.</p></details></div>
+<div class="card" data-track="ui" data-id="SETTINGS-PARITY" data-size="M" data-tier="pebble" data-launch="v2">
+<div class="hd"><span class="sz">M</span><span class="ttl">SETTINGS-PARITY &middot; Codex-style settings parity</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Borrow Codex's searchable left-nav settings shape and icon density, but keep only categories that serve the lean VS Code replacement workflow.</p>
+<details><summary>Done criteria</summary><p class="done">Settings has searchable grouped sections for General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees; Profile, Pets, Usage &amp; billing, Archived chats, and Chat Settings are absent; Appshots and Computer use remain parked.</p></details></div>
 <div class="card" data-track="quality" data-id="PACKAGING" data-size="M" data-tier="pebble" data-launch="v3">
 <div class="hd"><span class="sz">M</span><span class="ttl">PACKAGING &middot; Local app packaging</span><span class="lens l-quality">Quality + shipping</span></div>
 <div class="badges"><span class="me ver">v3</span></div><p class="sum">Make it launch like a real macOS app, not only from `npm run tauri dev`.</p>
@@ -278,8 +282,8 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">A keyboard palette can run core app actions, shows shortcuts where assigned, and stays consistent with menu/context-menu labels.</p></details></div>
 <div class="card" data-track="ui" data-id="SETTINGS" data-size="M" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">M</span><span class="ttl">SETTINGS &middot; Settings for commands, themes, and shortcuts</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v2</span></div><p class="sum">Keep settings boring and inspectable: agent commands, AI connections, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.</p>
-<details><summary>Done criteria</summary><p class="done">A local config file controls agent profiles, AI connections, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported.</p></details></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Keep settings boring and inspectable: agent commands, AI connections, ignored folders, font, color theme, default layout, browser preview, hooks, git/worktree defaults, environments, and shortcut overrides. This is not a plugin platform.</p>
+<details><summary>Done criteria</summary><p class="done">A local config file controls agent profiles, AI connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported.</p></details></div>
 <div class="card" data-track="ui" data-id="NOTIFICATIONS" data-size="S" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">S</span><span class="ttl">NOTIFICATIONS &middot; Background agent notifications</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">When an agent in another project or pane stops or needs input, Jason should not have to manually inspect every pane.</p>

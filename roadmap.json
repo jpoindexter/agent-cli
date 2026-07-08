@@ -587,6 +587,17 @@
       "done": "Settings can configure Claude/Codex command profiles, provider/API credentials via OS-safe storage, MCP server entries, env vars, default models, permission policy, and validation checks that explain missing auth or broken connections."
     },
     {
+      "id": "SETTINGS-PARITY",
+      "title": "Codex-style settings parity",
+      "column": "later",
+      "tier": "pebble",
+      "track": "ui",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Borrow Codex's searchable left-nav settings shape and icon density, but keep only categories that serve the lean VS Code replacement workflow.",
+      "done": "Settings has searchable grouped sections for General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees; Profile, Pets, Usage & billing, Archived chats, and Chat Settings are absent; Appshots and Computer use remain parked."
+    },
+    {
       "id": "SETTINGS",
       "title": "Settings for commands, themes, and shortcuts",
       "column": "later",
@@ -594,8 +605,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v2",
-      "summary": "Keep settings boring and inspectable: agent commands, AI connections, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.",
-      "done": "A local config file controls agent profiles, AI connections, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
+      "summary": "Keep settings boring and inspectable: agent commands, AI connections, ignored folders, font, color theme, default layout, browser preview, hooks, git/worktree defaults, environments, and shortcut overrides. This is not a plugin platform.",
+      "done": "A local config file controls agent profiles, AI connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
     },
     {
       "id": "NOTIFICATIONS",
