@@ -343,14 +343,14 @@
     },
     {
       "id": "AGENT-COMPOSER",
-      "title": "Compact agent composer",
+      "title": "Codex-style agent composer",
       "column": "next",
       "tier": "pebble",
       "track": "core",
       "size": "M",
       "launch": "v0_5",
-      "summary": "Keep terminal panes as the trusted source-of-truth agent interface, but add a compact Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.",
-      "done": "Composer can target the selected Claude/Codex/shell pane, send text safely through the real pty, show target/project context, and run app actions via command palette routing; it never replaces the underlying terminal transcript."
+      "summary": "Keep terminal panes as the trusted source-of-truth agent interface, but add a bottom Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.",
+      "done": "Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript."
     },
     {
       "id": "SHORTCUTS",
@@ -500,6 +500,18 @@
       "blocker": true,
       "summary": "Each pane/session needs an inspectable timeline of user-safe agent events so Jason can see what happened without reading every terminal line.",
       "done": "Per-pane/session log captures thinking/planning summaries, file read/edit/create/delete/rename events, command start/finish/failure with cwd and exit code, tool/app actions, git/source-control events, approval requests, errors, exits, and completion; events are attributed, filterable, retained with session metadata, and link to diffs/output/undo where available."
+    },
+    {
+      "id": "COMPOSER-HARNESS",
+      "title": "Composer harness controls",
+      "column": "next",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Grow the bottom composer into a Codex-style app-owned harness around real terminal panes: permission mode, goal state, target pane, model/profile, attachments, and stop/send controls.",
+      "done": "Composer supports Ask for approval, Approve safe actions, and Full access modes for app-owned actions; shows goal chip, target project/session/pane, model/profile selector, attachments/screenshot references with remove controls, stop/send state, and logs prompt/permission/attachment/action events to the activity timeline."
     },
     {
       "id": "PROCESS-LIFECYCLE",
@@ -754,6 +766,17 @@
       "launch": "v2",
       "summary": "Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.",
       "done": "A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log."
+    },
+    {
+      "id": "DIRECT-AGENT-HARNESS",
+      "title": "Optional direct API agent harness",
+      "column": "later",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Research-backed future lane: app-owned direct API/MCP agent workflows using human review, resumable state, and tracing, without replacing real Claude/Codex terminal panes.",
+      "done": "A feature-flagged direct agent can run app-owned tools/MCP with approval gates, state restore/resume, tracing/activity log entries, and clear separation from terminal-backed Claude/Codex panes."
     },
     {
       "id": "PACKAGING",

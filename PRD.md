@@ -26,7 +26,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
 - Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Keep the terminal robust enough for daily agent work: Ghostty-backed VT fidelity, alternate-screen TUIs, ANSI/truecolor styling, resize, scrollback, selection/copy/paste, bracketed paste, common keyboard chords, fast-output responsiveness, and clear pane lifecycle state.
-- Keep terminal panes as the source-of-truth agent interface. Add a compact composer only for routing prompts/instructions to the selected agent pane or app-level actions; do not replace Claude/Codex's real terminal UI with a custom chat clone.
+- Keep terminal panes as the source-of-truth agent interface. Add a Codex-style composer/harness for routing prompts/instructions to the selected agent pane or app-level actions; do not replace Claude/Codex's real terminal UI with a custom chat clone.
 - Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.
 - Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
 - Switch across multiple active projects without separate heavyweight VS Code windows.
@@ -68,6 +68,10 @@ The editor and terminal are the product core. The editor should feel like a real
 
 Agent panes need Codex-style activity visibility: compact current state in pane headers, recent activity rows like `Edited a file`, aggregate rail badges, and a per-pane/session activity log. The log should show file events, command events, tool/app events, git/source-control events, approvals, errors, and completion. Hidden chain-of-thought stays out of scope; user-safe summaries, tool names, file paths, diffs, outputs, and approval states are in scope. Detailed criteria live in `docs/agent-activity-timeline.md`.
 
+## Composer Harness
+
+Use a bottom composer like Codex as the lightweight control surface over real panes. v0.5 routes prompts to the selected pty. v1 adds harness controls: permission mode, goal chip, target pane, model/profile selector, attachments/screenshot references, stop/send state, and activity logging. v2 may add an optional direct API/MCP agent harness, but only for app-owned orchestration; real Claude/Codex terminal panes remain first-class. Research and phased scope live in `docs/composer-harness-research.md`.
+
 ## User
 
 Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and testable over speculative; decides aesthetics by seeing, not describing (proven: rejected two color schemes before picking one by eye). Stack fluency: Node/ESM/TS, React, Tauri 2, Rust-adjacent (indx/hashmark/brutal all Tauri). **Not** a Swift/AppKit dev — a reason building native-in-Tauri beats forking a Swift app.
@@ -91,6 +95,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Recent projects and last workspace make reopening cheap.
 - [ ] Common file/editor/terminal actions are reachable through VS Code-style shortcuts, menu bar entries, and right-click/Control-click context menus.
 - [ ] Core chrome surfaces use a coherent token/icon system with hover, active, disabled, focus, loading, empty, and error states.
+- [ ] Composer can target the selected terminal pane, send multiline prompts safely, stop/interrupt the pane, and show target/project/session context.
 
 ## v1 done criteria
 
@@ -102,6 +107,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [ ] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [ ] Pane lifecycle controls and icon badges cover thinking, running, waiting, errored, exited, restart, terminate, and attention-needed states.
 - [ ] Agent activity rows show recent thinking/planning summaries, file edits, commands, tool/app actions, approvals, errors, and completion per pane/session.
+- [ ] Composer harness supports permission mode, goal state, model/profile selector, attachments, and approval logging for app-owned actions.
 - [ ] Session restore brings back projects, file tabs, pane layout, and enough metadata to resume intentionally.
 - [ ] Resource use is measured against the equivalent VS Code workflow.
 

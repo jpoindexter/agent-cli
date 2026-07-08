@@ -66,7 +66,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 59 slices &middot; 6 shipped</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 61 slices &middot; 6 shipped</p>
 <p class="loop">Open project folder → inspect/edit files → preview web output → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported explorer/editor/browser/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
@@ -172,6 +172,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">AGENT-ACTIVITY-LOG &middot; Agent activity timeline</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Each pane/session needs an inspectable timeline of user-safe agent events so Jason can see what happened without reading every terminal line.</p>
 <details><summary>Done criteria</summary><p class="done">Per-pane/session log captures thinking/planning summaries, file read/edit/create/delete/rename events, command start/finish/failure with cwd and exit code, tool/app actions, git/source-control events, approval requests, errors, exits, and completion; events are attributed, filterable, retained with session metadata, and link to diffs/output/undo where available.</p></details></div>
+<div class="card" data-track="core" data-id="COMPOSER-HARNESS" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">COMPOSER-HARNESS &middot; Composer harness controls</span><span class="lens l-core">Terminal + process</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Grow the bottom composer into a Codex-style app-owned harness around real terminal panes: permission mode, goal state, target pane, model/profile, attachments, and stop/send controls.</p>
+<details><summary>Done criteria</summary><p class="done">Composer supports Ask for approval, Approve safe actions, and Full access modes for app-owned actions; shows goal chip, target project/session/pane, model/profile selector, attachments/screenshot references with remove controls, stop/send state, and logs prompt/permission/attachment/action events to the activity timeline.</p></details></div>
 <div class="card" data-track="workspace" data-id="SESSION-RESTORE" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">SESSION-RESTORE &middot; Restore projects, files, panes</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.</p>
@@ -211,9 +215,9 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Make Claude the default but stop hardcoding one command forever. Add simple profiles for Claude, Codex, and shell so the pane can launch the desired CLI.</p>
 <details><summary>Done criteria</summary><p class="done">New pane can choose Claude, Codex, or shell; command path/args are visible in config; missing commands fail with a useful message.</p></details></div>
 <div class="card" data-track="core" data-id="AGENT-COMPOSER" data-size="M" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">M</span><span class="ttl">AGENT-COMPOSER &middot; Compact agent composer</span><span class="lens l-core">Terminal + process</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep terminal panes as the trusted source-of-truth agent interface, but add a compact Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.</p>
-<details><summary>Done criteria</summary><p class="done">Composer can target the selected Claude/Codex/shell pane, send text safely through the real pty, show target/project context, and run app actions via command palette routing; it never replaces the underlying terminal transcript.</p></details></div>
+<div class="hd"><span class="sz">M</span><span class="ttl">AGENT-COMPOSER &middot; Codex-style agent composer</span><span class="lens l-core">Terminal + process</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep terminal panes as the trusted source-of-truth agent interface, but add a bottom Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.</p>
+<details><summary>Done criteria</summary><p class="done">Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript.</p></details></div>
 <div class="card" data-track="ui" data-id="SHORTCUTS" data-size="S" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">S</span><span class="ttl">SHORTCUTS &middot; VS Code shortcut baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.</p>
@@ -276,6 +280,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">AGENT-HOOKS &middot; Built-in agent MCP/API hooks</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.</p>
 <details><summary>Done criteria</summary><p class="done">A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log.</p></details></div>
+<div class="card" data-track="core" data-id="DIRECT-AGENT-HARNESS" data-size="M" data-tier="rock" data-launch="v2">
+<div class="hd"><span class="sz">M</span><span class="ttl">DIRECT-AGENT-HARNESS &middot; Optional direct API agent harness</span><span class="lens l-core">Terminal + process</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Research-backed future lane: app-owned direct API/MCP agent workflows using human review, resumable state, and tracing, without replacing real Claude/Codex terminal panes.</p>
+<details><summary>Done criteria</summary><p class="done">A feature-flagged direct agent can run app-owned tools/MCP with approval gates, state restore/resume, tracing/activity log entries, and clear separation from terminal-backed Claude/Codex panes.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="core" data-id="WORKTREE" data-size="M" data-tier="pebble" data-launch="v2">

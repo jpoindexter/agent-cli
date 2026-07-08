@@ -59,7 +59,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **FILE-OPS:** create/rename/delete/duplicate/reveal from rail.
 - **EDITOR-TABS:** several open files, dirty indicators, close protection.
 - **AGENT-PROFILES:** Claude default, plus Codex/shell profiles without hardcoding one CLI forever.
-- **AGENT-COMPOSER:** compact input that routes prompts/instructions to the selected real terminal agent or app action.
+- **AGENT-COMPOSER:** Codex-style bottom input that routes prompts/instructions to the selected real terminal agent or app action.
 - **SHORTCUTS:** VS Code-compatible shortcut map across terminal/editor/chrome.
 - **TERMINAL-ROBUSTNESS:** single-pane terminal fidelity for agent TUIs, alternate screen, ANSI/truecolor, scrollback, paste, selection, resize, keyboard chords, pane status, and fast output.
 - **CONTEXT-MENUS:** right-click/Control-click menus across rail, files, editor, terminal, browser, git/diff, and agent panes.
@@ -76,6 +76,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **PANE-NAMES:** pane names and task labels.
 - **AGENT-ACTIVITY:** visible thinking/running/tool/waiting/error/exited/complete state. Show Codex-style activity rows and tool events, not hidden chain-of-thought.
 - **AGENT-ACTIVITY-LOG:** per-pane/session event timeline for thinking summaries, file edits, commands, tool/app events, git/source-control events, approvals, errors, and completion.
+- **COMPOSER-HARNESS:** permission mode, goal chip, target pane, model/profile selector, attachments, stop/send state, and approval logging around real panes.
 - **PROCESS-LIFECYCLE:** running/exited status, restart, kill, command/cwd visibility.
 - **SESSION-RESTORE:** restore project rail, editor tabs, rail state, pane layout.
 - **GIT-STATUS:** dirty/new/deleted markers in the file rail.
@@ -98,6 +99,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, AI connections, and shortcut overrides.
 - **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost and preserve the chrome token contract.
 - **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
+- **DIRECT-AGENT-HARNESS:** optional direct API/MCP agent path for app-owned orchestration, after real terminal panes and approvals are solid.
 - **NOTIFICATIONS:** background agent exit/attention badges and optional macOS notifications.
 - **TRANSCRIPTS:** save/review completed pane output.
 - **SESSION-ARCHIVE:** archive old project sessions only after sessions and transcripts are real.
