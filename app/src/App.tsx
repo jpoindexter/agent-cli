@@ -51,6 +51,15 @@ import {
   upsertEditorTab,
 } from "./editorTabs";
 import type { EditorBufferSnapshot } from "./editorTabs";
+import {
+  LAUNCH_PROFILES,
+  defaultLaunchProfile,
+  launchProfileById,
+  launchProfileCommandLine,
+  launchProfileMode,
+  normalizeLaunchProfile,
+} from "./launchProfiles";
+import type { LaunchProfile } from "./launchProfiles";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -58,7 +67,6 @@ import "./App.css";
 
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
-type LaunchProfile = { id: string; command: string; args: string[]; useLoginShell: boolean };
 type PaneExit = { command: string; code: number; message: string };
 type FileTreeNode = {
   id: string;
@@ -88,13 +96,6 @@ type FileContextMenu = { node: FileTreeNode; x: number; y: number };
 const FONT_SIZE = 15;
 const FONT_FAMILY = "JetBrains Mono, monospace";
 const LINE_HEIGHT = 1.25;
-const DEFAULT_LAUNCH_PROFILE: LaunchProfile = {
-  id: "claude",
-  command: "claude",
-  args: [],
-  useLoginShell: true,
-};
-
 const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 const dirname = (path: string) => path.replace(/[\\/][^\\/]*$/, "") || path;
@@ -112,21 +113,6 @@ const markDirtyFile = (nodes: FileTreeNode[], dirtyPaths: Set<string>): FileTree
     dirty: dirtyPaths.has(node.path),
     children: node.children ? markDirtyFile(node.children, dirtyPaths) : undefined,
   }));
-};
-
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value != null;
-
-const normalizeLaunchProfile = (value: unknown): LaunchProfile => {
-  if (!isRecord(value) || typeof value.command !== "string" || !value.command.trim()) {
-    return DEFAULT_LAUNCH_PROFILE;
-  }
-  const args = Array.isArray(value.args) ? value.args.filter((arg): arg is string => typeof arg === "string") : [];
-  return {
-    id: typeof value.id === "string" && value.id.trim() ? value.id : value.command,
-    command: value.command,
-    args,
-    useLoginShell: typeof value.useLoginShell === "boolean" ? value.useLoginShell : true,
-  };
 };
 
 function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode>) {
@@ -176,6 +162,7 @@ function App() {
   const workspacePathRef = useRef<string | null>(null);
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
+  const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
   const restoredActiveFileWorkspaceRef = useRef<string | null>(null);
   const selectedFileRef = useRef<FileTreeNode | null>(null);
@@ -190,6 +177,8 @@ function App() {
   const selection = useRef<SelectionRange | null>(null);
   const selecting = useRef(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
+  const [launchProfile, setLaunchProfile] = useState<LaunchProfile>(defaultLaunchProfile);
+  const [launchProfileChanging, setLaunchProfileChanging] = useState(false);
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [fileTreeError, setFileTreeError] = useState<string | null>(null);
@@ -332,15 +321,14 @@ function App() {
     await store?.save();
   };
 
-  const openWorkspaceDirect = async (path: string) => {
+  useEffect(() => {
+    launchProfileRef.current = launchProfile;
+  }, [launchProfile]);
+
+  const openWorkspaceDirect = async (path: string, profileOverride: LaunchProfile = launchProfileRef.current) => {
     captureCurrentEditorViewState();
     const store = storeRef.current;
-    const saved = await store?.get<unknown>("launchProfile");
-    const profile = normalizeLaunchProfile(saved);
-    if (!saved) {
-      await store?.set("launchProfile", profile);
-      await store?.save();
-    }
+    const profile = profileOverride;
     try {
       const root = await invoke<string>("open_workspace", { path, profile });
       setLaunchError(null);
@@ -352,6 +340,7 @@ function App() {
       const nextRecent = pushRecentProject(recentProjectsRef.current, root);
       recentProjectsRef.current = nextRecent;
       setRecentProjects(nextRecent);
+      await store?.set("launchProfile", profile);
       await store?.set("folder", root);
       await store?.set("recentFolders", nextRecent);
       await store?.save();
@@ -400,6 +389,33 @@ function App() {
     const dir = await open({ directory: true });
     if (typeof dir !== "string") return;
     await requestOpenWorkspace(dir);
+  };
+
+  const switchLaunchProfile = async (profile: LaunchProfile) => {
+    if (profile.id === launchProfile.id || launchProfileChanging) return;
+    const root = workspacePathRef.current ?? workspacePath;
+    const store = storeRef.current;
+    if (!root) {
+      launchProfileRef.current = profile;
+      setLaunchProfile(profile);
+      await store?.set("launchProfile", profile);
+      await store?.save();
+      return;
+    }
+    setLaunchProfileChanging(true);
+    try {
+      await invoke<string>("open_workspace", { path: root, profile });
+      setLaunchError(null);
+      launchProfileRef.current = profile;
+      setLaunchProfile(profile);
+      await store?.set("launchProfile", profile);
+      await store?.save();
+      setTimeout(sendTerminalResize, 0);
+    } catch (err) {
+      setLaunchError(String(err));
+    } finally {
+      setLaunchProfileChanging(false);
+    }
   };
 
   const terminalSize = () => {
@@ -953,18 +969,21 @@ function App() {
       const store = await load("workspace.json", { autoSave: true, defaults: {} });
       storeRef.current = store;
       const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
+      const savedProfile = normalizeLaunchProfile(await store.get<unknown>("launchProfile"));
       activeFilesByWorkspaceRef.current = normalizeActiveFileByWorkspace(await store.get<unknown>("activeFileByWorkspace"));
       recentProjectsRef.current = savedRecent;
+      launchProfileRef.current = savedProfile;
+      setLaunchProfile(savedProfile);
       setRecentProjects(savedRecent);
       const last = await store.get<string>("folder");
-      if (last) await openWorkspaceDirect(last);
+      if (last) await openWorkspaceDirect(last, savedProfile);
       else await pickWorkspace();
       sendTerminalResize();
     };
 
     const onKey = (e: KeyboardEvent) => {
       const target = e.target instanceof HTMLElement ? e.target : null;
-      if (target?.closest(".file-rail, .editor-area")) return;
+      if (target?.closest(".file-rail, .editor-area, .terminal-titlebar")) return;
       if (e.isComposing) return;
       // Cmd (meta) combos are app-level, not pty input. Let them through so the
       // native copy/paste clipboard events fire; handle the few we own explicitly.
@@ -1320,10 +1339,28 @@ function App() {
 
         <section className="terminal-panel" aria-label="Agent terminal">
           <div className="terminal-titlebar">
-            <div>
+            <div className="terminal-profile">
               <span className="terminal-kicker">Agent</span>
-              <span className="terminal-title">Claude</span>
+              <span className="terminal-title">{launchProfile.label}</span>
+              <span className="terminal-command" title={launchProfileCommandLine(launchProfile)}>
+                {launchProfileCommandLine(launchProfile)}
+              </span>
+              <span className="terminal-mode">{launchProfileMode(launchProfile)}</span>
             </div>
+            <label className="terminal-profile-picker">
+              <span className="terminal-profile-picker__label">Profile</span>
+              <select
+                value={launchProfile.id}
+                disabled={launchProfileChanging}
+                onChange={(event) => void switchLaunchProfile(launchProfileById(event.currentTarget.value))}
+              >
+                {LAUNCH_PROFILES.map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
           <div ref={terminalHostRef} className="terminal-host">
             <canvas ref={canvasRef} className="term" />

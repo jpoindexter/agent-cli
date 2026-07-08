@@ -389,13 +389,13 @@
     {
       "id": "AGENT-PROFILES",
       "title": "Agent command profiles",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "core",
       "size": "S",
       "launch": "v0_5",
       "summary": "Make Claude the default but stop hardcoding one command forever. Add simple profiles for Claude, Codex, and shell so the pane can launch the desired CLI.",
-      "done": "New pane can choose Claude, Codex, or shell; command path/args are visible in config; missing commands fail with a useful message."
+      "done": "Verified 2026-07-09: terminal header exposes Claude, Codex, and Shell profiles; shows active command/mode details; successful changes restart the pane through open_workspace and persist to workspace.json; missing-command errors stay visible and do not overwrite the saved profile. Covered by npm build/test, cargo missing-command preflight tests, screenshot QA, selected/narrow visual inspection, and docs/local-state.md schema update."
     },
     {
       "id": "AGENT-COMPOSER",

@@ -698,12 +698,19 @@ body,
   height: 32px;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 0 10px;
   color: #cfcfcf;
 }
 
+.terminal-profile {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
 .terminal-kicker {
-  margin-right: 8px;
   color: #7d7d7d;
   font-size: 11px;
   font-weight: 700;
@@ -715,6 +722,59 @@ body,
   color: #e5e5e5;
   font-size: 12px;
   font-weight: 650;
+}
+
+.terminal-command,
+.terminal-mode {
+  overflow: hidden;
+  color: #858585;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-command {
+  max-width: min(34vw, 320px);
+}
+
+.terminal-mode {
+  flex: 0 0 auto;
+}
+
+.terminal-profile-picker {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-profile-picker__label {
+  color: #7d7d7d;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.terminal-profile-picker select {
+  height: 22px;
+  border: 1px solid #3c3c3c;
+  border-radius: 5px;
+  background: #282828;
+  color: #dcdcdc;
+  cursor: default;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  padding: 0 6px;
+}
+
+.terminal-profile-picker select:focus-visible {
+  outline: 2px solid #5a8fb8;
+  outline-offset: -2px;
+}
+
+.terminal-profile-picker select:disabled {
+  color: #6d6d6d;
 }
 
 .terminal-host {

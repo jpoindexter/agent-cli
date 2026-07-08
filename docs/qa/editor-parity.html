@@ -200,10 +200,20 @@
         </section>
         <section class="terminal-panel" aria-label="Agent terminal">
           <div class="terminal-titlebar">
-            <div>
+            <div class="terminal-profile">
               <span class="terminal-kicker">Agent</span>
               <span class="terminal-title">Claude</span>
+              <span class="terminal-command">claude</span>
+              <span class="terminal-mode">login shell</span>
             </div>
+            <label class="terminal-profile-picker">
+              <span class="terminal-profile-picker__label">Profile</span>
+              <select>
+                <option>Claude</option>
+                <option>Codex</option>
+                <option>Shell</option>
+              </select>
+            </label>
           </div>
           <div class="terminal-host">
             <canvas class="term" width="960" height="260"></canvas>

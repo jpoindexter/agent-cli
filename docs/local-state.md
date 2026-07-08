@@ -13,6 +13,7 @@ Current schema:
   "folder": "/absolute/path/to/last/workspace",
   "launchProfile": {
     "id": "claude",
+    "label": "Claude",
     "command": "claude",
     "args": [],
     "useLoginShell": true
@@ -23,7 +24,7 @@ Current schema:
 }
 ```
 
-`folder` is the last workspace to reopen. `launchProfile` is the command the pane launches in that workspace. The default is Claude through a login shell so shell-managed paths such as `nvm` are available.
+`folder` is the last workspace to reopen. `launchProfile` is the command the pane launches in that workspace. Built-in profile ids are `claude`, `codex`, and `shell`. Claude and Codex run through a login shell so shell-managed paths such as `nvm` are available; Shell launches `/bin/zsh -l` directly.
 `activeFileByWorkspace` stores the last active editor file per canonical workspace root; stale paths are ignored instead of being opened.
 
 ## Reset Path
@@ -51,6 +52,7 @@ To restore the default Claude profile while keeping the last folder, edit only `
 ```json
 "launchProfile": {
   "id": "claude",
+  "label": "Claude",
   "command": "claude",
   "args": [],
   "useLoginShell": true
