@@ -66,7 +66,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 51 slices &middot; 6 shipped</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 53 slices &middot; 6 shipped</p>
 <p class="loop">Open project folder → inspect/edit files → preview web output → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported explorer/editor/browser/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
@@ -143,7 +143,11 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="card" data-track="workspace" data-id="PROJECT-RAIL" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-RAIL &middot; Left project rail for open workspaces</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.</p>
-<details><summary>Done criteria</summary><p class="done">Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's file rail, editor tabs, browser preview, terminal panes, and focused pane.</p></details></div>
+<details><summary>Done criteria</summary><p class="done">Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's session list, file rail, editor tabs, browser preview, terminal panes, and focused pane.</p></details></div>
+<div class="card" data-track="workspace" data-id="PROJECT-SESSIONS" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-SESSIONS &middot; Project session rows</span><span class="lens l-workspace">Projects + sessions</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.</p>
+<details><summary>Done criteria</summary><p class="done">A project can show multiple named sessions with recency/status, active highlight, Show more collapse, rename/delete controls, and running/exited/attention badges; selecting a session restores its editor tabs, browser URL, pane layout, pane labels/status, and transcript references without pretending dead processes are live.</p></details></div>
 <div class="card" data-track="ui" data-id="BROWSER-PREVIEW" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">BROWSER-PREVIEW &middot; Browser and web preview pane</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The stripped VS Code workbench still needs a browser surface for localhost apps, docs, auth flows, and agent-generated pages without context switching.</p>
@@ -159,7 +163,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="card" data-track="workspace" data-id="SESSION-RESTORE" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">SESSION-RESTORE &middot; Restore projects, files, panes</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.</p>
-<details><summary>Done criteria</summary><p class="done">Relaunch restores the left project rail, selected project, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured.</p></details></div>
+<details><summary>Done criteria</summary><p class="done">Relaunch restores the left project rail, selected project/session, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured.</p></details></div>
 <div class="card" data-track="files" data-id="DIFF-VIEW" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">DIFF-VIEW &middot; Diff view for agent changes</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">Jason supervises agents by reading what changed. A file status marker is not enough; he needs to inspect diffs without opening VS Code.</p>
@@ -292,6 +296,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">S</span><span class="ttl">TRANSCRIPTS &middot; Pane transcript capture</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">Completed agent sessions should be reviewable after the process exits without keeping panes open forever.</p>
 <details><summary>Done criteria</summary><p class="done">A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior.</p></details></div>
+<div class="card" data-track="workspace" data-id="SESSION-ARCHIVE" data-size="S" data-tier="sand" data-launch="v2">
+<div class="hd"><span class="sz">S</span><span class="ttl">SESSION-ARCHIVE &middot; Session archive</span><span class="lens l-workspace">Projects + sessions</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Only after project sessions and transcripts exist, add a way to hide old sessions without turning the product into archived chats.</p>
+<details><summary>Done criteria</summary><p class="done">A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats.</p></details></div>
 <div class="card" data-track="ui" data-id="KEYBINDINGS-CONFIG" data-size="S" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">S</span><span class="ttl">KEYBINDINGS-CONFIG &middot; Configurable keybindings</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.</p>

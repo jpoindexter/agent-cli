@@ -49,3 +49,9 @@ Deferred ideas. Promote, never delete.
 **Captured:** 2026-07-08
 **Why parked:** Codex exposes Appshots and Computer use settings, but this app should not inherit them blindly. Appshots may become visual context capture for browser/app screenshots sent to agents. Computer use may become permissioned agent-controlled app/browser actions. Both depend on browser preview and agent hooks being real first.
 **Cost to revisit:** Medium — promote only after `BROWSER-PREVIEW` and `AGENT-HOOKS`; require explicit approvals, attribution logs, and no broad desktop automation.
+
+## Scheduled sessions / session archive sidebar parity
+
+**Captured:** 2026-07-08
+**Why parked:** Codex shows Scheduled and archived chat concepts. For this app, Scheduled could mean background agent runs and Archive could mean old project sessions/transcripts, but both require project sessions, transcript capture, and agent hooks first.
+**Cost to revisit:** Medium — promote only after `PROJECT-SESSIONS`, `TRANSCRIPTS`, and `AGENT-HOOKS`; keep labels task/workbench-oriented, not chat-oriented.

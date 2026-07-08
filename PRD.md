@@ -20,6 +20,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 
 - Open and switch project folders quickly, including recent projects.
 - Keep multiple projects open in one window through a persistent left project/workspace rail, similar in spirit to Codex's sidebar, with clear active-project state.
+- Show task-scoped project sessions under each project in the left rail, similar to Codex chat rows. A session is a saved workbench context: project, editor tabs, browser URL, agent panes, pane labels/status, and transcript references. It is not an editor tab and not a custom chat thread.
 - Browse the project tree with sensible ignores, file watching, and safe handling for symlinks, large files, and binary files.
 - Open, edit, find/replace, save, and close source files with dirty-state and external-change protection.
 - Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
@@ -43,6 +44,10 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 Use Codex's settings structure as a reference for navigation density, iconography, search, and grouping, but only keep categories that serve this app's workbench job. Kept categories: General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees.
 
 Drop categories that imply an account/chat product or novelty feature: Profile, Pets, Usage & billing, Archived chats, and Chat Settings. Park Appshots and Computer use as future visual-context/permissioned automation ideas; they should not appear in the settings UI until browser preview and agent hooks are already real. Detailed mapping lives in `docs/settings-parity.md`.
+
+## Navigation Parity
+
+Use Codex's project/chat sidebar as a reference for information density, grouping, recency labels, active-row styling, and icon rhythm. Translate chats into project sessions: "New chat" becomes "New session", chat rows become named task sessions under each project, and "Show more" collapses older sessions. Search stays. Plugins and account/profile chrome are dropped. Scheduled/background sessions and archived sessions are parked until project sessions, transcripts, and agent hooks exist. Detailed mapping lives in `docs/navigation-parity.md`.
 
 ## User
 
@@ -72,6 +77,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 **Done:** the app replaces the current multi-window VS Code habit for normal agent work.
 
 - [ ] A persistent left project/workspace rail opens at least 3 projects in one window and shows active, running, exited, and attention-needed states.
+- [ ] Each project can show multiple task sessions in the rail; selecting one restores its workbench context without pretending dead processes are live.
 - [ ] Browser/web preview opens localhost apps, docs, auth flows, and generated pages inside the workbench.
 - [ ] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [ ] Pane lifecycle controls and icon badges cover thinking, running, waiting, errored, exited, restart, terminate, and attention-needed states.
@@ -112,3 +118,4 @@ The file rail and editor are not optional product garnish; they are the reason t
 - Not an arbitrary agent plugin host: built-in MCP/API hooks may expose app-owned commands, but agents should not run unreviewed extension code inside the app.
 - Not a task database: pane names/status/transcripts exist only to orient agent work, not to become project management software.
 - Not a Codex settings clone: copy the useful structure, search, icons, and developer/AI connection surfaces; do not copy account, billing, pets, archived-chat, or custom-chat settings.
+- Not a Codex chat clone: project sessions may look like chat rows in the rail, but the underlying object is a workbench session, not a custom LLM conversation thread.

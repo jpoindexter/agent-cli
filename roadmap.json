@@ -394,7 +394,19 @@
       "launch": "v1",
       "blocker": true,
       "summary": "The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.",
-      "done": "Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's file rail, editor tabs, browser preview, terminal panes, and focused pane."
+      "done": "Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's session list, file rail, editor tabs, browser preview, terminal panes, and focused pane."
+    },
+    {
+      "id": "PROJECT-SESSIONS",
+      "title": "Project session rows",
+      "column": "next",
+      "tier": "rock",
+      "track": "workspace",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.",
+      "done": "A project can show multiple named sessions with recency/status, active highlight, Show more collapse, rename/delete controls, and running/exited/attention badges; selecting a session restores its editor tabs, browser URL, pane layout, pane labels/status, and transcript references without pretending dead processes are live."
     },
     {
       "id": "BROWSER-PREVIEW",
@@ -462,7 +474,7 @@
       "size": "M",
       "launch": "v1",
       "summary": "After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.",
-      "done": "Relaunch restores the left project rail, selected project, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured."
+      "done": "Relaunch restores the left project rail, selected project/session, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured."
     },
     {
       "id": "GIT-STATUS",
@@ -629,6 +641,17 @@
       "launch": "v2",
       "summary": "Completed agent sessions should be reviewable after the process exits without keeping panes open forever.",
       "done": "A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior."
+    },
+    {
+      "id": "SESSION-ARCHIVE",
+      "title": "Session archive",
+      "column": "later",
+      "tier": "sand",
+      "track": "workspace",
+      "size": "S",
+      "launch": "v2",
+      "summary": "Only after project sessions and transcripts exist, add a way to hide old sessions without turning the product into archived chats.",
+      "done": "A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats."
     },
     {
       "id": "KEYBINDINGS-CONFIG",

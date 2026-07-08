@@ -67,6 +67,7 @@ This is where the clarified product point lands: not "terminal app with optional
 ## v1 — Multi-project, multi-agent cockpit
 
 - **PROJECT-RAIL:** Codex-style left project/workspace rail replaces separate VS Code windows.
+- **PROJECT-SESSIONS:** chat-like rows under each project become named task/workbench sessions, not custom chat threads.
 - **BROWSER-PREVIEW:** lightweight browser/web preview pane for localhost apps, docs, auth flows, and generated pages.
 - **PANE-MANAGER:** multiple Claude/Codex/shell panes per project.
 - **PANE-NAMES:** pane names and task labels.
@@ -93,6 +94,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
 - **NOTIFICATIONS:** background agent exit/attention badges and optional macOS notifications.
 - **TRANSCRIPTS:** save/review completed pane output.
+- **SESSION-ARCHIVE:** archive old project sessions only after sessions and transcripts are real.
 - **KEYBINDINGS-CONFIG:** configurable app shortcut overrides after defaults stabilize, including conflict detection and a visible shortcut reference.
 
 ## v3 — Polish and shipping
