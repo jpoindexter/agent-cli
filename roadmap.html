@@ -184,6 +184,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">AGENT-COMPOSER &middot; Codex-style agent composer</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep terminal panes as the trusted source-of-truth agent interface, but add a bottom Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.</p>
 <details><summary>Done criteria</summary><p class="done">Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript.</p></details></div>
+<div class="card" data-track="ui" data-id="SHORTCUTS" data-size="S" data-tier="pebble" data-launch="v0_5">
+<div class="hd"><span class="sz">S</span><span class="ttl">SHORTCUTS &middot; VS Code shortcut baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.</p>
+<details><summary>Done criteria</summary><p class="done">A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, appears in menu items/tooltips where relevant, and explicitly lists terminal/editor/app-chrome conflicts and exceptions.</p></details></div>
 </div>
 <div class="tg t-sand"><h3>Sand · glue &amp; polish</h3>
 <div class="card" data-track="quality" data-id="PRODUCT-NAME-README" data-size="S" data-tier="sand" data-launch="v0_5">
@@ -250,10 +254,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">Stage file, unstage file, discard file with confirmation, and copy diff are available from file status/diff surfaces.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="ui" data-id="SHORTCUTS" data-size="S" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">S</span><span class="ttl">SHORTCUTS &middot; VS Code shortcut baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.</p>
-<details><summary>Done criteria</summary><p class="done">A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, appears in menu items/tooltips where relevant, and explicitly lists terminal/editor/app-chrome conflicts and exceptions.</p></details></div>
 <div class="card" data-track="ui" data-id="CONTEXT-MENUS" data-size="M" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">M</span><span class="ttl">CONTEXT-MENUS &middot; Right-click context menus</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">macOS pointer workflows need right-click/Control-click affordances, not only visible buttons. Context menus should expose the same command registry as menu bar, shortcuts, and command palette where possible.</p>

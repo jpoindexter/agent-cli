@@ -17,6 +17,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `integrations-scope.md`: Git, GitHub, GitLab, and adapter-lane boundaries.
 - `composer-harness-research.md`: bottom composer and future harness scope.
 - `harness-contract.md`: app-owned pane/session handle contract.
+- `shortcuts.md`: active v0.5 shortcut map and planned exceptions.
 
 ## Quality References
 

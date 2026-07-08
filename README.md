@@ -68,6 +68,7 @@ Zig must stay pinned to `0.15.2`; Homebrew's default `0.16` breaks the Ghostty b
 | `STATE.md` | Current handoff, verified slices, next step |
 | `DECISIONS.md` | Append-only decision log |
 | `docs/product-positioning.md` | Name, one-liner, language rules |
+| `docs/shortcuts.md` | Active shortcut map and planned exceptions |
 | `docs/*-parity.md` / `docs/*-scope.md` | Focused research and parity criteria |
 
 Rebuild the roadmap board after editing `roadmap.json`:

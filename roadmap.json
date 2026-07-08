@@ -422,7 +422,7 @@
     {
       "id": "SHORTCUTS",
       "title": "VS Code shortcut baseline",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "S",

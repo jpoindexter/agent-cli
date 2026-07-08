@@ -68,6 +68,7 @@ import {
   routeComposerDraft,
 } from "./agentComposer";
 import type { ComposerAppCommand } from "./agentComposer";
+import { shortcutTitle } from "./shortcuts";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -174,6 +175,9 @@ function App() {
   const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
   const restoredActiveFileWorkspaceRef = useRef<string | null>(null);
   const selectedFileRef = useRef<FileTreeNode | null>(null);
+  const saveEditorFileRef = useRef<() => Promise<boolean>>(async () => false);
+  const openEditorSearchRef = useRef<() => void>(() => {});
+  const closeActiveEditorTabRef = useRef<() => Promise<void>>(async () => {});
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
   const editorBuffersRef = useRef<Record<string, EditorBuffer>>({});
@@ -850,6 +854,16 @@ function App() {
     }
   };
 
+  const closeActiveEditorTab = async () => {
+    const file = selectedFileRef.current;
+    if (!file) return;
+    await closeEditorTab(file);
+  };
+
+  saveEditorFileRef.current = saveEditorFile;
+  openEditorSearchRef.current = openEditorSearch;
+  closeActiveEditorTabRef.current = closeActiveEditorTab;
+
   const continuePendingNavigation = async (navigation: PendingNavigation) => {
     if (navigation.kind === "file") {
       await openEditorFileDirect(navigation.file, navigation.options);
@@ -1174,6 +1188,15 @@ function App() {
     const unlistenMenu = listen("menu-open-folder", () => {
       pickWorkspace();
     });
+    const unlistenMenuSave = listen("menu-save-file", () => {
+      void saveEditorFileRef.current();
+    });
+    const unlistenMenuFind = listen("menu-find-in-file", () => {
+      openEditorSearchRef.current();
+    });
+    const unlistenMenuCloseTab = listen("menu-close-editor-tab", () => {
+      void closeActiveEditorTabRef.current();
+    });
     const unlistenPaneExit = listen<PaneExit>("pane-exit", (ev) => {
       setLaunchError(ev.payload.message);
     });
@@ -1191,6 +1214,9 @@ function App() {
     return () => {
       unlisten.then((f) => f());
       unlistenMenu.then((f) => f());
+      unlistenMenuSave.then((f) => f());
+      unlistenMenuFind.then((f) => f());
+      unlistenMenuCloseTab.then((f) => f());
       unlistenPaneExit.then((f) => f());
       window.removeEventListener("keydown", onKey);
       canvas.removeEventListener("mousedown", onMouseDown);
@@ -1226,7 +1252,7 @@ function App() {
           >
             Folder
           </button>
-          <button className="rail-open-button" type="button" onClick={pickWorkspace}>
+          <button className="rail-open-button" type="button" title={shortcutTitle("workspace.open", "Open folder")} onClick={pickWorkspace}>
             Open
           </button>
         </div>
@@ -1300,7 +1326,16 @@ function App() {
       </aside>
 
       <main className="workbench">
-        <section className="editor-area" aria-label="Editor">
+        <section
+          className="editor-area"
+          aria-label="Editor"
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "w") {
+              event.preventDefault();
+              void closeActiveEditorTab();
+            }
+          }}
+        >
           <div className="editor-tabbar">
             <div className="editor-tabs" role="tablist" aria-label="Open files">
               {editorTabs.length > 0 ? (
@@ -1330,7 +1365,7 @@ function App() {
                         className="editor-tab__close"
                         type="button"
                         aria-label={`Close ${tab.name}`}
-                        title={`Close ${tab.name}`}
+                        title={shortcutTitle("editor.close-tab", `Close ${tab.name}`)}
                         onPointerDown={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -1359,13 +1394,14 @@ function App() {
                 <span className="editor-status" title={selectedFile.path}>
                   {editorLoading ? "Loading" : editorDirty ? "Unsaved" : "Saved"}
                 </span>
-                <button className="editor-command" type="button" disabled={editorLoading} title="Find and replace (Cmd+F)" onClick={openEditorSearch}>
+                <button className="editor-command" type="button" disabled={editorLoading} title={shortcutTitle("editor.find", "Find and replace")} onClick={openEditorSearch}>
                   Find
                 </button>
                 <button
                   className="editor-save"
                   type="button"
                   disabled={!editorDirty || editorSaving || editorLoading}
+                  title={shortcutTitle("editor.save", "Save")}
                   onClick={() => void saveEditorFile()}
                 >
                   {editorSaving ? "Saving" : "Save"}
@@ -1496,12 +1532,13 @@ function App() {
               <button
                 className="agent-composer__button"
                 type="button"
+                title={shortcutTitle("composer.send", "Send")}
                 disabled={composerSending || !composerDraft.trim()}
                 onClick={() => void submitComposerDraft()}
               >
                 {composerSending ? "Sending" : "Send"}
               </button>
-              <button className="agent-composer__button" type="button" onClick={() => void interruptActivePane()}>
+              <button className="agent-composer__button" type="button" title="Stop selected pane (Ctrl+C)" onClick={() => void interruptActivePane()}>
                 Stop
               </button>
             </div>
