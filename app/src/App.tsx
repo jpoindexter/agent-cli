@@ -14,14 +14,19 @@ import type { NodeRendererProps, TreeApi } from "react-arborist";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
+  forgetActiveFile,
   isMissingWorkspaceError,
+  normalizeActiveFileByWorkspace,
   normalizeRecentProjects,
   pushRecentProject,
+  rememberActiveFile,
   removeRecentProject,
 } from "./workspaceState";
+import type { ActiveFileByWorkspace } from "./workspaceState";
 import {
   clampEditorViewState,
   cursorFromText,
+  findFileTreeNode,
   fileTreeContainsPath,
   languageLabelForPath,
   pathBreadcrumbs,
@@ -147,6 +152,8 @@ function App() {
   const workspacePathRef = useRef<string | null>(null);
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
+  const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
+  const restoredActiveFileWorkspaceRef = useRef<string | null>(null);
   const selectedFileRef = useRef<FileTreeNode | null>(null);
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
@@ -224,6 +231,22 @@ function App() {
     };
   };
 
+  const persistActiveFile = async (workspace: string, filePath: string) => {
+    const store = storeRef.current;
+    const next = rememberActiveFile(activeFilesByWorkspaceRef.current, workspace, filePath);
+    activeFilesByWorkspaceRef.current = next;
+    await store?.set("activeFileByWorkspace", next);
+    await store?.save();
+  };
+
+  const clearPersistedActiveFile = async (workspace: string) => {
+    const store = storeRef.current;
+    const next = forgetActiveFile(activeFilesByWorkspaceRef.current, workspace);
+    activeFilesByWorkspaceRef.current = next;
+    await store?.set("activeFileByWorkspace", next);
+    await store?.save();
+  };
+
   const openWorkspace = async (path: string) => {
     captureCurrentEditorViewState();
     const store = storeRef.current;
@@ -234,15 +257,17 @@ function App() {
       await store?.save();
     }
     try {
-      await invoke("open_workspace", { path, profile });
+      const root = await invoke<string>("open_workspace", { path, profile });
       setLaunchError(null);
-      setWorkspacePath(path);
+      restoredActiveFileWorkspaceRef.current = null;
+      workspacePathRef.current = root;
+      setWorkspacePath(root);
       resetEditor();
       setTimeout(sendTerminalResize, 0);
-      const nextRecent = pushRecentProject(recentProjectsRef.current, path);
+      const nextRecent = pushRecentProject(recentProjectsRef.current, root);
       recentProjectsRef.current = nextRecent;
       setRecentProjects(nextRecent);
-      await store?.set("folder", path);
+      await store?.set("folder", root);
       await store?.set("recentFolders", nextRecent);
       await store?.save();
       return true;
@@ -311,6 +336,7 @@ function App() {
       setEditorBytes(result.bytes);
       const restoredForContent = clampEditorViewState(editorViewStatesRef.current[file.path], result.content.length);
       setEditorCursor(restoredForContent ? cursorFromText(result.content, restoredForContent.head) : { line: 1, column: 1 });
+      await persistActiveFile(root, file.path);
     } catch (err) {
       if (editorLoadSeq.current !== seq) return;
       setEditorText("");
@@ -390,6 +416,20 @@ function App() {
       cancelled = true;
     };
   }, [workspacePath, treeRefreshNonce]);
+
+  useEffect(() => {
+    if (!workspacePath || fileTreeLoading || fileTreeError || fileTree.length === 0 || selectedFile) return;
+    if (restoredActiveFileWorkspaceRef.current === workspacePath) return;
+    restoredActiveFileWorkspaceRef.current = workspacePath;
+    const savedActiveFile = activeFilesByWorkspaceRef.current[workspacePath];
+    if (!savedActiveFile) return;
+    const node = findFileTreeNode(fileTree, savedActiveFile);
+    if (node?.kind === "file") {
+      void openEditorFile(node);
+      return;
+    }
+    void clearPersistedActiveFile(workspacePath);
+  }, [fileTree, fileTreeError, fileTreeLoading, selectedFile, workspacePath]);
 
   const handleEditorUpdate = (update: ViewUpdate) => {
     const file = selectedFileRef.current;
@@ -511,6 +551,7 @@ function App() {
       const store = await load("workspace.json", { autoSave: true, defaults: {} });
       storeRef.current = store;
       const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
+      activeFilesByWorkspaceRef.current = normalizeActiveFileByWorkspace(await store.get<unknown>("activeFileByWorkspace"));
       recentProjectsRef.current = savedRecent;
       setRecentProjects(savedRecent);
       const last = await store.get<string>("folder");

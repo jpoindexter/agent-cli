@@ -763,24 +763,24 @@ fn watch_workspace_tree(
 
 /// Open (or switch to) a workspace folder: spawn a fresh pane in `path` using the
 /// selected launch profile and tear down the previous one. Persistence of the last
-/// folder/profile is done frontend-side.
+/// folder/profile is done frontend-side from the returned canonical workspace.
 #[tauri::command]
 fn open_workspace(
     app: AppHandle,
     state: State<PtyState>,
     path: String,
     profile: Option<LaunchProfile>,
-) -> Result<(), String> {
+) -> Result<String, String> {
     let cwd = validate_workspace_path(&path)?;
     let profile = profile.unwrap_or_default().normalized();
     preflight_profile(&profile, &cwd)?;
-    let new = spawn_pane(app, cwd, profile)?;
+    let new = spawn_pane(app, cwd.clone(), profile)?;
     if let Ok(mut guard) = state.pane.lock() {
         if let Some(mut old) = guard.replace(new) {
             let _ = old.killer.kill();
         }
     }
-    Ok(())
+    Ok(cwd)
 }
 
 /// Quote one shell token for the login-shell profile path.

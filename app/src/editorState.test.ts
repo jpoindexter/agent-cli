@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   clampEditorViewState,
   cursorFromText,
+  findFileTreeNode,
   fileTreeContainsPath,
   languageLabelForPath,
   pathBreadcrumbs,
@@ -17,17 +18,17 @@ describe("editorState helpers", () => {
   });
 
   it("finds active files in nested trees", () => {
-    expect(
-      fileTreeContainsPath(
-        [
-          {
-            path: "/work/project/src",
-            children: [{ path: "/work/project/src/App.tsx" }],
-          },
-        ],
-        "/work/project/src/App.tsx",
-      ),
-    ).toBe(true);
+    const tree = [
+      {
+        path: "/work/project/src",
+        children: [{ path: "/work/project/src/App.tsx", kind: "file" }],
+      },
+    ];
+    expect(fileTreeContainsPath(tree, "/work/project/src/App.tsx")).toBe(true);
+    expect(findFileTreeNode(tree, "/work/project/src/App.tsx")).toEqual({
+      path: "/work/project/src/App.tsx",
+      kind: "file",
+    });
   });
 
   it("reports one-based cursor positions", () => {

@@ -43,6 +43,8 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **Next active slice: ACTIVE-FILE-SYNC.** Keep rail highlight/reveal, editor title/path, watcher refresh, and workspace restore synchronized. EDITOR-PARITY-UX is verified; do not reopen it unless visual QA regresses. The remaining sync gap is persistence/restoration of active file metadata across relaunch and robust behavior when watcher refreshes remove or re-add the selected file.
 
+Progress 2026-07-08: active-file metadata is now persisted per workspace in `activeFileByWorkspace`, using the backend-returned canonical workspace root from `open_workspace`. On workspace tree load, the frontend restores the saved active file only when that exact file exists in the current tree; stale persisted paths are cleared instead of opening the wrong file. Helper coverage was added for active-file map normalization and nested file lookup. Native smoke found and fixed a `/tmp` vs `/private/tmp` canonicalization bug; the store now canonicalizes `folder` after launch. Remaining before marking `ACTIVE-FILE-SYNC` done: stronger app-level proof that the editor visibly restores the active file after relaunch, because current desktop screenshot capture was blocked by macOS space/frontmost-window behavior.
+
 ## Next (ordered)
 
 1. **ACTIVE-FILE-SYNC:** keep rail highlight/reveal, editor title/path, watcher refresh, and workspace restore synchronized.

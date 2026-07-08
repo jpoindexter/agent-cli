@@ -16,11 +16,15 @@ Current schema:
     "command": "claude",
     "args": [],
     "useLoginShell": true
+  },
+  "activeFileByWorkspace": {
+    "/absolute/path/to/workspace": "/absolute/path/to/workspace/src/file.ts"
   }
 }
 ```
 
 `folder` is the last workspace to reopen. `launchProfile` is the command the pane launches in that workspace. The default is Claude through a login shell so shell-managed paths such as `nvm` are available.
+`activeFileByWorkspace` stores the last active editor file per canonical workspace root; stale paths are ignored instead of being opened.
 
 ## Reset Path
 

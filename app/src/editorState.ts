@@ -52,6 +52,15 @@ export const pathBreadcrumbs = (root: string | null, path: string): string[] => 
 export const fileTreeContainsPath = (nodes: TreePathNode[], path: string): boolean =>
   nodes.some((node) => node.path === path || fileTreeContainsPath(node.children ?? [], path));
 
+export const findFileTreeNode = <T extends TreePathNode>(nodes: T[], path: string): T | null => {
+  for (const node of nodes) {
+    if (node.path === path) return node;
+    const found = findFileTreeNode((node.children ?? []) as T[], path);
+    if (found) return found;
+  }
+  return null;
+};
+
 export const languageLabelForPath = (path: string): string => {
   const ext = basename(path).split(".").pop()?.toLowerCase() ?? "";
   switch (ext) {

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  forgetActiveFile,
   isMissingWorkspaceError,
+  normalizeActiveFileByWorkspace,
   normalizeRecentProjects,
   pushRecentProject,
+  rememberActiveFile,
   removeRecentProject,
 } from "./workspaceState";
 
@@ -25,5 +28,17 @@ describe("workspace state helpers", () => {
     expect(isMissingWorkspaceError("Workspace folder does not exist: /missing")).toBe(true);
     expect(isMissingWorkspaceError("Workspace path is not a folder: /tmp/file")).toBe(true);
     expect(isMissingWorkspaceError("Cannot find `claude` in the login-shell PATH.")).toBe(false);
+  });
+
+  it("normalizes active file metadata by workspace", () => {
+    expect(normalizeActiveFileByWorkspace({ "/a": "/a/src/App.tsx", "/b": 42, "": "/bad" })).toEqual({
+      "/a": "/a/src/App.tsx",
+    });
+  });
+
+  it("remembers and forgets active files without touching other workspaces", () => {
+    const remembered = rememberActiveFile({ "/a": "/a/old.ts" }, "/b", "/b/src/main.ts");
+    expect(remembered).toEqual({ "/a": "/a/old.ts", "/b": "/b/src/main.ts" });
+    expect(forgetActiveFile(remembered, "/a")).toEqual({ "/b": "/b/src/main.ts" });
   });
 });
