@@ -311,13 +311,13 @@
     {
       "id": "EDITOR-RESPONSIVE-QA",
       "title": "Editor responsive screenshot QA",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "quality",
       "size": "S",
       "launch": "v0_5",
       "summary": "The userflow audit called out screenshot proof for editor states and small desktop widths before claiming parity.",
-      "done": "Capture and keep QA artifacts for selected-file, dirty-file, save-error, no-file-selected, and 1024x640/narrow-width workbench states. Screenshots must show no overlapping chrome, no unusable squeezed editor, and clear rail/editor/terminal orientation."
+      "done": "Verified 2026-07-08: npm run qa:editor captures selected, dirty, save-error, missing-file, no-file, and 1024x640 narrow workbench states into docs/qa/editor-parity/. Visual audit confirmed clear rail/editor/terminal orientation with no overlapping chrome in narrow and no-file states."
     },
     {
       "id": "EDITOR-FIND-REPLACE",
