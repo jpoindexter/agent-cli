@@ -433,7 +433,7 @@
     {
       "id": "TERMINAL-ROBUSTNESS",
       "title": "Robust terminal parity",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "core",
       "size": "M",

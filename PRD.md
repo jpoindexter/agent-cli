@@ -100,7 +100,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Editor navigation preserves active-file orientation: rail highlight/reveal, editor title/path, watcher refresh, and workspace restore stay synchronized.
 - [x] Unsaved editor work is protected: per-file view state is restored, dirty drafts survive file/project switches, save failures keep the buffer, and recovery actions are explicit.
 - [x] Editor parity is screenshot-verified for selected, dirty, save-error, no-file, and narrow-width states.
-- [ ] Terminal pane remains robust and responsive while browsing/editing files.
+- [x] Terminal pane remains robust and responsive while browsing/editing files.
 - [x] Recent projects and last workspace make reopening cheap.
 - [ ] Common file/editor/terminal actions are reachable through VS Code-style shortcuts, menu bar entries, and right-click/Control-click context menus.
 - [ ] Core chrome surfaces use a coherent token/icon system with hover, active, disabled, focus, loading, empty, and error states.

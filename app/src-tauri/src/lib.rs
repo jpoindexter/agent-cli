@@ -92,6 +92,7 @@ struct Pane {
 struct PtyState {
     pane: Mutex<Option<Pane>>,
     watcher: Mutex<Option<WorkspaceWatcher>>,
+    next_pane_id: Mutex<u64>,
 }
 
 impl PtyState {
@@ -102,6 +103,14 @@ impl PtyState {
                 let _ = pane.tx.send(msg);
             }
         }
+    }
+
+    fn allocate_pane_id(&self) -> u64 {
+        let Ok(mut guard) = self.next_pane_id.lock() else {
+            return 1;
+        };
+        *guard += 1;
+        *guard
     }
 }
 
@@ -127,9 +136,17 @@ struct Snapshot {
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
 struct PaneExit {
+    pane_id: u64,
     command: String,
     code: u32,
     message: String,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct OpenWorkspaceResponse {
+    root: String,
+    pane_id: u64,
 }
 
 struct WorkspaceWatcher {
@@ -880,17 +897,18 @@ fn open_workspace(
     state: State<PtyState>,
     path: String,
     profile: Option<LaunchProfile>,
-) -> Result<String, String> {
+) -> Result<OpenWorkspaceResponse, String> {
     let cwd = validate_workspace_path(&path)?;
     let profile = profile.unwrap_or_default().normalized();
     preflight_profile(&profile, &cwd)?;
-    let new = spawn_pane(app, cwd.clone(), profile)?;
+    let pane_id = state.allocate_pane_id();
+    let new = spawn_pane(app, cwd.clone(), profile, pane_id)?;
     if let Ok(mut guard) = state.pane.lock() {
         if let Some(mut old) = guard.replace(new) {
             let _ = old.killer.kill();
         }
     }
-    Ok(cwd)
+    Ok(OpenWorkspaceResponse { root: cwd, pane_id })
 }
 
 /// Quote one shell token for the login-shell profile path.
@@ -1156,7 +1174,12 @@ fn profile_command(profile: &LaunchProfile) -> CommandBuilder {
 /// thread forwarding pty bytes, and a terminal thread owning the `!Send` Terminal +
 /// Encoder that emits grid snapshots via `app`. Returns a launch error if the
 /// pty/process cannot start.
-fn spawn_pane(app: AppHandle, cwd: String, profile: LaunchProfile) -> Result<Pane, String> {
+fn spawn_pane(
+    app: AppHandle,
+    cwd: String,
+    profile: LaunchProfile,
+    pane_id: u64,
+) -> Result<Pane, String> {
     let pty_system = native_pty_system();
     let pair = pty_system
         .openpty(PtySize {
@@ -1228,6 +1251,7 @@ fn spawn_pane(app: AppHandle, cwd: String, profile: LaunchProfile) -> Result<Pan
         let _ = app_exit.emit(
             "pane-exit",
             PaneExit {
+                pane_id,
                 command: command_name,
                 code,
                 message,
@@ -1417,6 +1441,7 @@ pub fn run() {
             app.manage(PtyState {
                 pane: Mutex::new(None),
                 watcher: Mutex::new(None),
+                next_pane_id: Mutex::new(0),
             });
             Ok(())
         })
@@ -1446,13 +1471,25 @@ mod tests {
     use std::fs;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    fn encode_key(code: &str, shift: bool, alt: bool, ctrl: bool) -> Vec<u8> {
-        let term = Terminal::new(Options {
-            cols: INIT_COLS,
-            rows: INIT_ROWS,
+    fn test_terminal(cols: u16, rows: u16) -> Terminal<'static, 'static> {
+        Terminal::new(Options {
+            cols,
+            rows,
             max_scrollback: 100,
         })
-        .expect("create terminal");
+        .expect("create terminal")
+    }
+
+    fn snapshot_line(snapshot: &Snapshot, row: usize) -> String {
+        let cols = snapshot.cols as usize;
+        snapshot.cells[row * cols..(row + 1) * cols]
+            .iter()
+            .map(|cell| cell.t.as_str())
+            .collect::<String>()
+    }
+
+    fn encode_key(code: &str, shift: bool, alt: bool, ctrl: bool) -> Vec<u8> {
+        let term = test_terminal(INIT_COLS, INIT_ROWS);
         let mut encoder = Encoder::new().expect("create encoder");
         encoder.set_macos_option_as_alt(OptionAsAlt::True);
         let mut scratch = Vec::new();
@@ -1475,6 +1512,71 @@ mod tests {
     #[test]
     fn cmd_k_menu_clear_encodes_ctrl_l() {
         assert_eq!(encode_key("KeyL", false, false, true), vec![0x0c]);
+    }
+
+    #[test]
+    fn snapshot_resolves_ansi_truecolor_cells() {
+        let mut term = test_terminal(10, 4);
+        term.vt_write(b"\x1b[38;2;1;2;3;48;2;4;5;6mX");
+
+        let snap = snapshot(&term);
+        let cell = &snap.cells[0];
+        assert_eq!(cell.t, "X");
+        assert_eq!(cell.f, [1, 2, 3]);
+        assert_eq!(cell.b, [4, 5, 6]);
+    }
+
+    #[test]
+    fn snapshot_reads_alternate_screen_and_restores_main_screen() {
+        let mut term = test_terminal(12, 4);
+        term.vt_write(b"main\x1b[?1049hALT");
+
+        let alt = snapshot(&term);
+        assert!(snapshot_line(&alt, 0).contains("ALT"));
+
+        term.vt_write(b"\x1b[?1049l");
+        let main = snapshot(&term);
+        assert!(snapshot_line(&main, 0).starts_with("main"));
+    }
+
+    #[test]
+    fn terminal_resize_updates_snapshot_dimensions() {
+        let mut term = test_terminal(10, 4);
+        term.resize(132, 40, 0, 0).expect("resize terminal");
+
+        let snap = snapshot(&term);
+        assert_eq!(snap.cols, 132);
+        assert_eq!(snap.rows, 40);
+        assert_eq!(snap.cells.len(), 132 * 40);
+    }
+
+    #[test]
+    fn fast_output_preserves_scrollback_and_live_tail() {
+        let mut term = test_terminal(24, 5);
+        for i in 0..300 {
+            term.vt_write(format!("line {i:03}\r\n").as_bytes());
+        }
+
+        let snap = snapshot(&term);
+        assert!(snap.sb > 0);
+        let visible = (0..snap.rows as usize)
+            .map(|row| snapshot_line(&snap, row))
+            .collect::<Vec<_>>()
+            .join("\n");
+        assert!(visible.contains("line 299"));
+    }
+
+    #[test]
+    fn bracketed_paste_wraps_payload_when_terminal_mode_is_enabled() {
+        let mut term = test_terminal(10, 4);
+        term.vt_write(b"\x1b[?2004h");
+        let mut out = Vec::new();
+
+        handle_paste(&term, &mut out, "hello\n".into());
+
+        assert!(out.starts_with(b"\x1b[200~"));
+        assert!(out.ends_with(b"\x1b[201~"));
+        assert!(out.windows(5).any(|window| window == b"hello"));
     }
 
     #[test]

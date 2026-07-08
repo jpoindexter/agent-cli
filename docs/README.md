@@ -23,6 +23,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 
 - `chrome-ui-polish.md`: workbench chrome quality bar.
 - `editor-terminal-parity.md`: editor and terminal parity criteria.
+- `terminal-robustness.md`: v0.5 terminal runtime evidence and checklist.
 - `agent-activity-timeline.md`: user-visible agent activity events.
 - `local-state.md`: Tauri Store path, schema, and reset steps.
 - `qa/`: repeatable screenshot fixtures and captures.

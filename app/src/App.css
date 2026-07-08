@@ -725,7 +725,8 @@ body,
 }
 
 .terminal-command,
-.terminal-mode {
+.terminal-mode,
+.terminal-cwd {
   overflow: hidden;
   color: #858585;
   font-size: 11px;
@@ -739,6 +740,41 @@ body,
 
 .terminal-mode {
   flex: 0 0 auto;
+}
+
+.terminal-state {
+  flex: 0 0 auto;
+  border: 1px solid #3c3c3c;
+  border-radius: 999px;
+  color: #d0d0d0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 0 7px;
+}
+
+.terminal-state--running {
+  border-color: #315f42;
+  color: #8fd9a3;
+}
+
+.terminal-state--starting {
+  border-color: #5e5131;
+  color: #e2c879;
+}
+
+.terminal-state--exited,
+.terminal-state--error {
+  border-color: #63313a;
+  color: #ffb5c0;
+}
+
+.terminal-state--idle {
+  color: #858585;
+}
+
+.terminal-cwd {
+  max-width: min(22vw, 220px);
 }
 
 .terminal-profile-picker {

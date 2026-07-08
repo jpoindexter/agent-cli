@@ -69,6 +69,8 @@ import {
 } from "./agentComposer";
 import type { ComposerAppCommand } from "./agentComposer";
 import { shortcutTitle } from "./shortcuts";
+import { terminalPaneCwdLabel, terminalPaneStateLabel } from "./terminalPane";
+import type { TerminalPaneState } from "./terminalPane";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -76,7 +78,8 @@ import "./App.css";
 
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
-type PaneExit = { command: string; code: number; message: string };
+type PaneExit = { paneId: number; command: string; code: number; message: string };
+type OpenWorkspaceResponse = { root: string; paneId: number };
 type FileTreeNode = {
   id: string;
   name: string;
@@ -172,6 +175,7 @@ function App() {
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
+  const terminalPaneIdRef = useRef<number | null>(null);
   const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
   const restoredActiveFileWorkspaceRef = useRef<string | null>(null);
   const selectedFileRef = useRef<FileTreeNode | null>(null);
@@ -191,6 +195,8 @@ function App() {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launchProfile, setLaunchProfile] = useState<LaunchProfile>(defaultLaunchProfile);
   const [launchProfileChanging, setLaunchProfileChanging] = useState(false);
+  const [terminalPaneState, setTerminalPaneState] = useState<TerminalPaneState>("idle");
+  const [terminalExitCode, setTerminalExitCode] = useState<number | null>(null);
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
   const [fileTreeError, setFileTreeError] = useState<string | null>(null);
@@ -236,6 +242,7 @@ function App() {
     [selectedFile, workspacePath],
   );
   const editorLanguage = selectedFile ? languageLabelForPath(selectedFile.path) : "No file";
+  const terminalStatusLabel = terminalPaneStateLabel(terminalPaneState, terminalExitCode);
   const visibleFileTree = useMemo(
     () => markDirtyFile(fileTree, dirtyTabPathSet),
     [fileTree, dirtyTabPathSet],
@@ -346,9 +353,17 @@ function App() {
     captureCurrentEditorViewState();
     const store = storeRef.current;
     const profile = profileOverride;
+    const previousPaneState = terminalPaneState;
+    const previousExitCode = terminalExitCode;
+    const hadPreviousPane = terminalPaneIdRef.current != null;
+    setTerminalPaneState("starting");
+    setTerminalExitCode(null);
     try {
-      const root = await invoke<string>("open_workspace", { path, profile });
+      const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile });
+      const root = result.root;
+      terminalPaneIdRef.current = result.paneId;
       setLaunchError(null);
+      setTerminalPaneState("running");
       restoredActiveFileWorkspaceRef.current = null;
       workspacePathRef.current = root;
       setWorkspacePath(root);
@@ -365,6 +380,8 @@ function App() {
     } catch (err) {
       const message = String(err);
       setLaunchError(message);
+      setTerminalPaneState(hadPreviousPane ? previousPaneState : "error");
+      setTerminalExitCode(hadPreviousPane ? previousExitCode : null);
       if (isMissingWorkspaceError(message)) {
         const nextRecent = removeRecentProject(recentProjectsRef.current, path);
         recentProjectsRef.current = nextRecent;
@@ -502,9 +519,16 @@ function App() {
       return;
     }
     setLaunchProfileChanging(true);
+    const previousPaneState = terminalPaneState;
+    const previousExitCode = terminalExitCode;
+    const hadPreviousPane = terminalPaneIdRef.current != null;
+    setTerminalPaneState("starting");
+    setTerminalExitCode(null);
     try {
-      await invoke<string>("open_workspace", { path: root, profile });
+      const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path: root, profile });
+      terminalPaneIdRef.current = result.paneId;
       setLaunchError(null);
+      setTerminalPaneState("running");
       launchProfileRef.current = profile;
       setLaunchProfile(profile);
       await store?.set("launchProfile", profile);
@@ -512,6 +536,8 @@ function App() {
       setTimeout(sendTerminalResize, 0);
     } catch (err) {
       setLaunchError(String(err));
+      setTerminalPaneState(hadPreviousPane ? previousPaneState : "error");
+      setTerminalExitCode(hadPreviousPane ? previousExitCode : null);
     } finally {
       setLaunchProfileChanging(false);
     }
@@ -1198,6 +1224,9 @@ function App() {
       void closeActiveEditorTabRef.current();
     });
     const unlistenPaneExit = listen<PaneExit>("pane-exit", (ev) => {
+      if (ev.payload.paneId !== terminalPaneIdRef.current) return;
+      setTerminalPaneState("exited");
+      setTerminalExitCode(ev.payload.code);
       setLaunchError(ev.payload.message);
     });
 
@@ -1477,6 +1506,10 @@ function App() {
                 {launchProfileCommandLine(launchProfile)}
               </span>
               <span className="terminal-mode">{launchProfileMode(launchProfile)}</span>
+              <span className={`terminal-state terminal-state--${terminalPaneState}`}>{terminalStatusLabel}</span>
+              <span className="terminal-cwd" title={workspacePath ?? ""}>
+                {terminalPaneCwdLabel(workspacePath)}
+              </span>
             </div>
             <label className="terminal-profile-picker">
               <span className="terminal-profile-picker__label">Profile</span>
