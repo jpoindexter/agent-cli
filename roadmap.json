@@ -467,13 +467,13 @@
     {
       "id": "ICON-SYSTEM",
       "title": "Codex-quality icon and status system",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "M",
       "launch": "v0_5",
       "summary": "The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.",
-      "done": "A single SVG/icon system covers primary actions and object types; selected states use filled/active treatment; non-universal icons have labels or tooltips; status badges cover thinking/running/waiting/error/exited/complete with accessible names."
+      "done": "Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, context menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Browser, git/diff, source-host, and multi-pane icons remain deferred until those surfaces exist."
     },
     {
       "id": "ACCESSIBILITY-BASICS",

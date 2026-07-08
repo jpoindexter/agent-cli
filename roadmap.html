@@ -200,6 +200,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">CHROME-POLISH-SYSTEM &middot; Codex-level chrome polish system</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Define the workbench chrome system before more surfaces drift: dense rails, calm dark surfaces, tokens, menus, badges, pane headers, settings/sidebar rhythm, command palette, toasts, and restrained motion.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-09: current v0.5 chrome uses primitive -&gt; semantic -&gt; component CSS tokens, shared control/menu/badge/field/overlay states, visible focus, disabled/danger/success/warning states, reduced-motion handling, and screenshot QA for one-project workbench, context menu, recovery alerts, narrow layout, and a chrome state palette. Icon replacement remains ICON-SYSTEM; settings, command palette, browser, and diff/review surfaces consume these tokens when their cards create real UI.</p></details></div>
+<div class="card" data-track="ui" data-id="ICON-SYSTEM" data-size="M" data-tier="pebble" data-launch="v0_5">
+<div class="hd"><span class="sz">M</span><span class="ttl">ICON-SYSTEM &middot; Codex-quality icon and status system</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, context menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Browser, git/diff, source-host, and multi-pane icons remain deferred until those surfaces exist.</p></details></div>
 </div>
 <div class="tg t-sand"><h3>Sand · glue &amp; polish</h3>
 <div class="card" data-track="quality" data-id="PRODUCT-NAME-README" data-size="S" data-tier="sand" data-launch="v0_5">
@@ -262,10 +266,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">Stage file, unstage file, discard file with confirmation, and copy diff are available from file status/diff surfaces.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="ui" data-id="ICON-SYSTEM" data-size="M" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">M</span><span class="ttl">ICON-SYSTEM &middot; Codex-quality icon and status system</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.</p>
-<details><summary>Done criteria</summary><p class="done">A single SVG/icon system covers primary actions and object types; selected states use filled/active treatment; non-universal icons have labels or tooltips; status badges cover thinking/running/waiting/error/exited/complete with accessible names.</p></details></div>
 <div class="card" data-track="ui" data-id="ACCESSIBILITY-BASICS" data-size="S" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">S</span><span class="ttl">ACCESSIBILITY-BASICS &middot; Keyboard and focus accessibility baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">A dense tool still needs visible focus, keyboard reachability, and labelled controls so it can be used without pointer precision.</p>

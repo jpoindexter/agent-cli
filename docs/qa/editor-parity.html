@@ -123,42 +123,62 @@
     </style>
   </head>
   <body>
+    <svg style="display: none" aria-hidden="true">
+      <symbol id="i-agent" viewBox="0 0 24 24"><path d="M12 8V4m-5 8H5m14 0h-2m-2 7H9a5 5 0 0 1-5-5v-3a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5v3a5 5 0 0 1-5 5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 13h.01M15 13h.01" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-close" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-file-plus" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v5h5M12 11v6M9 14h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-folder-plus" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v6M9 13h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><path d="m21 21-4.3-4.3M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 3h12l2 2v16H5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 3v6h8V3M8 21v-7h8v7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-send" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M22 2 11 13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-stop" viewBox="0 0 24 24"><path d="M7 7h10v10H7Z" fill="currentColor"/></symbol>
+      <symbol id="i-workspace" viewBox="0 0 24 24"><path d="M3 6h18v12H3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 21h8M12 18v3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-loading" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6-8.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-thinking" viewBox="0 0 24 24"><path d="M9 3a4 4 0 0 0-3.7 5.5A4.5 4.5 0 0 0 7 17h1v3h8v-3h1a4.5 4.5 0 0 0 1.7-8.5A4 4 0 0 0 15 3a4 4 0 0 0-3 1.3A4 4 0 0 0 9 3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+      <symbol id="i-waiting" viewBox="0 0 24 24"><path d="M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+      <symbol id="i-error" viewBox="0 0 24 24"><path d="M12 8v5M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    </svg>
     <div class="app-shell" data-qa="editor-parity-shell">
       <aside class="file-rail" aria-label="Project files">
         <div class="panel-title panel-title--with-action">
           <span>Files</span>
-          <button class="rail-open-button" type="button" title="New file">File</button>
-          <button class="rail-open-button" type="button" title="New folder">Folder</button>
-          <button class="rail-open-button" type="button">Open</button>
+          <button class="rail-open-button" type="button" title="New file"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>File</span></button>
+          <button class="rail-open-button" type="button" title="New folder"><svg class="app-icon"><use href="#i-folder-plus" /></svg><span>Folder</span></button>
+          <button class="rail-open-button" type="button"><svg class="app-icon"><use href="#i-folder" /></svg><span>Open</span></button>
         </div>
         <div class="rail-root" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">
-          <button class="rail-root__button" type="button">agent cli</button>
+          <button class="rail-root__button" type="button"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></button>
         </div>
         <div class="rail-tree">
           <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true">▾</span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-down" /></svg></span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
             <span class="file-node__name">app</span>
           </div>
           <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true">▾</span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-down" /></svg></span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
             <span class="file-node__name">src</span>
           </div>
           <div class="file-node file-node--selected" style="padding-left: 28px">
             <span class="file-node__twisty" aria-hidden="true"></span>
-            <span class="file-node__icon file-node__icon--file" aria-hidden="true">·</span>
+            <span class="file-node__icon file-node__icon--file" aria-hidden="true"><svg class="app-icon"><use href="#i-file" /></svg></span>
             <span class="file-node__name">App.tsx</span>
             <span class="file-node__dirty" aria-label="Unsaved changes"></span>
           </div>
           <div class="file-node" style="padding-left: 28px">
             <span class="file-node__twisty" aria-hidden="true"></span>
-            <span class="file-node__icon file-node__icon--file" aria-hidden="true">·</span>
+            <span class="file-node__icon file-node__icon--file" aria-hidden="true"><svg class="app-icon"><use href="#i-file" /></svg></span>
             <span class="file-node__name">editorState.ts</span>
           </div>
           <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true">▸</span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-right" /></svg></span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
             <span class="file-node__name">src-tauri</span>
           </div>
         </div>
@@ -172,19 +192,19 @@
                   <span class="editor-tab__name">App.tsx</span>
                   <span class="editor-tab__dirty" aria-label="Unsaved changes"></span>
                 </button>
-                <button class="editor-tab__close" type="button" aria-label="Close App.tsx">×</button>
+                <button class="editor-tab__close" type="button" aria-label="Close App.tsx"><svg class="app-icon"><use href="#i-close" /></svg></button>
               </div>
               <div class="editor-tab" role="tab" aria-selected="false" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli/app/src/editorTabs.ts">
                 <button class="editor-tab__activate" type="button">
                   <span class="editor-tab__name">editorTabs.ts</span>
                 </button>
-                <button class="editor-tab__close" type="button" aria-label="Close editorTabs.ts">×</button>
+                <button class="editor-tab__close" type="button" aria-label="Close editorTabs.ts"><svg class="app-icon"><use href="#i-close" /></svg></button>
               </div>
               <div class="editor-tab" role="tab" aria-selected="false" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli/app/src/editorState.ts">
                 <button class="editor-tab__activate" type="button">
                   <span class="editor-tab__name">editorState.ts</span>
                 </button>
-                <button class="editor-tab__close" type="button" aria-label="Close editorState.ts">×</button>
+                <button class="editor-tab__close" type="button" aria-label="Close editorState.ts"><svg class="app-icon"><use href="#i-close" /></svg></button>
               </div>
             </div>
             <div class="editor-actions">
@@ -193,8 +213,8 @@
               <span class="editor-meta">18.4 KB</span>
               <span class="editor-meta">Ln 42, Col 17</span>
               <span class="editor-status">Unsaved</span>
-              <button class="editor-command" type="button">Find</button>
-              <button class="editor-save" type="button">Save</button>
+              <button class="editor-command" type="button"><svg class="app-icon"><use href="#i-search" /></svg><span>Find</span></button>
+              <button class="editor-save" type="button"><svg class="app-icon"><use href="#i-save" /></svg><span>Save</span></button>
             </div>
           </div>
           <nav class="editor-pathbar" aria-label="Active file path" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli/app/src/App.tsx">
@@ -234,10 +254,10 @@
           <div class="terminal-titlebar">
             <div class="terminal-profile">
               <span class="terminal-kicker">Agent</span>
-              <span class="terminal-title">Claude</span>
+              <span class="terminal-title"><svg class="app-icon"><use href="#i-agent" /></svg><span>Claude</span></span>
               <span class="terminal-command">claude</span>
               <span class="terminal-mode">login shell</span>
-              <span class="terminal-state terminal-state--running">Running</span>
+              <span class="terminal-state terminal-state--running"><svg class="app-icon"><use href="#i-loading" /></svg><span>Running</span></span>
               <span class="terminal-cwd" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">agent cli</span>
             </div>
             <label class="terminal-profile-picker">
@@ -255,14 +275,14 @@
           <div class="agent-composer" aria-label="Agent composer">
             <div class="agent-composer__target" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">
               <span>Target</span>
-              <strong>Claude</strong>
+              <strong><svg class="app-icon"><use href="#i-agent" /></svg><span>Claude</span></strong>
               <span>agent cli</span>
               <span>single pane</span>
             </div>
             <textarea class="agent-composer__input" rows="2" placeholder="Send to selected agent. Use >save, >find, >open, or >clear for app actions.">Summarize the selected file and propose the next edit.</textarea>
             <div class="agent-composer__actions">
-              <button class="agent-composer__button" type="button">Send</button>
-              <button class="agent-composer__button" type="button">Stop</button>
+              <button class="agent-composer__button" type="button"><svg class="app-icon"><use href="#i-send" /></svg><span>Send</span></button>
+              <button class="agent-composer__button" type="button"><svg class="app-icon"><use href="#i-stop" /></svg><span>Stop</span></button>
             </div>
           </div>
         </section>
@@ -304,19 +324,19 @@
           "beforeend",
           `<div class="context-menu" role="menu" style="left: 508px; top: 126px">
             <button class="context-menu__item" type="button" role="menuitem" disabled>
-              <span>Save</span><span class="context-menu__shortcut">Cmd+S</span>
+              <span class="context-menu__label"><svg class="app-icon"><use href="#i-save" /></svg><span>Save</span></span><span class="context-menu__shortcut">Cmd+S</span>
             </button>
             <button class="context-menu__item" type="button" role="menuitem">
-              <span>Find and Replace</span><span class="context-menu__shortcut">Cmd+F / F3 / Cmd+G / Shift+Cmd+G</span>
+              <span class="context-menu__label"><svg class="app-icon"><use href="#i-search" /></svg><span>Find and Replace</span></span><span class="context-menu__shortcut">Cmd+F / F3 / Cmd+G / Shift+Cmd+G</span>
             </button>
             <button class="context-menu__item" type="button" role="menuitem">
-              <span>Open Externally</span>
+              <span class="context-menu__label"><svg class="app-icon"><use href="#i-file" /></svg><span>Open Externally</span></span>
             </button>
             <button class="context-menu__item" type="button" role="menuitem">
-              <span>Reveal in Finder</span>
+              <span class="context-menu__label"><svg class="app-icon"><use href="#i-folder" /></svg><span>Reveal in Finder</span></span>
             </button>
             <button class="context-menu__item" type="button" role="menuitem">
-              <span>Copy File Path</span>
+              <span class="context-menu__label"><svg class="app-icon"><use href="#i-file" /></svg><span>Copy File Path</span></span>
             </button>
           </div>`,
         );
@@ -328,10 +348,15 @@
           `<div class="chrome-state-palette" aria-label="Chrome state palette">
             <div class="chrome-state-palette__title">Chrome states</div>
             <div class="chrome-state-palette__row">
-              <span class="terminal-state terminal-state--running">Running</span>
-              <span class="terminal-state terminal-state--starting">Starting</span>
-              <span class="terminal-state terminal-state--exited">Exited</span>
-              <span class="terminal-state terminal-state--idle">Idle</span>
+              <span class="terminal-state terminal-state--thinking"><svg class="app-icon"><use href="#i-thinking" /></svg><span>Thinking</span></span>
+              <span class="terminal-state terminal-state--running"><svg class="app-icon"><use href="#i-loading" /></svg><span>Running</span></span>
+              <span class="terminal-state terminal-state--waiting"><svg class="app-icon"><use href="#i-waiting" /></svg><span>Waiting</span></span>
+              <span class="terminal-state terminal-state--exited"><svg class="app-icon"><use href="#i-error" /></svg><span>Exited</span></span>
+              <span class="terminal-state terminal-state--complete"><svg class="app-icon"><use href="#i-check" /></svg><span>Complete</span></span>
+            </div>
+            <div class="chrome-state-palette__row">
+              <span class="terminal-state terminal-state--error"><svg class="app-icon"><use href="#i-error" /></svg><span>Error</span></span>
+              <span class="terminal-state terminal-state--idle"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Idle</span></span>
             </div>
             <div class="chrome-state-palette__row">
               <span class="editor-badge editor-badge--warn">Missing from tree</span>
@@ -345,7 +370,7 @@
             </div>
             <div class="chrome-state-palette__row">
               <button class="context-menu__item" type="button" disabled>
-                <span>Disabled item</span><span class="context-menu__shortcut">Cmd+S</span>
+                <span class="context-menu__label"><svg class="app-icon"><use href="#i-save" /></svg><span>Disabled item</span></span><span class="context-menu__shortcut">Cmd+S</span>
               </button>
             </div>
             <div class="draft-modal__error">Recovery text uses the shared danger surface.</div>

@@ -29,6 +29,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-store": "^2.4.3",
     "@uiw/react-codemirror": "^4.25.11",
+    "lucide-react": "^1.23.0",
     "react": "^19.1.0",
     "react-arborist": "^3.13.2",
     "react-dom": "^19.1.0"
