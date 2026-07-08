@@ -1,10 +1,10 @@
-# STATE — agent cli (handoff 2026-07-08 18:23)
+# STATE — agent cli (handoff 2026-07-08 18:34)
 
 Mirror of `~/Documents/Obsidian Vault/ops/handoffs/handoff-2026-07-08-1519-agent-cli-folder-picker.md`. Overwrite on each handoff.
 
 ## Goal
 
-Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code workflow (file-explorer rail + CodeMirror editor + real `claude`/`codex` CLI terminal panes), built on Ghostty's terminal engine. Current work: starting recent-projects switching.
+Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code workflow (file-explorer rail + CodeMirror editor + real `claude`/`codex` CLI terminal panes), built on Ghostty's terminal engine. Current work: finishing recent-projects switching.
 
 ## Done
 
@@ -23,7 +23,7 @@ Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## In progress
 
-**Next active slice: RECENT-PROJECTS.** File rail/watch are verified. Add a small recent-projects list so switching active workspaces does not require the native folder picker every time.
+**Next active slice: RECENT-PROJECTS.** Implementation is in but the full user click path is not yet verified. Added `recentFolders` persistence in `workspace.json`, a compact recent-projects rail section, an Open button sharing the native picker path, recent-list dedupe/cap/prune helpers, and tests for recent-state behavior. Verified so far: `npm run build`, `npm test` (2 files, 7 tests), `cargo test` (12 Rust tests), `cargo build`, and specific app-window screenshot showing a seeded recent project (`postures`) in the rail. Not yet verified: automated click on the recent row successfully switches workspace; coordinate click attempts hit the current-project area instead.
 
 ## Next (ordered)
 
@@ -48,4 +48,4 @@ Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## Continuation prompt (for Codex)
 
-Continue agent cli: read `STATE.md`, `ROADMAP.md`, and `DECISIONS.md` at the repo root, then resume at "Next" step 1 — RECENT-PROJECTS. v0 is verified, and v0.5 has APP-SHELL + FILE-RAIL + FILE-WATCHER verified. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Respect the Execution discipline in ROADMAP: one slice at a time, app runnable every commit, measure-don't-preempt.
+Continue agent cli: read `STATE.md`, `ROADMAP.md`, and `DECISIONS.md` at the repo root, then resume at "Next" step 1 — RECENT-PROJECTS. The implementation is mostly in; finish by verifying the actual click-to-switch user path or adjusting the UI so it is machine- and keyboard-verifiable, then mark RECENT-PROJECTS done only after that. v0 is verified, and v0.5 has APP-SHELL + FILE-RAIL + FILE-WATCHER verified. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Respect the Execution discipline in ROADMAP: one slice at a time, app runnable every commit, measure-don't-preempt.

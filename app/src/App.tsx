@@ -8,6 +8,12 @@ import { Tree } from "react-arborist";
 import type { NodeRendererProps } from "react-arborist";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
+import {
+  isMissingWorkspaceError,
+  normalizeRecentProjects,
+  pushRecentProject,
+  removeRecentProject,
+} from "./workspaceState";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -77,6 +83,8 @@ function App() {
   const terminalHostRef = useRef<HTMLDivElement>(null);
   const railBodyRef = useRef<HTMLDivElement>(null);
   const workspacePathRef = useRef<string | null>(null);
+  const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
+  const recentProjectsRef = useRef<string[]>([]);
   const latest = useRef<Snapshot | null>(null);
   const frame = useRef<number | null>(null);
   const metrics = useRef({ cw: 9, ch: 19 });
@@ -91,6 +99,77 @@ function App() {
   const [treeRefreshNonce, setTreeRefreshNonce] = useState(0);
   const [railHeight, setRailHeight] = useState(240);
   const [selectedFile, setSelectedFile] = useState<FileTreeNode | null>(null);
+  const [recentProjects, setRecentProjects] = useState<string[]>([]);
+
+  useEffect(() => {
+    recentProjectsRef.current = recentProjects;
+  }, [recentProjects]);
+
+  const openWorkspace = async (path: string) => {
+    const store = storeRef.current;
+    const saved = await store?.get<unknown>("launchProfile");
+    const profile = normalizeLaunchProfile(saved);
+    if (!saved) {
+      await store?.set("launchProfile", profile);
+      await store?.save();
+    }
+    try {
+      await invoke("open_workspace", { path, profile });
+      setLaunchError(null);
+      setWorkspacePath(path);
+      setSelectedFile(null);
+      setTimeout(sendTerminalResize, 0);
+      const nextRecent = pushRecentProject(recentProjectsRef.current, path);
+      recentProjectsRef.current = nextRecent;
+      setRecentProjects(nextRecent);
+      await store?.set("folder", path);
+      await store?.set("recentFolders", nextRecent);
+      await store?.save();
+      return true;
+    } catch (err) {
+      const message = String(err);
+      setLaunchError(message);
+      if (isMissingWorkspaceError(message)) {
+        const nextRecent = removeRecentProject(recentProjectsRef.current, path);
+        recentProjectsRef.current = nextRecent;
+        setRecentProjects(nextRecent);
+        await store?.set("recentFolders", nextRecent);
+        if (workspacePathRef.current === path) {
+          setWorkspacePath(null);
+          setFileTree([]);
+          setSelectedFile(null);
+        }
+        await store?.delete("folder");
+        await store?.save();
+      }
+      return false;
+    }
+  };
+
+  const pickWorkspace = async () => {
+    const dir = await open({ directory: true });
+    if (typeof dir !== "string") return;
+    await openWorkspace(dir);
+  };
+
+  const terminalSize = () => {
+    const rect = terminalHostRef.current?.getBoundingClientRect();
+    if (rect && rect.width > 0 && rect.height > 0) {
+      return { width: rect.width, height: rect.height };
+    }
+    return { width: window.innerWidth, height: window.innerHeight };
+  };
+
+  const sendTerminalResize = () => {
+    const { cw, ch } = metrics.current;
+    const { width, height } = terminalSize();
+    const cols = Math.max(2, Math.floor(width / cw));
+    const rows = Math.max(2, Math.floor(height / ch));
+    invoke("resize_pty", { cols, rows }).catch(() => {});
+  };
+
+  const visibleRecentProjects = recentProjects.filter((project) => project !== workspacePath).slice(0, 3);
+  const hiddenRecentCount = Math.max(0, recentProjects.filter((project) => project !== workspacePath).length - visibleRecentProjects.length);
 
   useEffect(() => {
     workspacePathRef.current = workspacePath;
@@ -219,22 +298,6 @@ function App() {
       await initWorkspace();
     };
 
-    const terminalSize = () => {
-      const rect = terminalHostRef.current?.getBoundingClientRect();
-      if (rect && rect.width > 0 && rect.height > 0) {
-        return { width: rect.width, height: rect.height };
-      }
-      return { width: window.innerWidth, height: window.innerHeight };
-    };
-
-    const sendResize = () => {
-      const { cw, ch } = metrics.current;
-      const { width, height } = terminalSize();
-      const cols = Math.max(2, Math.floor(width / cw));
-      const rows = Math.max(2, Math.floor(height / ch));
-      invoke("resize_pty", { cols, rows }).catch(() => {});
-    };
-
     const scrollViewport = (delta: number) => {
       if (!Number.isFinite(delta) || delta === 0) return;
       selection.current = null;
@@ -244,46 +307,17 @@ function App() {
 
     // Workspace: reopen the last folder on startup, else prompt. Opening a folder
     // spawns the selected launch profile in it (backend `open_workspace`) and
-    // persists the choice.
-    let store: Awaited<ReturnType<typeof load>> | null = null;
-
-    const launchProfile = async () => {
-      const saved = await store?.get<unknown>("launchProfile");
-      const profile = normalizeLaunchProfile(saved);
-      if (!saved) {
-        await store?.set("launchProfile", profile);
-        await store?.save();
-      }
-      return profile;
-    };
-
-    const openFolder = async (path: string) => {
-      try {
-        await invoke("open_workspace", { path, profile: await launchProfile() });
-        setLaunchError(null);
-        setWorkspacePath(path);
-        sendResize(); // size the fresh pane to the current window
-        return true;
-      } catch (err) {
-        setLaunchError(String(err));
-        return false;
-      }
-    };
-
-    const pickFolder = async () => {
-      const dir = await open({ directory: true });
-      if (typeof dir !== "string") return;
-      const opened = await openFolder(dir);
-      if (!opened) return;
-      await store?.set("folder", dir);
-      await store?.save();
-    };
-
+    // persists both the active folder and recent-projects list.
     const initWorkspace = async () => {
-      store = await load("workspace.json", { autoSave: true, defaults: {} });
+      const store = await load("workspace.json", { autoSave: true, defaults: {} });
+      storeRef.current = store;
+      const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
+      recentProjectsRef.current = savedRecent;
+      setRecentProjects(savedRecent);
       const last = await store.get<string>("folder");
-      if (last) await openFolder(last);
-      else await pickFolder();
+      if (last) await openWorkspace(last);
+      else await pickWorkspace();
+      sendTerminalResize();
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -382,7 +416,7 @@ function App() {
       requestPaint();
     });
     const unlistenMenu = listen("menu-open-folder", () => {
-      pickFolder();
+      pickWorkspace();
     });
     const unlistenPaneExit = listen<PaneExit>("pane-exit", (ev) => {
       setLaunchError(ev.payload.message);
@@ -393,9 +427,9 @@ function App() {
     canvas.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
-    const resizeObserver = new ResizeObserver(sendResize);
+    const resizeObserver = new ResizeObserver(sendTerminalResize);
     if (terminalHostRef.current) resizeObserver.observe(terminalHostRef.current);
-    window.addEventListener("resize", sendResize);
+    window.addEventListener("resize", sendTerminalResize);
     setup();
 
     return () => {
@@ -407,7 +441,7 @@ function App() {
       canvas.removeEventListener("wheel", onWheel);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("resize", sendResize);
+      window.removeEventListener("resize", sendTerminalResize);
       resizeObserver.disconnect();
       if (frame.current != null) cancelAnimationFrame(frame.current);
     };
@@ -416,10 +450,34 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="file-rail" aria-label="Project files">
-        <div className="panel-title">Files</div>
+        <div className="panel-title panel-title--with-action">
+          <span>Files</span>
+          <button className="rail-open-button" type="button" onClick={pickWorkspace}>
+            Open
+          </button>
+        </div>
         <div className="rail-root" title={workspacePath ?? ""}>
           {workspacePath ? basename(workspacePath) : "No workspace"}
         </div>
+        {visibleRecentProjects.length > 0 ? (
+          <div className="recent-projects" aria-label="Recent projects">
+            {visibleRecentProjects.map((project) => (
+              <button
+                className="recent-project"
+                type="button"
+                key={project}
+                title={project}
+                onClick={() => {
+                  void openWorkspace(project);
+                }}
+              >
+                <span className="recent-project__name">{basename(project)}</span>
+                <span className="recent-project__path">{project}</span>
+              </button>
+            ))}
+            {hiddenRecentCount > 0 ? <div className="rail-status rail-status--muted">{hiddenRecentCount} more hidden</div> : null}
+          </div>
+        ) : null}
         <div ref={railBodyRef} className="rail-tree">
           {fileTreeLoading ? <div className="rail-status">Loading…</div> : null}
           {fileTreeError ? <div className="rail-status rail-status--error">{fileTreeError}</div> : null}

@@ -57,6 +57,37 @@ body,
   text-transform: uppercase;
 }
 
+.panel-title--with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0;
+}
+
+.rail-open-button {
+  border: 1px solid #3c3c3c;
+  border-radius: 5px;
+  background: #282828;
+  color: #dcdcdc;
+  cursor: default;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 20px;
+  padding: 0 8px;
+  text-transform: none;
+}
+
+.rail-open-button:hover {
+  background: #323232;
+}
+
+.rail-open-button:focus-visible,
+.recent-project:focus-visible {
+  outline: 2px solid #5a8fb8;
+  outline-offset: -2px;
+}
+
 .rail-root {
   overflow: hidden;
   flex: 0 0 auto;
@@ -67,6 +98,48 @@ body,
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.recent-projects {
+  flex: 0 0 auto;
+  border-bottom: 1px solid #282828;
+  padding: 4px 0;
+}
+
+.recent-project {
+  display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  border: 0;
+  background: transparent;
+  color: #cfcfcf;
+  cursor: default;
+  padding: 5px 12px;
+  text-align: left;
+}
+
+.recent-project:hover {
+  background: #242424;
+}
+
+.recent-project__name,
+.recent-project__path {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-project__name {
+  color: #dfdfdf;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.recent-project__path {
+  color: #828282;
+  font-size: 11px;
 }
 
 .rail-tree {
