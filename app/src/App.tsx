@@ -4,6 +4,8 @@ import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open } from "@tauri-apps/plugin-dialog";
 import { load } from "@tauri-apps/plugin-store";
+import CodeMirror from "@uiw/react-codemirror";
+import { oneDark } from "@codemirror/theme-one-dark";
 import { Tree } from "react-arborist";
 import type { NodeRendererProps } from "react-arborist";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
@@ -32,6 +34,7 @@ type FileTreeNode = {
 };
 type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolean };
 type WorkspaceTreeChanged = { root: string; count: number };
+type TextFileResponse = { path: string; content: string; bytes: number };
 
 const FONT_SIZE = 15;
 const FONT_FAMILY = "JetBrains Mono, monospace";
@@ -99,7 +102,13 @@ function App() {
   const [treeRefreshNonce, setTreeRefreshNonce] = useState(0);
   const [railHeight, setRailHeight] = useState(240);
   const [selectedFile, setSelectedFile] = useState<FileTreeNode | null>(null);
+  const [editorText, setEditorText] = useState("");
+  const [savedEditorText, setSavedEditorText] = useState("");
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorSaving, setEditorSaving] = useState(false);
+  const [editorError, setEditorError] = useState<string | null>(null);
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
+  const editorDirty = selectedFile != null && editorText !== savedEditorText;
 
   useEffect(() => {
     recentProjectsRef.current = recentProjects;
@@ -118,6 +127,9 @@ function App() {
       setLaunchError(null);
       setWorkspacePath(path);
       setSelectedFile(null);
+      setEditorText("");
+      setSavedEditorText("");
+      setEditorError(null);
       setTimeout(sendTerminalResize, 0);
       const nextRecent = pushRecentProject(recentProjectsRef.current, path);
       recentProjectsRef.current = nextRecent;
@@ -138,6 +150,9 @@ function App() {
           setWorkspacePath(null);
           setFileTree([]);
           setSelectedFile(null);
+          setEditorText("");
+          setSavedEditorText("");
+          setEditorError(null);
         }
         await store?.delete("folder");
         await store?.save();
@@ -171,6 +186,46 @@ function App() {
   const visibleRecentProjects = recentProjects.filter((project) => project !== workspacePath).slice(0, 3);
   const hiddenRecentCount = Math.max(0, recentProjects.filter((project) => project !== workspacePath).length - visibleRecentProjects.length);
 
+  const openEditorFile = async (file: FileTreeNode) => {
+    const root = workspacePathRef.current ?? workspacePath;
+    if (!root) return;
+    setSelectedFile(file);
+    setEditorLoading(true);
+    setEditorSaving(false);
+    setEditorError(null);
+    try {
+      const result = await invoke<TextFileResponse>("read_text_file", { root, path: file.path });
+      if (result.path !== file.path) return;
+      setEditorText(result.content);
+      setSavedEditorText(result.content);
+    } catch (err) {
+      setEditorText("");
+      setSavedEditorText("");
+      setEditorError(String(err));
+    } finally {
+      setEditorLoading(false);
+    }
+  };
+
+  const saveEditorFile = async () => {
+    const root = workspacePathRef.current ?? workspacePath;
+    if (!root || !selectedFile || editorSaving || !editorDirty) return;
+    setEditorSaving(true);
+    setEditorError(null);
+    try {
+      const result = await invoke<TextFileResponse>("write_text_file", {
+        root,
+        path: selectedFile.path,
+        content: editorText,
+      });
+      setSavedEditorText(result.content);
+    } catch (err) {
+      setEditorError(String(err));
+    } finally {
+      setEditorSaving(false);
+    }
+  };
+
   useEffect(() => {
     workspacePathRef.current = workspacePath;
   }, [workspacePath]);
@@ -194,6 +249,9 @@ function App() {
       setFileTreeError(null);
       setFileTreeTruncated(false);
       setSelectedFile(null);
+      setEditorText("");
+      setSavedEditorText("");
+      setEditorError(null);
       return;
     }
     let cancelled = false;
@@ -512,7 +570,7 @@ function App() {
                 if (node.data.kind === "directory") {
                   node.toggle();
                 } else {
-                  setSelectedFile(node.data);
+                  void openEditorFile(node.data);
                 }
               }}
             >
@@ -526,12 +584,56 @@ function App() {
       <main className="workbench">
         <section className="editor-area" aria-label="Editor">
           <div className="editor-tabbar">
-            <div className="editor-tab">{selectedFile ? selectedFile.name : "No file open"}</div>
+            <div className={`editor-tab ${editorDirty ? "editor-tab--dirty" : ""}`}>
+              {selectedFile ? selectedFile.name : "No file open"}
+            </div>
+            {selectedFile ? (
+              <div className="editor-actions">
+                <span className="editor-status" title={selectedFile.path}>
+                  {editorLoading ? "Loading" : editorDirty ? "Unsaved" : "Saved"}
+                </span>
+                <button
+                  className="editor-save"
+                  type="button"
+                  disabled={!editorDirty || editorSaving || editorLoading}
+                  onClick={() => void saveEditorFile()}
+                >
+                  {editorSaving ? "Saving" : "Save"}
+                </button>
+              </div>
+            ) : null}
           </div>
-          <div className="editor-empty">
-            <div className="editor-empty-title">{selectedFile ? selectedFile.name : "Select a file"}</div>
-            <div className="editor-empty-path">{selectedFile ? selectedFile.path : "Project editor surface"}</div>
-          </div>
+          {selectedFile ? (
+            <div
+              className="editor-code"
+              onKeyDown={(event) => {
+                if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
+                  event.preventDefault();
+                  void saveEditorFile();
+                }
+              }}
+            >
+              {editorError ? <div className="editor-error">{editorError}</div> : null}
+              <CodeMirror
+                value={editorText}
+                height="100%"
+                theme={oneDark}
+                basicSetup={{
+                  lineNumbers: true,
+                  foldGutter: true,
+                  highlightActiveLine: true,
+                  highlightActiveLineGutter: true,
+                }}
+                editable={!editorLoading}
+                onChange={(value) => setEditorText(value)}
+              />
+            </div>
+          ) : (
+            <div className="editor-empty">
+              <div className="editor-empty-title">Select a file</div>
+              <div className="editor-empty-path">Project editor surface</div>
+            </div>
+          )}
         </section>
 
         <section className="terminal-panel" aria-label="Agent terminal">

@@ -24,8 +24,9 @@ use notify_debouncer_mini::{
 use portable_pty::{native_pty_system, ChildKiller, CommandBuilder, PtySize};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+use std::fs;
 use std::io::{Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::Mutex;
@@ -40,6 +41,7 @@ const FALLBACK_BG: [u8; 3] = [16, 16, 16];
 const MENU_CLEAR: &str = "terminal.clear";
 const MENU_OPEN: &str = "workspace.open";
 const MAX_TREE_ENTRIES: usize = 8_000;
+const MAX_TEXT_FILE_BYTES: u64 = 2 * 1024 * 1024;
 
 #[rustfmt::skip]
 const LETTER_KEYS: [Key; 26] = [
@@ -161,6 +163,13 @@ struct FileTreeResponse {
     root: String,
     nodes: Vec<FileTreeNode>,
     truncated: bool,
+}
+
+#[derive(Debug, Serialize)]
+struct TextFileResponse {
+    path: String,
+    content: String,
+    bytes: u64,
 }
 
 struct FileTreeBuilder {
@@ -686,6 +695,55 @@ fn list_workspace_tree(path: String) -> Result<FileTreeResponse, String> {
     })
 }
 
+/// Frontend -> filesystem: read a UTF-8 text file inside the selected workspace.
+#[tauri::command]
+fn read_text_file(root: String, path: String) -> Result<TextFileResponse, String> {
+    let file_path = validate_workspace_file_path(&root, &path)?;
+    let metadata = fs::metadata(&file_path)
+        .map_err(|err| format!("Could not inspect file {}: {err}", file_path.display()))?;
+    let bytes = metadata.len();
+    if bytes > MAX_TEXT_FILE_BYTES {
+        return Err(format!(
+            "File is too large for the editor slice: {} bytes, limit is {} bytes.",
+            bytes, MAX_TEXT_FILE_BYTES
+        ));
+    }
+    let raw = fs::read(&file_path)
+        .map_err(|err| format!("Could not read file {}: {err}", file_path.display()))?;
+    let content = String::from_utf8(raw)
+        .map_err(|_| format!("File is not valid UTF-8 text: {}", file_path.display()))?;
+    Ok(TextFileResponse {
+        path: file_path.to_string_lossy().into_owned(),
+        content,
+        bytes,
+    })
+}
+
+/// Frontend -> filesystem: overwrite an existing UTF-8 text file inside the
+/// selected workspace. Creation/rename/delete live in later file-ops slices.
+#[tauri::command]
+fn write_text_file(
+    root: String,
+    path: String,
+    content: String,
+) -> Result<TextFileResponse, String> {
+    let file_path = validate_workspace_file_path(&root, &path)?;
+    let bytes = content.len() as u64;
+    if bytes > MAX_TEXT_FILE_BYTES {
+        return Err(format!(
+            "File is too large for the editor slice: {} bytes, limit is {} bytes.",
+            bytes, MAX_TEXT_FILE_BYTES
+        ));
+    }
+    fs::write(&file_path, content.as_bytes())
+        .map_err(|err| format!("Could not save file {}: {err}", file_path.display()))?;
+    Ok(TextFileResponse {
+        path: file_path.to_string_lossy().into_owned(),
+        content,
+        bytes,
+    })
+}
+
 /// Frontend -> filesystem: start or replace the live watcher for the current
 /// workspace. The watcher only emits a refresh signal; `list_workspace_tree` stays
 /// the single source of truth for rail data.
@@ -745,6 +803,29 @@ fn validate_workspace_path(path: &str) -> Result<String, String> {
     path.canonicalize()
         .map(|p| p.to_string_lossy().into_owned())
         .map_err(|err| format!("Cannot open workspace folder {trimmed}: {err}"))
+}
+
+fn validate_workspace_file_path(root: &str, path: &str) -> Result<PathBuf, String> {
+    let root = validate_workspace_path(root)?;
+    let root_path = PathBuf::from(&root);
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("No file was selected.".into());
+    }
+    let candidate = Path::new(trimmed);
+    if !candidate.exists() {
+        return Err(format!("File does not exist: {trimmed}"));
+    }
+    if !candidate.is_file() {
+        return Err(format!("Selected path is not a file: {trimmed}"));
+    }
+    let canonical = candidate
+        .canonicalize()
+        .map_err(|err| format!("Cannot open file {trimmed}: {err}"))?;
+    if !canonical.starts_with(&root_path) {
+        return Err(format!("File is outside the selected workspace: {trimmed}"));
+    }
+    Ok(canonical)
 }
 
 fn command_exists_on_path(command: &str) -> bool {
@@ -1066,7 +1147,9 @@ pub fn run() {
             scroll_pty,
             open_workspace,
             list_workspace_tree,
-            watch_workspace_tree
+            watch_workspace_tree,
+            read_text_file,
+            write_text_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -1159,6 +1242,54 @@ mod tests {
                 .to_string_lossy()
                 .into_owned()
         );
+    }
+
+    #[test]
+    fn text_file_roundtrip_stays_inside_workspace() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-test-{suffix}"));
+        let file = root.join("note.txt");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&file, "before\n").expect("write file");
+
+        let root_s = root.to_string_lossy().into_owned();
+        let file_s = file.to_string_lossy().into_owned();
+        let read = read_text_file(root_s.clone(), file_s.clone()).expect("read text file");
+        assert_eq!(read.content, "before\n");
+
+        let written = write_text_file(root_s, file_s, "after\n".into()).expect("write text file");
+        assert_eq!(written.content, "after\n");
+        assert_eq!(
+            fs::read_to_string(&file).expect("read saved file"),
+            "after\n"
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn text_file_rejects_paths_outside_workspace() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-root-{suffix}"));
+        let outside = std::env::temp_dir().join(format!("agent-cli-editor-outside-{suffix}.txt"));
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&outside, "outside").expect("write outside file");
+
+        let err = read_text_file(
+            root.to_string_lossy().into_owned(),
+            outside.to_string_lossy().into_owned(),
+        )
+        .expect_err("outside file should fail");
+        assert!(err.contains("outside the selected workspace"));
+
+        let _ = fs::remove_dir_all(root);
+        let _ = fs::remove_file(outside);
     }
 
     #[test]

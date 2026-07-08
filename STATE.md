@@ -39,7 +39,7 @@ Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## In progress
 
-**Next active slice: EDITOR.** Build the CodeMirror editor surface that opens files from the rail, edits, tracks dirty state, and saves. Keep the first slice narrow, but the target is a robust coding editor: line gutter, syntax highlighting, path context, save feedback, selection/cursor fidelity, and no silent overwrite of agent edits. Preserve VS Code editor muscle memory where it applies.
+**Next active slice: EDITOR.** Code path is now implemented but not yet marked verified-done: `@uiw/react-codemirror` is installed, file activation from the rail reads UTF-8 files through `read_text_file`, editor edits track dirty state, Save/Cmd+S writes through `write_text_file`, and backend guards reject outside-workspace paths plus oversized/non-UTF-8 files. Verified so far: `npm run build`, `npm test`, `cargo test` (14 tests), and `npm run tauri dev` launch to `target/debug/agent-cli`. Remaining Done proof before crossing off ROADMAP: live native UI smoke that opens a real file from the rail, edits it, saves, and confirms the file contents changed on disk.
 
 ## Next (ordered)
 
