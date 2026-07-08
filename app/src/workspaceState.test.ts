@@ -1,16 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
+  activeProjectSessionId,
+  ensureProjectSessions,
   forgetActiveFile,
   isMissingWorkspaceError,
   normalizeActiveFileByWorkspace,
+  normalizeActiveSessionByProject,
   normalizeOpenProjects,
+  normalizeProjectSessionsByProject,
   normalizeRecentProjects,
+  newProjectSession,
   openProjectsFromRecent,
   pushRecentProject,
+  removeProjectSession,
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  setActiveProjectSession,
   setOpenProjectStatus,
+  setProjectSessionStatus,
+  upsertProjectSession,
   upsertOpenProject,
 } from "./workspaceState";
 
@@ -69,5 +78,60 @@ describe("workspace state helpers", () => {
       { path: "/b", status: "exited" },
     ]);
     expect(removeOpenProject(open, "/a")).toEqual([{ path: "/b", status: "exited" }]);
+  });
+
+  it("normalizes project sessions by project", () => {
+    expect(
+      normalizeProjectSessionsByProject({
+        "/a": [
+          { id: "one", title: "Build auth", status: "running", updatedAt: 10 },
+          { id: "one", title: "Duplicate", status: "attention", updatedAt: 11 },
+          { id: "two", title: "  Review diff  ", status: "unknown", updatedAt: Number.NaN },
+          { id: "", title: "Bad", status: "running", updatedAt: 12 },
+        ],
+        "": [{ id: "bad", title: "Bad", status: "running", updatedAt: 1 }],
+        "/empty": [],
+      }),
+    ).toEqual({
+      "/a": [
+        { id: "one", title: "Build auth", status: "running", updatedAt: 10 },
+        { id: "two", title: "Review diff", status: "exited", updatedAt: 0 },
+      ],
+    });
+  });
+
+  it("normalizes active session ids by project", () => {
+    expect(normalizeActiveSessionByProject({ "/a": "one", "/b": 7, "": "bad" })).toEqual({ "/a": "one" });
+  });
+
+  it("creates a default project session only when a project has none", () => {
+    expect(ensureProjectSessions({}, "/a", 36)).toEqual({
+      "/a": [{ id: "session-10", title: "Current work", status: "exited", updatedAt: 36 }],
+    });
+    expect(ensureProjectSessions({ "/a": [{ id: "one", title: "Existing", status: "running", updatedAt: 1 }] }, "/a", 36)).toEqual({
+      "/a": [{ id: "one", title: "Existing", status: "running", updatedAt: 1 }],
+    });
+  });
+
+  it("creates, promotes, and updates project sessions", () => {
+    const existing = [{ id: "one", title: "Current work", status: "exited" as const, updatedAt: 1 }];
+    const next = newProjectSession(existing, 72);
+    expect(next).toEqual({ id: "session-20", title: "New session 2", status: "running", updatedAt: 72 });
+    const sessionsByProject = upsertProjectSession({ "/a": existing }, "/a", next);
+    expect(sessionsByProject["/a"]).toEqual([next, existing[0]]);
+    expect(setProjectSessionStatus(sessionsByProject, "/a", "one", "attention", 80)["/a"]).toEqual([
+      next,
+      { id: "one", title: "Current work", status: "attention", updatedAt: 80 },
+    ]);
+    expect(removeProjectSession(sessionsByProject, "/a", "one")["/a"]).toEqual([next]);
+    expect(removeProjectSession({ "/a": [next] }, "/a", next.id)).toEqual({ "/a": [next] });
+  });
+
+  it("resolves active project sessions with fallback to the first row", () => {
+    const sessionsByProject = { "/a": [{ id: "one", title: "Current work", status: "exited" as const, updatedAt: 1 }] };
+    expect(activeProjectSessionId({ "/a": "missing" }, sessionsByProject, "/a")).toBe("one");
+    expect(activeProjectSessionId({ "/a": "one" }, sessionsByProject, "/a")).toBe("one");
+    expect(activeProjectSessionId({}, sessionsByProject, "/b")).toBeNull();
+    expect(setActiveProjectSession({}, "/a", "one")).toEqual({ "/a": "one" });
   });
 });

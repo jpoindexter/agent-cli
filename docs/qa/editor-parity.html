@@ -156,27 +156,63 @@
         </div>
         <nav class="project-rail" aria-label="Open projects">
           <div class="project-rail__heading">Projects</div>
-          <button class="project-row project-row--active project-row--running" type="button" aria-current="page" aria-label="Active project agent cli, Running">
-            <span class="project-row__copy">
-              <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></span>
-              <span class="project-row__path">/Users/jasonpoindexter/Documents/GitHub/apps/agent cli</span>
-            </span>
-            <span class="project-row__state"><svg class="app-icon"><use href="#i-loading" /></svg><span>Active</span></span>
-          </button>
-          <button class="project-row project-row--exited" type="button" aria-label="Switch to project postures, Exited">
-            <span class="project-row__copy">
-              <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>postures</span></span>
-              <span class="project-row__path">/Users/jasonpoindexter/Documents/postures</span>
-            </span>
-            <span class="project-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Exited</span></span>
-          </button>
-          <button class="project-row project-row--attention" type="button" aria-label="Switch to project Vanta, Needs attention">
-            <span class="project-row__copy">
-              <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Vanta</span></span>
-              <span class="project-row__path">/Users/jasonpoindexter/Documents/GitHub/docs/Vanta</span>
-            </span>
-            <span class="project-row__state"><svg class="app-icon"><use href="#i-error" /></svg><span>Needs attention</span></span>
-          </button>
+          <div class="project-group">
+            <button class="project-row project-row--active project-row--running" type="button" aria-current="page" aria-label="Active project agent cli, Running">
+              <span class="project-row__copy">
+                <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></span>
+                <span class="project-row__path">/Users/jasonpoindexter/Documents/GitHub/apps/agent cli</span>
+              </span>
+              <span class="project-row__state"><svg class="app-icon"><use href="#i-loading" /></svg><span>Active</span></span>
+            </button>
+            <div class="session-list" aria-label="agent cli sessions">
+              <button class="session-row session-row--new" type="button" aria-label="New session in agent cli"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
+              <button class="session-row session-row--active session-row--running" type="button" aria-current="page" aria-label="Active session Project sessions, Running">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Project sessions</span></span>
+                <span class="session-row__state"><svg class="app-icon"><use href="#i-loading" /></svg></span>
+              </button>
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Update Codex handoff, Exited">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Update Codex handoff</span></span>
+                <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
+              </button>
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Blocks, Exited">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Blocks</span></span>
+                <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
+              </button>
+              <button class="session-row session-row--more" type="button" aria-expanded="false" aria-label="Show 2 more sessions in agent cli"><span>Show more (2)</span></button>
+            </div>
+          </div>
+          <div class="project-group">
+            <button class="project-row project-row--exited" type="button" aria-label="Switch to project postures, Exited">
+              <span class="project-row__copy">
+                <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>postures</span></span>
+                <span class="project-row__path">/Users/jasonpoindexter/Documents/postures</span>
+              </span>
+              <span class="project-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Exited</span></span>
+            </button>
+            <div class="session-list" aria-label="postures sessions">
+              <button class="session-row session-row--new" type="button" aria-label="New session in postures"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Build routine site, Exited">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Build routine site</span></span>
+                <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
+              </button>
+            </div>
+          </div>
+          <div class="project-group">
+            <button class="project-row project-row--attention" type="button" aria-label="Switch to project Vanta, Needs attention">
+              <span class="project-row__copy">
+                <span class="project-row__name"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Vanta</span></span>
+                <span class="project-row__path">/Users/jasonpoindexter/Documents/GitHub/docs/Vanta</span>
+              </span>
+              <span class="project-row__state"><svg class="app-icon"><use href="#i-error" /></svg><span>Needs attention</span></span>
+            </button>
+            <div class="session-list" aria-label="Vanta sessions">
+              <button class="session-row session-row--new" type="button" aria-label="New session in Vanta"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
+              <button class="session-row session-row--attention" type="button" aria-label="Switch to session Harness audit, Needs attention">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Harness audit</span></span>
+                <span class="session-row__state"><svg class="app-icon"><use href="#i-error" /></svg></span>
+              </button>
+            </div>
+          </div>
         </nav>
         <div class="rail-tree">
           <div class="file-node">

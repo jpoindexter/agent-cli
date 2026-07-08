@@ -501,14 +501,14 @@
     {
       "id": "PROJECT-SESSIONS",
       "title": "Project session rows",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "workspace",
       "size": "M",
       "launch": "v1",
       "blocker": true,
       "summary": "Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.",
-      "done": "A project can show multiple named sessions with recency/status, active highlight, Show more collapse, rename/delete controls, and running/exited/attention badges; selecting a session restores its editor tabs, browser URL, pane layout, pane labels/status, and transcript references without pretending dead processes are live."
+      "done": "Verified 2026-07-09: projectSessions and activeSessionByProject persist in workspace.json; the rail shows nested session rows with active/running/exited/attention states; New session, switch, rename, copy name, delete with last-session protection, and Show more/Show fewer are implemented; selecting sessions snapshots/restores editor tabs, active file, buffers, and view state for current in-memory sessions. Browser URLs, pane layouts/labels, transcript references, and cross-relaunch snapshot restore remain with their dedicated later cards."
     },
     {
       "id": "BROWSER-PREVIEW",

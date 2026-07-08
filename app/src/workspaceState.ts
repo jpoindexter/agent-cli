@@ -1,12 +1,24 @@
 export const MAX_RECENT_PROJECTS = 8;
 export const MAX_OPEN_PROJECTS = 8;
+export const MAX_PROJECT_SESSIONS = 6;
 
 export type ProjectRailStatus = "running" | "exited" | "attention";
+export type ProjectSessionStatus = ProjectRailStatus;
 
 export type OpenProject = {
   path: string;
   status: ProjectRailStatus;
 };
+
+export type ProjectSession = {
+  id: string;
+  title: string;
+  status: ProjectSessionStatus;
+  updatedAt: number;
+};
+
+export type ProjectSessionsByProject = Record<string, ProjectSession[]>;
+export type ActiveSessionByProject = Record<string, string>;
 
 export const normalizeRecentProjects = (value: unknown): string[] =>
   Array.isArray(value)
@@ -64,6 +76,138 @@ export const setOpenProjectStatus = (
 ): OpenProject[] => projects.map((project) => (project.path === path ? { ...project, status } : project));
 
 export const removeOpenProject = (projects: OpenProject[], path: string) => projects.filter((project) => project.path !== path);
+
+export const defaultProjectSession = (updatedAt: number = Date.now()): ProjectSession => ({
+  id: `session-${Math.max(0, Math.floor(updatedAt)).toString(36)}`,
+  title: "Current work",
+  status: "exited",
+  updatedAt,
+});
+
+export const newProjectSession = (existing: ProjectSession[], updatedAt: number = Date.now()): ProjectSession => ({
+  id: `session-${Math.max(0, Math.floor(updatedAt)).toString(36)}`,
+  title: existing.length === 0 ? "Current work" : `New session ${existing.length + 1}`,
+  status: "running",
+  updatedAt,
+});
+
+const normalizeProjectSession = (value: unknown): ProjectSession | null => {
+  if (typeof value !== "object" || value == null || Array.isArray(value)) return null;
+  const item = value as Record<string, unknown>;
+  const id = typeof item.id === "string" ? item.id.trim() : "";
+  const title = typeof item.title === "string" ? item.title.trim() : "";
+  const updatedAt = typeof item.updatedAt === "number" && Number.isFinite(item.updatedAt) ? item.updatedAt : 0;
+  if (!id || !title) return null;
+  return {
+    id,
+    title,
+    status: normalizeProjectStatus(item.status),
+    updatedAt,
+  };
+};
+
+export const normalizeProjectSessionsByProject = (value: unknown): ProjectSessionsByProject => {
+  if (typeof value !== "object" || value == null || Array.isArray(value)) return {};
+  const entries = Object.entries(value as Record<string, unknown>)
+    .map(([path, sessions]) => {
+      const trimmedPath = path.trim();
+      if (!trimmedPath || !Array.isArray(sessions)) return null;
+      const seen = new Set<string>();
+      const normalized = sessions
+        .map(normalizeProjectSession)
+        .filter((session): session is ProjectSession => {
+          if (!session || seen.has(session.id)) return false;
+          seen.add(session.id);
+          return true;
+        })
+        .slice(0, MAX_PROJECT_SESSIONS);
+      return normalized.length > 0 ? [trimmedPath, normalized] as const : null;
+    })
+    .filter((entry): entry is readonly [string, ProjectSession[]] => entry != null);
+  return Object.fromEntries(entries);
+};
+
+export const normalizeActiveSessionByProject = (value: unknown): ActiveSessionByProject => {
+  if (typeof value !== "object" || value == null || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] =>
+        entry[0].trim().length > 0 && typeof entry[1] === "string" && entry[1].trim().length > 0,
+    ),
+  );
+};
+
+export const ensureProjectSessions = (
+  sessionsByProject: ProjectSessionsByProject,
+  projectPath: string,
+  updatedAt: number = Date.now(),
+): ProjectSessionsByProject => {
+  if (!projectPath || sessionsByProject[projectPath]?.length > 0) return sessionsByProject;
+  return {
+    ...sessionsByProject,
+    [projectPath]: [defaultProjectSession(updatedAt)],
+  };
+};
+
+export const upsertProjectSession = (
+  sessionsByProject: ProjectSessionsByProject,
+  projectPath: string,
+  session: ProjectSession,
+): ProjectSessionsByProject => {
+  const existing = sessionsByProject[projectPath] ?? [];
+  return {
+    ...sessionsByProject,
+    [projectPath]: [session, ...existing.filter((item) => item.id !== session.id)].slice(0, MAX_PROJECT_SESSIONS),
+  };
+};
+
+export const removeProjectSession = (
+  sessionsByProject: ProjectSessionsByProject,
+  projectPath: string,
+  sessionId: string,
+): ProjectSessionsByProject => {
+  const existing = sessionsByProject[projectPath];
+  if (!existing || existing.length <= 1) return sessionsByProject;
+  return {
+    ...sessionsByProject,
+    [projectPath]: existing.filter((session) => session.id !== sessionId),
+  };
+};
+
+export const setProjectSessionStatus = (
+  sessionsByProject: ProjectSessionsByProject,
+  projectPath: string,
+  sessionId: string,
+  status: ProjectSessionStatus,
+  updatedAt: number = Date.now(),
+): ProjectSessionsByProject => {
+  const existing = sessionsByProject[projectPath];
+  if (!existing) return sessionsByProject;
+  return {
+    ...sessionsByProject,
+    [projectPath]: existing.map((session) => (session.id === sessionId ? { ...session, status, updatedAt } : session)),
+  };
+};
+
+export const activeProjectSessionId = (
+  activeByProject: ActiveSessionByProject,
+  sessionsByProject: ProjectSessionsByProject,
+  projectPath: string | null,
+): string | null => {
+  if (!projectPath) return null;
+  const sessions = sessionsByProject[projectPath] ?? [];
+  const active = activeByProject[projectPath];
+  return sessions.some((session) => session.id === active) ? active : sessions[0]?.id ?? null;
+};
+
+export const setActiveProjectSession = (
+  activeByProject: ActiveSessionByProject,
+  projectPath: string,
+  sessionId: string,
+): ActiveSessionByProject => ({
+  ...activeByProject,
+  [projectPath]: sessionId,
+});
 
 export const isMissingWorkspaceError = (message: string) =>
   message.includes("Workspace folder does not exist") || message.includes("Workspace path is not a folder");

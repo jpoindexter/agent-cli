@@ -195,6 +195,7 @@ body,
 
 .rail-open-button:focus-visible,
 .project-row:focus-visible,
+.session-row:focus-visible,
 .rail-root__button:focus-visible,
 .editor-tab__activate:focus-visible,
 .editor-tab__close:focus-visible,
@@ -309,6 +310,11 @@ body,
   text-transform: uppercase;
 }
 
+.project-group {
+  display: grid;
+  gap: 1px;
+}
+
 .project-row {
   display: grid;
   width: 100%;
@@ -390,6 +396,86 @@ body,
 
 .project-row--attention .project-row__state {
   border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+.session-list {
+  display: grid;
+  gap: 1px;
+  padding: 0 8px 5px 22px;
+}
+
+.session-row {
+  display: grid;
+  width: 100%;
+  min-height: 28px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: default;
+  padding: 3px 6px;
+  text-align: left;
+}
+
+.session-row:hover,
+.session-row:focus-visible {
+  background: var(--color-row-hover);
+  color: var(--color-text);
+}
+
+.session-row--active {
+  background: var(--color-row-active);
+  color: var(--color-text-strong);
+}
+
+.session-row--new {
+  color: var(--color-text-subtle);
+}
+
+.session-row--more {
+  display: block;
+  min-height: 24px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.session-row__copy {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.session-row__copy span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-row__state {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-subtle);
+}
+
+.session-row__state .app-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.session-row--running .session-row__state {
+  color: var(--color-success);
+}
+
+.session-row--attention .session-row__state {
   color: var(--color-danger);
 }
 

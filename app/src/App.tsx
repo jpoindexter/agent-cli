@@ -17,20 +17,29 @@ import { editorExtensionsFor } from "./editorLanguages";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
+  activeProjectSessionId,
+  ensureProjectSessions,
   forgetActiveFile,
   isMissingWorkspaceError,
   normalizeActiveFileByWorkspace,
+  normalizeActiveSessionByProject,
   normalizeOpenProjects,
+  normalizeProjectSessionsByProject,
   normalizeRecentProjects,
+  newProjectSession,
   openProjectsFromRecent,
   pushRecentProject,
+  removeProjectSession,
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  setActiveProjectSession,
   setOpenProjectStatus,
+  setProjectSessionStatus,
   upsertOpenProject,
+  upsertProjectSession,
 } from "./workspaceState";
-import type { ActiveFileByWorkspace, OpenProject, ProjectRailStatus } from "./workspaceState";
+import type { ActiveFileByWorkspace, ActiveSessionByProject, OpenProject, ProjectRailStatus, ProjectSession, ProjectSessionsByProject } from "./workspaceState";
 import {
   clampEditorViewState,
   cursorFromText,
@@ -205,6 +214,8 @@ function App() {
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
   const openProjectsRef = useRef<OpenProject[]>([]);
+  const projectSessionsRef = useRef<ProjectSessionsByProject>({});
+  const activeSessionByProjectRef = useRef<ActiveSessionByProject>({});
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const terminalPaneIdRef = useRef<number | null>(null);
   const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
@@ -216,7 +227,7 @@ function App() {
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
   const editorBuffersRef = useRef<Record<string, EditorBuffer>>({});
-  const projectEditorSnapshotsRef = useRef<Record<string, ProjectEditorSnapshot>>({});
+  const sessionEditorSnapshotsRef = useRef<Record<string, ProjectEditorSnapshot>>({});
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const pendingEditorFocusRef = useRef(false);
   const editorLoadSeq = useRef(0);
@@ -252,6 +263,9 @@ function App() {
   const [editorCursor, setEditorCursor] = useState<CursorPosition>({ line: 1, column: 1 });
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
   const [openProjects, setOpenProjects] = useState<OpenProject[]>([]);
+  const [projectSessions, setProjectSessions] = useState<ProjectSessionsByProject>({});
+  const [activeSessionByProject, setActiveSessionByProjectState] = useState<ActiveSessionByProject>({});
+  const [expandedSessionProjects, setExpandedSessionProjects] = useState<Record<string, boolean>>({});
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -281,6 +295,10 @@ function App() {
     () => markDirtyFile(fileTree, dirtyTabPathSet),
     [fileTree, dirtyTabPathSet],
   );
+  const activeSessionId = useMemo(
+    () => activeProjectSessionId(activeSessionByProject, projectSessions, workspacePath),
+    [activeSessionByProject, projectSessions, workspacePath],
+  );
 
   const refreshFileTree = () => setTreeRefreshNonce((value) => value + 1);
 
@@ -291,6 +309,14 @@ function App() {
   useEffect(() => {
     openProjectsRef.current = openProjects;
   }, [openProjects]);
+
+  useEffect(() => {
+    projectSessionsRef.current = projectSessions;
+  }, [projectSessions]);
+
+  useEffect(() => {
+    activeSessionByProjectRef.current = activeSessionByProject;
+  }, [activeSessionByProject]);
 
   useEffect(() => {
     selectedFileRef.current = selectedFile;
@@ -402,10 +428,27 @@ function App() {
     await storeRef.current?.save();
   };
 
+  const persistProjectSessions = async (sessions: ProjectSessionsByProject, activeByProject: ActiveSessionByProject) => {
+    projectSessionsRef.current = sessions;
+    activeSessionByProjectRef.current = activeByProject;
+    setProjectSessions(sessions);
+    setActiveSessionByProjectState(activeByProject);
+    await storeRef.current?.set("projectSessions", sessions);
+    await storeRef.current?.set("activeSessionByProject", activeByProject);
+    await storeRef.current?.save();
+  };
+
   const updateOpenProjectStatus = async (path: string | null, status: ProjectRailStatus) => {
     if (!path) return;
     const next = setOpenProjectStatus(openProjectsRef.current, path, status);
     await persistOpenProjects(next);
+  };
+
+  const updateActiveSessionStatus = async (path: string | null, status: ProjectRailStatus) => {
+    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, path);
+    if (!path || !sessionId) return;
+    const nextSessions = setProjectSessionStatus(projectSessionsRef.current, path, sessionId, status);
+    await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
   };
 
   const activeProjectStatus = (): ProjectRailStatus => {
@@ -414,12 +457,15 @@ function App() {
     return "attention";
   };
 
-  const captureCurrentProjectSnapshot = () => {
+  const sessionSnapshotKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
+
+  const captureCurrentSessionSnapshot = () => {
     const root = workspacePathRef.current;
-    if (!root) return;
+    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+    if (!root || !sessionId) return;
     captureCurrentEditorViewState();
     captureCurrentEditorBuffer();
-    projectEditorSnapshotsRef.current[root] = {
+    sessionEditorSnapshotsRef.current[sessionSnapshotKey(root, sessionId)] = {
       tabs: editorTabs,
       activePath: selectedFileRef.current?.path ?? null,
       buffers: { ...editorBuffersRef.current },
@@ -427,8 +473,8 @@ function App() {
     };
   };
 
-  const restoreProjectEditorSnapshot = (root: string) => {
-    const snapshot = projectEditorSnapshotsRef.current[root];
+  const restoreSessionEditorSnapshot = (root: string, sessionId: string | null) => {
+    const snapshot = sessionId ? sessionEditorSnapshotsRef.current[sessionSnapshotKey(root, sessionId)] : null;
     resetEditor();
     if (!snapshot) return;
     editorBuffersRef.current = { ...snapshot.buffers };
@@ -445,7 +491,7 @@ function App() {
 
   const openWorkspaceDirect = async (path: string, profileOverride: LaunchProfile = launchProfileRef.current) => {
     const previousRoot = workspacePathRef.current;
-    captureCurrentProjectSnapshot();
+    captureCurrentSessionSnapshot();
     const store = storeRef.current;
     const profile = profileOverride;
     const previousPaneState = terminalPaneState;
@@ -464,22 +510,41 @@ function App() {
       setWorkspacePath(root);
       resetEditor();
       setTimeout(sendTerminalResize, 0);
+      const now = Date.now();
       const nextRecent = pushRecentProject(recentProjectsRef.current, root);
       const nextOpen = upsertOpenProject(
         previousRoot && previousRoot !== root ? setOpenProjectStatus(openProjectsRef.current, previousRoot, "exited") : openProjectsRef.current,
         root,
         "running",
       );
+      let nextSessions = projectSessionsRef.current;
+      let nextActiveSessions = activeSessionByProjectRef.current;
+      if (previousRoot && previousRoot !== root) {
+        const previousSessionId = activeProjectSessionId(nextActiveSessions, nextSessions, previousRoot);
+        if (previousSessionId) nextSessions = setProjectSessionStatus(nextSessions, previousRoot, previousSessionId, "exited", now);
+      }
+      nextSessions = ensureProjectSessions(nextSessions, root, now);
+      const sessionId = activeProjectSessionId(nextActiveSessions, nextSessions, root);
+      if (sessionId) {
+        nextActiveSessions = setActiveProjectSession(nextActiveSessions, root, sessionId);
+        nextSessions = setProjectSessionStatus(nextSessions, root, sessionId, "running", now);
+      }
       recentProjectsRef.current = nextRecent;
       openProjectsRef.current = nextOpen;
+      projectSessionsRef.current = nextSessions;
+      activeSessionByProjectRef.current = nextActiveSessions;
       setRecentProjects(nextRecent);
       setOpenProjects(nextOpen);
+      setProjectSessions(nextSessions);
+      setActiveSessionByProjectState(nextActiveSessions);
       await store?.set("launchProfile", profile);
       await store?.set("folder", root);
       await store?.set("recentFolders", nextRecent);
       await store?.set("openProjects", nextOpen);
+      await store?.set("projectSessions", nextSessions);
+      await store?.set("activeSessionByProject", nextActiveSessions);
       await store?.save();
-      restoreProjectEditorSnapshot(root);
+      restoreSessionEditorSnapshot(root, sessionId);
       return true;
     } catch (err) {
       const message = String(err);
@@ -489,12 +554,20 @@ function App() {
       if (isMissingWorkspaceError(message)) {
         const nextRecent = removeRecentProject(recentProjectsRef.current, path);
         const nextOpen = removeOpenProject(openProjectsRef.current, path);
+        const { [path]: _removedSessions, ...nextSessions } = projectSessionsRef.current;
+        const { [path]: _removedActiveSession, ...nextActiveSessions } = activeSessionByProjectRef.current;
         recentProjectsRef.current = nextRecent;
         openProjectsRef.current = nextOpen;
+        projectSessionsRef.current = nextSessions;
+        activeSessionByProjectRef.current = nextActiveSessions;
         setRecentProjects(nextRecent);
         setOpenProjects(nextOpen);
+        setProjectSessions(nextSessions);
+        setActiveSessionByProjectState(nextActiveSessions);
         await store?.set("recentFolders", nextRecent);
         await store?.set("openProjects", nextOpen);
+        await store?.set("projectSessions", nextSessions);
+        await store?.set("activeSessionByProject", nextActiveSessions);
         if (workspacePathRef.current === path) {
           setWorkspacePath(null);
           setFileTree([]);
@@ -504,9 +577,23 @@ function App() {
         await store?.save();
       } else {
         const nextOpen = upsertOpenProject(openProjectsRef.current, path, "attention");
+        const now = Date.now();
+        let nextSessions = ensureProjectSessions(projectSessionsRef.current, path, now);
+        let nextActiveSessions = activeSessionByProjectRef.current;
+        const sessionId = activeProjectSessionId(nextActiveSessions, nextSessions, path);
+        if (sessionId) {
+          nextActiveSessions = setActiveProjectSession(nextActiveSessions, path, sessionId);
+          nextSessions = setProjectSessionStatus(nextSessions, path, sessionId, "attention", now);
+        }
         openProjectsRef.current = nextOpen;
+        projectSessionsRef.current = nextSessions;
+        activeSessionByProjectRef.current = nextActiveSessions;
         setOpenProjects(nextOpen);
+        setProjectSessions(nextSessions);
+        setActiveSessionByProjectState(nextActiveSessions);
         await store?.set("openProjects", nextOpen);
+        await store?.set("projectSessions", nextSessions);
+        await store?.set("activeSessionByProject", nextActiveSessions);
         await store?.save();
       }
       return false;
@@ -531,6 +618,74 @@ function App() {
       return false;
     }
     return openWorkspaceDirect(path);
+  };
+
+  const switchProjectSession = async (projectPath: string, sessionId: string) => {
+    const currentRoot = workspacePathRef.current;
+    const sameProject = currentRoot === projectPath;
+    const now = Date.now();
+    captureCurrentSessionSnapshot();
+    let nextSessions = projectSessionsRef.current;
+    let nextActiveSessions = setActiveProjectSession(activeSessionByProjectRef.current, projectPath, sessionId);
+    const previousSessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, projectPath);
+    if (sameProject && previousSessionId && previousSessionId !== sessionId) {
+      nextSessions = setProjectSessionStatus(nextSessions, projectPath, previousSessionId, activeProjectStatus(), now);
+    }
+    nextSessions = setProjectSessionStatus(nextSessions, projectPath, sessionId, sameProject ? activeProjectStatus() : "exited", now);
+    await persistProjectSessions(nextSessions, nextActiveSessions);
+    if (sameProject) {
+      restoreSessionEditorSnapshot(projectPath, sessionId);
+    } else {
+      await requestOpenWorkspace(projectPath);
+    }
+  };
+
+  const createProjectSession = async (projectPath: string) => {
+    const sameProject = workspacePathRef.current === projectPath;
+    const now = Date.now();
+    captureCurrentSessionSnapshot();
+    const existing = projectSessionsRef.current[projectPath] ?? [];
+    const session = {
+      ...newProjectSession(existing, now),
+      status: sameProject ? activeProjectStatus() : "exited" as ProjectRailStatus,
+    };
+    const nextSessions = upsertProjectSession(projectSessionsRef.current, projectPath, session);
+    const nextActiveSessions = setActiveProjectSession(activeSessionByProjectRef.current, projectPath, session.id);
+    await persistProjectSessions(nextSessions, nextActiveSessions);
+    if (sameProject) {
+      restoreSessionEditorSnapshot(projectPath, session.id);
+    } else {
+      await requestOpenWorkspace(projectPath);
+    }
+  };
+
+  const renameProjectSession = async (projectPath: string, session: ProjectSession) => {
+    const title = window.prompt("Session name", session.title)?.trim();
+    if (!title || title === session.title) return;
+    const nextSessions = {
+      ...projectSessionsRef.current,
+      [projectPath]: (projectSessionsRef.current[projectPath] ?? []).map((item) =>
+        item.id === session.id ? { ...item, title, updatedAt: Date.now() } : item,
+      ),
+    };
+    await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
+  };
+
+  const deleteProjectSession = async (projectPath: string, session: ProjectSession) => {
+    const existing = projectSessionsRef.current[projectPath] ?? [];
+    if (existing.length <= 1) return;
+    const ok = window.confirm(`Delete session "${session.title}"? Editor context saved only in this app session will be removed.`);
+    if (!ok) return;
+    const nextSessions = removeProjectSession(projectSessionsRef.current, projectPath, session.id);
+    const fallbackSessionId = activeProjectSessionId(activeSessionByProjectRef.current, nextSessions, projectPath);
+    const nextActiveSessions = fallbackSessionId
+      ? setActiveProjectSession(activeSessionByProjectRef.current, projectPath, fallbackSessionId)
+      : activeSessionByProjectRef.current;
+    delete sessionEditorSnapshotsRef.current[sessionSnapshotKey(projectPath, session.id)];
+    await persistProjectSessions(nextSessions, nextActiveSessions);
+    if (workspacePathRef.current === projectPath && activeSessionId === session.id) {
+      restoreSessionEditorSnapshot(projectPath, fallbackSessionId);
+    }
   };
 
   const pickWorkspace = async () => {
@@ -649,11 +804,13 @@ function App() {
       await store?.save();
       setTimeout(sendTerminalResize, 0);
       await updateOpenProjectStatus(root, "running");
+      await updateActiveSessionStatus(root, "running");
     } catch (err) {
       setLaunchError(String(err));
       setTerminalPaneState(hadPreviousPane ? previousPaneState : "error");
       setTerminalExitCode(hadPreviousPane ? previousExitCode : null);
       await updateOpenProjectStatus(root, "attention");
+      await updateActiveSessionStatus(root, "attention");
     } finally {
       setLaunchProfileChanging(false);
     }
@@ -691,6 +848,11 @@ function App() {
     if (status === "attention") return "error";
     return "idle";
   };
+
+  const projectSessionsFor = (projectPath: string) => projectSessions[projectPath] ?? [];
+
+  const projectSessionStatus = (projectPath: string, session: ProjectSession): ProjectRailStatus =>
+    projectPath === workspacePath && session.id === activeSessionId ? activeProjectStatus() : session.status;
 
   const visibleOpenProjects = openProjects.length > 0
     ? openProjects
@@ -1101,6 +1263,20 @@ function App() {
     ),
   ];
 
+  const projectSessionContextMenuItems = (projectPath: string, session: ProjectSession): ContextMenuItem[] => [
+    menuItem("session.switch", "Switch to Session", () => void switchProjectSession(projectPath, session.id), {
+      icon: "file",
+      disabled: projectPath === workspacePath && session.id === activeSessionId,
+    }),
+    menuItem("session.rename", "Rename Session", () => void renameProjectSession(projectPath, session), { icon: "file" }),
+    menuItem("session.copy-name", "Copy Session Name", () => void writeText(session.title), { icon: "file" }),
+    menuItem("session.delete", "Delete Session", () => void deleteProjectSession(projectPath, session), {
+      icon: "error",
+      danger: true,
+      disabled: (projectSessionsRef.current[projectPath] ?? []).length <= 1,
+    }),
+  ];
+
   const editorTabContextMenuItems = (tab: FileTreeNode): ContextMenuItem[] => [
     menuItem("tab.open", "Open", () => void requestOpenEditorFile(tab, { focusEditor: true }), { icon: "file" }),
     menuItem("tab.close", "Close Tab", () => void closeEditorTab(tab), { icon: "close", shortcut: shortcutKeys("editor.close-tab") }),
@@ -1404,15 +1580,25 @@ function App() {
       storeRef.current = store;
       const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
       const savedOpenProjects = normalizeOpenProjects(await store.get<unknown>("openProjects"));
+      const savedProjectSessions = normalizeProjectSessionsByProject(await store.get<unknown>("projectSessions"));
+      const savedActiveSessions = normalizeActiveSessionByProject(await store.get<unknown>("activeSessionByProject"));
       const savedProfile = normalizeLaunchProfile(await store.get<unknown>("launchProfile"));
       activeFilesByWorkspaceRef.current = normalizeActiveFileByWorkspace(await store.get<unknown>("activeFileByWorkspace"));
       const initialOpenProjects = savedOpenProjects.length > 0 ? savedOpenProjects : openProjectsFromRecent(savedRecent);
+      const initialProjectSessions = initialOpenProjects.reduce(
+        (sessions, project) => ensureProjectSessions(sessions, project.path, Date.now()),
+        savedProjectSessions,
+      );
       recentProjectsRef.current = savedRecent;
       openProjectsRef.current = initialOpenProjects;
+      projectSessionsRef.current = initialProjectSessions;
+      activeSessionByProjectRef.current = savedActiveSessions;
       launchProfileRef.current = savedProfile;
       setLaunchProfile(savedProfile);
       setRecentProjects(savedRecent);
       setOpenProjects(initialOpenProjects);
+      setProjectSessions(initialProjectSessions);
+      setActiveSessionByProjectState(savedActiveSessions);
       const last = await store.get<string>("folder");
       if (last) await openWorkspaceDirect(last, savedProfile);
       else await pickWorkspace();
@@ -1532,6 +1718,7 @@ function App() {
       setTerminalExitCode(ev.payload.code);
       setLaunchError(ev.payload.message);
       void updateOpenProjectStatus(workspacePathRef.current, "exited");
+      void updateActiveSessionStatus(workspacePathRef.current, "exited");
     });
 
     window.addEventListener("keydown", onKey);
@@ -1617,33 +1804,101 @@ function App() {
             {visibleOpenProjects.map((project) => {
               const status = projectRailStatus(project);
               const active = project.path === workspacePath;
+              const sessions = projectSessionsFor(project.path);
+              const sessionsExpanded = expandedSessionProjects[project.path] ?? false;
+              const visibleSessions = sessionsExpanded ? sessions : sessions.slice(0, 3);
+              const hiddenSessionCount = Math.max(0, sessions.length - visibleSessions.length);
               return (
-              <button
-                className={`project-row ${active ? "project-row--active" : ""} project-row--${status}`}
-                type="button"
-                key={project.path}
-                aria-current={active ? "page" : undefined}
-                aria-label={`${active ? "Active project" : "Switch to project"} ${basename(project.path)}, ${projectRailStatusLabel(status)}`}
-                title={project.path}
-                onPointerDown={(event) => {
-                  if (event.button !== 0) return;
-                  event.preventDefault();
-                  if (!active) void requestOpenWorkspace(project.path);
-                }}
-                onContextMenu={(event) => openContextMenu(event, projectRailContextMenuItems(project))}
-              >
-                <span className="project-row__copy">
-                  <span className="project-row__name">
-                    <AppIcon name="workspace" />
-                    <span>{basename(project.path)}</span>
-                  </span>
-                  <span className="project-row__path">{project.path}</span>
-                </span>
-                <span className="project-row__state">
-                  <AppIcon name={projectRailStatusIcon(status)} />
-                  <span>{active ? "Active" : projectRailStatusLabel(status)}</span>
-                </span>
-              </button>
+                <div className="project-group" key={project.path}>
+                  <button
+                    className={`project-row ${active ? "project-row--active" : ""} project-row--${status}`}
+                    type="button"
+                    aria-current={active ? "page" : undefined}
+                    aria-label={`${active ? "Active project" : "Switch to project"} ${basename(project.path)}, ${projectRailStatusLabel(status)}`}
+                    title={project.path}
+                    onPointerDown={(event) => {
+                      if (event.button !== 0) return;
+                      event.preventDefault();
+                      if (!active) void requestOpenWorkspace(project.path);
+                    }}
+                    onContextMenu={(event) => openContextMenu(event, projectRailContextMenuItems(project))}
+                  >
+                    <span className="project-row__copy">
+                      <span className="project-row__name">
+                        <AppIcon name="workspace" />
+                        <span>{basename(project.path)}</span>
+                      </span>
+                      <span className="project-row__path">{project.path}</span>
+                    </span>
+                    <span className="project-row__state">
+                      <AppIcon name={projectRailStatusIcon(status)} />
+                      <span>{active ? "Active" : projectRailStatusLabel(status)}</span>
+                    </span>
+                  </button>
+                  <div className="session-list" aria-label={`${basename(project.path)} sessions`}>
+                    <button
+                      className="session-row session-row--new"
+                      type="button"
+                      aria-label={`New session in ${basename(project.path)}`}
+                      onPointerDown={(event) => {
+                        if (event.button !== 0) return;
+                        event.preventDefault();
+                        void createProjectSession(project.path);
+                      }}
+                    >
+                      <span className="session-row__copy">
+                        <AppIcon name="filePlus" />
+                        <span>New session</span>
+                      </span>
+                    </button>
+                    {visibleSessions.map((session) => {
+                      const sessionStatus = projectSessionStatus(project.path, session);
+                      const sessionActive = active && session.id === activeSessionId;
+                      return (
+                        <button
+                          className={`session-row ${sessionActive ? "session-row--active" : ""} session-row--${sessionStatus}`}
+                          type="button"
+                          key={session.id}
+                          aria-current={sessionActive ? "page" : undefined}
+                          aria-label={`${sessionActive ? "Active session" : "Switch to session"} ${session.title}, ${projectRailStatusLabel(sessionStatus)}`}
+                          title={`${session.title} · ${projectRailStatusLabel(sessionStatus)}`}
+                          onPointerDown={(event) => {
+                            if (event.button !== 0) return;
+                            event.preventDefault();
+                            if (!sessionActive) void switchProjectSession(project.path, session.id);
+                          }}
+                          onContextMenu={(event) => openContextMenu(event, projectSessionContextMenuItems(project.path, session))}
+                        >
+                          <span className="session-row__copy">
+                            <AppIcon name="file" />
+                            <span>{session.title}</span>
+                          </span>
+                          <span className="session-row__state">
+                            <AppIcon name={projectRailStatusIcon(sessionStatus)} />
+                          </span>
+                        </button>
+                      );
+                    })}
+                    {sessions.length > 3 ? (
+                      <button
+                        className="session-row session-row--more"
+                        type="button"
+                        aria-expanded={sessionsExpanded}
+                        aria-label={sessionsExpanded ? `Show fewer sessions in ${basename(project.path)}` : `Show ${hiddenSessionCount} more sessions in ${basename(project.path)}`}
+                        onPointerDown={(event) => {
+                          if (event.button !== 0) return;
+                          event.preventDefault();
+                          setExpandedSessionProjects((expanded) => ({
+                            ...expanded,
+                            [project.path]: !sessionsExpanded,
+                          }));
+                        }}
+                      >
+                        <span>{sessionsExpanded ? "Show fewer" : `Show more (${hiddenSessionCount})`}</span>
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
               );
             })}
           </nav>
