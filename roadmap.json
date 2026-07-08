@@ -363,6 +363,17 @@
       "done": "Project rail, file explorer, editor tabs/text, terminal panes, browser preview, diff/git surfaces, and agent panes expose relevant context menus with disabled states, shortcut labels, and confirmation/undo for destructive actions; no command exists only in a hidden context menu."
     },
     {
+      "id": "CHROME-POLISH-SYSTEM",
+      "title": "Codex-level chrome polish system",
+      "column": "next",
+      "tier": "pebble",
+      "track": "ui",
+      "size": "M",
+      "launch": "v0_5",
+      "summary": "Define the workbench chrome system before more surfaces drift: dense rails, calm dark surfaces, tokens, menus, badges, pane headers, settings/sidebar rhythm, command palette, toasts, and restrained motion.",
+      "done": "Core chrome uses semantic tokens, one icon family, compact desktop density, consistent active/hover/focus/disabled/loading/empty/error states, shared command labels across menus/tooltips/palette, accessible badges, and screenshot-based visual QA for one-project workbench, settings, context menu, command palette, and agent attention state."
+    },
+    {
       "id": "ICON-SYSTEM",
       "title": "Codex-quality icon and status system",
       "column": "next",
@@ -694,8 +705,8 @@
       "track": "ui",
       "size": "S",
       "launch": "v2",
-      "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming.",
-      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast."
+      "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming or break the chrome token contract.",
+      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states."
     },
     {
       "id": "AGENT-HOOKS",

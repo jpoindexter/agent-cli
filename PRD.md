@@ -33,6 +33,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Connect to local Git plus source hosts that matter for real coding work: GitHub and GitLab first, with Bitbucket/Azure DevOps as adapter-lane later. Connections should detect existing `git`/`gh`/`glab` auth, show health/errors, open repos/PRs/MRs/issues/pipelines, and support PR/MR creation only after local review flows are solid.
 - Search files and terminal scrollback without leaving the app.
 - Use polished, consistent Codex-quality iconography for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions. Icons must carry labels/tooltips where meaning is not universal.
+- Match Codex-level chrome polish for the workbench shell: compact density, consistent dark surfaces, active/hover/focus states, pane headers, settings/sidebar rhythm, command palette, context menus, badges, toasts, and restrained motion. Polish is part of the app chrome, not a marketing layer.
 - Show agent activity state clearly: thinking, running command, editing files, waiting for approval/input, errored, exited, and complete. Surface concise activity/progress summaries and tool events, not hidden chain-of-thought.
 - Keep browser/web-preview controls minimal: address/local URL, back/forward, reload, open external, and per-project remembered preview URL.
 - Keep common VS Code shortcuts and interaction patterns for the supported workflow, including command palette-style action access.
@@ -53,6 +54,10 @@ Use Codex's project/chat sidebar as a reference for information density, groupin
 ## Integration Scope
 
 Local Git is core because it is part of supervising agent work. GitHub and GitLab are first-class source-hosting integrations because they cover common repo, PR/MR, issue, and CI/pipeline workflows. Prefer existing CLIs (`git`, `gh`, `glab`) and OS-safe credential storage before direct API work. Bitbucket, Azure DevOps, Linear, Jira, Slack, and Discord are adapter-lane or notification/link targets only; they should not turn the app into a project management, chat, or plugin platform. Detailed mapping lives in `docs/integrations-scope.md`.
+
+## Chrome UI Polish
+
+The chrome should feel Codex-level: dense, calm, readable, and intentional across the rails, editor tabs, pane headers, browser toolbar, settings shell, context menus, command palette, dialogs, toasts, and status badges. Use a real token system, one icon family, complete interaction states, and screenshot-based visual QA. Detailed criteria live in `docs/chrome-ui-polish.md`.
 
 ## User
 
@@ -76,6 +81,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [ ] Terminal pane remains usable while browsing/editing files.
 - [x] Recent projects and last workspace make reopening cheap.
 - [ ] Common file/editor/terminal actions are reachable through VS Code-style shortcuts, menu bar entries, and right-click/Control-click context menus.
+- [ ] Core chrome surfaces use a coherent token/icon system with hover, active, disabled, focus, loading, empty, and error states.
 
 ## v1 done criteria
 
@@ -125,3 +131,4 @@ The file rail and editor are not optional product garnish; they are the reason t
 - Not a Codex settings clone: copy the useful structure, search, icons, and developer/AI connection surfaces; do not copy account, billing, pets, archived-chat, or custom-chat settings.
 - Not a Codex chat clone: project sessions may look like chat rows in the rail, but the underlying object is a workbench session, not a custom LLM conversation thread.
 - Not a general integration hub: GitHub/GitLab/source-control integrations are allowed because they support code review and shipping; unrelated services stay parked unless they directly improve agent supervision.
+- Not decorative UI bloat: chrome polish means consistent workbench surfaces, states, and legibility; it does not mean marketing pages, ornamental graphics, or feature chrome that does not support the workflow.

@@ -66,7 +66,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 55 slices &middot; 6 shipped</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 56 slices &middot; 6 shipped</p>
 <p class="loop">Open project folder → inspect/edit files → preview web output → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported explorer/editor/browser/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
@@ -210,6 +210,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">CONTEXT-MENUS &middot; Right-click context menus</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">macOS pointer workflows need right-click/Control-click affordances, not only visible buttons. Context menus should expose the same command registry as menu bar, shortcuts, and command palette where possible.</p>
 <details><summary>Done criteria</summary><p class="done">Project rail, file explorer, editor tabs/text, terminal panes, browser preview, diff/git surfaces, and agent panes expose relevant context menus with disabled states, shortcut labels, and confirmation/undo for destructive actions; no command exists only in a hidden context menu.</p></details></div>
+<div class="card" data-track="ui" data-id="CHROME-POLISH-SYSTEM" data-size="M" data-tier="pebble" data-launch="v0_5">
+<div class="hd"><span class="sz">M</span><span class="ttl">CHROME-POLISH-SYSTEM &middot; Codex-level chrome polish system</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Define the workbench chrome system before more surfaces drift: dense rails, calm dark surfaces, tokens, menus, badges, pane headers, settings/sidebar rhythm, command palette, toasts, and restrained motion.</p>
+<details><summary>Done criteria</summary><p class="done">Core chrome uses semantic tokens, one icon family, compact desktop density, consistent active/hover/focus/disabled/loading/empty/error states, shared command labels across menus/tooltips/palette, accessible badges, and screenshot-based visual QA for one-project workbench, settings, context menu, command palette, and agent attention state.</p></details></div>
 <div class="card" data-track="ui" data-id="ICON-SYSTEM" data-size="M" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">M</span><span class="ttl">ICON-SYSTEM &middot; Codex-quality icon and status system</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.</p>
@@ -314,8 +318,8 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">A local config file can override app-level shortcuts, reports conflicts with terminal/editor reserved bindings, and generates a visible shortcut reference.</p></details></div>
 <div class="card" data-track="ui" data-id="THEME" data-size="S" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">S</span><span class="ttl">THEME &middot; Color themes</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v2</span></div><p class="sum">Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming.</p>
-<details><summary>Done criteria</summary><p class="done">App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast.</p></details></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming or break the chrome token contract.</p>
+<details><summary>Done criteria</summary><p class="done">App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states.</p></details></div>
 <div class="card" data-track="research" data-id="REUSE-AUDIT" data-size="S" data-tier="sand" data-launch="v3">
 <div class="hd"><span class="sz">S</span><span class="ttl">REUSE-AUDIT &middot; Mine old projects for reusable pieces</span><span class="lens l-research">Research &amp; spikes</span></div>
 <div class="badges"><span class="me ver">v3</span></div><p class="sum">Re-check Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without adopting their product shape.</p>

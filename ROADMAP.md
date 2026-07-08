@@ -61,6 +61,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **AGENT-COMPOSER:** compact input that routes prompts/instructions to the selected real terminal agent or app action.
 - **SHORTCUTS:** VS Code-compatible shortcut map across terminal/editor/chrome.
 - **CONTEXT-MENUS:** right-click/Control-click menus across rail, files, editor, terminal, browser, git/diff, and agent panes.
+- **CHROME-POLISH-SYSTEM:** Codex-level workbench chrome tokens, density, states, badges, menus, and visual QA.
 - **ICON-SYSTEM:** polished Codex-quality iconography, labels, tooltips, and status badges.
 - **ACCESSIBILITY-BASICS:** keyboard reachability, visible focus, and labelled chrome controls.
 
@@ -92,7 +93,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **INTEGRATIONS-POLICY:** define which other integrations are allowed, parked, or explicitly out of scope.
 - **SETTINGS-PARITY:** Codex-style searchable settings shell, keeping only useful workbench categories and dropping account/chat novelty categories.
 - **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, AI connections, and shortcut overrides.
-- **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost.
+- **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost and preserve the chrome token contract.
 - **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
 - **NOTIFICATIONS:** background agent exit/attention badges and optional macOS notifications.
 - **TRANSCRIPTS:** save/review completed pane output.
