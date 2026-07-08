@@ -130,6 +130,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">TERMINAL-ROBUSTNESS &middot; Robust terminal parity</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">The terminal is the trusted agent surface, so it needs daily-driver robustness beyond the initial working loop.</p>
 <details><summary>Done criteria</summary><p class="done">Single-pane terminal verifies Claude/Codex TUIs, alternate screen apps, ANSI/truecolor styling, resize, scrollback, mouse selection, copy, paste, bracketed paste, common keyboard chords, command/cwd/status header, fast-output responsiveness, and screenshot/runtime QA.</p></details></div>
+<div class="card" data-track="workspace" data-id="PROJECT-RAIL" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-RAIL &middot; Left project rail for open workspaces</span><span class="lens l-workspace">Projects + sessions</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-09: the left rail now has persisted openProjects separate from recents, shows at least three project rows in QA, marks active/running/exited/attention states, promotes opened folders into the rail, prunes missing paths, and exposes switch/reveal/copy/close context-menu actions. Switching projects uses the real workspace load path and restores in-session editor tabs, active file, editor buffers, and view state. Project session rows, browser preview state, multiple live panes, background-running status, and cross-relaunch session restore stay with their dedicated later cards.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="workspace" data-id="LAST-WORKSPACE" data-size="S" data-tier="pebble" data-launch="v0">
@@ -220,10 +224,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 <div class="col" data-status="next"><h2 class="s-next">Next</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="workspace" data-id="PROJECT-RAIL" data-size="M" data-tier="rock" data-launch="v1">
-<div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-RAIL &middot; Left project rail for open workspaces</span><span class="lens l-workspace">Projects + sessions</span></div>
-<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.</p>
-<details><summary>Done criteria</summary><p class="done">Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's session list, file rail, editor tabs, browser preview, terminal panes, and focused pane.</p></details></div>
 <div class="card" data-track="workspace" data-id="PROJECT-SESSIONS" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-SESSIONS &middot; Project session rows</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.</p>

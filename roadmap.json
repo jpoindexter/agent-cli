@@ -489,14 +489,14 @@
     {
       "id": "PROJECT-RAIL",
       "title": "Left project rail for open workspaces",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "workspace",
       "size": "M",
       "launch": "v1",
       "blocker": true,
       "summary": "The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.",
-      "done": "Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's session list, file rail, editor tabs, browser preview, terminal panes, and focused pane."
+      "done": "Verified 2026-07-09: the left rail now has persisted openProjects separate from recents, shows at least three project rows in QA, marks active/running/exited/attention states, promotes opened folders into the rail, prunes missing paths, and exposes switch/reveal/copy/close context-menu actions. Switching projects uses the real workspace load path and restores in-session editor tabs, active file, editor buffers, and view state. Project session rows, browser preview state, multiple live panes, background-running status, and cross-relaunch session restore stay with their dedicated later cards."
     },
     {
       "id": "PROJECT-SESSIONS",

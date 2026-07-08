@@ -21,6 +21,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 
 - `settings-parity.md`: Codex-inspired settings shape; kept, dropped, and parked sections.
 - `navigation-parity.md`: project/session rail model and Codex sidebar translation.
+- `project-rail.md`: v1 open-project rail implementation and deferred session/pane work.
 - `integrations-scope.md`: Git, GitHub, GitLab, and adapter-lane boundaries.
 - `composer-harness-research.md`: bottom composer and future harness scope.
 - `harness-contract.md`: app-owned pane/session handle contract.

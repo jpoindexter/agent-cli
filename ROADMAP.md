@@ -75,7 +75,7 @@ This is where the clarified product point lands: not "terminal app with optional
 
 ## v1 — Multi-project, multi-agent cockpit
 
-- **PROJECT-RAIL:** Codex-style left project/workspace rail replaces separate VS Code windows.
+- ~~**PROJECT-RAIL:** Codex-style left project/workspace rail replaces separate VS Code windows.~~ **DONE 2026-07-09** — the left rail now has persisted `openProjects` separate from recents, shows at least three project rows in QA, marks active/running/exited/attention states, promotes opened folders into the rail, prunes missing paths, and exposes switch/reveal/copy/close context-menu actions. Switching projects uses the real workspace load path and restores in-session editor tabs, active file, editor buffers, and view state. Project session rows, browser preview state, multiple live panes, background-running status, and cross-relaunch session restore stay with their dedicated later cards. Verified with `npm run build`, `npm test` (59 tests), `npm run qa:editor`, screenshot inspection, and `git diff --check`.
 - **PROJECT-SESSIONS:** chat-like rows under each project become named task/workbench sessions, not custom chat threads.
 - **BROWSER-PREVIEW:** lightweight browser/web preview pane for localhost apps, docs, auth flows, and generated pages.
 - **PANE-MANAGER:** multiple Claude/Codex/shell panes per project.

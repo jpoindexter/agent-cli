@@ -1,4 +1,12 @@
 export const MAX_RECENT_PROJECTS = 8;
+export const MAX_OPEN_PROJECTS = 8;
+
+export type ProjectRailStatus = "running" | "exited" | "attention";
+
+export type OpenProject = {
+  path: string;
+  status: ProjectRailStatus;
+};
 
 export const normalizeRecentProjects = (value: unknown): string[] =>
   Array.isArray(value)
@@ -14,6 +22,48 @@ export const pushRecentProject = (projects: string[], path: string) => [
 ].slice(0, MAX_RECENT_PROJECTS);
 
 export const removeRecentProject = (projects: string[], path: string) => projects.filter((project) => project !== path);
+
+const normalizeProjectStatus = (value: unknown): ProjectRailStatus =>
+  value === "running" || value === "exited" || value === "attention" ? value : "exited";
+
+export const normalizeOpenProjects = (value: unknown): OpenProject[] => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const projects: OpenProject[] = [];
+  for (const item of value) {
+    const objectItem = typeof item === "object" && item != null && !Array.isArray(item) ? item as Record<string, unknown> : null;
+    const path = typeof item === "string" ? item : typeof objectItem?.path === "string" ? objectItem.path : "";
+    const trimmed = path.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    projects.push({
+      path: trimmed,
+      status: objectItem ? normalizeProjectStatus(objectItem.status) : "exited",
+    });
+    if (projects.length >= MAX_OPEN_PROJECTS) break;
+  }
+  return projects;
+};
+
+export const openProjectsFromRecent = (projects: string[]): OpenProject[] =>
+  projects.slice(0, MAX_OPEN_PROJECTS).map((path) => ({ path, status: "exited" }));
+
+export const upsertOpenProject = (
+  projects: OpenProject[],
+  path: string,
+  status: ProjectRailStatus,
+): OpenProject[] => [
+  { path, status },
+  ...projects.filter((project) => project.path !== path),
+].slice(0, MAX_OPEN_PROJECTS);
+
+export const setOpenProjectStatus = (
+  projects: OpenProject[],
+  path: string,
+  status: ProjectRailStatus,
+): OpenProject[] => projects.map((project) => (project.path === path ? { ...project, status } : project));
+
+export const removeOpenProject = (projects: OpenProject[], path: string) => projects.filter((project) => project.path !== path);
 
 export const isMissingWorkspaceError = (message: string) =>
   message.includes("Workspace folder does not exist") || message.includes("Workspace path is not a folder");

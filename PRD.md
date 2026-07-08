@@ -110,7 +110,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 
 **Done:** the app replaces the current multi-window VS Code habit for normal agent work.
 
-- [ ] A persistent left project/workspace rail opens at least 3 projects in one window and shows active, running, exited, and attention-needed states.
+- [x] A persistent left project/workspace rail opens at least 3 projects in one window and shows active, running, exited, and attention-needed states.
 - [ ] Each project can show multiple task sessions in the rail; selecting one restores its workbench context without pretending dead processes are live.
 - [ ] Browser/web preview opens localhost apps, docs, auth flows, and generated pages inside the workbench.
 - [ ] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.

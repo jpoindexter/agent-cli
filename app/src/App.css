@@ -194,7 +194,7 @@ body,
 }
 
 .rail-open-button:focus-visible,
-.recent-project:focus-visible,
+.project-row:focus-visible,
 .rail-root__button:focus-visible,
 .editor-tab__activate:focus-visible,
 .editor-tab__close:focus-visible,
@@ -293,15 +293,23 @@ body,
   outline: none;
 }
 
-.recent-projects {
-  position: relative;
-  z-index: 2;
+.project-rail {
   flex: 0 0 auto;
   border-bottom: 1px solid var(--gray-800);
-  padding: 4px 0;
+  padding: 6px 0;
 }
 
-.recent-project {
+.project-rail__heading {
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.04em;
+  line-height: 18px;
+  padding: 0 12px 2px;
+  text-transform: uppercase;
+}
+
+.project-row {
   display: grid;
   width: 100%;
   min-height: 48px;
@@ -316,25 +324,30 @@ body,
   text-align: left;
 }
 
-.recent-project:hover {
+.project-row:hover,
+.project-row:focus-visible {
   background: var(--color-row-hover);
 }
 
-.recent-project__copy {
+.project-row--active {
+  background: var(--color-info-active);
+}
+
+.project-row__copy {
   display: grid;
   min-width: 0;
   gap: 1px;
 }
 
-.recent-project__name,
-.recent-project__path {
+.project-row__name,
+.project-row__path {
   overflow: hidden;
   min-width: 0;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.recent-project__name {
+.project-row__name {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -343,19 +356,41 @@ body,
   font-weight: 650;
 }
 
-.recent-project__path {
+.project-row__path {
   color: var(--color-text-subtle);
   font-size: 11px;
 }
 
-.recent-project__action {
+.project-row__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 1px solid var(--control-border);
-  border-radius: var(--control-radius);
+  border-radius: var(--badge-radius);
   color: var(--color-text);
   font-size: 10px;
   font-weight: 650;
   line-height: 18px;
   padding: 0 6px;
+}
+
+.project-row__state .app-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.project-row--running .project-row__state {
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+.project-row--exited .project-row__state {
+  color: var(--color-text-subtle);
+}
+
+.project-row--attention .project-row__state {
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
 }
 
 .rail-tree {

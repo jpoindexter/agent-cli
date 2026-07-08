@@ -3,10 +3,15 @@ import {
   forgetActiveFile,
   isMissingWorkspaceError,
   normalizeActiveFileByWorkspace,
+  normalizeOpenProjects,
   normalizeRecentProjects,
+  openProjectsFromRecent,
   pushRecentProject,
+  removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  setOpenProjectStatus,
+  upsertOpenProject,
 } from "./workspaceState";
 
 describe("workspace state helpers", () => {
@@ -40,5 +45,29 @@ describe("workspace state helpers", () => {
     const remembered = rememberActiveFile({ "/a": "/a/old.ts" }, "/b", "/b/src/main.ts");
     expect(remembered).toEqual({ "/a": "/a/old.ts", "/b": "/b/src/main.ts" });
     expect(forgetActiveFile(remembered, "/a")).toEqual({ "/b": "/b/src/main.ts" });
+  });
+
+  it("normalizes open projects from current and legacy store shapes", () => {
+    expect(normalizeOpenProjects([{ path: "/a", status: "running" }, "/b", { path: "/a", status: "attention" }, { path: "", status: "running" }, 7])).toEqual([
+      { path: "/a", status: "running" },
+      { path: "/b", status: "exited" },
+    ]);
+  });
+
+  it("promotes and updates open project rail entries", () => {
+    const open = openProjectsFromRecent(["/a", "/b"]);
+    expect(open).toEqual([
+      { path: "/a", status: "exited" },
+      { path: "/b", status: "exited" },
+    ]);
+    expect(upsertOpenProject(open, "/b", "running")).toEqual([
+      { path: "/b", status: "running" },
+      { path: "/a", status: "exited" },
+    ]);
+    expect(setOpenProjectStatus(open, "/a", "attention")).toEqual([
+      { path: "/a", status: "attention" },
+      { path: "/b", status: "exited" },
+    ]);
+    expect(removeOpenProject(open, "/a")).toEqual([{ path: "/b", status: "exited" }]);
   });
 });

@@ -20,12 +20,17 @@ import {
   forgetActiveFile,
   isMissingWorkspaceError,
   normalizeActiveFileByWorkspace,
+  normalizeOpenProjects,
   normalizeRecentProjects,
+  openProjectsFromRecent,
   pushRecentProject,
+  removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  setOpenProjectStatus,
+  upsertOpenProject,
 } from "./workspaceState";
-import type { ActiveFileByWorkspace } from "./workspaceState";
+import type { ActiveFileByWorkspace, OpenProject, ProjectRailStatus } from "./workspaceState";
 import {
   clampEditorViewState,
   cursorFromText,
@@ -101,6 +106,12 @@ type EditorBuffer = EditorBufferSnapshot & {
   modifiedMs: number | null;
   error: string | null;
   recoveryError: string | null;
+};
+type ProjectEditorSnapshot = {
+  tabs: FileTreeNode[];
+  activePath: string | null;
+  buffers: Record<string, EditorBuffer>;
+  viewStates: Record<string, EditorViewState>;
 };
 type PendingNavigation =
   | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
@@ -193,6 +204,7 @@ function App() {
   const workspacePathRef = useRef<string | null>(null);
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
+  const openProjectsRef = useRef<OpenProject[]>([]);
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const terminalPaneIdRef = useRef<number | null>(null);
   const activeFilesByWorkspaceRef = useRef<ActiveFileByWorkspace>({});
@@ -204,6 +216,7 @@ function App() {
   const editorViewRef = useRef<EditorView | null>(null);
   const editorViewStatesRef = useRef<Record<string, EditorViewState>>({});
   const editorBuffersRef = useRef<Record<string, EditorBuffer>>({});
+  const projectEditorSnapshotsRef = useRef<Record<string, ProjectEditorSnapshot>>({});
   const contextMenuRef = useRef<HTMLDivElement | null>(null);
   const pendingEditorFocusRef = useRef(false);
   const editorLoadSeq = useRef(0);
@@ -238,6 +251,7 @@ function App() {
   const [editorModifiedMs, setEditorModifiedMs] = useState<number | null>(null);
   const [editorCursor, setEditorCursor] = useState<CursorPosition>({ line: 1, column: 1 });
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
+  const [openProjects, setOpenProjects] = useState<OpenProject[]>([]);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -273,6 +287,10 @@ function App() {
   useEffect(() => {
     recentProjectsRef.current = recentProjects;
   }, [recentProjects]);
+
+  useEffect(() => {
+    openProjectsRef.current = openProjects;
+  }, [openProjects]);
 
   useEffect(() => {
     selectedFileRef.current = selectedFile;
@@ -377,12 +395,57 @@ function App() {
     await store?.save();
   };
 
+  const persistOpenProjects = async (projects: OpenProject[]) => {
+    openProjectsRef.current = projects;
+    setOpenProjects(projects);
+    await storeRef.current?.set("openProjects", projects);
+    await storeRef.current?.save();
+  };
+
+  const updateOpenProjectStatus = async (path: string | null, status: ProjectRailStatus) => {
+    if (!path) return;
+    const next = setOpenProjectStatus(openProjectsRef.current, path, status);
+    await persistOpenProjects(next);
+  };
+
+  const activeProjectStatus = (): ProjectRailStatus => {
+    if (terminalPaneState === "running" || terminalPaneState === "starting") return "running";
+    if (terminalPaneState === "exited") return "exited";
+    return "attention";
+  };
+
+  const captureCurrentProjectSnapshot = () => {
+    const root = workspacePathRef.current;
+    if (!root) return;
+    captureCurrentEditorViewState();
+    captureCurrentEditorBuffer();
+    projectEditorSnapshotsRef.current[root] = {
+      tabs: editorTabs,
+      activePath: selectedFileRef.current?.path ?? null,
+      buffers: { ...editorBuffersRef.current },
+      viewStates: { ...editorViewStatesRef.current },
+    };
+  };
+
+  const restoreProjectEditorSnapshot = (root: string) => {
+    const snapshot = projectEditorSnapshotsRef.current[root];
+    resetEditor();
+    if (!snapshot) return;
+    editorBuffersRef.current = { ...snapshot.buffers };
+    editorViewStatesRef.current = { ...snapshot.viewStates };
+    setEditorTabs(snapshot.tabs);
+    setEditorBufferRevision((value) => value + 1);
+    const nextActive = snapshot.tabs.find((tab) => tab.path === snapshot.activePath) ?? snapshot.tabs[0] ?? null;
+    if (nextActive) void openEditorFileDirect(nextActive);
+  };
+
   useEffect(() => {
     launchProfileRef.current = launchProfile;
   }, [launchProfile]);
 
   const openWorkspaceDirect = async (path: string, profileOverride: LaunchProfile = launchProfileRef.current) => {
-    captureCurrentEditorViewState();
+    const previousRoot = workspacePathRef.current;
+    captureCurrentProjectSnapshot();
     const store = storeRef.current;
     const profile = profileOverride;
     const previousPaneState = terminalPaneState;
@@ -402,12 +465,21 @@ function App() {
       resetEditor();
       setTimeout(sendTerminalResize, 0);
       const nextRecent = pushRecentProject(recentProjectsRef.current, root);
+      const nextOpen = upsertOpenProject(
+        previousRoot && previousRoot !== root ? setOpenProjectStatus(openProjectsRef.current, previousRoot, "exited") : openProjectsRef.current,
+        root,
+        "running",
+      );
       recentProjectsRef.current = nextRecent;
+      openProjectsRef.current = nextOpen;
       setRecentProjects(nextRecent);
+      setOpenProjects(nextOpen);
       await store?.set("launchProfile", profile);
       await store?.set("folder", root);
       await store?.set("recentFolders", nextRecent);
+      await store?.set("openProjects", nextOpen);
       await store?.save();
+      restoreProjectEditorSnapshot(root);
       return true;
     } catch (err) {
       const message = String(err);
@@ -416,15 +488,25 @@ function App() {
       setTerminalExitCode(hadPreviousPane ? previousExitCode : null);
       if (isMissingWorkspaceError(message)) {
         const nextRecent = removeRecentProject(recentProjectsRef.current, path);
+        const nextOpen = removeOpenProject(openProjectsRef.current, path);
         recentProjectsRef.current = nextRecent;
+        openProjectsRef.current = nextOpen;
         setRecentProjects(nextRecent);
+        setOpenProjects(nextOpen);
         await store?.set("recentFolders", nextRecent);
+        await store?.set("openProjects", nextOpen);
         if (workspacePathRef.current === path) {
           setWorkspacePath(null);
           setFileTree([]);
           resetEditor();
         }
         await store?.delete("folder");
+        await store?.save();
+      } else {
+        const nextOpen = upsertOpenProject(openProjectsRef.current, path, "attention");
+        openProjectsRef.current = nextOpen;
+        setOpenProjects(nextOpen);
+        await store?.set("openProjects", nextOpen);
         await store?.save();
       }
       return false;
@@ -566,10 +648,12 @@ function App() {
       await store?.set("launchProfile", profile);
       await store?.save();
       setTimeout(sendTerminalResize, 0);
+      await updateOpenProjectStatus(root, "running");
     } catch (err) {
       setLaunchError(String(err));
       setTerminalPaneState(hadPreviousPane ? previousPaneState : "error");
       setTerminalExitCode(hadPreviousPane ? previousExitCode : null);
+      await updateOpenProjectStatus(root, "attention");
     } finally {
       setLaunchProfileChanging(false);
     }
@@ -591,8 +675,28 @@ function App() {
     invoke("resize_pty", { cols, rows }).catch(() => {});
   };
 
-  const visibleRecentProjects = recentProjects.filter((project) => project !== workspacePath).slice(0, 3);
-  const hiddenRecentCount = Math.max(0, recentProjects.filter((project) => project !== workspacePath).length - visibleRecentProjects.length);
+  const projectRailStatus = (project: OpenProject): ProjectRailStatus => {
+    if (project.path !== workspacePath) return project.status;
+    return activeProjectStatus();
+  };
+
+  const projectRailStatusLabel = (status: ProjectRailStatus) => {
+    if (status === "running") return "Running";
+    if (status === "attention") return "Needs attention";
+    return "Exited";
+  };
+
+  const projectRailStatusIcon = (status: ProjectRailStatus): AppIconName => {
+    if (status === "running") return "loading";
+    if (status === "attention") return "error";
+    return "idle";
+  };
+
+  const visibleOpenProjects = openProjects.length > 0
+    ? openProjects
+    : workspacePath
+      ? [{ path: workspacePath, status: activeProjectStatus() }]
+      : [];
 
   const openEditorFileDirect = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
     const root = workspacePathRef.current ?? workspacePath;
@@ -979,20 +1083,21 @@ function App() {
     }),
   ];
 
-  const recentProjectContextMenuItems = (project: string): ContextMenuItem[] => [
-    menuItem("recent.switch", "Switch to Project", () => void requestOpenWorkspace(project), { icon: "workspace" }),
-    menuItem("recent.reveal", "Reveal in Finder", () => void revealItemInDir(project), { icon: "folderOpen" }),
-    menuItem("recent.copy-path", "Copy Path", () => void copyPathToClipboard(project), { icon: "file" }),
+  const projectRailContextMenuItems = (project: OpenProject): ContextMenuItem[] => [
+    menuItem("project.switch", "Switch to Project", () => void requestOpenWorkspace(project.path), {
+      icon: "workspace",
+      disabled: project.path === workspacePath,
+    }),
+    menuItem("project.reveal", "Reveal in Finder", () => void revealItemInDir(project.path), { icon: "folderOpen" }),
+    menuItem("project.copy-path", "Copy Path", () => void copyPathToClipboard(project.path), { icon: "file" }),
     menuItem(
-      "recent.remove",
-      "Remove from Recents",
+      "project.close",
+      "Close Project",
       () => {
-        const nextRecent = removeRecentProject(recentProjectsRef.current, project);
-        recentProjectsRef.current = nextRecent;
-        setRecentProjects(nextRecent);
-        void storeRef.current?.set("recentFolders", nextRecent).then(() => storeRef.current?.save());
+        const nextOpen = removeOpenProject(openProjectsRef.current, project.path);
+        void persistOpenProjects(nextOpen);
       },
-      { icon: "error", danger: true },
+      { icon: "close", danger: true, disabled: project.path === workspacePath },
     ),
   ];
 
@@ -1293,17 +1398,21 @@ function App() {
 
     // Workspace: reopen the last folder on startup, else prompt. Opening a folder
     // spawns the selected launch profile in it (backend `open_workspace`) and
-    // persists both the active folder and recent-projects list.
+    // persists the active folder plus recent and open-project rail lists.
     const initWorkspace = async () => {
       const store = await load("workspace.json", { autoSave: true, defaults: {} });
       storeRef.current = store;
       const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
+      const savedOpenProjects = normalizeOpenProjects(await store.get<unknown>("openProjects"));
       const savedProfile = normalizeLaunchProfile(await store.get<unknown>("launchProfile"));
       activeFilesByWorkspaceRef.current = normalizeActiveFileByWorkspace(await store.get<unknown>("activeFileByWorkspace"));
+      const initialOpenProjects = savedOpenProjects.length > 0 ? savedOpenProjects : openProjectsFromRecent(savedRecent);
       recentProjectsRef.current = savedRecent;
+      openProjectsRef.current = initialOpenProjects;
       launchProfileRef.current = savedProfile;
       setLaunchProfile(savedProfile);
       setRecentProjects(savedRecent);
+      setOpenProjects(initialOpenProjects);
       const last = await store.get<string>("folder");
       if (last) await openWorkspaceDirect(last, savedProfile);
       else await pickWorkspace();
@@ -1422,6 +1531,7 @@ function App() {
       setTerminalPaneState("exited");
       setTerminalExitCode(ev.payload.code);
       setLaunchError(ev.payload.message);
+      void updateOpenProjectStatus(workspacePathRef.current, "exited");
     });
 
     window.addEventListener("keydown", onKey);
@@ -1501,36 +1611,42 @@ function App() {
             {workspacePath ? basename(workspacePath) : "No workspace"}
           </button>
         </div>
-        {visibleRecentProjects.length > 0 ? (
-          <div className="recent-projects" aria-label="Recent projects">
-            {visibleRecentProjects.map((project) => (
+        {visibleOpenProjects.length > 0 ? (
+          <nav className="project-rail" aria-label="Open projects">
+            <div className="project-rail__heading">Projects</div>
+            {visibleOpenProjects.map((project) => {
+              const status = projectRailStatus(project);
+              const active = project.path === workspacePath;
+              return (
               <button
-                className="recent-project"
+                className={`project-row ${active ? "project-row--active" : ""} project-row--${status}`}
                 type="button"
-                key={project}
-                aria-label={`Switch to recent project ${basename(project)}`}
-                title={project}
+                key={project.path}
+                aria-current={active ? "page" : undefined}
+                aria-label={`${active ? "Active project" : "Switch to project"} ${basename(project.path)}, ${projectRailStatusLabel(status)}`}
+                title={project.path}
                 onPointerDown={(event) => {
                   if (event.button !== 0) return;
                   event.preventDefault();
-                  void requestOpenWorkspace(project);
+                  if (!active) void requestOpenWorkspace(project.path);
                 }}
-                onContextMenu={(event) => openContextMenu(event, recentProjectContextMenuItems(project))}
+                onContextMenu={(event) => openContextMenu(event, projectRailContextMenuItems(project))}
               >
-                <span className="recent-project__copy">
-                  <span className="recent-project__name">
+                <span className="project-row__copy">
+                  <span className="project-row__name">
                     <AppIcon name="workspace" />
-                    <span>{basename(project)}</span>
+                    <span>{basename(project.path)}</span>
                   </span>
-                  <span className="recent-project__path">{project}</span>
+                  <span className="project-row__path">{project.path}</span>
                 </span>
-                <span className="recent-project__action" aria-hidden="true">
-                  Switch
+                <span className="project-row__state">
+                  <AppIcon name={projectRailStatusIcon(status)} />
+                  <span>{active ? "Active" : projectRailStatusLabel(status)}</span>
                 </span>
               </button>
-            ))}
-            {hiddenRecentCount > 0 ? <div className="rail-status rail-status--muted">{hiddenRecentCount} more hidden</div> : null}
-          </div>
+              );
+            })}
+          </nav>
         ) : null}
         <div ref={railBodyRef} className="rail-tree">
           {fileTreeLoading ? <div className="rail-status">Loading…</div> : null}
