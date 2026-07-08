@@ -330,6 +330,17 @@
       "done": "New pane can choose Claude, Codex, or shell; command path/args are visible in config; missing commands fail with a useful message."
     },
     {
+      "id": "AGENT-COMPOSER",
+      "title": "Compact agent composer",
+      "column": "next",
+      "tier": "pebble",
+      "track": "core",
+      "size": "M",
+      "launch": "v0_5",
+      "summary": "Keep terminal panes as the trusted source-of-truth agent interface, but add a compact Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.",
+      "done": "Composer can target the selected Claude/Codex/shell pane, send text safely through the real pty, show target/project context, and run app actions via command palette routing; it never replaces the underlying terminal transcript."
+    },
+    {
       "id": "SHORTCUTS",
       "title": "VS Code shortcut baseline",
       "column": "next",
@@ -554,6 +565,17 @@
       "done": "A keyboard palette can run core app actions and shows shortcuts where assigned."
     },
     {
+      "id": "AI-CONNECTIONS",
+      "title": "AI connections and credentials settings",
+      "column": "later",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Users need to hook up real AI tooling: Claude/Codex CLI auth, provider API keys, model defaults, MCP servers, environment variables, permission defaults, and health checks.",
+      "done": "Settings can configure Claude/Codex command profiles, provider/API credentials via OS-safe storage, MCP server entries, env vars, default models, permission policy, and validation checks that explain missing auth or broken connections."
+    },
+    {
       "id": "SETTINGS",
       "title": "Settings for commands, themes, and shortcuts",
       "column": "later",
@@ -561,8 +583,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v2",
-      "summary": "Keep settings boring and inspectable: agent commands, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.",
-      "done": "A local config file controls agent profiles, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
+      "summary": "Keep settings boring and inspectable: agent commands, AI connections, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.",
+      "done": "A local config file controls agent profiles, AI connections, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
     },
     {
       "id": "NOTIFICATIONS",

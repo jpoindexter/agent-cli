@@ -57,6 +57,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **FILE-OPS:** create/rename/delete/duplicate/reveal from rail.
 - **EDITOR-TABS:** several open files, dirty indicators, close protection.
 - **AGENT-PROFILES:** Claude default, plus Codex/shell profiles without hardcoding one CLI forever.
+- **AGENT-COMPOSER:** compact input that routes prompts/instructions to the selected real terminal agent or app action.
 - **SHORTCUTS:** VS Code-compatible shortcut map across terminal/editor/chrome.
 - **ICON-SYSTEM:** polished Codex-quality iconography, labels, tooltips, and status badges.
 - **ACCESSIBILITY-BASICS:** keyboard reachability, visible focus, and labelled chrome controls.
@@ -83,7 +84,8 @@ This is where the clarified product point lands: not "terminal app with optional
 - **SEARCH:** file quick-open and ripgrep-backed text search.
 - **TERMINAL-FIND:** search active terminal output/scrollback.
 - **COMMAND-PALETTE:** VS Code-style compact action access without adding IDE chrome.
-- **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, and shortcut overrides.
+- **AI-CONNECTIONS:** settings for providers, API keys, MCP servers, CLI auth, env vars, model defaults, and permission policy.
+- **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, AI connections, and shortcut overrides.
 - **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost.
 - **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
 - **NOTIFICATIONS:** background agent exit/attention badges and optional macOS notifications.

@@ -24,6 +24,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Open, edit, find/replace, save, and close source files with dirty-state and external-change protection.
 - Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
 - Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
+- Keep terminal panes as the source-of-truth agent interface. Add a compact composer only for routing prompts/instructions to the selected agent pane or app-level actions; do not replace Claude/Codex's real terminal UI with a custom chat clone.
 - Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.
 - Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
 - Switch across multiple active projects without separate heavyweight VS Code windows.
@@ -33,7 +34,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Show agent activity state clearly: thinking, running command, editing files, waiting for approval/input, errored, exited, and complete. Surface concise activity/progress summaries and tool events, not hidden chain-of-thought.
 - Keep browser/web-preview controls minimal: address/local URL, back/forward, reload, open external, and per-project remembered preview URL.
 - Keep common VS Code shortcuts and interaction patterns for the supported workflow, including command palette-style action access.
-- Provide only practical customization: color themes, font/terminal/editor settings, ignored folders, agent commands, and keybinding overrides.
+- Provide only practical customization: color themes, font/terminal/editor settings, ignored folders, agent commands, model/provider/API configuration, MCP servers, credentials/auth checks, permission defaults, environment variables, and keybinding overrides.
 - Recover from quit/crash by restoring project/session metadata without pretending dead agent processes are still alive.
 
 ## User
@@ -96,7 +97,7 @@ The file rail and editor are not optional product garnish; they are the reason t
 
 - Not a general-purpose terminal emulator (it hosts agents; it's not iTerm).
 - Not a general-purpose browser replacement: browser/web preview exists for development workflow, local previews, docs, and auth, not full daily browsing.
-- Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app is the cockpit around them, never a chat-UI replacement.
+- Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app may have a compact command/composer box, but it routes to real panes/app actions and does not become a custom chat-UI replacement.
 - Not a from-scratch VT parser — that's what libghostty-vt is for.
 - Not multi-platform, multi-user, or plugin-capable before there's a real daily-use track record.
 - Not a full VS Code clone: no extension marketplace, plugin system, debugger, LSP-first IDE layer, remote SSH, or full git client before the lean workflow is daily-drivable. Color themes and focused settings are allowed; plugins are not.
