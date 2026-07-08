@@ -1,18 +1,18 @@
 # PRD — agent cli
 
-**One-liner:** A lean native macOS replacement for Jason's actual VS Code workflow: project tabs, a file explorer, a real file editor, and multiple real Claude/Codex CLI terminals — built on Ghostty's terminal engine, without the IDE chrome he does not use.
+**One-liner:** A lean native macOS replacement for Jason's actual VS Code workflow: project tabs, a file explorer, a real file editor, browser/web preview, and multiple real Claude/Codex CLI terminals — built on Ghostty's terminal engine, without the IDE chrome he does not use.
 
 **Direction locked 2026-07-07** (see DECISIONS.md for the full trail): build our own app, leveraging open-source *components* (Ghostty's terminal engine, Tauri, CodeMirror) — not adopting a finished third-party app. cmux/Superconductor/hashmark were evaluated and are reference only. The core architecture (`libghostty-vt` in a Rust backend parsing a real pty) is **verified working** — see `spike-ghostty-vt/`.
 
 ## Problem
 
-Jason works across 5-10 active projects. The real workflow is not "use VS Code as an IDE"; it is: open a project folder in VS Code, use the left file explorer, edit files in the editor, and run one or more Claude/Codex CLI sessions in integrated terminals pointed at that project. When a second or third project is active, it becomes another VS Code window with its own folder and agent terminal(s).
+Jason works across 5-10 active projects. The real workflow is not "use VS Code as an IDE"; it is: open a project folder in VS Code, use the left file explorer, edit files in the editor, run one or more Claude/Codex CLI sessions in integrated terminals pointed at that project, and preview local web work in a browser. When a second or third project is active, it becomes another VS Code window with its own folder and agent terminal(s).
 
-VS Code is useful for two things here: the file explorer and file editor. Everything else is resource-heavy chrome around a workflow that is mostly real terminal agents. Existing tools each miss something: cmux (great reference, but someone else's app), zellij (static config, no native "open a folder"), Superconductor (closed source, chat UI not real terminal), hashmark/Hallmark-style approaches (reimplement chat UI or show one agent at a time instead of hosting real CLIs).
+VS Code is useful here as a workbench: Explorer, editor, integrated terminal, shortcut muscle memory, theming/settings, and enough browser/web preview for local app work. Everything else is resource-heavy chrome around a workflow that is mostly real terminal agents. Existing tools each miss something: cmux (great reference, but someone else's app), zellij (static config, no native "open a folder"), Superconductor (closed source, chat UI not real terminal), hashmark/Hallmark-style approaches (reimplement chat UI or show one agent at a time instead of hosting real CLIs).
 
 ## Core Job
 
-When Jason is moving between active projects and parallel coding agents, he wants to open/switch project folders, inspect and edit files, and run real Claude/Codex CLI sessions side by side, so he can keep the speed and trust of terminal agents without paying the VS Code window/resource tax.
+When Jason is moving between active projects and parallel coding agents, he wants to open/switch project folders, inspect and edit files, preview web output, and run real Claude/Codex CLI sessions side by side, so he can keep the speed and trust of terminal agents without paying the VS Code window/resource tax.
 
 ## Daily Workflow Requirements
 
@@ -21,12 +21,14 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Open and switch project folders quickly, including recent projects.
 - Browse the project tree with sensible ignores, file watching, and safe handling for symlinks, large files, and binary files.
 - Open, edit, find/replace, save, and close source files with dirty-state and external-change protection.
+- Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
 - Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Run multiple agent panes in one project, each with a visible name/task label, status, cwd, command, restart, and kill controls.
 - Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
 - Switch across multiple active projects without separate heavyweight VS Code windows.
 - Review agent-created changes through file status, diffs, editor gutters, and lightweight git actions.
 - Search files and terminal scrollback without leaving the app.
+- Keep browser/web-preview controls minimal: address/local URL, back/forward, reload, open external, and per-project remembered preview URL.
 - Keep common VS Code shortcuts and interaction patterns for the supported workflow, including command palette-style action access.
 - Provide only practical customization: color themes, font/terminal/editor settings, ignored folders, agent commands, and keybinding overrides.
 - Recover from quit/crash by restoring project/session metadata without pretending dead agent processes are still alive.
@@ -58,6 +60,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 **Done:** the app replaces the current multi-window VS Code habit for normal agent work.
 
 - [ ] Multiple project tabs are open in one window.
+- [ ] Browser/web preview opens localhost apps, docs, auth flows, and generated pages inside the workbench.
 - [ ] Each project can run multiple named agent/shell panes.
 - [ ] Pane lifecycle controls cover running, exited, restart, terminate, and attention-needed states.
 - [ ] Session restore brings back projects, file tabs, pane layout, and enough metadata to resume intentionally.
@@ -89,6 +92,7 @@ The file rail and editor are not optional product garnish; they are the reason t
 ## Non-goals
 
 - Not a general-purpose terminal emulator (it hosts agents; it's not iTerm).
+- Not a general-purpose browser replacement: browser/web preview exists for development workflow, local previews, docs, and auth, not full daily browsing.
 - Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app is the cockpit around them, never a chat-UI replacement.
 - Not a from-scratch VT parser — that's what libghostty-vt is for.
 - Not multi-platform, multi-user, or plugin-capable before there's a real daily-use track record.

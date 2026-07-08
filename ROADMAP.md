@@ -6,7 +6,7 @@ Source of truth: `roadmap.json` → `roadmap.html` (rockmap board). Rebuild afte
 node rockmap/build-roadmap.mjs roadmap.json roadmap.html
 ```
 
-Sequential where risk gates the next step; parallel only when cards are independent. Ship ugly first, but do not lose the actual product shape: this replaces Jason's VS Code workflow of file explorer + file editor + real CLI agents.
+Sequential where risk gates the next step; parallel only when cards are independent. Ship ugly first, but do not lose the actual product shape: this replaces Jason's VS Code workflow of file explorer + file editor + browser/web preview + real CLI agents.
 
 ## Execution discipline (governs every phase)
 
@@ -63,6 +63,7 @@ This is where the clarified product point lands: not "terminal app with optional
 ## v1 — Multi-project, multi-agent cockpit
 
 - **PROJECT-TABS:** project tabs replace separate VS Code windows.
+- **BROWSER-PREVIEW:** lightweight browser/web preview pane for localhost apps, docs, auth flows, and generated pages.
 - **PANE-MANAGER:** multiple Claude/Codex/shell panes per project.
 - **PANE-NAMES:** pane names and task labels.
 - **AGENT-ATTENTION:** visible exited/needs-input state. Start with reliable process exits, then explicit Claude/Codex prompt heuristics; prompt-idle detection is later/experimental.
@@ -71,6 +72,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **GIT-STATUS:** dirty/new/deleted markers in the file rail.
 - **DIFF-VIEW:** inspect agent-created changes without VS Code.
 - **GIT-ACTIONS-LITE:** stage/unstage/discard/copy diff; v1 must-have after DIFF-VIEW, not a full git client.
+- **DEV-SERVER-DETECT:** detect common localhost dev servers and offer to open them in the browser preview.
 - **PERF-BUDGET:** prove this is lighter than the VS Code workflow it replaces.
 - **DAILY-DRIVER-METRICS:** prove the app can replace the current workflow.
 

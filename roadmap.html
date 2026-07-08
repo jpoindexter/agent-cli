@@ -66,8 +66,8 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — files + editor + real CLI agents, without IDE bloat &middot; 44 slices &middot; 6 shipped</p>
-<p class="loop">Open project folder → inspect/edit files → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported file/editor/terminal workflows; skip plugins and IDE bloat.</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — explorer + editor + browser + real CLI agents, without IDE bloat &middot; 46 slices &middot; 6 shipped</p>
+<p class="loop">Open project folder → inspect/edit files → preview web output → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported explorer/editor/browser/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
 <label for="track-filter">Track:</label><select id="track-filter"><option value="all">All track</option><option value="core">Terminal + process</option><option value="workspace">Projects + sessions</option><option value="files">Files + editor</option><option value="ui">Chrome + interaction</option><option value="quality">Quality + shipping</option><option value="research">Research &amp; spikes</option></select>
@@ -144,6 +144,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-TABS &middot; Project tabs replace multiple VS Code windows</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows.</p>
 <details><summary>Done criteria</summary><p class="done">Open at least 3 folders as project tabs; switching tabs restores each project's rail, editor tabs, terminal panes, and focused pane.</p></details></div>
+<div class="card" data-track="ui" data-id="BROWSER-PREVIEW" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">BROWSER-PREVIEW &middot; Browser and web preview pane</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The stripped VS Code workbench still needs a browser surface for localhost apps, docs, auth flows, and agent-generated pages without context switching.</p>
+<details><summary>Done criteria</summary><p class="done">A project can open a browser/web preview pane with address/local URL, back/forward, reload, open-external, and per-project remembered preview URL; it is clearly scoped as dev preview, not a general browser.</p></details></div>
 <div class="card" data-track="core" data-id="PANE-MANAGER" data-size="L" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">L</span><span class="ttl">PANE-MANAGER &middot; Multiple agent panes per project</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Jason often runs multiple Claude/Codex sessions against the same project. Add a pane manager that can create/switch/close multiple terminal panes within one project.</p>
@@ -206,6 +210,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">PROCESS-LIFECYCLE &middot; Agent process lifecycle controls</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">A cockpit needs basic process affordances: restart, kill, status, exited state, and command/cwd visibility.</p>
 <details><summary>Done criteria</summary><p class="done">Each pane shows running/exited status, cwd, command profile, restart, and terminate. Exited panes keep scrollback until closed.</p></details></div>
+<div class="card" data-track="ui" data-id="DEV-SERVER-DETECT" data-size="S" data-tier="pebble" data-launch="v1">
+<div class="hd"><span class="sz">S</span><span class="ttl">DEV-SERVER-DETECT &middot; Local dev server detection</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v1</span></div><p class="sum">When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser.</p>
+<details><summary>Done criteria</summary><p class="done">Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project and offers reload/open-external.</p></details></div>
 <div class="card" data-track="quality" data-id="PERF-BUDGET" data-size="M" data-tier="pebble" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">PERF-BUDGET &middot; Resource and jank budget</span><span class="lens l-quality">Quality + shipping</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">The product exists to avoid VS Code resource bloat. Measure the thing the product promises: memory, CPU, and responsiveness with several projects/panes.</p>
