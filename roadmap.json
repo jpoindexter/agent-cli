@@ -352,16 +352,16 @@
       "done": "Core chrome controls are keyboard reachable, focus rings are visible, and rail/editor/pane controls expose useful labels."
     },
     {
-      "id": "PROJECT-TABS",
-      "title": "Project tabs replace multiple VS Code windows",
+      "id": "PROJECT-RAIL",
+      "title": "Left project rail for open workspaces",
       "column": "next",
       "tier": "rock",
       "track": "workspace",
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows.",
-      "done": "Open at least 3 folders as project tabs; switching tabs restores each project's rail, editor tabs, terminal panes, and focused pane."
+      "summary": "The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.",
+      "done": "Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's file rail, editor tabs, browser preview, terminal panes, and focused pane."
     },
     {
       "id": "BROWSER-PREVIEW",
@@ -384,8 +384,8 @@
       "size": "L",
       "launch": "v1",
       "blocker": true,
-      "summary": "Jason often runs multiple Claude/Codex sessions against the same project. Add a pane manager that can create/switch/close multiple terminal panes within one project.",
-      "done": "One project can run 3 live agent/shell panes; each has its own pty/process; focus is obvious; close/kill is explicit and safe."
+      "summary": "Jason often runs multiple Claude/Codex sessions against the same project, and different open projects may run different agents at the same time. Add a pane manager that can create/switch/close multiple terminal panes per project.",
+      "done": "One project can run 3 live agent/shell panes, and at least 2 open projects can run different agents concurrently; each pane has its own pty/process; focus is obvious; close/kill is explicit and safe."
     },
     {
       "id": "PANE-NAMES",
@@ -429,7 +429,7 @@
       "size": "M",
       "launch": "v1",
       "summary": "After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.",
-      "done": "Relaunch restores project tabs, rail expansion, editor tabs, pane layout, and starts fresh agent/shell panes where configured."
+      "done": "Relaunch restores the left project rail, selected project, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured."
     },
     {
       "id": "GIT-STATUS",

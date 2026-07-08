@@ -19,11 +19,12 @@ When Jason is moving between active projects and parallel coding agents, he want
 The app must cover the parts of VS Code Jason actually uses. Default behavior should preserve VS Code muscle memory for files, editor, terminal focus, project switching, search, save, close, and command execution unless there is a clear reason to differ.
 
 - Open and switch project folders quickly, including recent projects.
+- Keep multiple projects open in one window through a persistent left project/workspace rail, similar in spirit to Codex's sidebar, with clear active-project state.
 - Browse the project tree with sensible ignores, file watching, and safe handling for symlinks, large files, and binary files.
 - Open, edit, find/replace, save, and close source files with dirty-state and external-change protection.
 - Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
 - Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
-- Run multiple agent panes in one project, each with a visible name/task label, status, cwd, command, restart, and kill controls.
+- Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.
 - Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
 - Switch across multiple active projects without separate heavyweight VS Code windows.
 - Review agent-created changes through file status, diffs, editor gutters, and lightweight git actions.
@@ -59,9 +60,9 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 
 **Done:** the app replaces the current multi-window VS Code habit for normal agent work.
 
-- [ ] Multiple project tabs are open in one window.
+- [ ] A persistent left project/workspace rail opens at least 3 projects in one window and shows active, running, exited, and attention-needed states.
 - [ ] Browser/web preview opens localhost apps, docs, auth flows, and generated pages inside the workbench.
-- [ ] Each project can run multiple named agent/shell panes.
+- [ ] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [ ] Pane lifecycle controls cover running, exited, restart, terminate, and attention-needed states.
 - [ ] Session restore brings back projects, file tabs, pane layout, and enough metadata to resume intentionally.
 - [ ] Resource use is measured against the equivalent VS Code workflow.

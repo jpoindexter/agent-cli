@@ -140,18 +140,18 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">SAVE-CONFLICTS &middot; External change and save conflict handling</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">Agents and terminals can edit files while the editor is open. The app must not silently overwrite external changes.</p>
 <details><summary>Done criteria</summary><p class="done">If a file changes on disk after opening, the editor warns before overwrite and offers reload/overwrite choices.</p></details></div>
-<div class="card" data-track="workspace" data-id="PROJECT-TABS" data-size="M" data-tier="rock" data-launch="v1">
-<div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-TABS &middot; Project tabs replace multiple VS Code windows</span><span class="lens l-workspace">Projects + sessions</span></div>
-<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows.</p>
-<details><summary>Done criteria</summary><p class="done">Open at least 3 folders as project tabs; switching tabs restores each project's rail, editor tabs, terminal panes, and focused pane.</p></details></div>
+<div class="card" data-track="workspace" data-id="PROJECT-RAIL" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">PROJECT-RAIL &middot; Left project rail for open workspaces</span><span class="lens l-workspace">Projects + sessions</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.</p>
+<details><summary>Done criteria</summary><p class="done">Open at least 3 folders in a left project rail; each project shows active/running/exited/attention state; switching projects restores that project's file rail, editor tabs, browser preview, terminal panes, and focused pane.</p></details></div>
 <div class="card" data-track="ui" data-id="BROWSER-PREVIEW" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">BROWSER-PREVIEW &middot; Browser and web preview pane</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">The stripped VS Code workbench still needs a browser surface for localhost apps, docs, auth flows, and agent-generated pages without context switching.</p>
 <details><summary>Done criteria</summary><p class="done">A project can open a browser/web preview pane with address/local URL, back/forward, reload, open-external, and per-project remembered preview URL; it is clearly scoped as dev preview, not a general browser.</p></details></div>
 <div class="card" data-track="core" data-id="PANE-MANAGER" data-size="L" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">L</span><span class="ttl">PANE-MANAGER &middot; Multiple agent panes per project</span><span class="lens l-core">Terminal + process</span></div>
-<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Jason often runs multiple Claude/Codex sessions against the same project. Add a pane manager that can create/switch/close multiple terminal panes within one project.</p>
-<details><summary>Done criteria</summary><p class="done">One project can run 3 live agent/shell panes; each has its own pty/process; focus is obvious; close/kill is explicit and safe.</p></details></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Jason often runs multiple Claude/Codex sessions against the same project, and different open projects may run different agents at the same time. Add a pane manager that can create/switch/close multiple terminal panes per project.</p>
+<details><summary>Done criteria</summary><p class="done">One project can run 3 live agent/shell panes, and at least 2 open projects can run different agents concurrently; each pane has its own pty/process; focus is obvious; close/kill is explicit and safe.</p></details></div>
 <div class="card" data-track="core" data-id="AGENT-ATTENTION" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">AGENT-ATTENTION &middot; Agent attention and completion state</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">Background agents need visible status when they exit, wait for input, or need attention. Build this in reliable layers: process exits first, then explicit Claude/Codex prompt heuristics; generic prompt-idle detection waits until measured useful.</p>
@@ -159,7 +159,7 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="card" data-track="workspace" data-id="SESSION-RESTORE" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">SESSION-RESTORE &middot; Restore projects, files, panes</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.</p>
-<details><summary>Done criteria</summary><p class="done">Relaunch restores project tabs, rail expansion, editor tabs, pane layout, and starts fresh agent/shell panes where configured.</p></details></div>
+<details><summary>Done criteria</summary><p class="done">Relaunch restores the left project rail, selected project, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured.</p></details></div>
 <div class="card" data-track="files" data-id="DIFF-VIEW" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">DIFF-VIEW &middot; Diff view for agent changes</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">Jason supervises agents by reading what changed. A file status marker is not enough; he needs to inspect diffs without opening VS Code.</p>
