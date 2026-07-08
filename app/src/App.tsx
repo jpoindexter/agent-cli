@@ -60,8 +60,9 @@ type FileTreeNode = {
 };
 type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolean };
 type WorkspaceTreeChanged = { root: string; count: number };
-type TextFileResponse = { path: string; content: string; bytes: number };
+type TextFileResponse = { path: string; content: string; bytes: number; modifiedMs: number | null };
 type OpenEditorFileOptions = { focusEditor?: boolean };
+type SaveEditorFileOptions = { force?: boolean };
 type PendingNavigation =
   | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
   | { kind: "workspace"; path: string };
@@ -176,11 +177,13 @@ function App() {
   const [editorError, setEditorError] = useState<string | null>(null);
   const [editorRecoveryError, setEditorRecoveryError] = useState<string | null>(null);
   const [editorBytes, setEditorBytes] = useState<number | null>(null);
+  const [editorModifiedMs, setEditorModifiedMs] = useState<number | null>(null);
   const [editorCursor, setEditorCursor] = useState<CursorPosition>({ line: 1, column: 1 });
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
   const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
   const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
+  const editorSaveConflict = editorError?.startsWith("File changed on disk since it was opened") ?? false;
   const activeFileMissing = useMemo(
     () => selectedFile != null && fileTree.length > 0 && !fileTreeContainsPath(fileTree, selectedFile.path),
     [fileTree, selectedFile],
@@ -223,6 +226,7 @@ function App() {
     setEditorError(null);
     setEditorRecoveryError(null);
     setEditorBytes(null);
+    setEditorModifiedMs(null);
     setEditorCursor({ line: 1, column: 1 });
   };
 
@@ -346,6 +350,7 @@ function App() {
     setEditorError(null);
     setEditorRecoveryError(null);
     setEditorBytes(null);
+    setEditorModifiedMs(null);
     setEditorCursor({ line: 1, column: 1 });
     try {
       const result = await invoke<TextFileResponse>("read_text_file", { root, path: file.path });
@@ -353,6 +358,7 @@ function App() {
       setEditorText(result.content);
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
+      setEditorModifiedMs(result.modifiedMs);
       const restoredForContent = clampEditorViewState(editorViewStatesRef.current[file.path], result.content.length);
       setEditorCursor(restoredForContent ? cursorFromText(result.content, restoredForContent.head) : { line: 1, column: 1 });
       await persistActiveFile(root, file.path);
@@ -366,6 +372,7 @@ function App() {
       setEditorText("");
       setSavedEditorText("");
       setEditorBytes(null);
+      setEditorModifiedMs(null);
       setEditorError(String(err));
       setEditorRecoveryError(null);
     } finally {
@@ -388,7 +395,7 @@ function App() {
     return true;
   };
 
-  const saveEditorFile = async () => {
+  const saveEditorFile = async (options: SaveEditorFileOptions = {}) => {
     const root = workspacePathRef.current ?? workspacePath;
     if (!root || !selectedFile || editorSaving) return false;
     if (!editorDirty) return true;
@@ -400,9 +407,11 @@ function App() {
         root,
         path: selectedFile.path,
         content: editorText,
+        expectedModifiedMs: options.force ? null : editorModifiedMs,
       });
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
+      setEditorModifiedMs(result.modifiedMs);
       return true;
     } catch (err) {
       const message = String(err);
@@ -411,6 +420,15 @@ function App() {
     } finally {
       setEditorSaving(false);
     }
+  };
+
+  const reloadSelectedFileFromDisk = async () => {
+    if (!selectedFile) return;
+    await openEditorFileDirect(selectedFile, { focusEditor: true });
+  };
+
+  const overwriteSelectedFile = async () => {
+    await saveEditorFile({ force: true });
   };
 
   const openSelectedFileExternally = async () => {
@@ -918,7 +936,10 @@ function App() {
                   recoveryError={editorRecoveryError}
                   saving={editorSaving}
                   canOpenExternally={Boolean(selectedFile)}
+                  conflict={editorSaveConflict}
                   onRetry={() => void saveEditorFile()}
+                  onReload={() => void reloadSelectedFileFromDisk()}
+                  onOverwrite={() => void overwriteSelectedFile()}
                   onOpenExternally={() => void openSelectedFileExternally()}
                 />
               ) : null}

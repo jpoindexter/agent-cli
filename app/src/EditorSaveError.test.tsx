@@ -10,7 +10,10 @@ describe("EditorSaveError", () => {
         recoveryError={null}
         saving={false}
         canOpenExternally
+        conflict={false}
         onRetry={vi.fn()}
+        onReload={vi.fn()}
+        onOverwrite={vi.fn()}
         onOpenExternally={vi.fn()}
       />,
     );
@@ -29,7 +32,10 @@ describe("EditorSaveError", () => {
         recoveryError={null}
         saving={true}
         canOpenExternally
+        conflict={false}
         onRetry={vi.fn()}
+        onReload={vi.fn()}
+        onOverwrite={vi.fn()}
         onOpenExternally={vi.fn()}
       />,
     );
@@ -45,12 +51,35 @@ describe("EditorSaveError", () => {
         recoveryError="Could not open App.tsx externally: denied"
         saving={false}
         canOpenExternally
+        conflict={false}
         onRetry={vi.fn()}
+        onReload={vi.fn()}
+        onOverwrite={vi.fn()}
         onOpenExternally={vi.fn()}
       />,
     );
 
     expect(html).toContain("Could not open App.tsx externally: denied");
     expect(html).toContain("Retry");
+  });
+
+  it("shows reload and overwrite choices for save conflicts", () => {
+    const html = renderToStaticMarkup(
+      <EditorSaveError
+        message="File changed on disk since it was opened: App.tsx"
+        recoveryError={null}
+        saving={false}
+        canOpenExternally
+        conflict
+        onRetry={vi.fn()}
+        onReload={vi.fn()}
+        onOverwrite={vi.fn()}
+        onOpenExternally={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain("Reload");
+    expect(html).toContain("Overwrite");
+    expect(html).not.toContain("Retry");
   });
 });

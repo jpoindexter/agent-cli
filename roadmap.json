@@ -344,14 +344,14 @@
     {
       "id": "SAVE-CONFLICTS",
       "title": "External change and save conflict handling",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "files",
       "size": "M",
       "launch": "v0_5",
       "blocker": true,
       "summary": "Agents and terminals can edit files while the editor is open. The app must not silently overwrite external changes.",
-      "done": "If a file changes on disk after opening, the editor warns before overwrite and offers reload/overwrite choices."
+      "done": "Verified 2026-07-08: read_text_file returns modifiedMs, write_text_file receives the last-seen modifiedMs, and the Rust backend rejects stale writes before overwriting. The editor conflict surface offers Reload, Overwrite, and Open externally. Covered by cargo test stale-write rejection, npm build/test, and screenshot proof at docs/qa/editor-parity/save-conflict.png."
     },
     {
       "id": "LARGE-FILE-POLICY",

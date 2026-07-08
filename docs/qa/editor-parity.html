@@ -84,6 +84,7 @@
       .qa-state-dirty .editor-empty,
       .qa-state-dirty-modal .editor-empty,
       .qa-state-find-replace .editor-empty,
+      .qa-state-save-conflict .editor-empty,
       .qa-state-save-error .editor-empty,
       .qa-state-missing .editor-empty,
       .qa-state-narrow .editor-empty {
@@ -218,6 +219,15 @@
         badge.remove();
         error.remove();
         document.querySelector(".cm-search").style.display = "flex";
+      } else if (state === "save-conflict") {
+        badge.remove();
+        error.querySelector(".editor-error__body").textContent = "File changed on disk since it was opened: App.tsx. Reload from disk or overwrite the external change.";
+        const actions = error.querySelector(".editor-error__actions");
+        actions.innerHTML = `
+          <button class="editor-error__button" type="button">Reload</button>
+          <button class="editor-error__button" type="button">Overwrite</button>
+          <button class="editor-error__button" type="button">Open externally</button>
+        `;
       } else if (state === "save-error") {
         badge.remove();
       } else if (state === "missing") {

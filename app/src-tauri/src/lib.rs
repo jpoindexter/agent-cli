@@ -30,7 +30,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::mpsc::{channel, Sender};
 use std::sync::Mutex;
-use std::time::Duration;
+use std::time::{Duration, UNIX_EPOCH};
 use tauri::menu::{Menu, MenuItem, Submenu};
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -166,10 +166,12 @@ struct FileTreeResponse {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct TextFileResponse {
     path: String,
     content: String,
     bytes: u64,
+    modified_ms: Option<u64>,
 }
 
 struct FileTreeBuilder {
@@ -716,6 +718,7 @@ fn read_text_file(root: String, path: String) -> Result<TextFileResponse, String
         path: file_path.to_string_lossy().into_owned(),
         content,
         bytes,
+        modified_ms: modified_ms(&metadata),
     })
 }
 
@@ -726,8 +729,18 @@ fn write_text_file(
     root: String,
     path: String,
     content: String,
+    expected_modified_ms: Option<u64>,
 ) -> Result<TextFileResponse, String> {
     let file_path = validate_workspace_file_path(&root, &path)?;
+    let before_metadata = fs::metadata(&file_path)
+        .map_err(|err| format!("Could not inspect file {}: {err}", file_path.display()))?;
+    let current_modified_ms = modified_ms(&before_metadata);
+    if expected_modified_ms.is_some() && expected_modified_ms != current_modified_ms {
+        return Err(format!(
+            "File changed on disk since it was opened: {}. Reload the file or copy your draft before overwriting.",
+            file_path.display()
+        ));
+    }
     let bytes = content.len() as u64;
     if bytes > MAX_TEXT_FILE_BYTES {
         return Err(format!(
@@ -737,10 +750,13 @@ fn write_text_file(
     }
     fs::write(&file_path, content.as_bytes())
         .map_err(|err| format!("Could not save file {}: {err}", file_path.display()))?;
+    let metadata = fs::metadata(&file_path)
+        .map_err(|err| format!("Could not inspect saved file {}: {err}", file_path.display()))?;
     Ok(TextFileResponse {
         path: file_path.to_string_lossy().into_owned(),
         content,
         bytes,
+        modified_ms: modified_ms(&metadata),
     })
 }
 
@@ -826,6 +842,14 @@ fn validate_workspace_file_path(root: &str, path: &str) -> Result<PathBuf, Strin
         return Err(format!("File is outside the selected workspace: {trimmed}"));
     }
     Ok(canonical)
+}
+
+fn modified_ms(metadata: &fs::Metadata) -> Option<u64> {
+    metadata
+        .modified()
+        .ok()
+        .and_then(|time| time.duration_since(UNIX_EPOCH).ok())
+        .map(|duration| duration.as_millis() as u64)
 }
 
 fn command_exists_on_path(command: &str) -> bool {
@@ -1260,11 +1284,41 @@ mod tests {
         let read = read_text_file(root_s.clone(), file_s.clone()).expect("read text file");
         assert_eq!(read.content, "before\n");
 
-        let written = write_text_file(root_s, file_s, "after\n".into()).expect("write text file");
+        let written = write_text_file(root_s, file_s, "after\n".into(), read.modified_ms)
+            .expect("write text file");
         assert_eq!(written.content, "after\n");
+        assert!(written.modified_ms.is_some());
         assert_eq!(
             fs::read_to_string(&file).expect("read saved file"),
             "after\n"
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn text_file_write_rejects_stale_modified_time() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-conflict-test-{suffix}"));
+        let file = root.join("note.txt");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&file, "external\n").expect("write file");
+
+        let err = write_text_file(
+            root.to_string_lossy().into_owned(),
+            file.to_string_lossy().into_owned(),
+            "draft\n".into(),
+            Some(0),
+        )
+        .expect_err("stale write should fail");
+
+        assert!(err.contains("File changed on disk since it was opened"));
+        assert_eq!(
+            fs::read_to_string(&file).expect("read original file"),
+            "external\n"
         );
 
         let _ = fs::remove_dir_all(root);
