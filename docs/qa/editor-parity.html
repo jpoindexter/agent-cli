@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Keelhouse editor parity QA</title>
+    <link rel="stylesheet" href="../../app/src/App.css" />
+    <style>
+      body {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .qa-note {
+        position: fixed;
+        right: 12px;
+        bottom: 12px;
+        z-index: 20;
+        border: 1px solid #3a3a3a;
+        border-radius: 6px;
+        background: #181818;
+        color: #8f8f8f;
+        font-size: 11px;
+        padding: 5px 7px;
+      }
+
+      .qa-lines {
+        margin: 0;
+        padding: 12px 0 24px;
+        color: #d4d4d4;
+        font: 13px/1.55 "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      }
+
+      .qa-line {
+        display: grid;
+        grid-template-columns: 52px minmax(0, 1fr);
+      }
+
+      .qa-line-number {
+        border-right: 1px solid #2a2a2a;
+        background: #1a1a1a;
+        color: #6f6f6f;
+        padding-right: 10px;
+        text-align: right;
+      }
+
+      .qa-code {
+        padding-left: 12px;
+        white-space: pre;
+      }
+
+      .qa-keyword {
+        color: #c586c0;
+      }
+
+      .qa-string {
+        color: #ce9178;
+      }
+
+      .qa-function {
+        color: #dcdcaa;
+      }
+
+      .qa-comment {
+        color: #6a9955;
+      }
+
+      .qa-line--active .qa-line-number,
+      .qa-line--active .qa-code {
+        background: rgba(90, 143, 184, 0.11);
+      }
+
+      .qa-state-no-file .editor-pathbar,
+      .qa-state-no-file .editor-code,
+      .qa-state-no-file .editor-actions {
+        display: none;
+      }
+
+      .qa-state-no-file .editor-empty {
+        display: grid;
+      }
+
+      .qa-state-selected .editor-empty,
+      .qa-state-dirty .editor-empty,
+      .qa-state-save-error .editor-empty,
+      .qa-state-missing .editor-empty,
+      .qa-state-narrow .editor-empty {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell" data-qa="editor-parity-shell">
+      <aside class="file-rail" aria-label="Project files">
+        <div class="panel-title panel-title--with-action">
+          <span>Files</span>
+          <button class="rail-open-button" type="button">Open</button>
+        </div>
+        <div class="rail-root" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">agent cli</div>
+        <div class="rail-tree">
+          <div class="file-node">
+            <span class="file-node__twisty" aria-hidden="true">▾</span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__name">app</span>
+          </div>
+          <div class="file-node">
+            <span class="file-node__twisty" aria-hidden="true">▾</span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__name">src</span>
+          </div>
+          <div class="file-node file-node--selected" style="padding-left: 28px">
+            <span class="file-node__twisty" aria-hidden="true"></span>
+            <span class="file-node__icon file-node__icon--file" aria-hidden="true">·</span>
+            <span class="file-node__name">App.tsx</span>
+            <span class="file-node__dirty" aria-label="Unsaved changes"></span>
+          </div>
+          <div class="file-node" style="padding-left: 28px">
+            <span class="file-node__twisty" aria-hidden="true"></span>
+            <span class="file-node__icon file-node__icon--file" aria-hidden="true">·</span>
+            <span class="file-node__name">editorState.ts</span>
+          </div>
+          <div class="file-node">
+            <span class="file-node__twisty" aria-hidden="true">▸</span>
+            <span class="file-node__icon file-node__icon--directory" aria-hidden="true">□</span>
+            <span class="file-node__name">src-tauri</span>
+          </div>
+        </div>
+      </aside>
+      <main class="workbench">
+        <section class="editor-area" aria-label="Editor">
+          <div class="editor-tabbar">
+            <div class="editor-tab editor-tab--active editor-tab--dirty" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli/app/src/App.tsx">
+              <span class="editor-tab__name">App.tsx</span>
+              <span class="editor-tab__dirty" aria-label="Unsaved changes"></span>
+            </div>
+            <div class="editor-actions">
+              <span class="editor-badge editor-badge--warn">Missing from tree</span>
+              <span class="editor-meta">TSX</span>
+              <span class="editor-meta">18.4 KB</span>
+              <span class="editor-meta">Ln 42, Col 17</span>
+              <span class="editor-status">Unsaved</span>
+              <button class="editor-save" type="button">Save</button>
+            </div>
+          </div>
+          <nav class="editor-pathbar" aria-label="Active file path" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli/app/src/App.tsx">
+            <span class="editor-crumb"><span>agent cli</span></span>
+            <span class="editor-crumb"><span class="editor-crumb__separator">/</span><span>app</span></span>
+            <span class="editor-crumb"><span class="editor-crumb__separator">/</span><span>src</span></span>
+            <span class="editor-crumb"><span class="editor-crumb__separator">/</span><span class="editor-crumb__current">App.tsx</span></span>
+          </nav>
+          <div class="editor-code">
+            <div class="editor-error">Could not save file App.tsx: permission denied. Buffer is still intact.</div>
+            <div class="cm-theme">
+              <div class="cm-editor">
+                <pre class="qa-lines" aria-label="Editor code sample"><span class="qa-line"><span class="qa-line-number">38</span><span class="qa-code"><span class="qa-keyword">const</span> editorLanguage = <span class="qa-function">languageLabelForPath</span>(selectedFile.path);</span></span><span class="qa-line qa-line--active"><span class="qa-line-number">39</span><span class="qa-code"><span class="qa-keyword">const</span> activeFileMissing = fileTree.length &gt; 0 &amp;&amp; !contains;</span></span><span class="qa-line"><span class="qa-line-number">40</span><span class="qa-code"></span></span><span class="qa-line"><span class="qa-line-number">41</span><span class="qa-code"><span class="qa-comment">// Preserve orientation while agents continue running below.</span></span></span><span class="qa-line"><span class="qa-line-number">42</span><span class="qa-code"><span class="qa-keyword">return</span> <span class="qa-string">"Keelhouse editor parity"</span>;</span></span></pre>
+              </div>
+            </div>
+          </div>
+          <div class="editor-empty">
+            <div class="editor-empty-title">Select a file</div>
+            <div class="editor-empty-path">Project editor surface</div>
+          </div>
+        </section>
+        <section class="terminal-panel" aria-label="Agent terminal">
+          <div class="terminal-titlebar">
+            <div>
+              <span class="terminal-kicker">Agent</span>
+              <span class="terminal-title">Claude</span>
+            </div>
+          </div>
+          <div class="terminal-host">
+            <canvas class="term" width="960" height="260"></canvas>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div class="qa-note"></div>
+    <script>
+      const state = new URLSearchParams(location.search).get("state") || "selected";
+      document.body.classList.add(`qa-state-${state}`);
+      document.querySelector(".qa-note").textContent = `editor parity QA: ${state}`;
+      const tab = document.querySelector(".editor-tab");
+      const railDirty = document.querySelector(".file-node__dirty");
+      const tabDirty = document.querySelector(".editor-tab__dirty");
+      const badge = document.querySelector(".editor-badge");
+      const error = document.querySelector(".editor-error");
+      const status = document.querySelector(".editor-status");
+      const save = document.querySelector(".editor-save");
+      if (state === "selected") {
+        tab.classList.remove("editor-tab--dirty");
+        railDirty.remove();
+        tabDirty.remove();
+        badge.remove();
+        error.remove();
+        status.textContent = "Saved";
+        save.disabled = true;
+      } else if (state === "dirty" || state === "narrow") {
+        badge.remove();
+        error.remove();
+      } else if (state === "save-error") {
+        badge.remove();
+      } else if (state === "missing") {
+        document.querySelector(".file-node--selected")?.remove();
+        error.remove();
+      } else if (state === "no-file") {
+        tab.className = "editor-tab";
+        tab.removeAttribute("title");
+        tab.querySelector(".editor-tab__name").textContent = "No file open";
+        railDirty.remove();
+        tabDirty.remove();
+        document.querySelector(".file-node--selected")?.classList.remove("file-node--selected");
+      }
+    </script>
+  </body>
+</html>

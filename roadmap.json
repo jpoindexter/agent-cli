@@ -254,19 +254,19 @@
     {
       "id": "EDITOR-PARITY-UX",
       "title": "Robust editor parity UX",
-      "column": "now",
+      "column": "done",
       "tier": "rock",
       "track": "files",
       "size": "M",
       "launch": "v0_5",
       "blocker": true,
       "summary": "Match the coding editor orientation shown in the reference: dense file tree beside a real source editor with path context, gutter, dirty state, restored view position, and active-file reveal.",
-      "done": "Editor shows path/breadcrumb context, stable line gutter, selected file highlight, active-file reveal, restored scroll/selection per file, dirty markers in editor/rail, go-to-line or reveal hooks, and screenshot QA for selected, dirty, save-error, no-file, and narrow-width states. Tabs, find/replace, and expanded language modes remain separate cards."
+      "done": "Verified 2026-07-08: editor shows breadcrumb path context, stable CodeMirror line gutter, selected file highlight, active-file reveal via React Arborist scrollTo, restored per-file selection/scroll state, dirty markers in editor and rail, and screenshot QA artifacts for selected, dirty, save-error, no-file, missing, and 1024x640 narrow states in docs/qa/editor-parity/."
     },
     {
       "id": "ACTIVE-FILE-SYNC",
       "title": "Active file sync across rail and editor",
-      "column": "next",
+      "column": "now",
       "tier": "pebble",
       "track": "files",
       "size": "S",

@@ -10,7 +10,7 @@ import { javascript } from "@codemirror/lang-javascript";
 import { markdown } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { Tree } from "react-arborist";
-import type { NodeRendererProps } from "react-arborist";
+import type { NodeRendererProps, TreeApi } from "react-arborist";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
@@ -41,6 +41,7 @@ type FileTreeNode = {
   name: string;
   path: string;
   kind: "directory" | "file";
+  dirty?: boolean;
   children?: FileTreeNode[];
 };
 type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolean };
@@ -65,6 +66,15 @@ const formatBytes = (bytes: number | null) => {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+const markDirtyFile = (nodes: FileTreeNode[], dirtyPath: string | null): FileTreeNode[] => {
+  if (!dirtyPath) return nodes;
+  return nodes.map((node) => ({
+    ...node,
+    dirty: node.path === dirtyPath,
+    children: node.children ? markDirtyFile(node.children, dirtyPath) : undefined,
+  }));
 };
 
 const editorExtensionsFor = (path: string) => {
@@ -124,6 +134,7 @@ function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode
       <span className="file-node__name" title={node.data.path}>
         {node.data.name}
       </span>
+      {node.data.dirty ? <span className="file-node__dirty" aria-label="Unsaved changes" /> : null}
     </div>
   );
 }
@@ -132,6 +143,7 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const terminalHostRef = useRef<HTMLDivElement>(null);
   const railBodyRef = useRef<HTMLDivElement>(null);
+  const treeRef = useRef<TreeApi<FileTreeNode> | undefined>(undefined);
   const workspacePathRef = useRef<string | null>(null);
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
   const recentProjectsRef = useRef<string[]>([]);
@@ -171,6 +183,10 @@ function App() {
     [selectedFile, workspacePath],
   );
   const editorLanguage = selectedFile ? languageLabelForPath(selectedFile.path) : "No file";
+  const visibleFileTree = useMemo(
+    () => markDirtyFile(fileTree, editorDirty && selectedFile ? selectedFile.path : null),
+    [fileTree, editorDirty, selectedFile],
+  );
 
   useEffect(() => {
     recentProjectsRef.current = recentProjects;
@@ -179,6 +195,11 @@ function App() {
   useEffect(() => {
     selectedFileRef.current = selectedFile;
   }, [selectedFile]);
+
+  useEffect(() => {
+    if (!selectedFile) return;
+    treeRef.current?.scrollTo(selectedFile.id, "smart");
+  }, [selectedFile, visibleFileTree]);
 
   const resetEditor = () => {
     editorViewRef.current = null;
@@ -672,8 +693,9 @@ function App() {
           {!workspacePath ? <div className="rail-status">Open a folder</div> : null}
           {workspacePath && fileTree.length > 0 ? (
             <Tree<FileTreeNode>
+              ref={treeRef}
               aria-label="Project files"
-              data={fileTree}
+              data={visibleFileTree}
               idAccessor="id"
               childrenAccessor="children"
               rowHeight={24}
