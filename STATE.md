@@ -47,6 +47,8 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **EDITOR-VIEW-STATE (VERIFIED 2026-07-08):** per-file editor state now captures selection anchor/head, scrollTop, and focus intent. User-driven file activation focuses CodeMirror after loading; automatic active-file restore does not steal focus. Verified with `npm run build`, `npm test` (16 tests), `git diff --check`, and native `npm run tauri dev` smoke: set `first.ts` to `Ln 5, Col 9`, switched to `second.ts`, switched back to `first.ts`, captured restored cursor at `docs/qa/editor-view-state/restore.png`, then sent ArrowDown and captured `Ln 6, Col 1` at `docs/qa/editor-view-state/focus-restored.png`.
 
+Progress 2026-07-08: dirty editor navigation is now guarded for file switches, recent-project switches, and folder-picker switches. A pending navigation modal offers Cancel, Discard, and Save; Save continues only after the real `write_text_file` call succeeds, and failed saves keep the draft open with a modal error. Pure helper coverage was added for clean navigation, same-file refocus, dirty file replacement, and dirty workspace replacement. Remaining before marking `DIRTY-DRAFT-PROTECTION` done: a reliable native smoke must exercise the modal end-to-end; current macOS synthetic input did not consistently focus CodeMirror in the smoke window, so the modal path was not captured.
+
 ## Next (ordered)
 
 1. **DIRTY-DRAFT-PROTECTION:** preserve unsaved edits across file/project switches with save/discard/cancel.

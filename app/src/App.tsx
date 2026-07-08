@@ -33,6 +33,7 @@ import {
   reconcileActiveFileNode,
 } from "./editorState";
 import type { CursorPosition, EditorViewState } from "./editorState";
+import { shouldPromptForDirtyDraft } from "./draftProtection";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -54,6 +55,9 @@ type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolea
 type WorkspaceTreeChanged = { root: string; count: number };
 type TextFileResponse = { path: string; content: string; bytes: number };
 type OpenEditorFileOptions = { focusEditor?: boolean };
+type PendingNavigation =
+  | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
+  | { kind: "workspace"; path: string };
 
 const FONT_SIZE = 15;
 const FONT_FAMILY = "JetBrains Mono, monospace";
@@ -183,6 +187,8 @@ function App() {
   const [editorBytes, setEditorBytes] = useState<number | null>(null);
   const [editorCursor, setEditorCursor] = useState<CursorPosition>({ line: 1, column: 1 });
   const [recentProjects, setRecentProjects] = useState<string[]>([]);
+  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
+  const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
   const activeFileMissing = useMemo(
     () => selectedFile != null && fileTree.length > 0 && !fileTreeContainsPath(fileTree, selectedFile.path),
@@ -257,7 +263,7 @@ function App() {
     await store?.save();
   };
 
-  const openWorkspace = async (path: string) => {
+  const openWorkspaceDirect = async (path: string) => {
     captureCurrentEditorViewState();
     const store = storeRef.current;
     const saved = await store?.get<unknown>("launchProfile");
@@ -301,10 +307,19 @@ function App() {
     }
   };
 
+  const requestOpenWorkspace = async (path: string) => {
+    if (shouldPromptForDirtyDraft(editorDirty, selectedFileRef.current?.path ?? null, { kind: "workspace", path })) {
+      setDraftDialogError(null);
+      setPendingNavigation({ kind: "workspace", path });
+      return false;
+    }
+    return openWorkspaceDirect(path);
+  };
+
   const pickWorkspace = async () => {
     const dir = await open({ directory: true });
     if (typeof dir !== "string") return;
-    await openWorkspace(dir);
+    await requestOpenWorkspace(dir);
   };
 
   const terminalSize = () => {
@@ -326,7 +341,7 @@ function App() {
   const visibleRecentProjects = recentProjects.filter((project) => project !== workspacePath).slice(0, 3);
   const hiddenRecentCount = Math.max(0, recentProjects.filter((project) => project !== workspacePath).length - visibleRecentProjects.length);
 
-  const openEditorFile = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
+  const openEditorFileDirect = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
     const root = workspacePathRef.current ?? workspacePath;
     if (!root) return;
     captureCurrentEditorViewState();
@@ -364,9 +379,25 @@ function App() {
     }
   };
 
+  const requestOpenEditorFile = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
+    const currentPath = selectedFileRef.current?.path ?? null;
+    if (!shouldPromptForDirtyDraft(editorDirty, currentPath, { kind: "file", path: file.path }) && currentPath === file.path) {
+      if (options.focusEditor) requestAnimationFrame(() => editorViewRef.current?.focus());
+      return true;
+    }
+    if (shouldPromptForDirtyDraft(editorDirty, currentPath, { kind: "file", path: file.path })) {
+      setDraftDialogError(null);
+      setPendingNavigation({ kind: "file", file, options });
+      return false;
+    }
+    await openEditorFileDirect(file, options);
+    return true;
+  };
+
   const saveEditorFile = async () => {
     const root = workspacePathRef.current ?? workspacePath;
-    if (!root || !selectedFile || editorSaving || !editorDirty) return;
+    if (!root || !selectedFile || editorSaving) return false;
+    if (!editorDirty) return true;
     setEditorSaving(true);
     setEditorError(null);
     try {
@@ -377,11 +408,43 @@ function App() {
       });
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
+      return true;
     } catch (err) {
-      setEditorError(String(err));
+      const message = String(err);
+      setEditorError(message);
+      return false;
     } finally {
       setEditorSaving(false);
     }
+  };
+
+  const continuePendingNavigation = async (navigation: PendingNavigation) => {
+    if (navigation.kind === "file") {
+      await openEditorFileDirect(navigation.file, navigation.options);
+    } else {
+      await openWorkspaceDirect(navigation.path);
+    }
+  };
+
+  const saveDraftAndContinue = async () => {
+    if (!pendingNavigation) return;
+    setDraftDialogError(null);
+    const ok = await saveEditorFile();
+    if (!ok) {
+      setDraftDialogError("Save failed. The draft is still open; fix the save error before switching.");
+      return;
+    }
+    const next = pendingNavigation;
+    setPendingNavigation(null);
+    await continuePendingNavigation(next);
+  };
+
+  const discardDraftAndContinue = async () => {
+    if (!pendingNavigation) return;
+    const next = pendingNavigation;
+    setPendingNavigation(null);
+    setDraftDialogError(null);
+    await continuePendingNavigation(next);
   };
 
   useEffect(() => {
@@ -441,7 +504,7 @@ function App() {
     if (!savedActiveFile) return;
     const node = findFileTreeNode(fileTree, savedActiveFile);
     if (node?.kind === "file") {
-      void openEditorFile(node);
+      void openEditorFileDirect(node);
       return;
     }
     void clearPersistedActiveFile(workspacePath);
@@ -575,7 +638,7 @@ function App() {
       recentProjectsRef.current = savedRecent;
       setRecentProjects(savedRecent);
       const last = await store.get<string>("folder");
-      if (last) await openWorkspace(last);
+      if (last) await openWorkspaceDirect(last);
       else await pickWorkspace();
       sendTerminalResize();
     };
@@ -730,7 +793,7 @@ function App() {
                 title={project}
                 onPointerDown={(event) => {
                   event.preventDefault();
-                  void openWorkspace(project);
+                  void requestOpenWorkspace(project);
                 }}
               >
                 <span className="recent-project__copy">
@@ -773,7 +836,7 @@ function App() {
                 if (node.data.kind === "directory") {
                   node.toggle();
                 } else {
-                  void openEditorFile(node.data, { focusEditor: true });
+                  void requestOpenEditorFile(node.data, { focusEditor: true });
                 }
               }}
             >
@@ -879,6 +942,35 @@ function App() {
       {launchError ? (
         <div className="launch-error" role="alert">
           {launchError}
+        </div>
+      ) : null}
+      {pendingNavigation && selectedFile ? (
+        <div className="draft-modal-backdrop" role="presentation">
+          <div className="draft-modal" role="dialog" aria-modal="true" aria-labelledby="draft-modal-title">
+            <div className="draft-modal__title" id="draft-modal-title">
+              Save changes to {selectedFile.name}?
+            </div>
+            <div className="draft-modal__body">
+              Switching now would replace the unsaved editor buffer for this file.
+            </div>
+            {draftDialogError ? <div className="draft-modal__error">{draftDialogError}</div> : null}
+            <div className="draft-modal__actions">
+              <button className="draft-modal__button" type="button" onClick={() => setPendingNavigation(null)}>
+                Cancel
+              </button>
+              <button className="draft-modal__button draft-modal__button--danger" type="button" onClick={() => void discardDraftAndContinue()}>
+                Discard
+              </button>
+              <button
+                className="draft-modal__button draft-modal__button--primary"
+                type="button"
+                disabled={editorSaving}
+                onClick={() => void saveDraftAndContinue()}
+              >
+                {editorSaving ? "Saving" : "Save"}
+              </button>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>
