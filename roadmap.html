@@ -164,6 +164,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">S</span><span class="ttl">EDITOR-LANGUAGE-MODES &middot; Editor language modes</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The first editor pass needs credible syntax support for the file types this repo and Jason's projects use most.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: editor language extensions cover TypeScript, TSX/JSX, JavaScript, Markdown, HTML, CSS, Rust, JSON, TOML, YAML, and shell scripts/dotfiles. Covered by npm build and focused mode mapping tests.</p></details></div>
+<div class="card" data-track="files" data-id="LARGE-FILE-POLICY" data-size="S" data-tier="pebble" data-launch="v0_5">
+<div class="hd"><span class="sz">S</span><span class="ttl">LARGE-FILE-POLICY &middot; Large and binary file policy</span><span class="lens l-files">Files + editor</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The editor should fail safely on huge or binary files instead of freezing the app.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: backend rejects files over the 2 MB editor cap before full text load, rejects invalid UTF-8/binary files explicitly, and rejects oversized save buffers without touching disk. Covered by cargo tests for large read, binary read, and large save rejection.</p></details></div>
 </div>
 </div>
 <div class="col" data-status="now"><h2 class="s-now">Now</h2>
@@ -224,10 +228,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">Stage file, unstage file, discard file with confirmation, and copy diff are available from file status/diff surfaces.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
-<div class="card" data-track="files" data-id="LARGE-FILE-POLICY" data-size="S" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">S</span><span class="ttl">LARGE-FILE-POLICY &middot; Large and binary file policy</span><span class="lens l-files">Files + editor</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The editor should fail safely on huge or binary files instead of freezing the app.</p>
-<details><summary>Done criteria</summary><p class="done">Large text files show a warning before full load; binary files show an explicit unsupported/preview state and never open as corrupt text.</p></details></div>
 <div class="card" data-track="files" data-id="FILE-OPS" data-size="M" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">M</span><span class="ttl">FILE-OPS &middot; Basic file operations</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Replacing the VS Code shell requires basic rail operations, not only open-file. These commands must be reachable from the rail, menu/shortcut paths, and the file context menu where relevant.</p>

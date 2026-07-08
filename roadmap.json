@@ -356,13 +356,13 @@
     {
       "id": "LARGE-FILE-POLICY",
       "title": "Large and binary file policy",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "files",
       "size": "S",
       "launch": "v0_5",
       "summary": "The editor should fail safely on huge or binary files instead of freezing the app.",
-      "done": "Large text files show a warning before full load; binary files show an explicit unsupported/preview state and never open as corrupt text."
+      "done": "Verified 2026-07-08: backend rejects files over the 2 MB editor cap before full text load, rejects invalid UTF-8/binary files explicitly, and rejects oversized save buffers without touching disk. Covered by cargo tests for large read, binary read, and large save rejection."
     },
     {
       "id": "FILE-OPS",

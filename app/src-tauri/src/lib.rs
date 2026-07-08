@@ -1347,6 +1347,73 @@ mod tests {
     }
 
     #[test]
+    fn text_file_rejects_large_files_before_full_editor_load() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-large-root-{suffix}"));
+        let file = root.join("large.txt");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&file, vec![b'a'; (MAX_TEXT_FILE_BYTES + 1) as usize])
+            .expect("write large file");
+
+        let err = read_text_file(
+            root.to_string_lossy().into_owned(),
+            file.to_string_lossy().into_owned(),
+        )
+        .expect_err("large file should fail");
+        assert!(err.contains("File is too large for the editor slice"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn text_file_rejects_binary_utf8_invalid_files() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-binary-root-{suffix}"));
+        let file = root.join("binary.bin");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&file, [0xff, 0xfe, 0xfd, 0x00]).expect("write binary file");
+
+        let err = read_text_file(
+            root.to_string_lossy().into_owned(),
+            file.to_string_lossy().into_owned(),
+        )
+        .expect_err("binary file should fail");
+        assert!(err.contains("File is not valid UTF-8 text"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn text_file_rejects_large_save_buffers() {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("system time")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("agent-cli-editor-large-save-root-{suffix}"));
+        let file = root.join("note.txt");
+        fs::create_dir_all(&root).expect("create root");
+        fs::write(&file, "before").expect("write file");
+
+        let err = write_text_file(
+            root.to_string_lossy().into_owned(),
+            file.to_string_lossy().into_owned(),
+            "a".repeat((MAX_TEXT_FILE_BYTES + 1) as usize),
+            None,
+        )
+        .expect_err("large save should fail");
+        assert!(err.contains("File is too large for the editor slice"));
+        assert_eq!(fs::read_to_string(&file).expect("read file"), "before");
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn preflight_rejects_missing_non_login_command() {
         let cwd = std::env::current_dir()
             .expect("current dir")
