@@ -1,10 +1,10 @@
-# STATE — agent cli (handoff 2026-07-08 18:34)
+# STATE — agent cli (handoff 2026-07-08 18:52)
 
 Mirror of `~/Documents/Obsidian Vault/ops/handoffs/handoff-2026-07-08-1519-agent-cli-folder-picker.md`. Overwrite on each handoff.
 
 ## Goal
 
-Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code workflow (file-explorer rail + CodeMirror editor + real `claude`/`codex` CLI terminal panes), built on Ghostty's terminal engine. Current work: finishing recent-projects switching.
+Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code workflow (file-explorer rail + CodeMirror editor + real `claude`/`codex` CLI terminal panes), built on Ghostty's terminal engine. Current work: starting the CodeMirror editor slice, while preserving VS Code muscle memory for supported workflows.
 
 ## Done
 
@@ -20,16 +20,19 @@ Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code
 - **APP-SHELL (VERIFIED 2026-07-08):** frontend now has the stable VS Code-shell replacement shape: left file rail surface, main editor surface, and bottom agent terminal panel. Terminal resize now measures the terminal panel instead of the full window, so the pty grid matches the visible pane. Verified with `npm run build`, `npm test`, `cargo test`, `cargo build`, and real `npm run tauri dev` smoke launching `target/debug/agent-cli` with direct child `claude` in cwd `/Users/jasonpoindexter/Documents/GitHub/apps/agent cli`.
 - **FILE-RAIL (VERIFIED 2026-07-08):** backend command `list_workspace_tree(path)` lists the selected workspace with `ignore::WalkBuilder`, `.require_git(false)`, app noisy-folder filtering (`node_modules`, `target`, `dist`, `.git`, etc.), and an 8000-entry cap. Frontend renders the left rail with React Arborist, directory expand/collapse, loading/error/empty states, and file activation into the editor surface. Verified with `npm run build`, `npm test`, `cargo test` (11 tests, including `.gitignore`/noisy-dir coverage), `cargo build`, and real `npm run tauri dev` smoke launching `target/debug/agent-cli` with direct child `claude` in cwd `/Users/jasonpoindexter/Documents/GitHub/apps/agent cli`.
 - **FILE-WATCHER (VERIFIED 2026-07-08):** backend command `watch_workspace_tree(path)` owns one debounced `notify`/`notify-debouncer-mini` watcher per selected workspace, filters noisy paths before emitting `workspace-tree-changed`, and frontend reloads the rail from `list_workspace_tree`. Verified with `npm run build`, `npm test`, `cargo test` (12 tests, including watcher noisy-path filtering), `cargo build`, and real `npm run tauri dev` visual smoke: creating `aaa-agent-cli-watch-smoke-dir` after launch appeared in the rail; the smoke directory was removed afterward.
+- **RECENT-PROJECTS (VERIFIED 2026-07-08):** frontend persists `recentFolders` in the Tauri Store, dedupes/caps recents, prunes missing folders on switch failure, renders a compact rail switcher, and shares the same `openWorkspace()` path as the native picker. The row now has an explicit `Switch` affordance and pointer-down activation so it is easy to hit in the native window. Verified with `npm run build`, `npm test` (2 files, 7 tests), real `npm run tauri dev`, seeded store (`agent cli` current, `postures` recent), clicking `Switch`, `workspace.json` persisting `/Users/jasonpoindexter/Documents/postures`, and the rail/tree visibly switching to the postures project.
+- **Scope correction (2026-07-08):** Jason clarified that the app should keep VS Code's shortcuts and supported file/editor/terminal workings, minus bloat/plugins/extensions. Allowed customization is practical settings only: color themes, font/editor/terminal/layout settings, ignored folders, agent commands, and keybinding overrides.
+- **Agent integration scope (2026-07-08):** add built-in MCP/API hooks so Claude/Codex-style agents can cooperate with the app: inspect projects/panes/open files, request app-owned actions, open diffs, create/focus panes, and report status. Keep this permissioned and attributed; do not turn it into a plugin/extension platform.
 
 ## In progress
 
-**Next active slice: RECENT-PROJECTS.** Implementation is in but the full user click path is not yet verified. Added `recentFolders` persistence in `workspace.json`, a compact recent-projects rail section, an Open button sharing the native picker path, recent-list dedupe/cap/prune helpers, and tests for recent-state behavior. Verified so far: `npm run build`, `npm test` (2 files, 7 tests), `cargo test` (12 Rust tests), `cargo build`, and specific app-window screenshot showing a seeded recent project (`postures`) in the rail. Not yet verified: automated click on the recent row successfully switches workspace; coordinate click attempts hit the current-project area instead.
+**Next active slice: EDITOR.** Build the CodeMirror editor surface that opens files from the rail, edits, tracks dirty state, and saves. Keep the first slice narrow: one active file is enough before tabs/find/language expansion, but the editor must be real, not a preview. Preserve VS Code editor muscle memory where it applies.
 
 ## Next (ordered)
 
-1. **RECENT-PROJECTS:** reopen active folders without a picker ceremony.
-2. **EDITOR:** CodeMirror editor via `@uiw/react-codemirror`.
-3. **EDITOR-FIND-REPLACE:** local find/replace inside files.
+1. **EDITOR:** CodeMirror editor via `@uiw/react-codemirror`.
+2. **EDITOR-FIND-REPLACE:** local find/replace inside files.
+3. **EDITOR-LANGUAGE-MODES:** TS/TSX/JSX/MD/Rust/JSON/TOML highlighting.
 
 ## Gotchas
 
@@ -39,13 +42,16 @@ Build **agent cli** — a native macOS Tauri 2 app that replaces Jason's VS Code
 - **Key files:**
   - `app/src-tauri/src/lib.rs` — backend: `spawn_pane()`, `open_workspace()`, `handle_key()`, `handle_paste()`, `snapshot()`, `key_from_code()`, `PtyState{pane: Mutex<Option<Pane>>}`, menu, tests.
   - `app/src-tauri/src/lib.rs` — file rail/watch commands: `list_workspace_tree()`, `watch_workspace_tree()`, `FileTreeBuilder`, `is_noisy_dir()`, `watch_event_is_relevant()`.
-  - `app/src/App.tsx` — app shell layout, file rail rendering, canvas render loop, input encoding, workspace init (`initWorkspace`/`pickFolder`), selection wiring.
+  - `app/src/App.tsx` — app shell layout, recent-project switcher, file rail rendering, canvas render loop, input encoding, workspace init (`openWorkspace`/`pickWorkspace`), selection wiring.
+  - `app/src/workspaceState.ts` — recent-project normalization, promotion, pruning, and missing-workspace error detection.
   - `app/src/selection.ts` — mouse selection math (`pointFromMouse`, `isCellSelected`, `selectionToText`).
   - `spike-ghostty-vt/` — original parsing-only spike + Zig-pin notes.
 - **Planning = source of truth (read before deciding anything):** `PRD.md`, `ROADMAP.md` (has "Execution discipline" + per-phase stack), `DECISIONS.md` (append-only, don't edit past entries), `docs/vision-to-reality-2026-07-08.html`.
 - **Execution discipline (locked in ROADMAP):** one thin vertical slice at a time; app runnable at every commit; measure-don't-preempt (no WebGL/SQL/worktrees/theming until measured need); the coding agent drives `lib.rs`/`App.tsx` (Jason reviews, doesn't hand-edit in parallel).
+- **Product boundary:** preserve VS Code muscle memory for supported workflows, but do not build plugins/extensions. Settings are limited to concrete knobs: color themes, fonts, keybindings, ignored folders, layout, and agent commands.
+- **Agent hook boundary:** built-in MCP/API is allowed for app-owned commands. Mutating actions need visible approval/undo where appropriate, and every agent-originated action should be attributable.
 - **Stack:** Tauri 2 + React/TS/Vite + Rust; `libghostty-vt` 0.2.0; `portable-pty` 0.9; plugins: opener, clipboard-manager, dialog, store. Capabilities in `app/src-tauri/capabilities/default.json`.
 
 ## Continuation prompt (for Codex)
 
-Continue agent cli: read `STATE.md`, `ROADMAP.md`, and `DECISIONS.md` at the repo root, then resume at "Next" step 1 — RECENT-PROJECTS. The implementation is mostly in; finish by verifying the actual click-to-switch user path or adjusting the UI so it is machine- and keyboard-verifiable, then mark RECENT-PROJECTS done only after that. v0 is verified, and v0.5 has APP-SHELL + FILE-RAIL + FILE-WATCHER verified. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Respect the Execution discipline in ROADMAP: one slice at a time, app runnable every commit, measure-don't-preempt.
+Continue agent cli: read `STATE.md`, `ROADMAP.md`, and `DECISIONS.md` at the repo root, then resume at "Next" step 1 — EDITOR. v0 is verified, and v0.5 has APP-SHELL + FILE-RAIL + FILE-WATCHER + RECENT-PROJECTS verified. Keep VS Code shortcuts/workings for supported files/editor/terminal flows, but do not build plugin/extension bloat; settings are only concrete knobs like themes, fonts, keybindings, layout, ignored folders, and agent commands. Agent MCP/API hooks are planned for v2 as built-in, permissioned, attributed app-owned commands, not arbitrary extension execution. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Respect the Execution discipline in ROADMAP: one thin vertical slice at a time, app runnable every commit, measure-don't-preempt.

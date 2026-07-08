@@ -2,7 +2,7 @@
   "$schema": "./rockmap/roadmap.schema.json",
   "title": "agent cli",
   "subtitle": "lean VS Code replacement for Jason's real workflow — files + editor + real CLI agents, without IDE bloat",
-  "loop": "Open project folder → inspect/edit files → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Build our own, using Ghostty/Tauri/CodeMirror as components.",
+  "loop": "Open project folder → inspect/edit files → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported file/editor/terminal workflows; skip plugins and IDE bloat.",
   "columns": [
     {
       "id": "done",
@@ -231,18 +231,18 @@
     {
       "id": "RECENT-PROJECTS",
       "title": "Recent projects switcher",
-      "column": "now",
+      "column": "done",
       "tier": "pebble",
       "track": "workspace",
       "size": "S",
       "launch": "v0_5",
       "summary": "Opening the same active projects repeatedly should be cheap, not a folder-picker ceremony every time.",
-      "done": "The app lists recent project folders, reopens one quickly, and prunes missing paths without blocking startup."
+      "done": "Verified 2026-07-08: recentFolders persists, dedupes, caps, and prunes missing folders; the rail lists recent projects with an explicit Switch affordance; real Tauri smoke switched from agent cli to postures and persisted postures as the active folder."
     },
     {
       "id": "EDITOR",
       "title": "CodeMirror file editor",
-      "column": "next",
+      "column": "now",
       "tier": "rock",
       "track": "files",
       "size": "L",
@@ -331,14 +331,14 @@
     },
     {
       "id": "SHORTCUTS",
-      "title": "Shortcut map for core workflow",
+      "title": "VS Code shortcut baseline",
       "column": "next",
       "tier": "pebble",
       "track": "ui",
       "size": "S",
       "launch": "v0_5",
-      "summary": "The app needs predictable keyboard access for open folder, file search, save, copy/paste, new pane, switch pane, and terminal focus.",
-      "done": "A documented shortcut map covers the v0.5 workflow and avoids conflicts between terminal, editor, and app chrome."
+      "summary": "Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.",
+      "done": "A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, and explicitly lists terminal/editor/app-chrome conflicts and exceptions."
     },
     {
       "id": "ACCESSIBILITY-BASICS",
@@ -510,25 +510,25 @@
     },
     {
       "id": "COMMAND-PALETTE",
-      "title": "Command palette for cockpit actions",
+      "title": "VS Code-style command palette",
       "column": "later",
       "tier": "sand",
       "track": "ui",
       "size": "S",
       "launch": "v2",
-      "summary": "A compact way to expose actions without adding IDE chrome: open folder, new agent pane, split, restart, kill, save, search.",
+      "summary": "A compact VS Code-style way to expose actions without adding IDE chrome: open folder, quick open, new agent pane, split, restart, kill, save, search, settings.",
       "done": "A keyboard palette can run core app actions and shows shortcuts where assigned."
     },
     {
       "id": "SETTINGS",
-      "title": "Settings file for commands and appearance",
+      "title": "Settings for commands, themes, and shortcuts",
       "column": "later",
       "tier": "sand",
       "track": "ui",
-      "size": "S",
+      "size": "M",
       "launch": "v2",
-      "summary": "Keep settings boring and inspectable: agent commands, ignored folders, font, theme, and default layout.",
-      "done": "A local config file controls agent profiles, font/theme, ignored folders, and default pane layout; bad config reports actionable errors."
+      "summary": "Keep settings boring and inspectable: agent commands, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.",
+      "done": "A local config file controls agent profiles, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
     },
     {
       "id": "NOTIFICATIONS",
@@ -560,19 +560,30 @@
       "track": "ui",
       "size": "S",
       "launch": "v2",
-      "summary": "After the default shortcut map stabilizes, allow overrides without hardcoding personal preferences into the app.",
+      "summary": "After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.",
       "done": "A local config file can override app-level shortcuts and reports conflicts with terminal/editor reserved bindings."
     },
     {
       "id": "THEME",
-      "title": "mono-ghost theme polish",
+      "title": "Color themes",
       "column": "later",
       "tier": "sand",
       "track": "ui",
       "size": "S",
-      "launch": "v3",
-      "summary": "Apply the already-approved mono-ghost palette across chrome, terminal, rail, and editor after the core workflow is real.",
-      "done": "App chrome, terminal canvas, file rail, and editor share a coherent dark theme with readable contrast."
+      "launch": "v2",
+      "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming.",
+      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast."
+    },
+    {
+      "id": "AGENT-HOOKS",
+      "title": "Built-in agent MCP/API hooks",
+      "column": "later",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.",
+      "done": "A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log."
     },
     {
       "id": "PACKAGING",

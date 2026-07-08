@@ -16,16 +16,19 @@ When Jason is moving between active projects and parallel coding agents, he want
 
 ## Daily Workflow Requirements
 
-The app must cover the parts of VS Code Jason actually uses:
+The app must cover the parts of VS Code Jason actually uses. Default behavior should preserve VS Code muscle memory for files, editor, terminal focus, project switching, search, save, close, and command execution unless there is a clear reason to differ.
 
 - Open and switch project folders quickly, including recent projects.
 - Browse the project tree with sensible ignores, file watching, and safe handling for symlinks, large files, and binary files.
 - Open, edit, find/replace, save, and close source files with dirty-state and external-change protection.
 - Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Run multiple agent panes in one project, each with a visible name/task label, status, cwd, command, restart, and kill controls.
+- Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
 - Switch across multiple active projects without separate heavyweight VS Code windows.
 - Review agent-created changes through file status, diffs, editor gutters, and lightweight git actions.
 - Search files and terminal scrollback without leaving the app.
+- Keep common VS Code shortcuts and interaction patterns for the supported workflow, including command palette-style action access.
+- Provide only practical customization: color themes, font/terminal/editor settings, ignored folders, agent commands, and keybinding overrides.
 - Recover from quit/crash by restoring project/session metadata without pretending dead agent processes are still alive.
 
 ## User
@@ -45,10 +48,10 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 
 **Done:** one project can be used without opening VS Code for the basic loop: browse files, edit/save files, and run one real agent terminal.
 
-- [ ] File rail lists the workspace with ignores and live updates.
+- [x] File rail lists the workspace with ignores and live updates.
 - [ ] Editor opens source files, supports syntax highlighting, find/replace, dirty state, save, and external-change warnings.
 - [ ] Terminal pane remains usable while browsing/editing files.
-- [ ] Recent projects and last workspace make reopening cheap.
+- [x] Recent projects and last workspace make reopening cheap.
 
 ## v1 done criteria
 
@@ -81,7 +84,7 @@ The file rail and editor are not optional product garnish; they are the reason t
 - **Library choices research-backed** (DECISIONS.md 2026-07-08, report `docs/vision-to-reality-2026-07-08.html`): editor `@uiw/react-codemirror`; file rail `ignore` (walk) + `notify`+`notify-debouncer-mini` (watch) + React Arborist (tree); persistence Tauri Store plugin (v0/v0.5) → SQL/SQLite plugin (v1); packaging ad-hoc sign for local use. All primary-sourced.
 - Toolchain: Zig **pinned to 0.15.2** (Homebrew default 0.16.0 breaks the libghostty-vt build). Documented in `spike-ghostty-vt/README.md`.
 - Must coexist with Jason's existing projects (indx, brutal, hashmark, prova, gripe, lint) without touching their git state.
-- Ship ugly first: no theming, animation, settings UI, or empty-states polish until the core loop works end-to-end.
+- Ship ugly first, but do not invent a new interaction language. VS Code-compatible shortcuts and basic settings/theme support are product requirements once the editor loop exists.
 
 ## Non-goals
 
@@ -89,5 +92,6 @@ The file rail and editor are not optional product garnish; they are the reason t
 - Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app is the cockpit around them, never a chat-UI replacement.
 - Not a from-scratch VT parser — that's what libghostty-vt is for.
 - Not multi-platform, multi-user, or plugin-capable before there's a real daily-use track record.
-- Not a full VS Code clone: no extension marketplace, debugger, LSP-first IDE layer, remote SSH, or full git client before the lean workflow is daily-drivable.
+- Not a full VS Code clone: no extension marketplace, plugin system, debugger, LSP-first IDE layer, remote SSH, or full git client before the lean workflow is daily-drivable. Color themes and focused settings are allowed; plugins are not.
+- Not an arbitrary agent plugin host: built-in MCP/API hooks may expose app-owned commands, but agents should not run unreviewed extension code inside the app.
 - Not a task database: pane names/status/transcripts exist only to orient agent work, not to become project management software.

@@ -466,13 +466,20 @@ function App() {
                 className="recent-project"
                 type="button"
                 key={project}
+                aria-label={`Switch to recent project ${basename(project)}`}
                 title={project}
-                onClick={() => {
+                onPointerDown={(event) => {
+                  event.preventDefault();
                   void openWorkspace(project);
                 }}
               >
-                <span className="recent-project__name">{basename(project)}</span>
-                <span className="recent-project__path">{project}</span>
+                <span className="recent-project__copy">
+                  <span className="recent-project__name">{basename(project)}</span>
+                  <span className="recent-project__path">{project}</span>
+                </span>
+                <span className="recent-project__action" aria-hidden="true">
+                  Switch
+                </span>
               </button>
             ))}
             {hiddenRecentCount > 0 ? <div className="rail-status rail-status--muted">{hiddenRecentCount} more hidden</div> : null}

@@ -66,8 +66,8 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </head>
 <body>
 <h1>agent cli</h1>
-<p class="meta">lean VS Code replacement for Jason's real workflow — files + editor + real CLI agents, without IDE bloat &middot; 43 slices &middot; 6 shipped</p>
-<p class="loop">Open project folder → inspect/edit files → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Build our own, using Ghostty/Tauri/CodeMirror as components.</p>
+<p class="meta">lean VS Code replacement for Jason's real workflow — files + editor + real CLI agents, without IDE bloat &middot; 44 slices &middot; 6 shipped</p>
+<p class="loop">Open project folder → inspect/edit files → run one or more real Claude/Codex CLI terminals in that project → switch projects without separate heavy VS Code windows. Preserve VS Code muscle memory for supported file/editor/terminal workflows; skip plugins and IDE bloat.</p>
 <div class="legend"><span><i style="border-color:#164a44;background:#06140f"></i>Terminal + process</span><span><i style="border-color:#5a4315;background:#171104"></i>Projects + sessions</span><span><i style="border-color:#1e3a5c;background:#0a1320"></i>Files + editor</span><span><i style="border-color:#4c1d6f;background:#15091f"></i>Chrome + interaction</span><span><i style="border-color:#5f1f2d;background:#1d0b10"></i>Quality + shipping</span><span><i style="border-color:#2a323e;background:#10141b"></i>Research &amp; spikes</span><span style="color:#f87171">🔒 launch blocker</span></div>
 <div class="filters">
 <label for="track-filter">Track:</label><select id="track-filter"><option value="all">All track</option><option value="core">Terminal + process</option><option value="workspace">Projects + sessions</option><option value="files">Files + editor</option><option value="ui">Chrome + interaction</option><option value="quality">Quality + shipping</option><option value="research">Research &amp; spikes</option></select>
@@ -120,22 +120,22 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">S</span><span class="ttl">DATA-STORAGE &middot; Local state storage and reset</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v0</span></div><p class="sum">Define where workspace/session state lives and how to reset it when the app gets confused.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: docs/local-state.md documents the Tauri Store path, workspace.json schema, reversible reset command, and default launchProfile repair path.</p></details></div>
-</div>
-</div>
-<div class="col" data-status="now"><h2 class="s-now">Now</h2>
-<div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="workspace" data-id="RECENT-PROJECTS" data-size="S" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">S</span><span class="ttl">RECENT-PROJECTS &middot; Recent projects switcher</span><span class="lens l-workspace">Projects + sessions</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Opening the same active projects repeatedly should be cheap, not a folder-picker ceremony every time.</p>
-<details><summary>Done criteria</summary><p class="done">The app lists recent project folders, reopens one quickly, and prunes missing paths without blocking startup.</p></details></div>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: recentFolders persists, dedupes, caps, and prunes missing folders; the rail lists recent projects with an explicit Switch affordance; real Tauri smoke switched from agent cli to postures and persisted postures as the active folder.</p></details></div>
 </div>
 </div>
-<div class="col" data-status="next"><h2 class="s-next">Next</h2>
+<div class="col" data-status="now"><h2 class="s-now">Now</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
 <div class="card" data-track="files" data-id="EDITOR" data-size="L" data-tier="rock" data-launch="v0_5">
 <div class="hd"><span class="sz">L</span><span class="ttl">EDITOR &middot; CodeMirror file editor</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">Open files from the rail into a real editor pane. This is not a decorative preview; it is the VS Code editor surface Jason actually uses.</p>
 <details><summary>Done criteria</summary><p class="done">Open/edit/save a .ts/.tsx/.md file with line numbers, syntax highlighting, selection, keyboard navigation, dirty indicator, and save feedback.</p></details></div>
+</div>
+</div>
+<div class="col" data-status="next"><h2 class="s-next">Next</h2>
+<div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
 <div class="card" data-track="files" data-id="SAVE-CONFLICTS" data-size="M" data-tier="rock" data-launch="v0_5">
 <div class="hd"><span class="sz">M</span><span class="ttl">SAVE-CONFLICTS &middot; External change and save conflict handling</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">Agents and terminals can edit files while the editor is open. The app must not silently overwrite external changes.</p>
@@ -191,9 +191,9 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Make Claude the default but stop hardcoding one command forever. Add simple profiles for Claude, Codex, and shell so the pane can launch the desired CLI.</p>
 <details><summary>Done criteria</summary><p class="done">New pane can choose Claude, Codex, or shell; command path/args are visible in config; missing commands fail with a useful message.</p></details></div>
 <div class="card" data-track="ui" data-id="SHORTCUTS" data-size="S" data-tier="pebble" data-launch="v0_5">
-<div class="hd"><span class="sz">S</span><span class="ttl">SHORTCUTS &middot; Shortcut map for core workflow</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">The app needs predictable keyboard access for open folder, file search, save, copy/paste, new pane, switch pane, and terminal focus.</p>
-<details><summary>Done criteria</summary><p class="done">A documented shortcut map covers the v0.5 workflow and avoids conflicts between terminal, editor, and app chrome.</p></details></div>
+<div class="hd"><span class="sz">S</span><span class="ttl">SHORTCUTS &middot; VS Code shortcut baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v0_5</span></div><p class="sum">Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.</p>
+<details><summary>Done criteria</summary><p class="done">A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, and explicitly lists terminal/editor/app-chrome conflicts and exceptions.</p></details></div>
 <div class="card" data-track="ui" data-id="ACCESSIBILITY-BASICS" data-size="S" data-tier="pebble" data-launch="v0_5">
 <div class="hd"><span class="sz">S</span><span class="ttl">ACCESSIBILITY-BASICS &middot; Keyboard and focus accessibility baseline</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v0_5</span></div><p class="sum">A dense tool still needs visible focus, keyboard reachability, and labelled controls so it can be used without pointer precision.</p>
@@ -223,6 +223,12 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 </div>
 <div class="col" data-status="later"><h2 class="s-later">Later</h2>
+<div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
+<div class="card" data-track="core" data-id="AGENT-HOOKS" data-size="M" data-tier="rock" data-launch="v2">
+<div class="hd"><span class="sz">M</span><span class="ttl">AGENT-HOOKS &middot; Built-in agent MCP/API hooks</span><span class="lens l-core">Terminal + process</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.</p>
+<details><summary>Done criteria</summary><p class="done">A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log.</p></details></div>
+</div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="core" data-id="WORKTREE" data-size="M" data-tier="pebble" data-launch="v2">
 <div class="hd"><span class="sz">M</span><span class="ttl">WORKTREE &middot; Worktree helper</span><span class="lens l-core">Terminal + process</span></div>
@@ -243,13 +249,13 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 <div class="tg t-sand"><h3>Sand · glue &amp; polish</h3>
 <div class="card" data-track="ui" data-id="COMMAND-PALETTE" data-size="S" data-tier="sand" data-launch="v2">
-<div class="hd"><span class="sz">S</span><span class="ttl">COMMAND-PALETTE &middot; Command palette for cockpit actions</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v2</span></div><p class="sum">A compact way to expose actions without adding IDE chrome: open folder, new agent pane, split, restart, kill, save, search.</p>
+<div class="hd"><span class="sz">S</span><span class="ttl">COMMAND-PALETTE &middot; VS Code-style command palette</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">A compact VS Code-style way to expose actions without adding IDE chrome: open folder, quick open, new agent pane, split, restart, kill, save, search, settings.</p>
 <details><summary>Done criteria</summary><p class="done">A keyboard palette can run core app actions and shows shortcuts where assigned.</p></details></div>
-<div class="card" data-track="ui" data-id="SETTINGS" data-size="S" data-tier="sand" data-launch="v2">
-<div class="hd"><span class="sz">S</span><span class="ttl">SETTINGS &middot; Settings file for commands and appearance</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v2</span></div><p class="sum">Keep settings boring and inspectable: agent commands, ignored folders, font, theme, and default layout.</p>
-<details><summary>Done criteria</summary><p class="done">A local config file controls agent profiles, font/theme, ignored folders, and default pane layout; bad config reports actionable errors.</p></details></div>
+<div class="card" data-track="ui" data-id="SETTINGS" data-size="M" data-tier="sand" data-launch="v2">
+<div class="hd"><span class="sz">M</span><span class="ttl">SETTINGS &middot; Settings for commands, themes, and shortcuts</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Keep settings boring and inspectable: agent commands, ignored folders, font, color theme, default layout, and shortcut overrides. This is not a plugin platform.</p>
+<details><summary>Done criteria</summary><p class="done">A local config file controls agent profiles, font/theme, ignored folders, default pane layout, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported.</p></details></div>
 <div class="card" data-track="ui" data-id="NOTIFICATIONS" data-size="S" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">S</span><span class="ttl">NOTIFICATIONS &middot; Background agent notifications</span><span class="lens l-ui">Chrome + interaction</span></div>
 <div class="badges"><span class="me ver">v2</span></div><p class="sum">When an agent in another project or pane stops or needs input, Jason should not have to manually inspect every pane.</p>
@@ -260,12 +266,12 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <details><summary>Done criteria</summary><p class="done">A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior.</p></details></div>
 <div class="card" data-track="ui" data-id="KEYBINDINGS-CONFIG" data-size="S" data-tier="sand" data-launch="v2">
 <div class="hd"><span class="sz">S</span><span class="ttl">KEYBINDINGS-CONFIG &middot; Configurable keybindings</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v2</span></div><p class="sum">After the default shortcut map stabilizes, allow overrides without hardcoding personal preferences into the app.</p>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.</p>
 <details><summary>Done criteria</summary><p class="done">A local config file can override app-level shortcuts and reports conflicts with terminal/editor reserved bindings.</p></details></div>
-<div class="card" data-track="ui" data-id="THEME" data-size="S" data-tier="sand" data-launch="v3">
-<div class="hd"><span class="sz">S</span><span class="ttl">THEME &middot; mono-ghost theme polish</span><span class="lens l-ui">Chrome + interaction</span></div>
-<div class="badges"><span class="me ver">v3</span></div><p class="sum">Apply the already-approved mono-ghost palette across chrome, terminal, rail, and editor after the core workflow is real.</p>
-<details><summary>Done criteria</summary><p class="done">App chrome, terminal canvas, file rail, and editor share a coherent dark theme with readable contrast.</p></details></div>
+<div class="card" data-track="ui" data-id="THEME" data-size="S" data-tier="sand" data-launch="v2">
+<div class="hd"><span class="sz">S</span><span class="ttl">THEME &middot; Color themes</span><span class="lens l-ui">Chrome + interaction</span></div>
+<div class="badges"><span class="me ver">v2</span></div><p class="sum">Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming.</p>
+<details><summary>Done criteria</summary><p class="done">App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast.</p></details></div>
 <div class="card" data-track="research" data-id="REUSE-AUDIT" data-size="S" data-tier="sand" data-launch="v3">
 <div class="hd"><span class="sz">S</span><span class="ttl">REUSE-AUDIT &middot; Mine old projects for reusable pieces</span><span class="lens l-research">Research &amp; spikes</span></div>
 <div class="badges"><span class="me ver">v3</span></div><p class="sum">Re-check Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without adopting their product shape.</p>

@@ -101,6 +101,8 @@ body,
 }
 
 .recent-projects {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
   border-bottom: 1px solid #282828;
   padding: 4px 0;
@@ -109,8 +111,10 @@ body,
 .recent-project {
   display: grid;
   width: 100%;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 1px;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   border: 0;
   background: transparent;
   color: #cfcfcf;
@@ -121,6 +125,12 @@ body,
 
 .recent-project:hover {
   background: #242424;
+}
+
+.recent-project__copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
 }
 
 .recent-project__name,
@@ -142,7 +152,19 @@ body,
   font-size: 11px;
 }
 
+.recent-project__action {
+  border: 1px solid #3c3c3c;
+  border-radius: 5px;
+  color: #bdbdbd;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 18px;
+  padding: 0 6px;
+}
+
 .rail-tree {
+  position: relative;
+  z-index: 1;
   min-height: 0;
   flex: 1;
   overflow: hidden;

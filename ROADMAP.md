@@ -16,7 +16,8 @@ Added 2026-07-08. The roadmap is now detailed enough to invite building breadth 
 - **App runnable at every commit.** `app/` must launch and work after each change — never a "big rewrite in flight" state.
 - **Measure, don't preempt.** The two open risks get fixed only when they actually bite: fast-output stutter → dirty-region IPC deltas (not WebGL first); 4–8 concurrent agents → measure the process ceiling then. Same for SQL, worktrees, WebGL, theming — build at the phase that needs them, not earlier.
 - **One driver per file per slice.** Decided 2026-07-08: **the coding agent drives the code** (`app/src-tauri/src/lib.rs`, `app/src/App.tsx`); Jason reviews rather than hand-editing in parallel, to avoid concurrent-edit clobbers.
-- **Rule of 3 / no platform-thinking** (from CLAUDE.md) still apply: no abstraction until 3 concrete uses; no multi-tenancy/plugins/settings before a real daily-use track record.
+- **Rule of 3 / no platform-thinking** (from CLAUDE.md) still apply: no abstraction until 3 concrete uses; no multi-tenancy/plugins/extension system. Settings are allowed only for concrete product knobs: theme, font, keybindings, ignored folders, layout, and agent commands.
+- **VS Code muscle memory is a feature.** For supported files/editor/terminal/project workflows, default shortcuts and interactions should match VS Code unless the native terminal path requires a deliberate exception.
 
 ## Done so far (research + verification — see DECISIONS.md)
 
@@ -47,7 +48,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - ~~**APP-SHELL:** stable three-part layout: file rail, editor area, terminal pane area.~~ **DONE 2026-07-08** — React shell now has a left file rail surface, main editor surface, and bottom terminal panel; terminal resize now uses the measured terminal panel instead of the whole window. Verified with `npm run build`, `npm test`, `cargo test`, `cargo build`, and real `npm run tauri dev` smoke launching `target/debug/agent-cli` with direct child `claude` in the repo cwd.
 - ~~**FILE-RAIL:** dense project file explorer, with noisy folders ignored.~~ **DONE 2026-07-08** — backend `list_workspace_tree` uses `ignore::WalkBuilder` with gitignore/app noisy-folder filtering; frontend renders a dense React Arborist tree in the left rail, supports directory expand/collapse, and activates files into the editor surface. Verified with `npm run build`, `npm test`, `cargo test` (11 tests, including noisy-dir/gitignore coverage), `cargo build`, and real `npm run tauri dev` smoke launching Claude in the selected cwd.
 - ~~**FILE-WATCHER:** live rail updates, gitignore/app ignores, noisy-folder protection.~~ **DONE 2026-07-08** — backend owns a debounced `notify` watcher per selected workspace, filters noisy paths before emitting `workspace-tree-changed`, and frontend refreshes the existing tree source on that event. Verified with `npm run build`, `npm test`, `cargo test` (12 tests, including watcher noisy-path filtering), `cargo build`, and real `npm run tauri dev` visual smoke: creating `aaa-agent-cli-watch-smoke-dir` after launch appeared in the rail, then was removed.
-- **RECENT-PROJECTS:** reopen active folders without a picker ceremony.
+- ~~**RECENT-PROJECTS:** reopen active folders without a picker ceremony.~~ **DONE 2026-07-08** — persisted `recentFolders`, added a compact rail switcher with explicit `Switch` affordance, dedupe/cap/prune helpers, and missing-path cleanup. Verified with `npm run build`, `npm test`, real `npm run tauri dev`, seeded `agent cli` + `postures` recents, clicking `Switch`, `workspace.json` persisting `/Users/jasonpoindexter/Documents/postures`, and the rail/tree switching to the postures project.
 - **EDITOR:** CodeMirror editor that opens files from the rail, edits, and saves.
 - **EDITOR-FIND-REPLACE:** local find/replace inside files.
 - **EDITOR-LANGUAGE-MODES:** first-class TS/TSX/JSX/MD/Rust/JSON/TOML highlighting.
@@ -56,7 +57,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **FILE-OPS:** create/rename/delete/duplicate/reveal from rail.
 - **EDITOR-TABS:** several open files, dirty indicators, close protection.
 - **AGENT-PROFILES:** Claude default, plus Codex/shell profiles without hardcoding one CLI forever.
-- **SHORTCUTS:** documented core shortcut map across terminal/editor/chrome.
+- **SHORTCUTS:** VS Code-compatible shortcut map across terminal/editor/chrome.
 - **ACCESSIBILITY-BASICS:** keyboard reachability, visible focus, and labelled chrome controls.
 
 ## v1 — Multi-project, multi-agent cockpit
@@ -78,15 +79,16 @@ This is where the clarified product point lands: not "terminal app with optional
 - **WORKTREE:** create disposable worktree + agent pane from a project.
 - **SEARCH:** file quick-open and ripgrep-backed text search.
 - **TERMINAL-FIND:** search active terminal output/scrollback.
-- **COMMAND-PALETTE:** compact access to cockpit actions without adding IDE chrome.
-- **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout.
+- **COMMAND-PALETTE:** VS Code-style compact action access without adding IDE chrome.
+- **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, and shortcut overrides.
+- **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost.
+- **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
 - **NOTIFICATIONS:** background agent exit/attention badges and optional macOS notifications.
 - **TRANSCRIPTS:** save/review completed pane output.
 - **KEYBINDINGS-CONFIG:** configurable app shortcut overrides after defaults stabilize.
 
 ## v3 — Polish and shipping
 
-- **THEME:** mono-ghost palette across chrome, terminal, rail, and editor.
 - **PACKAGING:** local macOS `.app` packaging.
 - **REUSE-AUDIT:** mine Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without inheriting the wrong product shape.
 
