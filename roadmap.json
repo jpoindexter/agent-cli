@@ -242,14 +242,14 @@
     {
       "id": "EDITOR",
       "title": "CodeMirror file editor",
-      "column": "now",
+      "column": "done",
       "tier": "rock",
       "track": "files",
       "size": "L",
       "launch": "v0_5",
       "blocker": true,
       "summary": "Open files from the rail into a real editor pane. This is not a decorative preview; it is the VS Code/Codex editor surface Jason actually uses.",
-      "done": "Open/edit/save a .ts/.tsx/.md file with line numbers, syntax highlighting, selection/cursor fidelity, keyboard navigation, dirty indicator, path context, and save feedback."
+      "done": "Verified 2026-07-08: CodeMirror opens files from the rail with reliable pointer-down activation, line numbers, path context, TS/TSX/JS/JSX/MD syntax modes, dirty/saved status, Save button, and Cmd+S/Ctrl+S. Native UI smoke opened, edited, saved, and confirmed disk contents changed for a real workspace file."
     },
     {
       "id": "EDITOR-PARITY-UX",

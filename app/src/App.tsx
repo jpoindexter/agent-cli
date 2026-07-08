@@ -5,6 +5,8 @@ import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open } from "@tauri-apps/plugin-dialog";
 import { load } from "@tauri-apps/plugin-store";
 import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { markdown } from "@codemirror/lang-markdown";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { Tree } from "react-arborist";
 import type { NodeRendererProps } from "react-arborist";
@@ -48,6 +50,23 @@ const DEFAULT_LAUNCH_PROFILE: LaunchProfile = {
 
 const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+const extension = (path: string) => basename(path).split(".").pop()?.toLowerCase() ?? "";
+
+const editorExtensionsFor = (path: string) => {
+  switch (extension(path)) {
+    case "js":
+    case "jsx":
+      return [javascript({ jsx: true })];
+    case "ts":
+    case "tsx":
+      return [javascript({ jsx: extension(path) === "tsx", typescript: true })];
+    case "md":
+    case "markdown":
+      return [markdown()];
+    default:
+      return [];
+  }
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value != null;
 
@@ -67,7 +86,20 @@ const normalizeLaunchProfile = (value: unknown): LaunchProfile => {
 function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode>) {
   const isDirectory = node.data.kind === "directory";
   return (
-    <div ref={dragHandle} style={style} className={`file-node ${node.isSelected ? "file-node--selected" : ""}`}>
+    <div
+      ref={dragHandle}
+      style={style}
+      className={`file-node ${node.isSelected ? "file-node--selected" : ""}`}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        if (isDirectory) {
+          node.toggle();
+        } else {
+          node.select();
+          node.activate();
+        }
+      }}
+    >
       <span className="file-node__twisty" aria-hidden="true">
         {isDirectory ? (node.isOpen ? "▾" : "▸") : ""}
       </span>
@@ -603,6 +635,7 @@ function App() {
               </div>
             ) : null}
           </div>
+          {selectedFile ? <div className="editor-pathbar">{selectedFile.path}</div> : null}
           {selectedFile ? (
             <div
               className="editor-code"
@@ -625,6 +658,7 @@ function App() {
                   highlightActiveLineGutter: true,
                 }}
                 editable={!editorLoading}
+                extensions={editorExtensionsFor(selectedFile.path)}
                 onChange={(value) => setEditorText(value)}
               />
             </div>

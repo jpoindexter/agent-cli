@@ -110,6 +110,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">M</span><span class="ttl">FILE-WATCHER &middot; File watcher and ignore rules</span><span class="lens l-files">Files + editor</span></div>
 <div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">The rail must reflect real project changes without drowning in node_modules, target, build output, or ignored files.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: debounced notify watcher emits workspace-tree-changed for relevant paths only; frontend refreshes the rail from list_workspace_tree; noisy paths are unit-tested; visual smoke showed a newly created top-level directory appear in the rail after launch.</p></details></div>
+<div class="card" data-track="files" data-id="EDITOR" data-size="L" data-tier="rock" data-launch="v0_5">
+<div class="hd"><span class="sz">L</span><span class="ttl">EDITOR &middot; CodeMirror file editor</span><span class="lens l-files">Files + editor</span></div>
+<div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">Open files from the rail into a real editor pane. This is not a decorative preview; it is the VS Code/Codex editor surface Jason actually uses.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-08: CodeMirror opens files from the rail with reliable pointer-down activation, line numbers, path context, TS/TSX/JS/JSX/MD syntax modes, dirty/saved status, Save button, and Cmd+S/Ctrl+S. Native UI smoke opened, edited, saved, and confirmed disk contents changed for a real workspace file.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="workspace" data-id="LAST-WORKSPACE" data-size="S" data-tier="pebble" data-launch="v0">
@@ -127,12 +131,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 </div>
 <div class="col" data-status="now"><h2 class="s-now">Now</h2>
-<div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="files" data-id="EDITOR" data-size="L" data-tier="rock" data-launch="v0_5">
-<div class="hd"><span class="sz">L</span><span class="ttl">EDITOR &middot; CodeMirror file editor</span><span class="lens l-files">Files + editor</span></div>
-<div class="badges"><span class="me ver">v0_5</span><span class="me lock">🔒</span></div><p class="sum">Open files from the rail into a real editor pane. This is not a decorative preview; it is the VS Code/Codex editor surface Jason actually uses.</p>
-<details><summary>Done criteria</summary><p class="done">Open/edit/save a .ts/.tsx/.md file with line numbers, syntax highlighting, selection/cursor fidelity, keyboard navigation, dirty indicator, path context, and save feedback.</p></details></div>
-</div>
 </div>
 <div class="col" data-status="next"><h2 class="s-next">Next</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
