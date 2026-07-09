@@ -31,6 +31,17 @@ assert(appCss.includes("--steel-cyan-500: #67c3d1;"), "App CSS must define steel
 assert(appCss.includes("--steel-cyan-400: #9bd9e3;"), "App CSS must define steel-cyan strong accent #9bd9e3");
 assert(appCss.includes("--steel-cyan-900: #162c33;"), "App CSS must define steel-cyan muted surface #162c33");
 assert(appCss.includes("--color-accent-border: var(--blue-500);"), "App accent border must flow through the semantic accent token");
+assert(appCss.includes("--toolbar-control-bg-hover: rgba(255, 255, 255, 0.055);"), "App CSS must define flat toolbar hover chrome");
+assert(appCss.includes("--toolbar-control-active-bg: rgba(103, 195, 209, 0.1);"), "App CSS must define flat steel-cyan toolbar active chrome");
+assert(/\.agent-surface-switcher\s*\{[^}]*border: 0;[^}]*background: transparent;/s.test(appCss), "Agent surface switcher must not render an enclosing segmented-control box");
+assert(/\.layout-switcher\s*\{[^}]*border: 0;[^}]*background: transparent;/s.test(appCss), "Layout switcher must not render an enclosing segmented-control box");
+assert(/\.agent-surface-switcher__button--active\s*\{[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-border\);/s.test(appCss), "Agent surface active state must use a flat underline accent");
+assert(/\.layout-switcher__button--active\s*\{[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-border\);/s.test(appCss), "Layout active state must use a flat underline accent");
+assert(/\.terminal-pane-button--active\s*\{[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-border\);/s.test(appCss), "Pane active state must use a flat underline accent");
+assert(/\.terminal-command,\s*\.terminal-mode\s*\{[^}]*display: none;/s.test(appCss), "Terminal toolbar must hide low-value command/mode text to avoid chrome crowding");
+assert(/\.terminal-title\s*\{[^}]*display: none;/s.test(appCss), "Terminal toolbar must not duplicate the selected profile label");
+assert(appCss.includes("container-type: inline-size;"), "Browser preview must use container-aware chrome behavior");
+assert(/@container \(max-width: 280px\)\s*\{[\s\S]*?\.browser-button--go\s*\{[^}]*display: none;/s.test(appCss), "Narrow browser tray must hide the Open button to prevent toolbar overlap");
 assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-style agent event cards");
 assert(appTsx.includes("agent-thread-event"), "App surface must render thread-style agent event cards");
 assert(appTsx.includes("agent-activity-log__title\">Thread"), "Agent activity surface must label the center feed as Thread");

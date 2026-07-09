@@ -33,6 +33,14 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 - The center work surface is labelled as `Agent thread and raw terminal`: chat/thread is primary, raw terminal is explicit.
 - QA fixtures must mirror those nouns so visual snapshots catch drift back to stacked-pane or terminal-first language.
 
+## Control Chrome Signals
+
+- Toolbar controls are flat by default: no enclosing segmented-control box around the agent surface or tray layout switchers.
+- Active toolbar state uses a small steel-cyan underline and subtle tint, not a filled rounded pill.
+- Pane, browser, collapse, and lifecycle icon buttons use hover/focus feedback without default rectangular chrome.
+- Terminal toolbar metadata is deliberately reduced to avoid collisions with agent/tray controls; selected profile is already visible in the app titlebar and pane chips.
+- Browser preview chrome responds to tray width; narrow trays hide the redundant Open button before controls overlap.
+
 ## Verification
 
 Run from `app/`:
