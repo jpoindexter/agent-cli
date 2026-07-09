@@ -59,6 +59,7 @@ const DIGIT_KEYS: [Key; 10] = [
 ];
 
 /// Messages into the terminal thread.
+#[derive(Clone)]
 enum Msg {
     Data(Vec<u8>),
     Key {
@@ -86,23 +87,84 @@ struct Pane {
     killer: Box<dyn ChildKiller + Send + Sync>,
 }
 
-/// App state for Tauri commands. Holds the CURRENT pane (None until a folder is
-/// opened). Deliberately holds NO libghostty type (Terminal/Encoder are `!Send` and
-/// live in the terminal thread); only the `Send` channel sender crosses the boundary.
+/// App state for Tauri commands. Holds live pane handles and the currently
+/// focused pane. Deliberately holds NO libghostty type (Terminal/Encoder are
+/// `!Send` and live in each terminal thread); only `Send` channel senders cross
+/// the boundary.
 struct PtyState {
-    pane: Mutex<Option<Pane>>,
+    panes: Mutex<BTreeMap<u64, Pane>>,
+    active_pane_id: Mutex<Option<u64>>,
     watcher: Mutex<Option<WorkspaceWatcher>>,
     next_pane_id: Mutex<u64>,
 }
 
 impl PtyState {
-    /// Forward a message to the current pane, if one is open.
+    /// Forward a message to the focused pane, if one is open.
     fn send(&self, msg: Msg) {
-        if let Ok(guard) = self.pane.lock() {
-            if let Some(pane) = guard.as_ref() {
-                let _ = pane.tx.send(msg);
+        let active_id = self.active_pane_id.lock().ok().and_then(|guard| *guard);
+        if let Some(active_id) = active_id {
+            if let Ok(guard) = self.panes.lock() {
+                if let Some(pane) = guard.get(&active_id) {
+                    let _ = pane.tx.send(msg);
+                }
             }
         }
+    }
+
+    fn broadcast(&self, msg: Msg) {
+        if let Ok(guard) = self.panes.lock() {
+            for pane in guard.values() {
+                let _ = pane.tx.send(msg.clone());
+            }
+        }
+    }
+
+    fn insert_and_focus(&self, pane_id: u64, pane: Pane) {
+        if let Ok(mut guard) = self.panes.lock() {
+            guard.insert(pane_id, pane);
+        }
+        let _ = self.focus(pane_id);
+    }
+
+    fn close(&self, pane_id: u64) -> Result<Option<u64>, String> {
+        let (removed, next_active) = {
+            let mut panes = self
+                .panes
+                .lock()
+                .map_err(|_| "Could not close terminal pane.".to_string())?;
+            let removed = panes.remove(&pane_id);
+            let next_active = panes.keys().next().copied();
+            (removed, next_active)
+        };
+        let Some(mut pane) = removed else {
+            return Err(format!("Terminal pane {pane_id} is no longer available."));
+        };
+        let _ = pane.killer.kill();
+        let mut active = self
+            .active_pane_id
+            .lock()
+            .map_err(|_| "Could not update focused terminal pane.".to_string())?;
+        if *active == Some(pane_id) {
+            *active = next_active;
+        }
+        Ok(*active)
+    }
+
+    fn focus(&self, pane_id: u64) -> Result<(), String> {
+        let exists = self
+            .panes
+            .lock()
+            .map_err(|_| "Could not read terminal panes.".to_string())?
+            .contains_key(&pane_id);
+        if !exists {
+            return Err(format!("Terminal pane {pane_id} is no longer available."));
+        }
+        let mut active = self
+            .active_pane_id
+            .lock()
+            .map_err(|_| "Could not focus terminal pane.".to_string())?;
+        *active = Some(pane_id);
+        Ok(())
     }
 
     fn allocate_pane_id(&self) -> u64 {
@@ -135,6 +197,13 @@ struct Snapshot {
 
 #[derive(Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+struct GridPayload {
+    pane_id: u64,
+    snapshot: Snapshot,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 struct PaneExit {
     pane_id: u64,
     command: String,
@@ -147,6 +216,18 @@ struct PaneExit {
 struct OpenWorkspaceResponse {
     root: String,
     pane_id: u64,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct OpenPaneResponse {
+    pane_id: u64,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct ClosePaneResponse {
+    active_pane_id: Option<u64>,
 }
 
 struct WorkspaceWatcher {
@@ -486,6 +567,16 @@ fn snapshot(term: &Terminal) -> Snapshot {
     }
 }
 
+fn emit_grid(app: &AppHandle, pane_id: u64, term: &Terminal) {
+    let _ = app.emit(
+        "grid",
+        GridPayload {
+            pane_id,
+            snapshot: snapshot(term),
+        },
+    );
+}
+
 /// Encode one key event through Ghostty's real encoder (respecting the terminal's
 /// live modes) and write the resulting bytes to the pty.
 fn handle_key(
@@ -593,7 +684,7 @@ fn paste(state: State<PtyState>, text: String) {
 /// Frontend -> terminal thread: viewport resized to cols x rows.
 #[tauri::command]
 fn resize_pty(state: State<PtyState>, cols: u16, rows: u16) {
-    state.send(Msg::Resize {
+    state.broadcast(Msg::Resize {
         cols: cols.max(2),
         rows: rows.max(2),
     });
@@ -888,9 +979,8 @@ fn watch_workspace_tree(
     Ok(())
 }
 
-/// Open (or switch to) a workspace folder: spawn a fresh pane in `path` using the
-/// selected launch profile and tear down the previous one. Persistence of the last
-/// folder/profile is done frontend-side from the returned canonical workspace.
+/// Open a workspace folder by spawning a pane in `path` using the selected launch
+/// profile. Existing panes stay alive so other projects can keep running.
 #[tauri::command]
 fn open_workspace(
     app: AppHandle,
@@ -903,12 +993,40 @@ fn open_workspace(
     preflight_profile(&profile, &cwd)?;
     let pane_id = state.allocate_pane_id();
     let new = spawn_pane(app, cwd.clone(), profile, pane_id)?;
-    if let Ok(mut guard) = state.pane.lock() {
-        if let Some(mut old) = guard.replace(new) {
-            let _ = old.killer.kill();
-        }
-    }
+    state.insert_and_focus(pane_id, new);
     Ok(OpenWorkspaceResponse { root: cwd, pane_id })
+}
+
+/// Spawn an additional pane in an existing workspace and focus it without
+/// tearing down already-running panes.
+#[tauri::command]
+fn create_pane(
+    app: AppHandle,
+    state: State<PtyState>,
+    path: String,
+    profile: Option<LaunchProfile>,
+) -> Result<OpenPaneResponse, String> {
+    let cwd = validate_workspace_path(&path)?;
+    let profile = profile.unwrap_or_default().normalized();
+    preflight_profile(&profile, &cwd)?;
+    let pane_id = state.allocate_pane_id();
+    let new = spawn_pane(app, cwd, profile, pane_id)?;
+    state.insert_and_focus(pane_id, new);
+    Ok(OpenPaneResponse { pane_id })
+}
+
+/// Focus an already-running pane. Input commands are always routed to this pane.
+#[tauri::command]
+fn focus_pane(state: State<PtyState>, pane_id: u64) -> Result<(), String> {
+    state.focus(pane_id)
+}
+
+/// Close one pane by killing its child process and removing its input route.
+#[tauri::command]
+fn close_pane(state: State<PtyState>, pane_id: u64) -> Result<ClosePaneResponse, String> {
+    Ok(ClosePaneResponse {
+        active_pane_id: state.close(pane_id)?,
+    })
 }
 
 /// Quote one shell token for the login-shell profile path.
@@ -1335,7 +1453,7 @@ fn spawn_pane(
                             Err(_) => break,
                         }
                     }
-                    let _ = app.emit("grid", snapshot(&term));
+                    emit_grid(&app, pane_id, &term);
                 }
                 Msg::Key {
                     code,
@@ -1358,20 +1476,20 @@ fn spawn_pane(
                         ctrl,
                         sup,
                     );
-                    let _ = app.emit("grid", snapshot(&term));
+                    emit_grid(&app, pane_id, &term);
                 }
                 Msg::Paste(t) => {
                     term.scroll_viewport(ScrollViewport::Bottom);
                     handle_paste(&term, &mut *writer, t);
-                    let _ = app.emit("grid", snapshot(&term));
+                    emit_grid(&app, pane_id, &term);
                 }
                 Msg::Scroll { delta } => {
                     term.scroll_viewport(ScrollViewport::Delta(delta));
-                    let _ = app.emit("grid", snapshot(&term));
+                    emit_grid(&app, pane_id, &term);
                 }
                 Msg::Resize { cols, rows } => {
                     do_resize(&master, &mut term, cols, rows);
-                    let _ = app.emit("grid", snapshot(&term));
+                    emit_grid(&app, pane_id, &term);
                 }
             }
         }
@@ -1439,7 +1557,8 @@ pub fn run() {
             // No pane yet — the frontend opens the last folder (or the picker) on
             // startup, which spawns the first pane via `open_workspace`.
             app.manage(PtyState {
-                pane: Mutex::new(None),
+                panes: Mutex::new(BTreeMap::new()),
+                active_pane_id: Mutex::new(None),
                 watcher: Mutex::new(None),
                 next_pane_id: Mutex::new(0),
             });
@@ -1451,6 +1570,9 @@ pub fn run() {
             resize_pty,
             scroll_pty,
             open_workspace,
+            create_pane,
+            focus_pane,
+            close_pane,
             list_workspace_tree,
             watch_workspace_tree,
             read_text_file,
@@ -1469,7 +1591,38 @@ pub fn run() {
 mod tests {
     use super::*;
     use std::fs;
+    use std::io::Result as IoResult;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[derive(Debug)]
+    struct TestKiller {
+        kills: Arc<AtomicUsize>,
+    }
+
+    impl ChildKiller for TestKiller {
+        fn kill(&mut self) -> IoResult<()> {
+            self.kills.fetch_add(1, Ordering::SeqCst);
+            Ok(())
+        }
+
+        fn clone_killer(&self) -> Box<dyn ChildKiller + Send + Sync> {
+            Box::new(Self {
+                kills: Arc::clone(&self.kills),
+            })
+        }
+    }
+
+    fn test_pane(kills: Arc<AtomicUsize>) -> Pane {
+        let (tx, _rx) = channel::<Msg>();
+        Pane {
+            tx,
+            killer: Box::new(TestKiller { kills }),
+        }
+    }
 
     fn test_terminal(cols: u16, rows: u16) -> Terminal<'static, 'static> {
         Terminal::new(Options {
@@ -1478,6 +1631,47 @@ mod tests {
             max_scrollback: 100,
         })
         .expect("create terminal")
+    }
+
+    #[test]
+    fn pty_state_focuses_and_closes_multiple_panes() {
+        let kills = Arc::new(AtomicUsize::new(0));
+        let state = PtyState {
+            panes: Mutex::new(BTreeMap::new()),
+            active_pane_id: Mutex::new(None),
+            watcher: Mutex::new(None),
+            next_pane_id: Mutex::new(0),
+        };
+
+        state.insert_and_focus(1, test_pane(Arc::clone(&kills)));
+        state.insert_and_focus(2, test_pane(Arc::clone(&kills)));
+        assert_eq!(
+            *state.active_pane_id.lock().expect("active pane lock"),
+            Some(2)
+        );
+
+        state.focus(1).expect("focus first pane");
+        assert_eq!(
+            *state.active_pane_id.lock().expect("active pane lock"),
+            Some(1)
+        );
+
+        let next = state.close(1).expect("close first pane");
+        assert_eq!(next, Some(2));
+        assert_eq!(
+            *state.active_pane_id.lock().expect("active pane lock"),
+            Some(2)
+        );
+        assert!(!state.panes.lock().expect("pane lock").contains_key(&1));
+        assert_eq!(kills.load(Ordering::SeqCst), 1);
+
+        let next = state.close(2).expect("close final pane");
+        assert_eq!(next, None);
+        assert_eq!(
+            *state.active_pane_id.lock().expect("active pane lock"),
+            None
+        );
+        assert_eq!(kills.load(Ordering::SeqCst), 2);
     }
 
     fn snapshot_line(snapshot: &Snapshot, row: usize) -> String {

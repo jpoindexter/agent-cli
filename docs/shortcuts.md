@@ -26,8 +26,8 @@ Keelhouse keeps VS Code/macOS muscle memory for the workflow it actually support
 |---|---|---|
 | `Cmd+P` | Quick open / file search | Deferred until `SEARCH` / `COMMAND-PALETTE`. |
 | `Shift+Cmd+P` | Command palette | Deferred until `COMMAND-PALETTE`; `Cmd+K` remains terminal clear in v0.5. |
-| <code>Cmd+Shift+`</code> | New terminal pane | Deferred until `PANE-MANAGER`; v0.5 has one pane. |
-| `Cmd+\` | Split terminal pane | Deferred until `PANE-MANAGER`; v0.5 has one pane. |
+| <code>Cmd+Shift+`</code> | New terminal pane | Pane UI exists; shortcut binding remains deferred until keybinding conflicts are settled. |
+| `Cmd+\` | Split terminal pane | Deferred; PANE-MANAGER uses a pane strip before split layout. |
 | `Cmd+Option+Left/Right` | Move between panes/projects | Deferred until multi-pane/project focus exists. |
 
 ## Conflict Rules

@@ -141,8 +141,8 @@ export const SHORTCUTS: Shortcut[] = [
     scope: "Terminal",
     keys: ["Cmd+Shift+`"],
     status: "planned",
-    behavior: "Planned once multi-pane support exists.",
-    exception: "v0.5 has one terminal pane.",
+    behavior: "New-pane UI exists; keyboard binding remains planned until shortcut conflict handling is explicit.",
+    exception: "Use the terminal header or context menu for now.",
   },
   {
     id: "terminal.split-pane",
@@ -150,8 +150,8 @@ export const SHORTCUTS: Shortcut[] = [
     scope: "Terminal",
     keys: ["Cmd+\\"],
     status: "planned",
-    behavior: "Planned once PANE-MANAGER exists.",
-    exception: "v0.5 has one terminal pane.",
+    behavior: "Planned after the pane strip proves the right default layout.",
+    exception: "PANE-MANAGER uses focusable pane buttons before split layout.",
   },
   {
     id: "terminal.focus-next-pane",
