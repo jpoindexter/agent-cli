@@ -119,7 +119,7 @@
       "size": "S",
       "launch": "v1",
       "summary": "Lock which external products are useful references so Keelhouse does not drift into a VS Code clone or generic orchestrator.",
-      "done": "Verified 2026-07-09: Zed is the closest product-shape reference, but Keelhouse must invert it into an agent-first cockpit instead of an editor-first IDE. From awesome-agent-orchestrators, ConstellAgent, herdr, parallel-code, and Clave are the closest targeted references. See docs/reference-products.md."
+      "done": "Verified 2026-07-09: Zed is the closest chrome-quality reference, but Keelhouse must translate that craft into an agent-first cockpit instead of copying an editor-first IDE. From awesome-agent-orchestrators, ConstellAgent, herdr, parallel-code, and Clave are the closest targeted references. Orbit is useful for agent workflow mechanics, not shell chrome. See docs/reference-products.md."
     },
     {
       "id": "APPROOT",
@@ -723,8 +723,8 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Fix the actual shell before measurement using Zed's agent-thread/sidebar/panel model as the reference framework: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, minimal rounded button chrome, and editor/browser/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
-      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/raw terminal are movable/resizable tool panes using a typed panel contract inspired by Zed's dock/sidebar architecture; dropdowns/context menus use flat Zed-like chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
+      "summary": "Fix the actual shell before measurement using VS Code/Zed-level chrome craft without copying either product, with demo/cockpit-demo.html as the dark orbital/Codex visual-language reference: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, minimal rounded button chrome, resizable splitters, and editor/browser/git/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
+      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
     },
     {
       "id": "DAILY-DRIVER-METRICS",
