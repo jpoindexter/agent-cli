@@ -91,6 +91,12 @@ import {
   routeComposerDraft,
 } from "./agentComposer";
 import type { ComposerAppCommand } from "./agentComposer";
+import {
+  DEFAULT_AGENT_APPROVAL_MODE,
+  buildAgentSessionHandleDescriptor,
+  readTailFromSnapshot,
+} from "./agentSessionHandle";
+import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { AppIcon, paneStateAccessibleLabel, paneStateIconName } from "./icons";
 import type { AppIconName } from "./icons";
 import { shortcutKeys, shortcutTitle } from "./shortcuts";
@@ -370,6 +376,23 @@ function App() {
   const activeTerminalPane = useMemo(
     () => terminalPanes.find((pane) => pane.id === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, terminalPanes],
+  );
+  const agentApprovalMode: AgentApprovalMode = DEFAULT_AGENT_APPROVAL_MODE;
+  const agentSessionDescriptors = useMemo<AgentSessionHandleDescriptor[]>(() => {
+    if (!workspacePath || !activeSessionId) return [];
+    return terminalPanes.map((pane, index) =>
+      buildAgentSessionHandleDescriptor({
+        pane,
+        projectId: workspacePath,
+        projectSessionId: activeSessionId,
+        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, index),
+        approvalMode: agentApprovalMode,
+      }),
+    );
+  }, [activeSessionId, agentApprovalMode, terminalPanes, workspacePath]);
+  const activeAgentSessionDescriptor = useMemo(
+    () => agentSessionDescriptors.find((handle) => handle.paneId === activeTerminalPaneId) ?? null,
+    [activeTerminalPaneId, agentSessionDescriptors],
   );
   const activeTerminalProfile = activeTerminalPane?.profile ?? launchProfile;
   const terminalPaneState = activeTerminalPane?.state ?? "idle";
@@ -991,14 +1014,9 @@ function App() {
   };
 
   const interruptActivePane = async () => {
-    if (activeTerminalPaneIdRef.current == null) return;
+    if (!activeAgentSessionHandle) return;
     setComposerError(null);
-    await invoke("send_key", { code: "KeyC", text: null, shift: false, alt: false, ctrl: true, sup: false });
-  };
-
-  const sendEnterToActivePane = async () => {
-    if (activeTerminalPaneIdRef.current == null) return;
-    await invoke("send_key", { code: "Enter", text: null, shift: false, alt: false, ctrl: false, sup: false });
+    await activeAgentSessionHandle.interrupt();
   };
 
   const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
@@ -1045,12 +1063,11 @@ function App() {
           setComposerError("Open a workspace before sending to an agent.");
           return;
         }
-        if (activeTerminalPaneIdRef.current == null) {
+        if (!activeAgentSessionHandle) {
           setComposerError("Create or select a terminal pane before sending.");
           return;
         }
-        await invoke("paste", { text: route.text });
-        await sendEnterToActivePane();
+        await activeAgentSessionHandle.send(route.text);
       } else {
         const ok = await runComposerAppCommand(route.command);
         if (!ok) return;
@@ -1172,6 +1189,32 @@ function App() {
       await updateActiveSessionStatus(root, "attention");
     }
   };
+
+  const activeAgentSessionHandle: AgentSessionHandle | null = activeAgentSessionDescriptor
+    ? {
+        ...activeAgentSessionDescriptor,
+        send: async (text: string) => {
+          if (activeTerminalPaneIdRef.current !== activeAgentSessionDescriptor.paneId) {
+            await focusTerminalPane(activeAgentSessionDescriptor.paneId);
+          }
+          await invoke("paste", { text });
+          await invoke("send_key", { code: "Enter", text: null, shift: false, alt: false, ctrl: false, sup: false });
+        },
+        interrupt: async () => {
+          if (activeTerminalPaneIdRef.current !== activeAgentSessionDescriptor.paneId) {
+            await focusTerminalPane(activeAgentSessionDescriptor.paneId);
+          }
+          await invoke("send_key", { code: "KeyC", text: null, shift: false, alt: false, ctrl: true, sup: false });
+        },
+        readTail: async (lines: number) =>
+          readTailFromSnapshot(
+            terminalSnapshotsRef.current[activeAgentSessionDescriptor.paneId] ??
+              (activeTerminalPaneIdRef.current === activeAgentSessionDescriptor.paneId ? latest.current : null),
+            lines,
+          ),
+        close: async () => closeTerminalPane(activeAgentSessionDescriptor.paneId),
+      }
+    : null;
 
   const renameTerminalPane = async (pane: ManagedTerminalPane) => {
     const root = workspacePathRef.current;
@@ -1549,6 +1592,12 @@ function App() {
     await writeText(selectedText);
   };
 
+  const copyActivePaneTail = async () => {
+    const tail = await activeAgentSessionHandle?.readTail(20);
+    if (!tail) return;
+    await writeText(tail);
+  };
+
   const pasteIntoTerminal = async () => {
     if (activeTerminalPaneIdRef.current == null) return;
     const text = await readText();
@@ -1683,10 +1732,10 @@ function App() {
       icon: "terminal",
       disabled: !activeTerminalPane,
     }),
-    menuItem("terminal.close-pane", "Close Selected Pane", () => activeTerminalPane && void closeTerminalPane(activeTerminalPane.id), {
+    menuItem("terminal.close-pane", "Close Selected Pane", () => activeAgentSessionHandle && void activeAgentSessionHandle.close(), {
       icon: "stop",
       danger: true,
-      disabled: !activeTerminalPane,
+      disabled: !activeAgentSessionHandle,
     }),
     menuItem("terminal.copy", "Copy Selection", () => void copyTerminalSelection(), {
       icon: "terminal",
@@ -1694,6 +1743,10 @@ function App() {
       disabled: !terminalSelectedText(),
     }),
     menuItem("terminal.paste", "Paste", () => void pasteIntoTerminal(), { icon: "terminal", shortcut: shortcutKeys("terminal.paste") }),
+    menuItem("terminal.copy-tail", "Copy Last 20 Lines", () => void copyActivePaneTail(), {
+      icon: "terminal",
+      disabled: !activeAgentSessionHandle,
+    }),
     menuItem("terminal.clear", "Clear Terminal", () => void clearActiveTerminal(), { icon: "terminal", shortcut: shortcutKeys("terminal.clear") }),
     menuItem("terminal.interrupt", "Interrupt Process", () => void interruptActivePane(), { icon: "stop", danger: true }),
     menuItem("terminal.copy-cwd", "Copy Working Directory", () => workspacePath && void copyPathToClipboard(workspacePath), {
@@ -1723,7 +1776,11 @@ function App() {
       disabled: composerSending || !composerDraft.trim(),
     }),
     menuItem("composer.clear", "Clear Draft", () => setComposerDraft(""), { icon: "close", disabled: !composerDraft }),
-    menuItem("composer.stop", "Stop Selected Pane", () => void interruptActivePane(), { icon: "stop", danger: true }),
+    menuItem("composer.stop", "Stop Selected Pane", () => void interruptActivePane(), {
+      icon: "stop",
+      danger: true,
+      disabled: !activeAgentSessionHandle,
+    }),
     menuItem("composer.copy-cwd", "Copy Target Workspace", () => workspacePath && void copyPathToClipboard(workspacePath), {
       icon: "workspace",
       disabled: !workspacePath,
@@ -2653,8 +2710,8 @@ function App() {
                 className="terminal-new-pane terminal-new-pane--danger"
                 type="button"
                 title="Close selected pane"
-                disabled={!activeTerminalPane}
-                onClick={() => activeTerminalPane && void closeTerminalPane(activeTerminalPane.id)}
+                disabled={!activeAgentSessionHandle}
+                onClick={() => activeAgentSessionHandle && void activeAgentSessionHandle.close()}
               >
                 <AppIcon name="stop" />
                 <span>Close</span>
@@ -2722,7 +2779,13 @@ function App() {
                 <AppIcon name={composerSending ? "loading" : "send"} />
                 <span>{composerSending ? "Sending" : "Send"}</span>
               </button>
-              <button className="agent-composer__button" type="button" title="Stop selected pane (Ctrl+C)" onClick={() => void interruptActivePane()}>
+              <button
+                className="agent-composer__button"
+                type="button"
+                title="Stop selected pane (Ctrl+C)"
+                disabled={!activeAgentSessionHandle}
+                onClick={() => void interruptActivePane()}
+              >
                 <AppIcon name="stop" />
                 <span>Stop</span>
               </button>

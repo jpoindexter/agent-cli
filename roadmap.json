@@ -548,14 +548,14 @@
     {
       "id": "AGENT-SESSION-HANDLE",
       "title": "App-owned agent session handles",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "core",
       "size": "M",
       "launch": "v1",
       "blocker": true,
       "summary": "Define the missing middle layer between real pty panes and the Codex-style composer: a stable app-owned handle for each pane/session.",
-      "done": "Every pane/session exposes id, project/session ids, cwd, agent profile, process state, approval mode, send, interrupt, readTail, close, and activity metadata. Composer, activity log, and future hooks target the handle contract instead of UI component state."
+      "done": "Verified 2026-07-09: app/src/agentSessionHandle.ts defines stable pane-backed handles with project/session ids, cwd, pane label, profile id/label, process state, approval mode, exit code, created time, activity metadata, and send/interrupt/readTail/close operations. The composer now sends prompts through the active handle; Stop and Close route through handle methods; terminal context menu can copy the latest 20 rendered terminal lines through readTail. Activity log and future hooks can target the handle contract instead of UI component state."
     },
     {
       "id": "AGENT-ACTIVITY",

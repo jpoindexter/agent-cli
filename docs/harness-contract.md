@@ -20,12 +20,22 @@ Every pane exposed to the composer should implement this handle:
 ```ts
 type AgentSessionHandle = {
   id: string;
+  paneId: number;
   projectId: string;
   projectSessionId: string;
   cwd: string;
+  label: string;
   agentProfileId: string;
+  agentProfileLabel: string;
   processState: "starting" | "running" | "waiting" | "exited" | "errored";
   approvalMode: "ask" | "approveSafe" | "fullAccess";
+  exitCode: number | null;
+  createdAt: number;
+  activity: {
+    label: string;
+    status: "starting" | "running" | "waiting" | "exited" | "errored";
+    updatedAt: number;
+  };
   send(text: string): Promise<void>;
   interrupt(): Promise<void>;
   readTail(lines: number): Promise<string>;
@@ -33,7 +43,9 @@ type AgentSessionHandle = {
 };
 ```
 
-The composer targets a handle, not a React component. The handle is also the boundary for future agent hooks and activity logging.
+The composer targets a handle, not a React component. The handle is also the boundary for future agent hooks and activity logging. The current implementation lives in `app/src/agentSessionHandle.ts`; `App.tsx` wraps the selected real pty pane with `send`, `interrupt`, `readTail`, and `close` operations.
+
+Current read-tail behavior returns text from the latest rendered terminal snapshot. Full scrollback/transcript readback belongs to TRANSCRIPTS and TERMINAL-FIND.
 
 ## App Action Gate
 

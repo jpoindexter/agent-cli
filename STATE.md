@@ -41,7 +41,7 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## In progress
 
-**Next active slice: AGENT-SESSION-HANDLE.** PROJECT-RAIL, PROJECT-SESSIONS, BROWSER-PREVIEW, PANE-MANAGER, and PANE-NAMES are verified for the first v1 navigation/session/preview/pane layers; next pass adds the app-owned handle contract that composer, activity, hooks, and future MCP/API surfaces can target.
+**Next active slice: AGENT-ACTIVITY.** PROJECT-RAIL, PROJECT-SESSIONS, BROWSER-PREVIEW, PANE-MANAGER, PANE-NAMES, and AGENT-SESSION-HANDLE are verified for the first v1 navigation/session/preview/pane layers; next pass adds visible agent activity/status rows on top of the handle metadata.
 
 **ACTIVE-FILE-SYNC (VERIFIED 2026-07-08):** active-file metadata persists per workspace in `activeFileByWorkspace`, using the backend-returned canonical workspace root from `open_workspace`. On workspace tree load, the frontend restores the saved active file only when that exact file exists in the current tree; stale persisted paths are cleared instead of opening the wrong file. Watcher/tree refresh now reconciles the selected file to the fresh tree node when the same path still exists, while preserving the missing-file warning when it disappears. Verified with `npm run build`, `npm test` (16 tests), `git diff --check`, and a native `npm run tauri dev` smoke that seeded a temporary workspace and captured the restored active file at `docs/qa/active-file-sync/restore.png`.
 
@@ -93,11 +93,13 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **PANE-NAMES (VERIFIED 2026-07-09):** terminal panes now have editable task labels shown in the pane strip and composer target. Labels normalize input, fall back to profile/index names when blank, persist in `paneLabelsBySession` by project-session plus pane slot, and can be edited by double-clicking the pane pill or using `Rename Selected Pane` in the terminal context menu. `docs/pane-names.md` records the implementation and boundaries; full pane layout/process restore remains with SESSION-RESTORE and PROCESS-LIFECYCLE. Verified with `npm run build`, `npm test`, `cargo test`, `cargo fmt --check`, `npm run qa:editor`, screenshot inspection, and `git diff --check`.
 
+**AGENT-SESSION-HANDLE (VERIFIED 2026-07-09):** `app/src/agentSessionHandle.ts` now defines stable pane-backed handle descriptors and handle operations with project/session ids, cwd, pane label, profile id/label, process state, approval mode, exit code, created time, activity metadata, `send`, `interrupt`, `readTail`, and `close`. The composer sends prompts through the active handle; Stop and Close route through handle methods; terminal context menu can copy the latest 20 rendered terminal lines through `readTail`. `docs/agent-session-handle.md` and `docs/harness-contract.md` record implementation and boundaries. Verified with `npm run build`, `npm test` (75 tests), `cargo test`, `cargo fmt --check`, `npm run qa:editor`, and `git diff --check`.
+
 ## Next (ordered)
 
-1. **AGENT-SESSION-HANDLE:** app-owned handle contract for every pane/session.
-2. **AGENT-ACTIVITY:** visible thinking/running/tool/waiting/error/exited/complete state.
-3. **AGENT-ACTIVITY-LOG:** per-pane/session event timeline.
+1. **AGENT-ACTIVITY:** visible thinking/running/tool/waiting/error/exited/complete state.
+2. **AGENT-ACTIVITY-LOG:** per-pane/session event timeline.
+3. **APP-ACTIONS-MINIMAL:** minimal gated app-owned actions.
 
 ## Gotchas
 
@@ -119,4 +121,4 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## Continuation prompt (for Codex)
 
-Continue Keelhouse: read `STATE.md`, `README.md`, `PRD.md`, `ROADMAP.md`, `DECISIONS.md`, `docs/README.md`, and the linked docs for the next card, then resume at "Next" step 1 — AGENT-SESSION-HANDLE. Verified v0/v0.5/v1 slices now include APP-SHELL, FILE-RAIL, FILE-WATCHER, RECENT-PROJECTS, EDITOR, EDITOR-PARITY-UX, ACTIVE-FILE-SYNC, EDITOR-VIEW-STATE, DIRTY-DRAFT-PROTECTION, SAVE-ERROR-RECOVERY, EDITOR-RESPONSIVE-QA, EDITOR-FIND-REPLACE, EDITOR-LANGUAGE-MODES, SAVE-CONFLICTS, LARGE-FILE-POLICY, FILE-OPS, EDITOR-TABS, AGENT-PROFILES, PRODUCT-NAME-README, AGENT-COMPOSER, SHORTCUTS, TERMINAL-ROBUSTNESS, CONTEXT-MENUS, CHROME-POLISH-SYSTEM, ICON-SYSTEM, ACCESSIBILITY-BASICS, PROJECT-RAIL, PROJECT-SESSIONS, BROWSER-PREVIEW, PANE-MANAGER, and PANE-NAMES. Product name is Keelhouse; repo/package/binary/storage slug remains `agent-cli` until explicit migration. Keep VS Code muscle memory for supported explorer/editor/browser/terminal flows; do not add plugin/extension bloat. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Follow ROADMAP execution discipline: one thin vertical slice at a time, app runnable every commit, measure-don't-preempt.
+Continue Keelhouse: read `STATE.md`, `README.md`, `PRD.md`, `ROADMAP.md`, `DECISIONS.md`, `docs/README.md`, and the linked docs for the next card, then resume at "Next" step 1 — AGENT-ACTIVITY. Verified v0/v0.5/v1 slices now include APP-SHELL, FILE-RAIL, FILE-WATCHER, RECENT-PROJECTS, EDITOR, EDITOR-PARITY-UX, ACTIVE-FILE-SYNC, EDITOR-VIEW-STATE, DIRTY-DRAFT-PROTECTION, SAVE-ERROR-RECOVERY, EDITOR-RESPONSIVE-QA, EDITOR-FIND-REPLACE, EDITOR-LANGUAGE-MODES, SAVE-CONFLICTS, LARGE-FILE-POLICY, FILE-OPS, EDITOR-TABS, AGENT-PROFILES, PRODUCT-NAME-README, AGENT-COMPOSER, SHORTCUTS, TERMINAL-ROBUSTNESS, CONTEXT-MENUS, CHROME-POLISH-SYSTEM, ICON-SYSTEM, ACCESSIBILITY-BASICS, PROJECT-RAIL, PROJECT-SESSIONS, BROWSER-PREVIEW, PANE-MANAGER, PANE-NAMES, and AGENT-SESSION-HANDLE. Product name is Keelhouse; repo/package/binary/storage slug remains `agent-cli` until explicit migration. Keep VS Code muscle memory for supported explorer/editor/browser/terminal flows; do not add plugin/extension bloat. All builds/runs need `PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH"` (zig 0.15.2 pin). Follow ROADMAP execution discipline: one thin vertical slice at a time, app runnable every commit, measure-don't-preempt.

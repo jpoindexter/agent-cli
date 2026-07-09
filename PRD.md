@@ -116,7 +116,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [ ] Pane lifecycle controls and icon badges cover thinking, running, waiting, errored, exited, restart, terminate, and attention-needed states.
 - [ ] Agent activity rows show recent thinking/planning summaries, file edits, commands, tool/app actions, approvals, errors, and completion per pane/session.
-- [ ] Each pane/session exposes an app-owned agent session handle with send, interrupt, readTail, close, state, cwd, profile, approval mode, and activity metadata.
+- [x] Each pane/session exposes an app-owned agent session handle with send, interrupt, readTail, close, state, cwd, profile, approval mode, and activity metadata.
 - [ ] App-owned actions use a minimal action gate with risk class, approval decision, audit event, and undo/rollback hint where possible.
 - [ ] Composer harness supports permission mode, goal state, model/profile selector, attachments, and approval logging for app-owned actions.
 - [ ] Session restore brings back projects, file tabs, pane layout, and enough metadata to resume intentionally.

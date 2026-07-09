@@ -18,7 +18,7 @@ The Codex-style bottom composer can be more than a text box, but it should not r
 - Shows selected project/session/pane target.
 - Supports send, stop/interrupt, multiline input, history, and paste.
 - No direct model API and no fake chat transcript.
-- Uses the agent session handle contract in `docs/harness-contract.md`, even if the first implementation only wraps one selected pane.
+- Uses the agent session handle contract in `docs/harness-contract.md`. The current implementation wraps the selected real pane with send, interrupt, readTail, close, process state, approval mode, and activity metadata.
 
 ### v1: Harness Shell
 

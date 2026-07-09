@@ -146,6 +146,10 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 <div class="hd"><span class="sz">L</span><span class="ttl">PANE-MANAGER &middot; Multiple agent panes per project</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Jason often runs multiple Claude/Codex sessions against the same project, and different open projects may run different agents at the same time. Add a pane manager that can create/switch/close multiple terminal panes per project.</p>
 <details><summary>Done criteria</summary><p class="done">Verified 2026-07-09: backend PtyState owns multiple real pty/process panes keyed by pane id; open_workspace spawns/focuses a pane without killing panes from other projects; create_pane, focus_pane, and close_pane add, focus, and safely kill exactly one selected pane. Grid events include paneId; the frontend caches snapshots by pane and paints only the focused pane. The terminal header exposes a focused pane strip plus New pane profile, New, and Close controls. Project/session state aggregates all panes for the project. Pane names, restart/kill-all, layout restore, and app-owned handles remain with their dedicated later cards.</p></details></div>
+<div class="card" data-track="core" data-id="AGENT-SESSION-HANDLE" data-size="M" data-tier="rock" data-launch="v1">
+<div class="hd"><span class="sz">M</span><span class="ttl">AGENT-SESSION-HANDLE &middot; App-owned agent session handles</span><span class="lens l-core">Terminal + process</span></div>
+<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Define the missing middle layer between real pty panes and the Codex-style composer: a stable app-owned handle for each pane/session.</p>
+<details><summary>Done criteria</summary><p class="done">Verified 2026-07-09: app/src/agentSessionHandle.ts defines stable pane-backed handles with project/session ids, cwd, pane label, profile id/label, process state, approval mode, exit code, created time, activity metadata, and send/interrupt/readTail/close operations. The composer now sends prompts through the active handle; Stop and Close route through handle methods; terminal context menu can copy the latest 20 rendered terminal lines through readTail. Activity log and future hooks can target the handle contract instead of UI component state.</p></details></div>
 </div>
 <div class="tg t-pebble"><h3>Pebbles · features</h3>
 <div class="card" data-track="workspace" data-id="LAST-WORKSPACE" data-size="S" data-tier="pebble" data-launch="v0">
@@ -240,10 +244,6 @@ h2.s-later{color:#c084fc;border-left-color:#c084fc}
 </div>
 <div class="col" data-status="next"><h2 class="s-next">Next</h2>
 <div class="tg t-rock"><h3>Rocks · foundational &amp; risky</h3>
-<div class="card" data-track="core" data-id="AGENT-SESSION-HANDLE" data-size="M" data-tier="rock" data-launch="v1">
-<div class="hd"><span class="sz">M</span><span class="ttl">AGENT-SESSION-HANDLE &middot; App-owned agent session handles</span><span class="lens l-core">Terminal + process</span></div>
-<div class="badges"><span class="me ver">v1</span><span class="me lock">🔒</span></div><p class="sum">Define the missing middle layer between real pty panes and the Codex-style composer: a stable app-owned handle for each pane/session.</p>
-<details><summary>Done criteria</summary><p class="done">Every pane/session exposes id, project/session ids, cwd, agent profile, process state, approval mode, send, interrupt, readTail, close, and activity metadata. Composer, activity log, and future hooks target the handle contract instead of UI component state.</p></details></div>
 <div class="card" data-track="core" data-id="AGENT-ACTIVITY" data-size="M" data-tier="rock" data-launch="v1">
 <div class="hd"><span class="sz">M</span><span class="ttl">AGENT-ACTIVITY &middot; Agent activity and thinking states</span><span class="lens l-core">Terminal + process</span></div>
 <div class="badges"><span class="me ver">v1</span></div><p class="sum">Background agents need Codex-style visible status and activity rows when they think, run commands, edit files, call tools, wait for approval/input, error, exit, or complete. Show concise activity/progress summaries and tool events, not hidden chain-of-thought.</p>
