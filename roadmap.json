@@ -715,10 +715,22 @@
       "done": "Verified 2026-07-09: diff review and Git-marked file context menus expose Stage, Unstage, Discard Unstaged Changes, and Copy shown diff. The blind audit findings were folded into the card: discard is blocked when the same file has an unsaved editor draft; mixed staged/unstaged files use explicit labels (Copy shown diff, whole-file Stage/Unstage); backend git_file_action validates repository-relative paths and re-reads target status before mutation; staged new files, tracked discard, and untracked discard use separate Git command paths; real temp-repo Git tests cover stage/unstage/discard; the slice stops at per-file actions, not branch/commit/push/PR; screenshot QA includes diff-review.png. Covered by npm run build, npm test, cargo test git_file_actions, npm run qa:editor, and git diff --check."
     },
     {
+      "id": "CHROME-COHERENCE-PASS",
+      "title": "Workbench chrome coherence pass",
+      "column": "now",
+      "tier": "rock",
+      "track": "ui",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Fix the actual shell before measurement: one large agent-first window, real drawers/trays, movable/resizable surfaces, no copied or fake VS Code controls, and Codex/Zed-level dropdown/menu styling.",
+      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects, files, search, git, browser, and settings are real drawer modes; editor/browser/raw terminal are movable/resizable trays; dropdowns/context menus share polished chrome tokens; fake navigation/window controls are gone; screenshot QA covers full, narrow, drawer, tray, and menu states."
+    },
+    {
       "id": "DAILY-DRIVER-METRICS",
       "title": "Daily-driver success metrics",
-      "column": "now",
-      "tier": "pebble",
+      "column": "next",
+      "tier": "rock",
       "track": "quality",
       "size": "S",
       "launch": "v1",
