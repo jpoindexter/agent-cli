@@ -176,6 +176,7 @@ type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
 type WorkbenchLayoutMode = "right" | "left" | "bottom" | "hidden";
 type WorkbenchSizing = { trayPercent: number; toolSplitPercent: number };
+type AgentSurfaceMode = "chat" | "terminal";
 type EditorBuffer = EditorBufferSnapshot & {
   bytes: number | null;
   modifiedMs: number | null;
@@ -208,6 +209,7 @@ const LINE_HEIGHT = 1.25;
 const clampWorkbenchPercent = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 const WORKBENCH_LAYOUT_STORAGE_KEY = "keelhouse.workbench.layout";
 const WORKBENCH_SIZING_STORAGE_KEY = "keelhouse.workbench.sizing";
+const AGENT_SURFACE_STORAGE_KEY = "keelhouse.agent.surface";
 const DEFAULT_WORKBENCH_SIZING: WorkbenchSizing = { trayPercent: 30, toolSplitPercent: 58 };
 const readStoredWorkbenchLayout = (): WorkbenchLayoutMode => {
   if (typeof window === "undefined") return "right";
@@ -230,6 +232,15 @@ const readStoredWorkbenchSizing = (): WorkbenchSizing => {
     };
   } catch {
     return DEFAULT_WORKBENCH_SIZING;
+  }
+};
+const readStoredAgentSurfaceMode = (): AgentSurfaceMode => {
+  if (typeof window === "undefined") return "chat";
+  try {
+    const value = window.localStorage.getItem(AGENT_SURFACE_STORAGE_KEY);
+    return value === "terminal" ? "terminal" : "chat";
+  } catch {
+    return "chat";
   }
 };
 const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
@@ -411,6 +422,7 @@ function App() {
   const [agentActivityFilter, setAgentActivityFilter] = useState<AgentActivityLogFilter>("all");
   const [workbenchLayout, setWorkbenchLayout] = useState<WorkbenchLayoutMode>(readStoredWorkbenchLayout);
   const [workbenchSizing, setWorkbenchSizing] = useState<WorkbenchSizing>(readStoredWorkbenchSizing);
+  const [agentSurfaceMode, setAgentSurfaceMode] = useState<AgentSurfaceMode>(readStoredAgentSurfaceMode);
   const workbenchRef = useRef<HTMLElement | null>(null);
   const workbenchStyle = {
     "--tool-tray-size": `${workbenchSizing.trayPercent}%`,
@@ -486,6 +498,13 @@ function App() {
       // Local layout persistence is best-effort; the workbench remains usable without it.
     }
   }, [workbenchLayout, workbenchSizing]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AGENT_SURFACE_STORAGE_KEY, agentSurfaceMode);
+    } catch {
+      // Local surface preference is best-effort.
+    }
+  }, [agentSurfaceMode]);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
   const dirtyTabPaths = useMemo(
     () => dirtyEditorTabPaths(editorTabs, editorBuffersRef.current, selectedFile?.path ?? null, editorDirty),
@@ -3363,6 +3382,30 @@ function App() {
               </span>
             </div>
             <div className="terminal-actions">
+              <div className="agent-surface-switcher" role="tablist" aria-label="Agent surface">
+                <button
+                  className={`agent-surface-switcher__button ${agentSurfaceMode === "chat" ? "agent-surface-switcher__button--active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={agentSurfaceMode === "chat"}
+                  title="Show chat run view"
+                  onClick={() => setAgentSurfaceMode("chat")}
+                >
+                  <AppIcon name="agent" />
+                  <span>Chat</span>
+                </button>
+                <button
+                  className={`agent-surface-switcher__button ${agentSurfaceMode === "terminal" ? "agent-surface-switcher__button--active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={agentSurfaceMode === "terminal"}
+                  title="Show raw terminal"
+                  onClick={() => setAgentSurfaceMode("terminal")}
+                >
+                  <AppIcon name="terminal" />
+                  <span>Terminal</span>
+                </button>
+              </div>
               <div className="layout-switcher" role="group" aria-label="Tool drawer layout">
                 <button
                   className={`layout-switcher__button ${workbenchLayout === "left" ? "layout-switcher__button--active" : ""}`}
@@ -3482,82 +3525,92 @@ function App() {
               </button>
             </div>
           </div>
-          <div
-            ref={terminalHostRef}
-            className="terminal-host"
-            onPointerDown={() => canvasRef.current?.focus()}
-            onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}
-          >
-            <canvas
-              ref={canvasRef}
-              className="term"
-              tabIndex={0}
-              role="application"
-              aria-label={`${activeTerminalProfile.label} terminal pane. Type to send keyboard input to the active process.`}
-            />
-          </div>
-          <div className="agent-activity" aria-label="Agent activity" aria-live="polite">
-            {visibleAgentActivity.length > 0 ? (
-              visibleAgentActivity.map((event) => (
-                <div
-                  className={`agent-activity__row agent-activity__row--${event.status}`}
-                  key={event.id}
-                  title={event.detail}
-                >
-                  <AppIcon
-                    name={agentActivityIconName(event.status)}
-                    label={agentActivityAccessibleLabel(event.status, event.label)}
-                  />
-                  <span className="agent-activity__label">{event.label}</span>
-                  {event.detail ? <span className="agent-activity__detail">{event.detail}</span> : null}
-                </div>
-              ))
-            ) : (
-              <div className="agent-activity__row agent-activity__row--waiting">
-                <AppIcon name="waiting" label="No recent agent activity" />
-                <span className="agent-activity__label">No recent activity</span>
-              </div>
-            )}
-          </div>
-          <section className="agent-activity-log" aria-label="Agent activity timeline">
-            <div className="agent-activity-log__toolbar" role="toolbar" aria-label="Filter agent activity timeline">
-              <span className="agent-activity-log__title">Timeline</span>
-              <div className="agent-activity-log__filters">
-                {AGENT_ACTIVITY_LOG_FILTERS.map((filter) => (
-                  <button
-                    className={`agent-activity-log__filter ${agentActivityFilter === filter ? "agent-activity-log__filter--active" : ""}`}
-                    type="button"
-                    key={filter}
-                    aria-pressed={agentActivityFilter === filter}
-                    onClick={() => setAgentActivityFilter(filter)}
-                  >
-                    {agentActivityFilterLabel(filter)}
-                  </button>
-                ))}
-              </div>
+          <div className={`agent-surface agent-surface--${agentSurfaceMode}`}>
+            <div
+              ref={terminalHostRef}
+              className={`terminal-host ${agentSurfaceMode === "terminal" ? "terminal-host--active" : "terminal-host--background"}`}
+              onPointerDown={() => canvasRef.current?.focus()}
+              onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}
+            >
+              <canvas
+                ref={canvasRef}
+                className="term"
+                tabIndex={0}
+                role="application"
+                aria-label={`${activeTerminalProfile.label} terminal pane. Type to send keyboard input to the active process.`}
+              />
             </div>
-            <div className="agent-activity-log__list">
-              {selectedAgentActivityLog.length > 0 ? (
-                selectedAgentActivityLog.map((event) => (
-                  <div className={`agent-activity-log__item agent-activity-log__item--${event.status}`} key={event.id}>
-                    <AppIcon
-                      name={agentActivityIconName(event.status)}
-                      label={agentActivityAccessibleLabel(event.status, event.label)}
-                    />
-                    <span className="agent-activity-log__time">{agentActivityTimeLabel(event.timestamp)}</span>
-                    <span className="agent-activity-log__label">{event.label}</span>
-                    <span className="agent-activity-log__detail">{event.detail ?? ""}</span>
-                    <span className="agent-activity-log__meta">{agentActivityMetaLabel(event)}</span>
-                    <span className="agent-activity-log__kind">{agentActivityFilterLabel(event.kind)}</span>
+            <div className="agent-chat-surface" aria-hidden={agentSurfaceMode !== "chat"}>
+              <div className="agent-activity" aria-label="Agent activity" aria-live="polite">
+                {visibleAgentActivity.length > 0 ? (
+                  visibleAgentActivity.map((event) => (
+                    <div
+                      className={`agent-activity__row agent-activity__row--${event.status}`}
+                      key={event.id}
+                      title={event.detail}
+                    >
+                      <AppIcon
+                        name={agentActivityIconName(event.status)}
+                        label={agentActivityAccessibleLabel(event.status, event.label)}
+                      />
+                      <span className="agent-activity__label">{event.label}</span>
+                      {event.detail ? <span className="agent-activity__detail">{event.detail}</span> : null}
+                    </div>
+                  ))
+                ) : (
+                  <div className="agent-activity__row agent-activity__row--waiting">
+                    <AppIcon name="waiting" label="No recent agent activity" />
+                    <span className="agent-activity__label">No recent activity</span>
                   </div>
-                ))
-              ) : (
-                <div className="agent-activity-log__empty">
-                  {activeAgentSessionDescriptor ? "No matching activity yet" : "No pane selected"}
+                )}
+              </div>
+              <section className="agent-activity-log" aria-label="Agent activity timeline">
+                <div className="agent-activity-log__toolbar" role="toolbar" aria-label="Filter agent activity timeline">
+                  <span className="agent-activity-log__title">Timeline</span>
+                  <div className="agent-activity-log__filters">
+                    {AGENT_ACTIVITY_LOG_FILTERS.map((filter) => (
+                      <button
+                        className={`agent-activity-log__filter ${agentActivityFilter === filter ? "agent-activity-log__filter--active" : ""}`}
+                        type="button"
+                        key={filter}
+                        aria-pressed={agentActivityFilter === filter}
+                        onClick={() => setAgentActivityFilter(filter)}
+                      >
+                        {agentActivityFilterLabel(filter)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              )}
+                <div className="agent-activity-log__list">
+                  {selectedAgentActivityLog.length > 0 ? (
+                    selectedAgentActivityLog.map((event) => (
+                      <div className={`agent-activity-log__item agent-activity-log__item--${event.status}`} key={event.id}>
+                        <AppIcon
+                          name={agentActivityIconName(event.status)}
+                          label={agentActivityAccessibleLabel(event.status, event.label)}
+                        />
+                        <span className="agent-activity-log__time">{agentActivityTimeLabel(event.timestamp)}</span>
+                        <span className="agent-activity-log__label">{event.label}</span>
+                        <span className="agent-activity-log__detail">{event.detail ?? ""}</span>
+                        <span className="agent-activity-log__meta">{agentActivityMetaLabel(event)}</span>
+                        <span className="agent-activity-log__kind">{agentActivityFilterLabel(event.kind)}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="agent-activity-log__empty">
+                      {activeAgentSessionDescriptor ? "No matching activity yet" : "No pane selected"}
+                    </div>
+                  )}
+                </div>
+              </section>
+              <div className="agent-chat-terminal-hint">
+                <button className="agent-chat-terminal-hint__button" type="button" onClick={() => setAgentSurfaceMode("terminal")}>
+                  <AppIcon name="terminal" />
+                  <span>Raw terminal</span>
+                </button>
+              </div>
             </div>
-          </section>
+          </div>
           <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
             <div className="agent-composer__harness">
               <div className="agent-composer__target" title={workspacePath ?? ""}>

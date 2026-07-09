@@ -1,6 +1,6 @@
 # Keelhouse
 
-Keelhouse is a lean native macOS agent cockpit for real CLI coding agents. The main surface is the selected Codex/Gemini/Claude terminal pane plus composer/activity; the VS Code parts Jason actually uses — project/session rail, file explorer, robust editor, and browser preview — stay close as resizable trays. It drops extension/plugin bloat, debugger sprawl, and account/chat chrome.
+Keelhouse is a lean native macOS agent cockpit for real CLI coding agents. The main surface is a Codex-like chat/run view backed by real Codex/Gemini/Claude terminal panes; raw terminal is available when needed, and the VS Code parts Jason actually uses — project/session rail, file explorer, robust editor, and browser preview — stay close as resizable trays. It drops extension/plugin bloat, debugger sprawl, and account/chat chrome.
 
 The repo/package slug remains `agent-cli` for now; **Keelhouse** is the locked product name.
 
@@ -27,7 +27,7 @@ Current active slice: see `STATE.md`. The roadmap source is `roadmap.json`, rend
 
 ## Product Shape
 
-- Agent-first workbench: selected terminal pane, composer, and activity timeline own the main screen.
+- Agent-first workbench: chat/run activity, composer, and selected real agent pane own the main screen.
 - Project/session rail for multiple workspaces and task contexts.
 - Dense file explorer with ignores, watching, and git-aware state.
 - CodeMirror editor tray with VS Code-style shortcuts, tabs, dirty state, find/replace, file operations, and file safety.
