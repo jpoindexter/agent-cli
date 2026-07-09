@@ -12,9 +12,9 @@ Current schema:
 {
   "folder": "/absolute/path/to/last/workspace",
   "launchProfile": {
-    "id": "claude",
-    "label": "Claude",
-    "command": "claude",
+    "id": "codex",
+    "label": "Codex",
+    "command": "codex",
     "args": [],
     "useLoginShell": true
   },
@@ -75,7 +75,7 @@ Current schema:
 }
 ```
 
-`folder` is the last workspace to reopen. `launchProfile` is the command the pane launches in that workspace. Built-in profile ids are `claude`, `codex`, and `shell`. Claude and Codex run through a login shell so shell-managed paths such as `nvm` are available; Shell launches `/bin/zsh -l` directly.
+`folder` is the last workspace to reopen. `launchProfile` is the command the pane launches in that workspace. Built-in profile ids are `codex`, `gemini`, `claude`, and `shell`. Codex, Gemini, and Claude run through a login shell so shell-managed paths such as `nvm` are available; Shell launches `/bin/zsh -l` directly. Fresh state defaults to Codex to avoid consuming Claude Code usage during testing.
 `activeFileByWorkspace` stores the last active editor file per canonical workspace root; stale paths are ignored instead of being opened.
 `openProjects` stores the project rail. `projectSessions` stores named task/workbench session rows under each project, and `activeSessionByProject` stores the selected session id per project. `browserPreviewByProject` and `browserPreviewBySession` remember the lightweight preview URL for project/session context.
 `paneLabelsBySession` stores user-edited terminal pane names by project-session key and pane slot. It restores labels when the same session/slot is recreated. It does not restore live processes, pane layout, or transcripts; those belong to `SESSION-RESTORE`, `PROCESS-LIFECYCLE`, and `TRANSCRIPTS`.
@@ -101,13 +101,13 @@ The app will create a fresh `workspace.json` after a folder is picked.
 
 ## Repair Without Full Reset
 
-To restore the default Claude profile while keeping the last folder, edit only `launchProfile`:
+To restore the default Codex profile while keeping the last folder, edit only `launchProfile`:
 
 ```json
 "launchProfile": {
-  "id": "claude",
-  "label": "Claude",
-  "command": "claude",
+  "id": "codex",
+  "label": "Codex",
+  "command": "codex",
   "args": [],
   "useLoginShell": true
 }

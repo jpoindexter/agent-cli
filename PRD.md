@@ -1,6 +1,6 @@
 # PRD — Keelhouse
 
-**One-liner:** Keelhouse is a lean native macOS replacement for Jason's actual VS Code workflow: project/session rail, a file explorer, a real file editor, browser/web preview, and multiple real Claude/Codex CLI terminals — built on Ghostty's terminal engine, without the IDE chrome he does not use.
+**One-liner:** Keelhouse is a lean native macOS replacement for Jason's actual VS Code workflow: project/session rail, a file explorer, a real file editor, browser/web preview, and multiple real Codex/Gemini/Claude CLI terminals — built on Ghostty's terminal engine, without the IDE chrome he does not use.
 
 **Naming:** `agent-cli` remains the repo/package slug while the product name is Keelhouse.
 
@@ -8,13 +8,13 @@
 
 ## Problem
 
-Jason works across 5-10 active projects. The real workflow is not "use VS Code as an IDE"; it is: open a project folder in VS Code, use the left file explorer, edit files in the editor, run one or more Claude/Codex CLI sessions in integrated terminals pointed at that project, and preview local web work in a browser. When a second or third project is active, it becomes another VS Code window with its own folder and agent terminal(s).
+Jason works across 5-10 active projects. The real workflow is not "use VS Code as an IDE"; it is: open a project folder in VS Code, use the left file explorer, edit files in the editor, run one or more Codex/Gemini/Claude CLI sessions in integrated terminals pointed at that project, and preview local web work in a browser. When a second or third project is active, it becomes another VS Code window with its own folder and agent terminal(s).
 
 VS Code is useful here as a workbench: Explorer, editor, integrated terminal, shortcut muscle memory, theming/settings, and enough browser/web preview for local app work. Everything else is resource-heavy chrome around a workflow that is mostly real terminal agents. Existing tools each miss something: cmux (great reference, but someone else's app), zellij (static config, no native "open a folder"), Superconductor (closed source, chat UI not real terminal), hashmark/Hallmark-style approaches (reimplement chat UI or show one agent at a time instead of hosting real CLIs).
 
 ## Core Job
 
-When Jason is moving between active projects and parallel coding agents, he wants to open/switch project folders, inspect and edit files, preview web output, and run real Claude/Codex CLI sessions side by side, so he can keep the speed and trust of terminal agents without paying the VS Code window/resource tax.
+When Jason is moving between active projects and parallel coding agents, he wants to open/switch project folders, inspect and edit files, preview web output, and run real Codex/Gemini/Claude CLI sessions side by side, so he can keep the speed and trust of terminal agents without paying the VS Code window/resource tax.
 
 ## Daily Workflow Requirements
 
@@ -26,7 +26,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Browse the project tree with sensible ignores, file watching, and safe handling for symlinks, large files, and binary files.
 - Open, edit, find/replace, save, and close source files in a robust CodeMirror editor with line numbers, syntax highlighting, indentation, undo/redo, path/breadcrumb context, file tabs, dirty-state, restored scroll/selection, and external-change protection.
 - Open a lightweight browser/web preview for localhost apps, docs, auth flows, and agent-produced pages without switching context.
-- Run real Claude/Codex/shell sessions in real ptys, with correct env/PATH/auth handling.
+- Run real Codex/Gemini/Claude/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Keep the terminal robust enough for daily agent work: Ghostty-backed VT fidelity, alternate-screen TUIs, ANSI/truecolor styling, resize, scrollback, selection/copy/paste, bracketed paste, common keyboard chords, fast-output responsiveness, and clear pane lifecycle state.
 - Keep terminal panes as the source-of-truth agent interface. Add a Codex-style composer/harness for routing prompts/instructions to the selected agent pane or app-level actions; do not replace Claude/Codex's real terminal UI with a custom chat clone.
 - Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.

@@ -6,7 +6,7 @@ PANE-MANAGER adds real multi-pane terminal support without turning the terminal 
 
 - Backend `PtyState` now owns multiple live `Pane` handles keyed by pane id.
 - `open_workspace` spawns and focuses a pane without killing panes from other projects.
-- `create_pane` launches an additional Claude/Codex/Shell pane in the active workspace.
+- `create_pane` launches an additional Codex/Gemini/Claude/Shell pane in the active workspace.
 - `focus_pane` routes keyboard, paste, scroll, and resize input to the selected pane.
 - `close_pane` kills one pane process, removes its route, and focuses a remaining pane when available.
 - Grid events include `paneId`; the frontend caches snapshots by pane and paints only the focused pane.

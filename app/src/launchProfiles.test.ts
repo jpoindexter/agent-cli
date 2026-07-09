@@ -8,10 +8,11 @@ import {
 } from "./launchProfiles";
 
 describe("launch profiles", () => {
-  it("defines Claude, Codex, and shell profiles", () => {
-    expect(LAUNCH_PROFILES.map((profile) => profile.id)).toEqual(["claude", "codex", "shell"]);
-    expect(launchProfileById("claude").command).toBe("claude");
+  it("defines Codex, Gemini, Claude, and shell profiles", () => {
+    expect(LAUNCH_PROFILES.map((profile) => profile.id)).toEqual(["codex", "gemini", "claude", "shell"]);
     expect(launchProfileById("codex").command).toBe("codex");
+    expect(launchProfileById("gemini").command).toBe("gemini");
+    expect(launchProfileById("claude").command).toBe("claude");
     expect(launchProfileById("shell")).toMatchObject({ command: "/bin/zsh", args: ["-l"], useLoginShell: false });
   });
 
@@ -21,9 +22,9 @@ describe("launch profiles", () => {
     );
   });
 
-  it("falls back to Claude for missing or empty profile data", () => {
-    expect(normalizeLaunchProfile(null)).toEqual(launchProfileById("claude"));
-    expect(normalizeLaunchProfile({ id: "broken", command: "" })).toEqual(launchProfileById("claude"));
+  it("falls back to Codex for missing or empty profile data", () => {
+    expect(normalizeLaunchProfile(null)).toEqual(launchProfileById("codex"));
+    expect(normalizeLaunchProfile({ id: "broken", command: "" })).toEqual(launchProfileById("codex"));
   });
 
   it("keeps custom stored profiles valid for future settings", () => {
@@ -47,5 +48,6 @@ describe("launch profiles", () => {
   it("formats visible command details", () => {
     expect(launchProfileCommandLine(launchProfileById("shell"))).toBe("/bin/zsh -l");
     expect(launchProfileSummary(launchProfileById("codex"))).toBe("Codex: codex (login shell)");
+    expect(launchProfileSummary(launchProfileById("gemini"))).toBe("Gemini: gemini (login shell)");
   });
 });

@@ -394,8 +394,8 @@
       "track": "core",
       "size": "S",
       "launch": "v0_5",
-      "summary": "Make Claude the default but stop hardcoding one command forever. Add simple profiles for Claude, Codex, and shell so the pane can launch the desired CLI.",
-      "done": "Verified 2026-07-09: terminal header exposes Claude, Codex, and Shell profiles; shows active command/mode details; successful changes restart the pane through open_workspace and persist to workspace.json; missing-command errors stay visible and do not overwrite the saved profile. Covered by npm build/test, cargo missing-command preflight tests, screenshot QA, selected/narrow visual inspection, and docs/local-state.md schema update."
+      "summary": "Stop hardcoding one command forever. Add simple profiles for Codex, Gemini, Claude, and shell so the pane can launch the desired CLI without burning the wrong quota during testing.",
+      "done": "Verified 2026-07-09: terminal header exposes Codex, Gemini, Claude, and Shell profiles; fresh state defaults to Codex; shows active command/mode details; successful changes restart the pane through open_workspace and persist to workspace.json; missing-command errors stay visible and do not overwrite the saved profile. Covered by npm build/test, cargo missing-command preflight tests, screenshot QA, selected/narrow visual inspection, and docs/local-state.md schema update."
     },
     {
       "id": "PRODUCT-NAME-README",

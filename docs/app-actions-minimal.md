@@ -23,7 +23,7 @@ APP-ACTIONS-MINIMAL adds a small enforcement layer for deterministic actions own
 ## Boundaries
 
 - This is not the full Codex permission UI. It is the enforcement/audit foundation.
-- The gate does not grant external CLI permissions; Claude/Codex still enforce their own CLI policies.
+- The gate does not grant external CLI permissions; Codex/Gemini/Claude still enforce their own CLI policies.
 - Blocked future actions are represented in the type model but not shown as usable controls until their surfaces exist.
 
 ## Verification

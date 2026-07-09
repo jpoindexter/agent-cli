@@ -6,7 +6,7 @@ This is the v0.5 single-pane terminal robustness gate. The terminal remains a re
 
 | Requirement | Evidence |
 |---|---|
-| Claude/Codex launch path | `claude --version` -> `2.1.197 (Claude Code)` and `codex --version` -> `codex-cli 0.141.0`; launch profiles run both through a login shell so nvm-managed CLIs resolve. |
+| Agent launch path | `codex --version` -> `codex-cli 0.141.0`, `gemini --version` -> `0.47.0`, and `claude --version` -> `2.1.197 (Claude Code)` when available; agent launch profiles run through a login shell so nvm-managed CLIs resolve. Fresh test state defaults to Codex. |
 | Real pty + Ghostty parser | `open_workspace` spawns `portable-pty`, sets `TERM=xterm-256color`, and owns `Terminal`/`Encoder` on one terminal thread. |
 | ANSI/truecolor | Rust test `snapshot_resolves_ansi_truecolor_cells`. |
 | Alternate screen | Rust test `snapshot_reads_alternate_screen_and_restores_main_screen`. |

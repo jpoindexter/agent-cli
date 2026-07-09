@@ -8,11 +8,11 @@ Keelhouse is the structure around the work: projects, files, browser preview, re
 
 ## Positioning Statement
 
-For developers who run Claude/Codex from the terminal while using VS Code mostly as a file shell, Keelhouse is a native agent workbench that keeps projects, files, previews, and real CLI panes together. Unlike a full IDE or terminal-only agent app, it keeps the useful workbench structure and removes extension-marketplace and chat-product bloat.
+For developers who run Codex, Gemini, Claude, or another coding agent from the terminal while using VS Code mostly as a file shell, Keelhouse is a native agent workbench that keeps projects, files, previews, and real CLI panes together. Unlike a full IDE or terminal-only agent app, it keeps the useful workbench structure and removes extension-marketplace and chat-product bloat.
 
 ## One-Liner
 
-Keelhouse is a lean native macOS workbench for running real Claude/Codex CLI agents beside the file explorer, editor, browser preview, and project/session rail Jason actually uses.
+Keelhouse is a lean native macOS workbench for running real coding-agent CLIs beside the file explorer, editor, browser preview, and project/session rail Jason actually uses.
 
 ## Short Description
 

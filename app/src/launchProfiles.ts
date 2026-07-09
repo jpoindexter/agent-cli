@@ -6,20 +6,27 @@ export type LaunchProfile = {
   useLoginShell: boolean;
 };
 
-export const DEFAULT_LAUNCH_PROFILE_ID = "claude";
+export const DEFAULT_LAUNCH_PROFILE_ID = "codex";
 
 export const LAUNCH_PROFILES: LaunchProfile[] = [
-  {
-    id: "claude",
-    label: "Claude",
-    command: "claude",
-    args: [],
-    useLoginShell: true,
-  },
   {
     id: "codex",
     label: "Codex",
     command: "codex",
+    args: [],
+    useLoginShell: true,
+  },
+  {
+    id: "gemini",
+    label: "Gemini",
+    command: "gemini",
+    args: [],
+    useLoginShell: true,
+  },
+  {
+    id: "claude",
+    label: "Claude",
+    command: "claude",
     args: [],
     useLoginShell: true,
   },
