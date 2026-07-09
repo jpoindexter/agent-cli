@@ -3352,6 +3352,8 @@ function App() {
     { id: "browser", label: "Browser", icon: "browser" },
     { id: "settings", label: "Settings", icon: "settings" },
   ];
+  const activeDrawerMode = drawerModes.find((mode) => mode.id === sideDrawerMode) ?? drawerModes[0];
+  const drawerActiveTitle = sideDrawerMode === "projects" ? "Project threads" : activeDrawerMode.label;
 
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""}`} style={appShellStyle}>
@@ -3386,9 +3388,9 @@ function App() {
           </button>
         </div>
       </header>
-      <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label="Project drawer">
+      <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label={`${drawerActiveTitle} drawer`}>
         <div className="drawer-toolbar">
-          <span>Drawer</span>
+          <span>{drawerActiveTitle}</span>
           <button
             className="drawer-collapse-button"
             type="button"
@@ -4219,10 +4221,10 @@ function App() {
           </div>
         </section>
 
-        <section className="terminal-panel" aria-label="Agent terminal">
+        <section className="terminal-panel" aria-label="Agent thread and raw terminal">
           <div className="terminal-titlebar">
             <div className="terminal-profile">
-              <span className="terminal-kicker">Agent</span>
+              <span className="terminal-kicker">Thread</span>
               <span className="terminal-title">
                 <AppIcon name="agent" />
                 <span>{activeTerminalProfile.label}</span>

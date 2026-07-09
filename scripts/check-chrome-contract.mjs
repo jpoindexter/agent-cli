@@ -12,6 +12,7 @@ const assert = (condition, message) => {
 
 const appCss = read("app/src/App.css");
 const appTsx = read("app/src/App.tsx");
+const editorQaFixture = read("docs/qa/editor-parity.html");
 const demo = read("demo/keelhouse-chrome-demo.html");
 
 const rejectedWarmAccent = /#e07a4f|#251b16|#d9a079|var\(--orange\)|orange accent|warm accent dominance/i;
@@ -33,6 +34,14 @@ assert(appCss.includes("--color-accent-border: var(--blue-500);"), "App accent b
 assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-style agent event cards");
 assert(appTsx.includes("agent-thread-event"), "App surface must render thread-style agent event cards");
 assert(appTsx.includes("agent-activity-log__title\">Thread"), "Agent activity surface must label the center feed as Thread");
+assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
+assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
+assert(appTsx.includes("Project threads"), "Projects drawer must present project sessions as threads");
+assert(appTsx.includes("Agent thread and raw terminal"), "Agent surface must be labelled as a thread with raw terminal as escape hatch");
+assert(appTsx.includes("<span className=\"terminal-kicker\">Thread</span>"), "Agent pane kicker must say Thread, not Agent terminal");
+assert(editorQaFixture.includes("Project threads drawer"), "Editor QA fixture must reflect the project-thread drawer");
+assert(!editorQaFixture.includes(">Drawer<"), "Editor QA fixture must not show a generic Drawer label");
+assert(editorQaFixture.includes("Agent thread and raw terminal"), "Editor QA fixture must reflect the agent-thread surface label");
 assert(demo.includes("--accent: #67c3d1;"), "Accepted chrome demo must use steel-cyan #67c3d1");
 assert(demo.includes("--accent-strong: #9bd9e3;"), "Accepted chrome demo must use steel-cyan strong #9bd9e3");
 assert(demo.includes("--accent-soft: #162c33;"), "Accepted chrome demo must use steel-cyan soft #162c33");

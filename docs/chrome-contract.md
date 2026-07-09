@@ -27,6 +27,12 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 - Event rows use `agent-thread-event` cards with status icons and compact metadata, not a spreadsheet-like log table.
 - The composer stays pinned below the thread.
 
+## Real App Port Signals
+
+- The side drawer uses mode-aware product nouns. The default Projects mode is `Project threads`, not a generic `Drawer`.
+- The center work surface is labelled as `Agent thread and raw terminal`: chat/thread is primary, raw terminal is explicit.
+- QA fixtures must mirror those nouns so visual snapshots catch drift back to stacked-pane or terminal-first language.
+
 ## Verification
 
 Run from `app/`:
