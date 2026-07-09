@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-07-09T17:54:06.768Z",
+  "commit": "c7741ee+dirty",
+  "branch": "main",
+  "status": "baseline-ready",
+  "northStar": "daily-driver workflow runs completed without opening VS Code",
+  "hardBudgets": [
+    {
+      "id": "total-js-assets",
+      "label": "Total built JS assets",
+      "actualBytes": 1166899,
+      "limitBytes": 1400000,
+      "pass": true
+    },
+    {
+      "id": "total-css-assets",
+      "label": "Total built CSS assets",
+      "actualBytes": 52715,
+      "limitBytes": 90000,
+      "pass": true
+    }
+  ],
+  "softBudgets": [
+    {
+      "id": "largest-js-vite-warning",
+      "label": "Largest JS chunk stays below Vite warning size",
+      "actualBytes": 1166899,
+      "limitBytes": 500000,
+      "pass": false,
+      "note": "Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning."
+    }
+  ],
+  "sourceChecks": [
+    {
+      "id": "codemirror-not-monaco",
+      "label": "Editor stack uses CodeMirror instead of Monaco/VS Code workbench",
+      "file": "app/package.json",
+      "pattern": "@uiw/react-codemirror",
+      "pass": true
+    },
+    {
+      "id": "no-monaco",
+      "label": "No Monaco dependency is present",
+      "file": "app/package.json",
+      "pattern": "monaco-editor",
+      "pass": true
+    },
+    {
+      "id": "frame-coalesced-terminal",
+      "label": "Terminal paint path is frame-coalesced",
+      "file": "app/src/App.tsx",
+      "pattern": "requestAnimationFrame(paint)",
+      "pass": true
+    },
+    {
+      "id": "terminal-snapshots",
+      "label": "Terminal snapshots are cached by pane",
+      "file": "app/src/App.tsx",
+      "pattern": "terminalSnapshotsRef",
+      "pass": true
+    },
+    {
+      "id": "browser-detection",
+      "label": "Dev-server detection is output driven, not browser-heavy",
+      "file": "app/src/browserPreview.ts",
+      "pattern": "detectLocalDevServerUrl",
+      "pass": true
+    },
+    {
+      "id": "daily-driver-ready",
+      "label": "Daily-driver readiness gate has passed",
+      "file": "docs/qa/daily-driver/latest.json",
+      "pattern": "ready-for-timed-runs",
+      "pass": true
+    }
+  ],
+  "artifactChecks": [
+    {
+      "id": "chrome-first-open",
+      "label": "Chrome first-open screenshot",
+      "file": "docs/qa/chrome-demo/first-open.png",
+      "bytes": 179314,
+      "minBytes": 1024,
+      "pass": true
+    },
+    {
+      "id": "chrome-workbench",
+      "label": "Chrome workbench screenshot",
+      "file": "docs/qa/chrome-demo/workbench.png",
+      "bytes": 144158,
+      "minBytes": 1024,
+      "pass": true
+    },
+    {
+      "id": "editor-selected",
+      "label": "Editor selected-state screenshot",
+      "file": "docs/qa/editor-parity/selected.png",
+      "bytes": 141848,
+      "minBytes": 1024,
+      "pass": true
+    },
+    {
+      "id": "daily-driver-report",
+      "label": "Daily-driver report",
+      "file": "docs/qa/daily-driver/latest.md",
+      "bytes": 2078,
+      "minBytes": 1024,
+      "pass": true
+    }
+  ],
+  "metrics": {
+    "assets": [
+      {
+        "file": "app/dist/assets/index-B2jnOYLV.js",
+        "bytes": 1166899,
+        "ext": ".js"
+      },
+      {
+        "file": "app/dist/assets/index-fBQw2pQu.css",
+        "bytes": 52715,
+        "ext": ".css"
+      }
+    ],
+    "totals": {
+      "totalJsBytes": 1166899,
+      "totalCssBytes": 52715,
+      "largestJsBytes": 1166899
+    }
+  },
+  "nextLiveMeasurements": [
+    "Measure Keelhouse memory, CPU, and responsiveness for one-project edit+agent in the packaged Tauri app.",
+    "Measure two-agent same-project pane focus/restart/close with terminal output under load.",
+    "Measure three-project switch/relaunch with restored sessions and previews.",
+    "Measure equivalent VS Code windows/extensions workflow and record the delta, not just Keelhouse alone."
+  ]
+}

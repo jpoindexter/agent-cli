@@ -115,6 +115,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **DAILY-DRIVER-METRICS:** prove the app can replace the current workflow with scripted one-project edit+agent, two-agent same-project, and three-project switch/relaunch runs.
   - 2026-07-09 slice: added `npm run qa:daily-driver`, which writes `docs/qa/daily-driver/latest.json` and `.md` with readiness evidence for the three replacement workflows. This proves the required app surfaces/evidence exist; timed live Tauri runs and VS Code comparison remain next.
 - **PERF-BUDGET:** prove this is lighter than the VS Code workflow it replaces across 1-project, 2-agent, and 3-project task runs.
+  - 2026-07-09 slice: added `npm run qa:perf-budget`, which writes `docs/qa/perf-budget/latest.json` and `.md` with hard static budgets for built JS/CSS, required screenshot/evidence checks, lightweight source-architecture checks, and explicit next live measurements. This creates the baseline gate; packaged Tauri memory/CPU/jank and VS Code comparison remain next.
 
 ## v2 — Workflow leverage
 

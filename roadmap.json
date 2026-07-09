@@ -836,8 +836,8 @@
       "track": "quality",
       "size": "M",
       "launch": "v1",
-      "summary": "The product exists to avoid VS Code resource bloat. Measure the thing the product promises: memory, CPU, and responsiveness with several projects/panes.",
-      "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release."
+      "summary": "The product exists to avoid VS Code resource bloat. Current slice adds a static budget gate for built assets, evidence artifacts, and lightweight architecture choices before live runtime comparison.",
+      "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release. Current gate writes docs/qa/perf-budget/latest.json and latest.md, enforces JS/CSS caps, checks screenshots/evidence, records the largest-JS soft warning, and keeps packaged Tauri plus VS Code live comparison as the next measurement pass."
     },
     {
       "id": "COMMAND-PALETTE",
