@@ -2926,30 +2926,33 @@ function App() {
   return (
     <div className="app-shell">
       <header className="app-titlebar" aria-label="Application chrome">
-        <div className="window-controls" aria-hidden="true">
-          <span className="window-dot window-dot--close" />
-          <span className="window-dot window-dot--minimize" />
-          <span className="window-dot window-dot--zoom" />
-        </div>
-        <div className="titlebar-nav" aria-label="Navigation">
-          <button className="titlebar-icon-button" type="button" title="Back" aria-label="Back">
-            <AppIcon name="back" />
+        <div className="titlebar-identity">
+          <span className="titlebar-product">Keelhouse</span>
+          <button className="titlebar-workspace" type="button" onClick={pickWorkspace} title="Open or switch project folder">
+            <AppIcon name="workspace" />
+            <span>{activeWorkspaceName}</span>
           </button>
-          <button className="titlebar-icon-button" type="button" title="Forward" aria-label="Forward">
-            <AppIcon name="forward" />
-          </button>
+          <span className="titlebar-session">{activeSessionTitle}</span>
         </div>
-        <button className="command-center" type="button" title={workspacePath ?? ""} onClick={pickWorkspace}>
-          <AppIcon name="search" />
-          <span>{activeWorkspaceName}</span>
-        </button>
-        <div className="titlebar-status">
+        <div className="titlebar-agent-context" aria-label="Selected agent context">
+          <span className="titlebar-meta">
+            <AppIcon name="agent" />
+            <span>{activeTerminalProfile.label}</span>
+          </span>
+          <span className="titlebar-meta">{activeTerminalPaneLabel ?? "No pane"}</span>
           <span className={`titlebar-pill titlebar-pill--${terminalPaneState}`}>
             <AppIcon name={paneStateIconName(terminalPaneState)} />
             <span>{terminalStatusLabel}</span>
           </span>
-          <button className="titlebar-primary" type="button" onClick={() => void reloadBrowserPreview()}>
-            Update
+        </div>
+        <div className="titlebar-actions">
+          <button className="titlebar-action" type="button" onClick={pickWorkspace}>
+            <AppIcon name="folderOpen" />
+            <span>Open Folder</span>
+          </button>
+          <button className="titlebar-action titlebar-action--primary" type="button" onClick={() => void reloadBrowserPreview()}>
+            <AppIcon name="reload" />
+            <span>Reload Preview</span>
           </button>
         </div>
       </header>

@@ -151,19 +151,19 @@
     </svg>
     <div class="app-shell" data-qa="editor-parity-shell">
       <header class="app-titlebar" aria-label="Application chrome">
-        <div class="window-controls" aria-hidden="true">
-          <span class="window-dot window-dot--close"></span>
-          <span class="window-dot window-dot--minimize"></span>
-          <span class="window-dot window-dot--zoom"></span>
+        <div class="titlebar-identity">
+          <span class="titlebar-product">Keelhouse</span>
+          <button class="titlebar-workspace" type="button"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></button>
+          <span class="titlebar-session">Project sessions</span>
         </div>
-        <div class="titlebar-nav" aria-label="Navigation">
-          <button class="titlebar-icon-button" type="button" aria-label="Back"><svg class="app-icon"><use href="#i-back" /></svg></button>
-          <button class="titlebar-icon-button" type="button" aria-label="Forward"><svg class="app-icon"><use href="#i-forward" /></svg></button>
-        </div>
-        <button class="command-center" type="button"><svg class="app-icon"><use href="#i-search" /></svg><span>agent cli</span></button>
-        <div class="titlebar-status">
+        <div class="titlebar-agent-context" aria-label="Selected agent context">
+          <span class="titlebar-meta"><svg class="app-icon"><use href="#i-agent" /></svg><span>Codex</span></span>
+          <span class="titlebar-meta">API fix - Codex</span>
           <span class="titlebar-pill titlebar-pill--running"><svg class="app-icon"><use href="#i-loading" /></svg><span>Running</span></span>
-          <button class="titlebar-primary" type="button">Update</button>
+        </div>
+        <div class="titlebar-actions">
+          <button class="titlebar-action" type="button"><svg class="app-icon"><use href="#i-folder" /></svg><span>Open Folder</span></button>
+          <button class="titlebar-action titlebar-action--primary" type="button"><svg class="app-icon"><use href="#i-reload" /></svg><span>Reload Preview</span></button>
         </div>
       </header>
       <nav class="activity-bar" aria-label="Primary activity">
