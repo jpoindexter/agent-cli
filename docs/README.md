@@ -16,6 +16,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `../ROADMAP.md`: readable roadmap companion to `../roadmap.json`.
 - `../STATE.md`: current handoff, verified slices, and next execution step.
 - `product-positioning.md`: name decision, one-liner, and language rules.
+- `reference-products.md`: source-backed reference products and what Keelhouse should borrow or reject.
 
 ## Product Scope
 

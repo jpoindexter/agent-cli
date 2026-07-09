@@ -56,6 +56,12 @@ Drop categories that imply an account/chat product or novelty feature: Profile, 
 
 Use Codex's project/chat sidebar as a reference for information density, grouping, recency labels, active-row styling, and icon rhythm. Translate chats into project sessions: "New chat" becomes "New session", chat rows become named task sessions under each project, and "Show more" collapses older sessions. Search stays. Plugins and account/profile chrome are dropped. Scheduled/background sessions and archived sessions are parked until project sessions, transcripts, and agent hooks exist. Detailed mapping lives in `docs/navigation-parity.md`.
 
+## Reference Product Guardrails
+
+Zed is the closest product-shape reference because its Agent Panel, Threads Sidebar, Terminal Threads, External Agents, ACP boundary, project grouping, worktree isolation, and review-changes flow overlap the Keelhouse job. The important inversion: Zed remains an editor with strong AI surfaces; Keelhouse should remain an agent cockpit where the selected agent session is the primary screen and editor/browser/terminal/git surfaces are movable trays or drawers around it.
+
+From the `awesome-agent-orchestrators` list, use ConstellAgent for macOS multi-agent terminal/editor/worktree shape, herdr for terminal-session mechanics and attention status, parallel-code for worktree/diff-review flow, and Clave for native macOS multi-session layout ideas. Do not borrow broad cloud/team orchestration, Kanban/org-chart layers, remote fleet runners, issue-tracker automation, or plugin-marketplace scope. Detailed mapping lives in `docs/reference-products.md`.
+
 ## Integration Scope
 
 Local Git is core because it is part of supervising agent work. GitHub and GitLab are first-class source-hosting integrations because they cover common repo, PR/MR, issue, and CI/pipeline workflows. Prefer existing CLIs (`git`, `gh`, `glab`) and OS-safe credential storage before direct API work. Bitbucket, Azure DevOps, Linear, Jira, Slack, and Discord are adapter-lane or notification/link targets only; they should not turn the app into a project management, chat, or plugin platform. Detailed mapping lives in `docs/integrations-scope.md`.

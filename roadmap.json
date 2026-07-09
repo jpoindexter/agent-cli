@@ -111,6 +111,17 @@
   "models": [],
   "cards": [
     {
+      "id": "REFERENCE-PRODUCT-AUDIT",
+      "title": "Reference product audit",
+      "column": "done",
+      "tier": "sand",
+      "track": "research",
+      "size": "S",
+      "launch": "v1",
+      "summary": "Lock which external products are useful references so Keelhouse does not drift into a VS Code clone or generic orchestrator.",
+      "done": "Verified 2026-07-09: Zed is the closest product-shape reference, but Keelhouse must invert it into an agent-first cockpit instead of an editor-first IDE. From awesome-agent-orchestrators, ConstellAgent, herdr, parallel-code, and Clave are the closest targeted references. See docs/reference-products.md."
+    },
+    {
       "id": "APPROOT",
       "title": "Promote app into real root/package",
       "column": "done",
@@ -655,7 +666,7 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Continue drawer navigation only when it is functional, not decorative. Remaining useful drawers are Search, Source Control/Git, Browser/tools, and Settings.",
+      "summary": "Continue drawer navigation only when it is functional, not decorative. Borrow Zed's agentic layout principle: project/session thread sidebar plus rearrangeable real panels, not a decorative VS Code rail clone. Remaining useful drawers are Search, Source Control/Git, Browser/tools, and Settings.",
       "done": "Drawer controls switch real side-drawer content; drawer width persists; pinned/collapsed state is keyboard reachable; Search, Source Control/Git, Browser/tools, and Settings are represented with real behavior instead of placeholders."
     },
     {
