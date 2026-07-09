@@ -19,7 +19,7 @@ Keelhouse v0.5 targets a practical keyboard and labelling baseline for the dense
 - Full modal focus trapping and focus return.
 - Screen-reader review of the Ghostty canvas terminal transcript.
 - Automated accessibility scanning once a browser-driven app harness exists.
-- Git/diff, settings, deeper project rail, and multi-pane accessibility rules when those surfaces exist.
+- Settings, deeper project rail, and multi-pane accessibility rules when those surfaces exist.
 
 ## QA
 

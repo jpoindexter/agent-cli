@@ -20,7 +20,7 @@ Shared states now cover:
 
 ## Deferred Surfaces
 
-Settings, command palette, diff/review, and later multi-pane rails will consume the same tokens when their roadmap cards create real surfaces. Browser preview now uses the shared control, field, focus, and surface tokens. Icon replacement stays in `ICON-SYSTEM`; this slice only defines the chrome styling contract around current icons and text controls.
+Browser preview and diff/review now use the shared control, field, focus, and surface tokens. Settings, command palette, and later multi-pane rails will consume the same tokens when their roadmap cards create real surfaces. Icon replacement stays in `ICON-SYSTEM`; this slice only defines the chrome styling contract around current icons and text controls.
 
 ## QA
 

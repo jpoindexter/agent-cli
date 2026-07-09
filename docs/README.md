@@ -37,8 +37,9 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `agent-activity.md`: v1 visible current/recent agent activity rows.
 - `agent-activity-log.md`: v1 durable, filterable pane/session activity timeline.
 - `activity-drawers.md`: v1 functional side-drawer modes for Projects, Files, Search, Git, Browser, and Settings.
+- `diff-view.md`: v1 read-only Git diff review from Source Control and file rail Git markers.
 - `shortcuts.md`: active v0.5 shortcut map and planned exceptions.
-- `context-menus.md`: right-click/Control-click coverage and deferred diff/git surfaces.
+- `context-menus.md`: right-click/Control-click coverage and deferred Git mutation actions.
 - `chrome-polish-system.md`: current token/state system and deferred chrome surfaces.
 - `icon-system.md`: SVG icon family, status mapping, and QA fixture coverage.
 - `accessibility-basics.md`: v0.5 keyboard, focus, and accessible-name baseline.

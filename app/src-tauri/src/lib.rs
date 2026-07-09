@@ -346,6 +346,14 @@ struct GitStatusResponse {
     files: Vec<GitStatusFile>,
 }
 
+#[derive(Debug, Serialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+struct GitDiffResponse {
+    path: String,
+    diff: String,
+    source: String,
+}
+
 struct FileTreeBuilder {
     name: String,
     path: String,
@@ -1129,6 +1137,117 @@ fn git_status(root: String) -> Result<GitStatusResponse, String> {
     )))
 }
 
+fn validate_git_relative_path(path: &str) -> Result<String, String> {
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        return Err("Git path is required.".into());
+    }
+    let path = Path::new(trimmed);
+    if path.is_absolute() {
+        return Err("Git path must be relative to the workspace.".into());
+    }
+    let mut parts = Vec::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::Normal(part) => parts.push(part.to_string_lossy().into_owned()),
+            _ => return Err("Git path must stay inside the workspace.".into()),
+        }
+    }
+    if parts.is_empty() {
+        return Err("Git path is required.".into());
+    }
+    Ok(parts.join("/"))
+}
+
+fn run_git_diff(root: &str, args: &[&str]) -> Result<String, String> {
+    let output = Command::new("git")
+        .args(["-C", root])
+        .args(args)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .map_err(|err| format!("Could not run git diff: {err}"))?;
+    if !output.status.success() {
+        return Err(format!(
+            "Could not read git diff: {}",
+            String::from_utf8_lossy(&output.stderr).trim()
+        ));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+fn synthetic_untracked_diff(
+    root: &str,
+    relative_path: &str,
+) -> Result<Option<GitDiffResponse>, String> {
+    let file_path = PathBuf::from(root).join(relative_path);
+    if !file_path.exists() || !file_path.is_file() {
+        return Ok(None);
+    }
+    let metadata = fs::metadata(&file_path)
+        .map_err(|err| format!("Could not inspect file {}: {err}", file_path.display()))?;
+    let bytes = metadata.len();
+    if bytes > MAX_TEXT_FILE_BYTES {
+        return Err(format!(
+            "File is too large for diff preview: {} bytes, limit is {} bytes.",
+            bytes, MAX_TEXT_FILE_BYTES
+        ));
+    }
+    let raw = fs::read(&file_path)
+        .map_err(|err| format!("Could not read file {}: {err}", file_path.display()))?;
+    let content = String::from_utf8(raw)
+        .map_err(|_| format!("File is not valid UTF-8 text: {}", file_path.display()))?;
+    let line_count = content.lines().count();
+    let mut diff = format!(
+        "diff --git a/{0} b/{0}\nnew file mode 100644\n--- /dev/null\n+++ b/{0}\n@@ -0,0 +1,{1} @@\n",
+        relative_path,
+        line_count
+    );
+    for line in content.lines() {
+        diff.push('+');
+        diff.push_str(line);
+        diff.push('\n');
+    }
+    Ok(Some(GitDiffResponse {
+        path: relative_path.into(),
+        diff,
+        source: "untracked".into(),
+    }))
+}
+
+#[tauri::command]
+fn git_file_diff(root: String, path: String) -> Result<GitDiffResponse, String> {
+    let root = validate_workspace_path(&root)?;
+    let relative_path = validate_git_relative_path(&path)?;
+    let unstaged = run_git_diff(&root, &["diff", "--no-ext-diff", "--", &relative_path])?;
+    if !unstaged.trim().is_empty() {
+        return Ok(GitDiffResponse {
+            path: relative_path,
+            diff: unstaged,
+            source: "working-tree".into(),
+        });
+    }
+    let staged = run_git_diff(
+        &root,
+        &["diff", "--cached", "--no-ext-diff", "--", &relative_path],
+    )?;
+    if !staged.trim().is_empty() {
+        return Ok(GitDiffResponse {
+            path: relative_path,
+            diff: staged,
+            source: "staged".into(),
+        });
+    }
+    if let Some(diff) = synthetic_untracked_diff(&root, &relative_path)? {
+        return Ok(diff);
+    }
+    Ok(GitDiffResponse {
+        path: relative_path,
+        diff: String::new(),
+        source: "clean".into(),
+    })
+}
+
 /// Frontend -> filesystem: start or replace the live watcher for the current
 /// workspace. The watcher only emits a refresh signal; `list_workspace_tree` stays
 /// the single source of truth for rail data.
@@ -1777,7 +1896,8 @@ pub fn run() {
             rename_workspace_path,
             delete_workspace_path,
             duplicate_workspace_path,
-            git_status
+            git_status,
+            git_file_diff
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -1944,6 +2064,14 @@ mod tests {
             false,
         );
         out
+    }
+
+    fn temp_root(prefix: &str) -> PathBuf {
+        let suffix = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        std::env::temp_dir().join(format!("{prefix}-{suffix}"))
     }
 
     #[test]
@@ -2312,6 +2440,33 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["src/app.ts", "README.md", "docs/new.md", "new.txt"],
         );
+    }
+
+    #[test]
+    fn validates_git_relative_paths() {
+        assert_eq!(
+            validate_git_relative_path("src/app.ts").expect("relative path"),
+            "src/app.ts"
+        );
+        assert!(validate_git_relative_path("../secret").is_err());
+        assert!(validate_git_relative_path("/tmp/secret").is_err());
+        assert!(validate_git_relative_path("").is_err());
+    }
+
+    #[test]
+    fn synthesizes_untracked_text_diff() {
+        let root = temp_root("git-diff-untracked");
+        fs::create_dir_all(root.join("src")).expect("create src");
+        fs::write(root.join("src/new.txt"), "one\ntwo\n").expect("write file");
+        let diff = synthetic_untracked_diff(root.to_str().expect("utf8 root"), "src/new.txt")
+            .expect("synthetic diff")
+            .expect("diff exists");
+        assert_eq!(diff.path, "src/new.txt");
+        assert_eq!(diff.source, "untracked");
+        assert!(diff.diff.contains("--- /dev/null"));
+        assert!(diff.diff.contains("+++ b/src/new.txt"));
+        assert!(diff.diff.contains("+one\n+two\n"));
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

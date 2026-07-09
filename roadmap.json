@@ -462,7 +462,7 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "macOS pointer workflows need right-click/Control-click affordances, not only visible buttons. Context menus should expose the same command registry as menu bar, shortcuts, and command palette where possible.",
-      "done": "Verified 2026-07-09: current surfaces expose right-click/Control-click menus for the workspace root, project/session rows, file explorer, editor tabs, editor text surface, browser preview, terminal pane, and composer/agent controls. Menus share shortcut labels where active, show disabled and danger states, reuse existing destructive confirmations/dirty guards, and are documented in docs/context-menus.md. Diff/git menus are deferred until those real surfaces land."
+      "done": "Verified 2026-07-09: current surfaces expose right-click/Control-click menus for the workspace root, project/session rows, file explorer, editor tabs, editor text surface, browser preview, terminal pane, and composer/agent controls. Menus share shortcut labels where active, show disabled and danger states, reuse existing destructive confirmations/dirty guards, and are documented in docs/context-menus.md. Git-marked file rows can open read-only diffs; Git mutation context actions remain deferred to GIT-ACTIONS-LITE."
     },
     {
       "id": "CHROME-POLISH-SYSTEM",
@@ -473,7 +473,7 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "Define the workbench chrome system before more surfaces drift: dense rails, calm dark surfaces, tokens, menus, badges, pane headers, settings/sidebar rhythm, command palette, toasts, and restrained motion.",
-      "done": "Verified 2026-07-09: current v0.5 chrome uses primitive -> semantic -> component CSS tokens, shared control/menu/badge/field/overlay states, visible focus, disabled/danger/success/warning states, reduced-motion handling, and screenshot QA for one-project workbench, context menu, recovery alerts, narrow layout, and a chrome state palette. Icon replacement remains ICON-SYSTEM; settings, command palette, browser, and diff/review surfaces consume these tokens when their cards create real UI."
+      "done": "Verified 2026-07-09: current v0.5 chrome uses primitive -> semantic -> component CSS tokens, shared control/menu/badge/field/overlay states, visible focus, disabled/danger/success/warning states, reduced-motion handling, and screenshot QA for one-project workbench, context menu, recovery alerts, narrow layout, and a chrome state palette. Icon replacement remains ICON-SYSTEM; browser and diff/review now consume these tokens, while settings and command palette remain future surfaces."
     },
     {
       "id": "ICON-SYSTEM",
@@ -484,7 +484,7 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.",
-      "done": "Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, browser preview, context menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Git/diff, source-host, and multi-pane icons remain deferred until those surfaces exist."
+      "done": "Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, browser preview, source-control/diff entry points, context-menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Source-host and multi-pane-specific icons remain deferred until those real surfaces land."
     },
     {
       "id": "ACCESSIBILITY-BASICS",
@@ -495,7 +495,7 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "A dense tool still needs visible focus, keyboard reachability, and labelled controls so it can be used without pointer precision.",
-      "done": "Verified 2026-07-09: current v0.5 chrome has explicit labels for rail actions, workspace root, agent profile picker, terminal canvas, composer draft, and browser preview controls; editor tabs put tab semantics on the actual focusable buttons; the terminal canvas is tabbable and has a visible focus ring; context menus focus the first enabled item, support Arrow Up/Down, and close with Escape. Full modal trapping, canvas transcript screen-reader review, and future git/settings/multi-pane surfaces remain deferred."
+      "done": "Verified 2026-07-09: current v0.5 chrome has explicit labels for rail actions, workspace root, agent profile picker, terminal canvas, composer draft, browser preview controls, and diff review controls; editor tabs put tab semantics on the actual focusable buttons; the terminal canvas is tabbable and has a visible focus ring; context menus focus the first enabled item, support Arrow Up/Down, and close with Escape. Full modal trapping, canvas transcript screen-reader review, and deeper settings/multi-pane accessibility rules remain deferred."
     },
     {
       "id": "PROJECT-RAIL",
@@ -577,7 +577,7 @@
       "size": "M",
       "launch": "v1",
       "summary": "Background agents need Codex-style visible status and activity rows when they think, run commands, edit files, call tools, wait for approval/input, error, exit, or complete. Show concise activity/progress summaries and tool events, not hidden chain-of-thought.",
-      "done": "Verified 2026-07-09: app/src/agentActivity.ts normalizes in-memory activity rows scoped by project/session/pane. The selected pane shows a current status row from its handle plus recent rows for prompt sent, app command ran/failed, edited file, created pane, stop sent, copied output, pane closed, complete, and command failed on non-zero exit. Rows render above the composer with shared icons/status colors and accessible labels; the QA fixture covers running, prompt, edited file, ran command, and failed command rows. Approval-specific rows and durable/filterable history remain with APP-ACTIONS-MINIMAL and AGENT-ACTIVITY-LOG."
+      "done": "Verified 2026-07-09: app/src/agentActivity.ts normalizes in-memory activity rows scoped by project/session/pane. The selected pane shows a current status row from its handle plus recent rows for prompt sent, app command ran/failed, edited file, created pane, stop sent, copied output, pane closed, complete, and command failed on non-zero exit. Rows render above the composer with shared icons/status colors and accessible labels; the QA fixture covers running, prompt, edited file, ran command, and failed command rows. Approval rows and durable/filterable history are covered by APP-ACTIONS-MINIMAL and AGENT-ACTIVITY-LOG."
     },
     {
       "id": "AGENT-ACTIVITY-LOG",
@@ -588,7 +588,7 @@
       "size": "M",
       "launch": "v1",
       "summary": "Each pane/session needs an inspectable timeline of user-safe agent events so Jason can see what happened without reading every terminal line.",
-      "done": "Verified 2026-07-09: agentActivityEvents now persists up to 200 user-safe events with project/session/pane attribution, kind, label, detail, status, timestamp, target, exit code, output reference, and undo hint fields. The selected pane shows a durable timeline below the activity strip with filters for prompts, process, commands, files, tools, git, app actions, approvals, browser, errors, and completion. Startup normalization drops malformed stored rows. Current producers cover prompts, app commands, file saves, pane lifecycle actions, copied output, and process exits; future git/approval/browser/diff producers populate the reserved event fields when those real surfaces land."
+      "done": "Verified 2026-07-09: agentActivityEvents now persists up to 200 user-safe events with project/session/pane attribution, kind, label, detail, status, timestamp, target, exit code, output reference, and undo hint fields. The selected pane shows a durable timeline below the activity strip with filters for prompts, process, commands, files, tools, git, app actions, approvals, browser, errors, and completion. Startup normalization drops malformed stored rows. Current producers cover prompts, app commands, app-action approvals including Open Diff, file saves, pane lifecycle actions, copied output, and process exits; git mutation, richer browser, and tool producers populate the reserved event fields when those real surfaces land."
     },
     {
       "id": "APP-ACTIONS-MINIMAL",
@@ -599,7 +599,7 @@
       "size": "M",
       "launch": "v1",
       "summary": "Permission controls need real enforcement behind them. Add the small action gate for app-owned actions before showing Codex-style approval modes.",
-      "done": "Verified 2026-07-09: app/src/appActions.ts defines app-owned action descriptors with kind, target, risk class, requester, reason, and undo hint; resolves each action to an audit event with approval mode, decision, prompt state, timestamp, and reason. Existing app-owned paths for focus pane, open file, open browser preview, attach reference, interrupt process, create pane, close pane, and composer commands route through the gate. Prompted, denied, blocked, and composer-originated decisions log approval audit rows to the activity timeline. Open diff remains typed but blocked until the real diff surface lands."
+      "done": "Verified 2026-07-09: app/src/appActions.ts defines app-owned action descriptors with kind, target, risk class, requester, reason, and undo hint; resolves each action to an audit event with approval mode, decision, prompt state, timestamp, and reason. Existing app-owned paths for focus pane, open file, open diff, open browser preview, attach reference, interrupt process, create pane, close pane, and composer commands route through the gate. Prompted, denied, blocked, and composer-originated decisions log approval audit rows to the activity timeline."
     },
     {
       "id": "COMPOSER-HARNESS",
@@ -694,13 +694,13 @@
     {
       "id": "DIFF-VIEW",
       "title": "Diff view for agent changes",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "files",
       "size": "M",
       "launch": "v1",
       "summary": "Jason supervises agents by reading what changed. A file status marker is not enough; he needs to inspect diffs without opening VS Code.",
-      "done": "Modified files open a readable diff view with additions/deletions; the editor can jump from a diff hunk to the file."
+      "done": "Verified 2026-07-09: Source Control rows and file-rail Git context menus open a read-only unified diff review in the editor tray. The review shows source/status, additions/deletions, old/new line numbers, diff metadata, synthetic untracked text diffs, and hunk-to-editor jumps for files that still exist. Covered by npm run build, npm test -- diffView.test.ts, cargo test git_, and cargo test synthesizes_untracked_text_diff."
     },
     {
       "id": "GIT-ACTIONS-LITE",

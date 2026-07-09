@@ -133,6 +133,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Drawer controls switch real side-drawer content, with persisted resizable/collapsible drawers for projects, files, search, source control, browser/tools, and settings.
 - [x] Session restore brings back projects, file tabs, browser URL, pane layout, and enough metadata to resume intentionally without pretending old processes are still live.
 - [x] Git status is visible in the file rail for modified, untracked/new, staged, renamed, and deleted files without merging it with unsaved editor draft state.
+- [x] Changed files can be reviewed in-app through a read-only unified diff view with additions/deletions and hunk-to-editor jumps when the file exists.
 - [ ] Daily-driver workflows are measured against the equivalent VS Code habit: one-project edit+agent, two-agent same-project, and three-project switching after quit/relaunch.
 - [ ] Resource use is measured against the equivalent VS Code workflow.
 

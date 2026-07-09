@@ -14,7 +14,7 @@ AGENT-ACTIVITY-LOG makes pane activity durable and inspectable. It extends the c
 ## Boundaries
 
 - The log only records app-owned events Keelhouse can observe today: prompts, app commands, file saves, pane lifecycle actions, copied output, and process exits.
-- Approval audit rows are produced by `APP-ACTIONS-MINIMAL`. Git/source-control, tool, diff, richer browser action, and undo links have reserved event fields and filters, but their producers become real with `DIFF-VIEW`, `GIT-STATUS`, `GIT-ACTIONS-LITE`, and browser/action cards.
+- Approval audit rows are produced by `APP-ACTIONS-MINIMAL`, including low-risk open-diff actions. Git/source-control mutation, tool, richer browser action, and undo links have reserved event fields and filters, but their producers become real with `GIT-ACTIONS-LITE` and later browser/action cards.
 - Hidden chain-of-thought is never stored. User-safe summaries, command names, paths, outputs, statuses, and approval decisions are the durable surface.
 
 ## Verification

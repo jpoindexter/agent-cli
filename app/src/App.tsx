@@ -5,7 +5,7 @@ import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openPath, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
-import type { EditorView, ViewUpdate } from "@codemirror/view";
+import { EditorView, type ViewUpdate } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { openSearchPanel } from "@codemirror/search";
@@ -136,9 +136,12 @@ import {
 import type { TerminalPaneState } from "./terminalPane";
 import {
   decorateFileTreeWithGitStatus,
+  absolutePathForGitFile,
   gitStatusLabel,
 } from "./fileGitStatus";
 import type { FileGitStatus, GitStatusFile } from "./fileGitStatus";
+import { parseUnifiedDiff } from "./diffView";
+import type { ParsedDiff } from "./diffView";
 import {
   normalizePaneLayoutsBySession,
   normalizeSessionEditorSnapshots,
@@ -193,6 +196,13 @@ type GitStatusResponse = {
   unstaged: number;
   untracked: number;
   files: GitStatusFile[];
+};
+type GitDiffResponse = { path: string; diff: string; source: string };
+type ActiveDiffReview = {
+  file: GitStatusFile;
+  absolutePath: string;
+  response: GitDiffResponse;
+  parsed: ParsedDiff;
 };
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
@@ -493,6 +503,9 @@ function App() {
   const [gitStatusRoot, setGitStatusRoot] = useState<string | null>(null);
   const [gitStatusLoading, setGitStatusLoading] = useState(false);
   const [gitStatusError, setGitStatusError] = useState<string | null>(null);
+  const [diffReview, setDiffReview] = useState<ActiveDiffReview | null>(null);
+  const [diffReviewLoading, setDiffReviewLoading] = useState(false);
+  const [diffReviewError, setDiffReviewError] = useState<string | null>(null);
   const workbenchRef = useRef<HTMLElement | null>(null);
   const workbenchStyle = {
     "--tool-tray-size": `${workbenchSizing.trayPercent}%`,
@@ -626,6 +639,11 @@ function App() {
     [selectedFile, workspacePath],
   );
   const editorLanguage = selectedFile ? languageLabelForPath(selectedFile.path) : "No file";
+  const diffBreadcrumbs = useMemo(
+    () => (diffReview ? pathBreadcrumbs(workspacePath, diffReview.absolutePath) : []),
+    [diffReview, workspacePath],
+  );
+  const diffReviewCanOpenFile = Boolean(diffReview && diffReview.file.index !== "D" && diffReview.file.worktree !== "D");
   const visibleFileTree = useMemo(
     () => {
       const dirtyTree = markDirtyFile(fileTree, dirtyTabPathSet);
@@ -733,6 +751,62 @@ function App() {
     } finally {
       setGitStatusLoading(false);
     }
+  };
+
+  const focusEditorLine = (line: number) => {
+    const targetLine = Math.max(1, line);
+    window.setTimeout(() => {
+      const view = editorViewRef.current;
+      if (!view) return;
+      const docLine = view.state.doc.line(Math.min(targetLine, view.state.doc.lines));
+      view.dispatch({
+        selection: { anchor: docLine.from },
+        effects: EditorView.scrollIntoView(docLine.from, { y: "center" }),
+      });
+      view.focus();
+    }, 60);
+  };
+
+  const openGitDiff = async (file: GitStatusFile) => {
+    const root = workspacePathRef.current ?? workspacePath;
+    if (!root) return false;
+    const audit = await gateAppAction(createAppAction({
+      kind: "open-diff",
+      label: "Open diff",
+      target: file.path,
+      risk: "low",
+      requestedBy: "user",
+    }));
+    if (audit.decision !== "approved") return false;
+    setDiffReviewLoading(true);
+    setDiffReviewError(null);
+    setDiffReview(null);
+    try {
+      const response = await invoke<GitDiffResponse>("git_file_diff", { root, path: file.path });
+      setDiffReview({
+        file,
+        response,
+        absolutePath: absolutePathForGitFile(root, file.path),
+        parsed: parseUnifiedDiff(response.diff),
+      });
+      return true;
+    } catch (err) {
+      setDiffReviewError(String(err));
+      return false;
+    } finally {
+      setDiffReviewLoading(false);
+    }
+  };
+
+  const openDiffFile = async (line: number | null = null) => {
+    if (!diffReview) return;
+    const opened = await requestOpenEditorFile(fileNodeFromPath(diffReview.absolutePath, "file"), { focusEditor: true });
+    if (opened && line != null) focusEditorLine(line);
+  };
+
+  const closeDiffReview = () => {
+    setDiffReview(null);
+    setDiffReviewError(null);
   };
 
   useEffect(() => {
@@ -2136,6 +2210,7 @@ function App() {
   const openEditorFileDirect = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
     const root = workspacePathRef.current ?? workspacePath;
     if (!root) return;
+    closeDiffReview();
     captureCurrentEditorViewState();
     captureCurrentEditorBuffer();
     pendingEditorFocusRef.current = options.focusEditor ?? false;
@@ -2214,6 +2289,7 @@ function App() {
   const requestOpenEditorFile = async (file: FileTreeNode, options: OpenEditorFileOptions = {}) => {
     const currentPath = selectedFileRef.current?.path ?? null;
     if (currentPath === file.path) {
+      closeDiffReview();
       if (options.focusEditor) requestAnimationFrame(() => editorViewRef.current?.focus());
       return true;
     }
@@ -2522,15 +2598,26 @@ function App() {
     }
   };
 
-  const fileNodeContextMenuItems = (node: FileTreeNode): ContextMenuItem[] => [
-    menuItem("file.new", "New File", () => void createFileInRail(node), { icon: "filePlus" }),
-    menuItem("folder.new", "New Folder", () => void createFolderInRail(node), { icon: "folderPlus" }),
-    menuItem("file.rename", "Rename", () => void renameRailNode(node), { icon: "file" }),
-    menuItem("file.duplicate", "Duplicate", () => void duplicateRailNode(node), { icon: "file" }),
-    menuItem("file.reveal", "Reveal in Finder", () => void revealRailNode(node), { icon: "folderOpen" }),
-    menuItem("file.copy-path", "Copy Path", () => void copyPathToClipboard(node.path), { icon: "file" }),
-    menuItem("file.delete", "Delete", () => void deleteRailNode(node), { icon: "error", danger: true }),
-  ];
+  const fileNodeContextMenuItems = (node: FileTreeNode): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
+    if (node.gitStatus) {
+      items.push(menuItem("git.diff", "Open Diff", () => void openGitDiff({
+        path: node.gitStatus!.relativePath,
+        index: node.gitStatus!.index,
+        worktree: node.gitStatus!.worktree,
+      }), { icon: "git" }));
+    }
+    return [
+      ...items,
+      menuItem("file.new", "New File", () => void createFileInRail(node), { icon: "filePlus" }),
+      menuItem("folder.new", "New Folder", () => void createFolderInRail(node), { icon: "folderPlus" }),
+      menuItem("file.rename", "Rename", () => void renameRailNode(node), { icon: "file" }),
+      menuItem("file.duplicate", "Duplicate", () => void duplicateRailNode(node), { icon: "file" }),
+      menuItem("file.reveal", "Reveal in Finder", () => void revealRailNode(node), { icon: "folderOpen" }),
+      menuItem("file.copy-path", "Copy Path", () => void copyPathToClipboard(node.path), { icon: "file" }),
+      menuItem("file.delete", "Delete", () => void deleteRailNode(node), { icon: "error", danger: true }),
+    ];
+  };
 
   const workspaceContextMenuItems = (): ContextMenuItem[] => [
     menuItem("workspace.open", "Open Folder", () => void pickWorkspace(), { icon: "folderOpen", shortcut: shortcutKeys("workspace.open") }),
@@ -3477,15 +3564,11 @@ function App() {
                       type="button"
                       key={`${file.index}${file.worktree}${file.path}`}
                       title={`${gitStatusLabel(file)} · ${file.path}`}
-                      onClick={() => {
-                        const node = searchableFiles.find((item) => item.path === `${workspacePath}/${file.path}` || item.path.endsWith(`/${file.path}`));
-                        if (node) void requestOpenEditorFile(node, { focusEditor: true });
-                        else setSideDrawerMode("files");
-                      }}
+                      onClick={() => void openGitDiff(file)}
                     >
                       <AppIcon name={file.index === "?" ? "filePlus" : "git"} />
                       <span className="drawer-list-row__main">{basename(file.path)}</span>
-                      <span className="drawer-list-row__meta">{gitStatusLabel(file)}</span>
+                      <span className="drawer-list-row__meta">{gitStatusLabel(file)} · Review diff</span>
                     </button>
                   ))}
                 </div>
@@ -3668,6 +3751,33 @@ function App() {
         >
           <div className="editor-tabbar">
             <div className="editor-tabs" role="tablist" aria-label="Open files">
+              {diffReview || diffReviewLoading || diffReviewError ? (
+                <div className="editor-tab editor-tab--active editor-tab--diff" title={diffReview?.response.path ?? diffReviewError ?? "Loading diff"}>
+                  <button
+                    className="editor-tab__activate"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-label={diffReview ? `Diff for ${diffReview.response.path}` : "Diff review"}
+                  >
+                    <span className="editor-tab__name">{diffReview ? `Diff: ${basename(diffReview.response.path)}` : "Diff review"}</span>
+                  </button>
+                  <button
+                    className="editor-tab__close"
+                    type="button"
+                    aria-label="Close diff review"
+                    title="Close diff review"
+                    onPointerDown={(event) => {
+                      if (event.button !== 0) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      closeDiffReview();
+                    }}
+                  >
+                    <AppIcon name="close" />
+                  </button>
+                </div>
+              ) : null}
               {editorTabs.length > 0 ? (
                 editorTabs.map((tab) => {
                   const active = selectedFile?.path === tab.path;
@@ -3711,13 +3821,33 @@ function App() {
                     </div>
                   );
                 })
-              ) : (
+              ) : !diffReview && !diffReviewLoading && !diffReviewError ? (
                 <div className="editor-tab editor-tab--empty">
                   <span className="editor-tab__name">No file open</span>
                 </div>
-              )}
+              ) : null}
             </div>
-            {selectedFile ? (
+            {diffReview || diffReviewLoading || diffReviewError ? (
+              <div className="editor-actions">
+                {diffReview ? <span className="editor-badge">{diffReview.response.source}</span> : null}
+                {diffReview ? <span className="editor-meta">+{diffReview.parsed.additions} / -{diffReview.parsed.deletions}</span> : null}
+                <span className="editor-status">{diffReviewLoading ? "Loading diff" : diffReviewError ? "Diff error" : "Review"}</span>
+                <button
+                  className="editor-command"
+                  type="button"
+                  disabled={!diffReview || !diffReviewCanOpenFile}
+                  title={diffReviewCanOpenFile ? "Open file" : "File cannot be opened from this diff"}
+                  onClick={() => void openDiffFile()}
+                >
+                  <AppIcon name="file" />
+                  <span>Open file</span>
+                </button>
+                <button className="editor-command" type="button" title="Close diff review" onClick={closeDiffReview}>
+                  <AppIcon name="close" />
+                  <span>Close</span>
+                </button>
+              </div>
+            ) : selectedFile ? (
               <div className="editor-actions">
                 {activeFileMissing ? <span className="editor-badge editor-badge--warn">Missing from tree</span> : null}
                 <span className="editor-meta">{editorLanguage}</span>
@@ -3745,7 +3875,16 @@ function App() {
               </div>
             ) : null}
           </div>
-          {selectedFile ? (
+          {diffReview ? (
+            <nav className="editor-pathbar" aria-label="Diff file path" title={diffReview.absolutePath}>
+              {diffBreadcrumbs.map((part, index) => (
+                <span className="editor-crumb" key={`${part}-${index}`}>
+                  {index > 0 ? <span className="editor-crumb__separator">/</span> : null}
+                  <span className={index === diffBreadcrumbs.length - 1 ? "editor-crumb__current" : ""}>{part}</span>
+                </span>
+              ))}
+            </nav>
+          ) : selectedFile ? (
             <nav className="editor-pathbar" aria-label="Active file path" title={selectedFile.path}>
               {editorBreadcrumbs.map((part, index) => (
                 <span className="editor-crumb" key={`${part}-${index}`}>
@@ -3755,7 +3894,56 @@ function App() {
               ))}
             </nav>
           ) : null}
-          {selectedFile ? (
+          {diffReview || diffReviewLoading || diffReviewError ? (
+            <div className="diff-view" aria-label="Diff review">
+              {diffReviewLoading ? <div className="diff-empty">Loading diff…</div> : null}
+              {diffReviewError ? (
+                <div className="editor-error editor-error--inline">
+                  <div className="editor-error__title">Diff failed</div>
+                  <div className="editor-error__body">{diffReviewError}</div>
+                </div>
+              ) : null}
+              {diffReview && !diffReviewLoading ? (
+                <>
+                  <div className="diff-view__header">
+                    <div>
+                      <div className="diff-view__title">{diffReview.response.path}</div>
+                      <div className="diff-view__meta">{gitStatusLabel(diffReview.file)} · {diffReview.response.source}</div>
+                    </div>
+                    <div className="diff-view__summary" aria-label="Diff summary">
+                      <span className="diff-view__additions">+{diffReview.parsed.additions}</span>
+                      <span className="diff-view__deletions">-{diffReview.parsed.deletions}</span>
+                    </div>
+                  </div>
+                  {diffReview.parsed.lines.length === 0 ? (
+                    <div className="diff-empty">No diff for this file.</div>
+                  ) : (
+                    <div className="diff-view__body" role="table" aria-label={`Diff for ${diffReview.response.path}`}>
+                      {diffReview.parsed.lines.map((line) => (
+                        <div className={`diff-line diff-line--${line.kind}`} role="row" key={line.id}>
+                          <span className="diff-line__number" aria-label={line.oldLine == null ? "No old line" : `Old line ${line.oldLine}`}>{line.oldLine ?? ""}</span>
+                          <span className="diff-line__number" aria-label={line.newLine == null ? "No new line" : `New line ${line.newLine}`}>{line.newLine ?? ""}</span>
+                          {line.kind === "hunk" ? (
+                            <button
+                              className="diff-line__jump"
+                              type="button"
+                              disabled={!diffReviewCanOpenFile || line.hunkNewStart == null}
+                              title={diffReviewCanOpenFile ? "Open file at hunk" : "File cannot be opened from this diff"}
+                              onClick={() => void openDiffFile(line.hunkNewStart)}
+                            >
+                              {line.text}
+                            </button>
+                          ) : (
+                            <code className="diff-line__code">{line.text || " "}</code>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : null}
+            </div>
+          ) : selectedFile ? (
             <div
               className="editor-code"
               onContextMenu={(event) => openContextMenu(event, editorContextMenuItems())}
