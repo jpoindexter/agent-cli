@@ -369,6 +369,13 @@
           <div class="terminal-host">
             <canvas class="term" width="960" height="260" tabindex="0" role="application" aria-label="Claude terminal pane. Type to send keyboard input to the active process."></canvas>
           </div>
+          <div class="agent-activity" aria-label="Agent activity" aria-live="polite">
+            <div class="agent-activity__row agent-activity__row--running"><svg class="app-icon"><use href="#i-loading" /></svg><span class="agent-activity__label">Running</span><span class="agent-activity__detail">API fix - Claude</span></div>
+            <div class="agent-activity__row agent-activity__row--thinking"><svg class="app-icon"><use href="#i-thinking" /></svg><span class="agent-activity__label">Prompt sent</span><span class="agent-activity__detail">API fix</span></div>
+            <div class="agent-activity__row agent-activity__row--complete"><svg class="app-icon"><use href="#i-check" /></svg><span class="agent-activity__label">Edited a file</span><span class="agent-activity__detail">App.tsx</span></div>
+            <div class="agent-activity__row agent-activity__row--complete"><svg class="app-icon"><use href="#i-check" /></svg><span class="agent-activity__label">Ran command</span><span class="agent-activity__detail">save</span></div>
+            <div class="agent-activity__row agent-activity__row--error"><svg class="app-icon"><use href="#i-error" /></svg><span class="agent-activity__label">Command failed</span><span class="agent-activity__detail">npm test</span></div>
+          </div>
           <div class="agent-composer" aria-label="Agent composer">
             <div class="agent-composer__target" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">
               <span>Target</span>

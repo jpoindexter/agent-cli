@@ -98,8 +98,15 @@ import {
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { AppIcon, paneStateAccessibleLabel, paneStateIconName } from "./icons";
+import { agentActivityAccessibleLabel, agentActivityIconName } from "./icons";
 import type { AppIconName } from "./icons";
 import { shortcutKeys, shortcutTitle } from "./shortcuts";
+import {
+  agentCurrentActivity,
+  createAgentActivityEvent,
+  pushAgentActivityEvent,
+} from "./agentActivity";
+import type { AgentActivityEvent } from "./agentActivity";
 import {
   normalizeTerminalPaneLabel,
   terminalPaneCwdLabel,
@@ -349,6 +356,7 @@ function App() {
   const [composerError, setComposerError] = useState<string | null>(null);
   const [composerHistory, setComposerHistory] = useState<string[]>([]);
   const [composerHistoryIndex, setComposerHistoryIndex] = useState<number | null>(null);
+  const [agentActivityEvents, setAgentActivityEvents] = useState<AgentActivityEvent[]>([]);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
   const dirtyTabPaths = useMemo(
     () => dirtyEditorTabPaths(editorTabs, editorBuffersRef.current, selectedFile?.path ?? null, editorDirty),
@@ -394,6 +402,22 @@ function App() {
     () => agentSessionDescriptors.find((handle) => handle.paneId === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, agentSessionDescriptors],
   );
+  const currentAgentActivity = useMemo(
+    () => agentCurrentActivity(activeAgentSessionDescriptor),
+    [activeAgentSessionDescriptor],
+  );
+  const visibleAgentActivity = useMemo(() => {
+    if (!activeAgentSessionDescriptor) return [];
+    const recent = agentActivityEvents.filter(
+      (event) =>
+        event.projectId === activeAgentSessionDescriptor.projectId &&
+        event.projectSessionId === activeAgentSessionDescriptor.projectSessionId &&
+        event.paneId === activeAgentSessionDescriptor.id,
+    );
+    return currentAgentActivity
+      ? [currentAgentActivity, ...recent.filter((event) => event.id !== currentAgentActivity.id)].slice(0, 4)
+      : recent.slice(0, 4);
+  }, [activeAgentSessionDescriptor, agentActivityEvents, currentAgentActivity]);
   const activeTerminalProfile = activeTerminalPane?.profile ?? launchProfile;
   const terminalPaneState = activeTerminalPane?.state ?? "idle";
   const terminalExitCode = activeTerminalPane?.exitCode ?? null;
@@ -726,6 +750,14 @@ function App() {
 
   const terminalPaneLabel = (pane: ManagedTerminalPane, index: number) => terminalPaneLabelForDisplay(pane.label, pane.profile.label, index);
 
+  const recordAgentActivity = (
+    handle: AgentSessionHandleDescriptor | null,
+    event: Parameters<typeof createAgentActivityEvent>[1],
+  ) => {
+    if (!handle) return;
+    setAgentActivityEvents((events) => pushAgentActivityEvent(events, createAgentActivityEvent(handle, event)));
+  };
+
   const sessionSnapshotKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
   const captureCurrentSessionSnapshot = () => {
@@ -1017,6 +1049,12 @@ function App() {
     if (!activeAgentSessionHandle) return;
     setComposerError(null);
     await activeAgentSessionHandle.interrupt();
+    recordAgentActivity(activeAgentSessionHandle, {
+      kind: "process",
+      label: "Stop sent",
+      detail: activeAgentSessionHandle.label,
+      status: "waiting",
+    });
   };
 
   const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
@@ -1068,9 +1106,29 @@ function App() {
           return;
         }
         await activeAgentSessionHandle.send(route.text);
+        recordAgentActivity(activeAgentSessionHandle, {
+          kind: "prompt",
+          label: "Prompt sent",
+          detail: activeAgentSessionHandle.label,
+          status: "thinking",
+        });
       } else {
         const ok = await runComposerAppCommand(route.command);
-        if (!ok) return;
+        if (!ok) {
+          recordAgentActivity(activeAgentSessionHandle, {
+            kind: "error",
+            label: "Command failed",
+            detail: route.command,
+            status: "error",
+          });
+          return;
+        }
+        recordAgentActivity(activeAgentSessionHandle, {
+          kind: "app",
+          label: "Ran command",
+          detail: route.command,
+          status: "complete",
+        });
       }
       setComposerHistory((history) => composerHistoryAfterSubmit(history, composerDraft));
       setComposerHistoryIndex(null);
@@ -1143,6 +1201,24 @@ function App() {
       };
       const nextPanes = [...existingPanes, pane];
       setProjectTerminalPanes(root, nextPanes, result.paneId);
+      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+      if (sessionId) {
+        recordAgentActivity(
+          buildAgentSessionHandleDescriptor({
+            pane,
+            projectId: root,
+            projectSessionId: sessionId,
+            label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, slot),
+            approvalMode: agentApprovalMode,
+          }),
+          {
+            kind: "process",
+            label: "Created pane",
+            detail: profile.label,
+            status: "running",
+          },
+        );
+      }
       launchProfileRef.current = profile;
       setLaunchProfile(profile);
       await storeRef.current?.set("launchProfile", profile);
@@ -1162,11 +1238,11 @@ function App() {
 
   const closeTerminalPane = async (paneId: number) => {
     const root = workspacePathRef.current;
-    if (!root) return;
+    if (!root) return false;
     const pane = terminalPanesForProject(root).find((item) => item.id === paneId);
-    if (!pane) return;
+    if (!pane) return false;
     const ok = window.confirm(`Close ${pane.profile.label} pane? The running process will be terminated.`);
-    if (!ok) return;
+    if (!ok) return false;
     try {
       const result = await invoke<ClosePaneResponse>("close_pane", { paneId });
       const remaining = terminalPanesForProject(root).filter((item) => item.id !== paneId);
@@ -1183,10 +1259,12 @@ function App() {
       await updateOpenProjectStatus(root, status);
       await updateActiveSessionStatus(root, status);
       if (nextActive != null) setTimeout(sendTerminalResize, 0);
+      return true;
     } catch (err) {
       setLaunchError(String(err));
       await updateOpenProjectStatus(root, "attention");
       await updateActiveSessionStatus(root, "attention");
+      return false;
     }
   };
 
@@ -1212,7 +1290,17 @@ function App() {
               (activeTerminalPaneIdRef.current === activeAgentSessionDescriptor.paneId ? latest.current : null),
             lines,
           ),
-        close: async () => closeTerminalPane(activeAgentSessionDescriptor.paneId),
+        close: async () => {
+          const closed = await closeTerminalPane(activeAgentSessionDescriptor.paneId);
+          if (closed) {
+            recordAgentActivity(activeAgentSessionDescriptor, {
+              kind: "process",
+              label: "Closed pane",
+              detail: activeAgentSessionDescriptor.label,
+              status: "exited",
+            });
+          }
+        },
       }
     : null;
 
@@ -1389,6 +1477,12 @@ function App() {
       setSavedEditorText(result.content);
       setEditorBytes(result.bytes);
       setEditorModifiedMs(result.modifiedMs);
+      recordAgentActivity(activeAgentSessionDescriptor, {
+        kind: "file",
+        label: "Edited a file",
+        detail: selectedFile.name,
+        status: "complete",
+      });
       return true;
     } catch (err) {
       const message = String(err);
@@ -1596,6 +1690,12 @@ function App() {
     const tail = await activeAgentSessionHandle?.readTail(20);
     if (!tail) return;
     await writeText(tail);
+    recordAgentActivity(activeAgentSessionHandle ?? null, {
+      kind: "app",
+      label: "Copied output",
+      detail: "Last 20 lines",
+      status: "complete",
+    });
   };
 
   const pasteIntoTerminal = async () => {
@@ -2189,8 +2289,29 @@ function App() {
       void closeActiveEditorTabRef.current();
     });
     const unlistenPaneExit = listen<PaneExit>("pane-exit", (ev) => {
+      const root = Object.entries(terminalPanesByProjectRef.current).find(([, panes]) => panes.some((pane) => pane.id === ev.payload.paneId))?.[0] ?? workspacePathRef.current;
       const nextPanes = setPaneState(ev.payload.paneId, "exited", ev.payload.code);
       const nextStatus = terminalPaneProjectStatus(nextPanes);
+      const paneIndex = nextPanes.findIndex((pane) => pane.id === ev.payload.paneId);
+      const pane = paneIndex >= 0 ? nextPanes[paneIndex] : null;
+      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+      if (root && sessionId && pane) {
+        recordAgentActivity(
+          buildAgentSessionHandleDescriptor({
+            pane,
+            projectId: root,
+            projectSessionId: sessionId,
+            label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex),
+            approvalMode: agentApprovalMode,
+          }),
+          {
+            kind: ev.payload.code === 0 ? "complete" : "error",
+            label: ev.payload.code === 0 ? "Complete" : "Command failed",
+            detail: ev.payload.command,
+            status: ev.payload.code === 0 ? "complete" : "error",
+          },
+        );
+      }
       if (ev.payload.paneId === activeTerminalPaneIdRef.current) setLaunchError(ev.payload.message);
       void updateOpenProjectStatus(workspacePathRef.current, nextStatus);
       void updateActiveSessionStatus(workspacePathRef.current, nextStatus);
@@ -2731,6 +2852,29 @@ function App() {
               role="application"
               aria-label={`${activeTerminalProfile.label} terminal pane. Type to send keyboard input to the active process.`}
             />
+          </div>
+          <div className="agent-activity" aria-label="Agent activity" aria-live="polite">
+            {visibleAgentActivity.length > 0 ? (
+              visibleAgentActivity.map((event) => (
+                <div
+                  className={`agent-activity__row agent-activity__row--${event.status}`}
+                  key={event.id}
+                  title={event.detail}
+                >
+                  <AppIcon
+                    name={agentActivityIconName(event.status)}
+                    label={agentActivityAccessibleLabel(event.status, event.label)}
+                  />
+                  <span className="agent-activity__label">{event.label}</span>
+                  {event.detail ? <span className="agent-activity__detail">{event.detail}</span> : null}
+                </div>
+              ))
+            ) : (
+              <div className="agent-activity__row agent-activity__row--waiting">
+                <AppIcon name="waiting" label="No recent agent activity" />
+                <span className="agent-activity__label">No recent activity</span>
+              </div>
+            )}
           </div>
           <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
             <div className="agent-composer__target" title={workspacePath ?? ""}>

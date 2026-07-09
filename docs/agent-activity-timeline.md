@@ -31,3 +31,7 @@ The app should show Codex-style visible agent activity: concise state and event 
 - Verify visible rows for thinking, edited file, ran command, command failed, waiting approval, and complete.
 - Verify rail badges update when the active pane is not visible.
 - Verify the activity log remains readable in compact and expanded pane layouts.
+
+## Current Implementation
+
+AGENT-ACTIVITY implements the compact current/recent activity strip above the composer. It is in-memory and pane-scoped. The durable, filterable per-pane/session timeline remains `AGENT-ACTIVITY-LOG`.
