@@ -672,13 +672,13 @@
     {
       "id": "SESSION-RESTORE",
       "title": "Restore projects, files, panes",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "workspace",
       "size": "M",
       "launch": "v1",
       "summary": "After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.",
-      "done": "Relaunch restores the left project rail, selected project/session, per-project file rail expansion, editor tabs, browser preview URL, pane layout, and starts fresh agent/shell panes where configured."
+      "done": "Verified 2026-07-09: sessionEditorSnapshots persists per-session editor tabs, active file, dirty buffers, and CodeMirror view state. paneLayoutsBySession persists pane slots, launch profile ids, and labels. Startup normalizes both stores before reopening the last workspace and creates fresh panes from the saved layout without pretending live process memory or transcripts survived relaunch. Covered by npm run build and npm test -- sessionRestore.test.ts."
     },
     {
       "id": "GIT-STATUS",

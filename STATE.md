@@ -114,10 +114,13 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## Next (ordered)
 
-1. **SESSION-RESTORE:** restore project rail, editor tabs, rail state, and pane layout.
-2. **GIT-STATUS:** dirty/new/deleted markers in the file rail.
-3. **DIFF-VIEW:** inspect agent-created changes without VS Code.
-4. **GIT-ACTIONS-LITE:** stage/unstage/discard/copy diff after DIFF-VIEW.
+**SESSION-RESTORE (VERIFIED 2026-07-09):** `sessionEditorSnapshots` now persists per-session editor tabs, active file, dirty buffers, and CodeMirror view state. `paneLayoutsBySession` persists pane slots, launch profile ids, and labels. Startup normalizes both stores before reopening the last workspace, then creates fresh panes from the saved layout while staying honest that live process memory/transcripts are not restored. Missing workspace cleanup and session deletion prune both restore stores. `docs/session-restore.md` and `docs/local-state.md` record schema and boundaries. Verified with `npm run build` and `npm test -- sessionRestore.test.ts`.
+
+## Next (ordered)
+
+1. **GIT-STATUS:** dirty/new/deleted markers in the file rail.
+2. **DIFF-VIEW:** inspect agent-created changes without VS Code.
+3. **GIT-ACTIONS-LITE:** stage/unstage/discard/copy diff after DIFF-VIEW.
 
 ## Gotchas
 

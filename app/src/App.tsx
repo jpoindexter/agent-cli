@@ -134,6 +134,12 @@ import {
   terminalPaneStateLabel,
 } from "./terminalPane";
 import type { TerminalPaneState } from "./terminalPane";
+import {
+  normalizePaneLayoutsBySession,
+  normalizeSessionEditorSnapshots,
+  paneLayoutFromPanes,
+} from "./sessionRestore";
+import type { PaneLayoutsBySession } from "./sessionRestore";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -395,6 +401,7 @@ function App() {
   const terminalPanesByProjectRef = useRef<TerminalPanesByProject>({});
   const activeTerminalPaneByProjectRef = useRef<ActiveTerminalPaneByProject>({});
   const paneLabelsBySessionRef = useRef<PaneLabelsBySession>({});
+  const paneLayoutsBySessionRef = useRef<PaneLayoutsBySession>({});
   const activeTerminalPaneIdRef = useRef<number | null>(null);
   const terminalSnapshotsRef = useRef<Record<number, Snapshot>>({});
   const requestTerminalPaintRef = useRef<() => void>(() => {});
@@ -881,13 +888,58 @@ function App() {
     await storeRef.current?.save();
   };
 
-  const paneLabelSessionKey = (root: string | null, sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root)) =>
-    root && sessionId ? `${root}\n${sessionId}` : null;
+  const sessionSnapshotKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
-  const savedPaneLabelForSlot = (root: string | null, slot: number) => {
-    const key = paneLabelSessionKey(root);
+  const paneLabelSessionKey = (root: string | null, sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root)) =>
+    root && sessionId ? sessionSnapshotKey(root, sessionId) : null;
+
+  const savedPaneLabelForSlot = (root: string | null, slot: number, sessionId?: string | null) => {
+    const key = paneLabelSessionKey(root, sessionId);
     if (!key) return null;
     return paneLabelsBySessionRef.current[key]?.find((record) => record.slot === slot)?.label ?? null;
+  };
+
+  const persistSessionEditorSnapshots = (next: Record<string, ProjectEditorSnapshot>) => {
+    sessionEditorSnapshotsRef.current = next;
+    void storeRef.current?.set("sessionEditorSnapshots", next);
+    void storeRef.current?.save();
+  };
+
+  const persistPaneLayoutsBySession = (next: PaneLayoutsBySession) => {
+    paneLayoutsBySessionRef.current = next;
+    void storeRef.current?.set("paneLayoutsBySession", next);
+    void storeRef.current?.save();
+  };
+
+  const persistPaneLayoutForSession = (
+    root: string | null,
+    sessionId: string | null,
+    panes: ManagedTerminalPane[] = root ? terminalPanesForProject(root) : [],
+  ) => {
+    if (!root || !sessionId) return;
+    const key = sessionSnapshotKey(root, sessionId);
+    const records = paneLayoutFromPanes(panes);
+    const next = { ...paneLayoutsBySessionRef.current };
+    if (records.length > 0) next[key] = records;
+    else delete next[key];
+    persistPaneLayoutsBySession(next);
+  };
+
+  const ensurePaneLayoutForSession = (root: string | null, sessionId: string | null, panes: ManagedTerminalPane[]) => {
+    if (!root || !sessionId) return;
+    const key = sessionSnapshotKey(root, sessionId);
+    if (paneLayoutsBySessionRef.current[key]?.length) return;
+    persistPaneLayoutForSession(root, sessionId, panes);
+  };
+
+  const removePersistedSessionRestore = (root: string, sessionId: string) => {
+    const key = sessionSnapshotKey(root, sessionId);
+    const nextSnapshots = { ...sessionEditorSnapshotsRef.current };
+    const nextPaneLayouts = { ...paneLayoutsBySessionRef.current };
+    delete nextSnapshots[key];
+    delete nextPaneLayouts[key];
+    persistSessionEditorSnapshots(nextSnapshots);
+    persistPaneLayoutsBySession(nextPaneLayouts);
   };
 
   const persistPaneLabel = async (root: string, slot: number, label: string | null) => {
@@ -1060,6 +1112,8 @@ function App() {
       setManagedTerminalPanes(panes);
       setFocusedTerminalPane(activePaneId);
     }
+    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+    persistPaneLayoutForSession(root, sessionId, panes);
   };
 
   const terminalPaneProjectStatus = (panes: ManagedTerminalPane[] = terminalPanesRef.current): ProjectRailStatus => {
@@ -1118,20 +1172,22 @@ function App() {
     return audit;
   };
 
-  const sessionSnapshotKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
-
   const captureCurrentSessionSnapshot = () => {
     const root = workspacePathRef.current;
     const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
     if (!root || !sessionId) return;
     captureCurrentEditorViewState();
     captureCurrentEditorBuffer();
-    sessionEditorSnapshotsRef.current[sessionSnapshotKey(root, sessionId)] = {
-      tabs: editorTabs,
-      activePath: selectedFileRef.current?.path ?? null,
-      buffers: { ...editorBuffersRef.current },
-      viewStates: { ...editorViewStatesRef.current },
-    };
+    persistSessionEditorSnapshots({
+      ...sessionEditorSnapshotsRef.current,
+      [sessionSnapshotKey(root, sessionId)]: {
+        tabs: editorTabs,
+        activePath: selectedFileRef.current?.path ?? null,
+        buffers: { ...editorBuffersRef.current },
+        viewStates: { ...editorViewStatesRef.current },
+      },
+    });
+    persistPaneLayoutForSession(root, sessionId);
   };
 
   const restoreSessionEditorSnapshot = (root: string, sessionId: string | null) => {
@@ -1160,26 +1216,53 @@ function App() {
     setFocusedTerminalPane(null);
     try {
       const existingPanes = terminalPanesForProject(path);
+      const requestedSessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, path);
+      const requestedLayout = requestedSessionId ? paneLayoutsBySessionRef.current[sessionSnapshotKey(path, requestedSessionId)] : null;
+      const fallbackLayout = [{ slot: 0, profileId: profile.id, label: savedPaneLabelForSlot(path, 0, requestedSessionId) }];
+      const initialLayout = requestedLayout && requestedLayout.length > 0 ? requestedLayout : fallbackLayout;
       let root = path;
       let nextProjectPanes = existingPanes;
       let nextActivePaneId = activePaneForProject(path, existingPanes);
       if (existingPanes.length > 0 && nextActivePaneId != null) {
         await invoke("focus_pane", { paneId: nextActivePaneId });
       } else {
-        const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile });
+        const firstLayout = initialLayout[0] ?? fallbackLayout[0];
+        const firstProfile = launchProfileById(firstLayout.profileId);
+        const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile: firstProfile });
         root = result.root;
+        const layout = requestedSessionId
+          ? paneLayoutsBySessionRef.current[sessionSnapshotKey(root, requestedSessionId)] ?? initialLayout
+          : initialLayout;
+        const [firstRecord, ...restRecords] = layout.length > 0 ? layout : fallbackLayout;
         const pane = {
           id: result.paneId,
-          profile,
+          profile: firstProfile,
           cwd: root,
-          slot: 0,
-          label: savedPaneLabelForSlot(root, 0),
+          slot: firstRecord.slot,
+          label: firstRecord.label ?? savedPaneLabelForSlot(root, firstRecord.slot, requestedSessionId),
           state: "running" as TerminalPaneState,
           exitCode: null,
           createdAt: Date.now(),
         };
         nextProjectPanes = [pane];
         nextActivePaneId = result.paneId;
+        for (const record of restRecords) {
+          const paneProfile = launchProfileById(record.profileId);
+          const nextPane = await invoke<OpenPaneResponse>("create_pane", { path: root, profile: paneProfile });
+          nextProjectPanes = [
+            ...nextProjectPanes,
+            {
+              id: nextPane.paneId,
+              profile: paneProfile,
+              cwd: root,
+              slot: record.slot,
+              label: record.label ?? savedPaneLabelForSlot(root, record.slot, requestedSessionId),
+              state: "running" as TerminalPaneState,
+              exitCode: null,
+              createdAt: Date.now(),
+            },
+          ];
+        }
       }
       terminalPanesByProjectRef.current = { ...terminalPanesByProjectRef.current, [root]: nextProjectPanes };
       if (nextActivePaneId != null) activeTerminalPaneByProjectRef.current = { ...activeTerminalPaneByProjectRef.current, [root]: nextActivePaneId };
@@ -1214,6 +1297,7 @@ function App() {
         nextActiveSessions = setActiveProjectSession(nextActiveSessions, root, sessionId);
         nextSessions = setProjectSessionStatus(nextSessions, root, sessionId, terminalPaneProjectStatus(nextProjectPanes), now);
       }
+      persistPaneLayoutForSession(root, sessionId, nextProjectPanes);
       recentProjectsRef.current = nextRecent;
       openProjectsRef.current = nextOpen;
       projectSessionsRef.current = nextSessions;
@@ -1251,6 +1335,12 @@ function App() {
         const nextComposerHarness = Object.fromEntries(
           Object.entries(composerHarnessBySessionRef.current).filter(([key]) => !key.startsWith(`${path}\n`)),
         );
+        const nextSessionSnapshots = Object.fromEntries(
+          Object.entries(sessionEditorSnapshotsRef.current).filter(([key]) => !key.startsWith(`${path}\n`)),
+        );
+        const nextPaneLayouts = Object.fromEntries(
+          Object.entries(paneLayoutsBySessionRef.current).filter(([key]) => !key.startsWith(`${path}\n`)),
+        );
         recentProjectsRef.current = nextRecent;
         openProjectsRef.current = nextOpen;
         projectSessionsRef.current = nextSessions;
@@ -1260,6 +1350,8 @@ function App() {
         browserPreviewByProjectRef.current = nextBrowserProjects;
         browserPreviewBySessionRef.current = nextBrowserSessions;
         composerHarnessBySessionRef.current = nextComposerHarness;
+        sessionEditorSnapshotsRef.current = nextSessionSnapshots;
+        paneLayoutsBySessionRef.current = nextPaneLayouts;
         setRecentProjects(nextRecent);
         setOpenProjects(nextOpen);
         setProjectSessions(nextSessions);
@@ -1274,6 +1366,8 @@ function App() {
         await store?.set("browserPreviewByProject", nextBrowserProjects);
         await store?.set("browserPreviewBySession", nextBrowserSessions);
         await store?.set("composerHarnessBySession", nextComposerHarness);
+        await store?.set("sessionEditorSnapshots", nextSessionSnapshots);
+        await store?.set("paneLayoutsBySession", nextPaneLayouts);
         if (workspacePathRef.current === path) {
           setManagedTerminalPanes([]);
           setFocusedTerminalPane(null);
@@ -1342,6 +1436,7 @@ function App() {
     nextSessions = setProjectSessionStatus(nextSessions, projectPath, sessionId, sameProject ? activeProjectStatus() : "exited", now);
     await persistProjectSessions(nextSessions, nextActiveSessions);
     if (sameProject) {
+      ensurePaneLayoutForSession(projectPath, sessionId, terminalPanesForProject(projectPath));
       restoreSessionEditorSnapshot(projectPath, sessionId);
       restoreBrowserPreview(projectPath, sessionId);
     } else {
@@ -1363,6 +1458,7 @@ function App() {
     await persistProjectSessions(nextSessions, nextActiveSessions);
     await persistBrowserPreviewUrl(projectPath, session.id, sameProject ? browserUrlRef.current : browserPreviewByProjectRef.current[projectPath] ?? DEFAULT_BROWSER_PREVIEW_URL);
     if (sameProject) {
+      persistPaneLayoutForSession(projectPath, session.id, terminalPanesForProject(projectPath));
       restoreSessionEditorSnapshot(projectPath, session.id);
       restoreBrowserPreview(projectPath, session.id);
     } else {
@@ -1392,7 +1488,7 @@ function App() {
     const nextActiveSessions = fallbackSessionId
       ? setActiveProjectSession(activeSessionByProjectRef.current, projectPath, fallbackSessionId)
       : activeSessionByProjectRef.current;
-    delete sessionEditorSnapshotsRef.current[sessionSnapshotKey(projectPath, session.id)];
+    removePersistedSessionRestore(projectPath, session.id);
     const nextBrowserSessions = { ...browserPreviewBySessionRef.current };
     delete nextBrowserSessions[browserPreviewSessionKey(projectPath, session.id)];
     const nextComposerHarness = { ...composerHarnessBySessionRef.current };
@@ -2831,6 +2927,8 @@ function App() {
       const savedProfile = normalizeLaunchProfile(await store.get<unknown>("launchProfile"));
       const savedComposerHarness = normalizeComposerHarnessRecords(await store.get<unknown>("composerHarnessBySession"), savedProfile.id);
       const savedPaneLabels = normalizePaneLabelsBySession(await store.get<unknown>("paneLabelsBySession"));
+      const savedSessionSnapshots = normalizeSessionEditorSnapshots(await store.get<unknown>("sessionEditorSnapshots"));
+      const savedPaneLayouts = normalizePaneLayoutsBySession(await store.get<unknown>("paneLayoutsBySession"));
       const savedAgentActivity = normalizeAgentActivityEvents(await store.get<unknown>("agentActivityEvents"));
       activeFilesByWorkspaceRef.current = normalizeActiveFileByWorkspace(await store.get<unknown>("activeFileByWorkspace"));
       const initialOpenProjects = savedOpenProjects.length > 0 ? savedOpenProjects : openProjectsFromRecent(savedRecent);
@@ -2846,6 +2944,8 @@ function App() {
       browserPreviewBySessionRef.current = savedBrowserSessions;
       composerHarnessBySessionRef.current = savedComposerHarness;
       paneLabelsBySessionRef.current = savedPaneLabels;
+      sessionEditorSnapshotsRef.current = savedSessionSnapshots;
+      paneLayoutsBySessionRef.current = savedPaneLayouts;
       launchProfileRef.current = savedProfile;
       setLaunchProfile(savedProfile);
       setRecentProjects(savedRecent);
