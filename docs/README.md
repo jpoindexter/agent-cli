@@ -48,6 +48,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 
 ## Quality References
 
+- `../demo/keelhouse-chrome-demo.html`: standalone chrome walkthrough for first open, drawer modes, movable trays, styled menus, settings, command palette, and constrained layouts.
 - `chrome-ui-polish.md`: workbench chrome quality bar.
 - `editor-terminal-parity.md`: editor and terminal parity criteria.
 - `terminal-robustness.md`: v0.5 terminal runtime evidence and checklist.
