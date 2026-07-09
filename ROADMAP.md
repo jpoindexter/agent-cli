@@ -108,18 +108,21 @@ This is where the clarified product point lands: not "terminal app with optional
 - **CHROME-CONTROL-POLISH:** flatten obvious AI-looking rounded rectangles into native-feeling toolbar/menu/dropdown controls; keep labels only where icons are ambiguous; restore high-quality outline iconography and consistent hover/focus/disabled states.
   - 2026-07-09 slice: real app toolbar switchers and pane controls now use flat transparent chrome, hover-only feedback, and steel-cyan underline active states; terminal metadata and narrow browser controls now avoid toolbar collisions; `npm run qa:chrome-contract` guards against boxed segmented-control and overlap-prone regressions.
 - **TRAY-DOCKING-UX:** make editor, files, browser, git, and raw terminal feel like movable/resizable trays rather than stacked panels; support left/right/bottom/hide states with clear splitters and compact tray tabs.
+  - 2026-07-09 slice: added persisted Split/Editor/Browser tool tray tabs; single-tray modes hide the unused editor/browser surface and remove the secondary editor/browser splitter; `npm run qa:chrome-contract` guards this.
 - **CHROME-COHERENCE-PASS:** final integration gate for the shell before measurement: VS Code/Zed-level chrome craft without copying either product, `demo/cockpit-demo.html` as graphite mood reference, Codex as clean-composition reference, one large agent-first window, direct thread/project sidebar, steel-cyan accent, flat icons, minimal rounded button chrome, resizable splitters, and docked editor/browser/git/raw terminal. Target walkthrough: `demo/keelhouse-chrome-demo.html`; QA captures: `docs/qa/chrome-demo/`.
+- **DEV-SERVER-DETECT:** detect common localhost dev servers and offer to open them in the browser preview.
 - **DAILY-DRIVER-METRICS:** prove the app can replace the current workflow with scripted one-project edit+agent, two-agent same-project, and three-project switch/relaunch runs.
 - **PERF-BUDGET:** prove this is lighter than the VS Code workflow it replaces across 1-project, 2-agent, and 3-project task runs.
-- **DEV-SERVER-DETECT:** detect common localhost dev servers and offer to open them in the browser preview.
 
 ## v2 — Workflow leverage
 
+- **COMMAND-PALETTE:** VS Code-style compact action access without adding IDE chrome; uses the same command registry as shortcuts and context menus.
 - **SEARCH:** file quick-open and ripgrep-backed text search.
 - **TERMINAL-FIND:** search active terminal output/scrollback.
-- **COMMAND-PALETTE:** VS Code-style compact action access without adding IDE chrome; uses the same command registry as shortcuts and context menus.
 - **SETTINGS-PARITY:** Codex-style searchable settings shell, keeping only useful workbench categories and dropping account/chat novelty categories.
 - **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, AI connections, and shortcut overrides.
+- **KEYBINDINGS-CONFIG:** configurable app shortcut overrides after defaults stabilize, including conflict detection and a visible shortcut reference.
+- **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost and preserve the chrome token contract.
 - **AI-CONNECTIONS:** settings for providers, API keys, MCP servers, CLI auth, env vars, model defaults, and permission policy.
 - **AGENT-HOOKS:** built-in MCP/API surface so agents can inspect app state and request app-owned actions.
 - **TRANSCRIPTS:** save/review completed pane output.
@@ -128,8 +131,6 @@ This is where the clarified product point lands: not "terminal app with optional
 - **INTEGRATIONS-POLICY:** define which other integrations are allowed, parked, or explicitly out of scope.
 - **SOURCE-CONTROL-CONNECTIONS:** GitHub/GitLab/source-host auth, repo links, PR/MR status, CI/pipeline status, and health checks.
 - **PACKAGING:** local macOS `.app` packaging.
-- **KEYBINDINGS-CONFIG:** configurable app shortcut overrides after defaults stabilize, including conflict detection and a visible shortcut reference.
-- **THEME:** color themes across chrome, terminal, rail, and editor; start with mono-ghost and preserve the chrome token contract.
 - **SESSION-ARCHIVE:** archive old project sessions only after sessions and transcripts are real.
 - **DIRECT-AGENT-HARNESS:** optional direct API/MCP agent path for app-owned orchestration, after real terminal panes and approvals are solid.
 

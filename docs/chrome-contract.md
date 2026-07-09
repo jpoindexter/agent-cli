@@ -41,6 +41,13 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 - Terminal toolbar metadata is deliberately reduced to avoid collisions with agent/tray controls; selected profile is already visible in the app titlebar and pane chips.
 - Browser preview chrome responds to tray width; narrow trays hide the redundant Open button before controls overlap.
 
+## Tool Tray Signals
+
+- The workbench exposes compact tray tabs for `Split`, `Editor`, and `Browser`.
+- `Split` shows editor and browser trays with the secondary splitter.
+- `Editor` and `Browser` modes hide the unused tray and remove the secondary editor/browser splitter.
+- Tray mode is a local workbench preference so daily-driver layout does not reset between launches.
+
 ## Verification
 
 Run from `app/`:

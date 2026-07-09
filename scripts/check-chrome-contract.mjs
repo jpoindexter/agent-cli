@@ -50,9 +50,17 @@ assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not rend
 assert(appTsx.includes("Project threads"), "Projects drawer must present project sessions as threads");
 assert(appTsx.includes("Agent thread and raw terminal"), "Agent surface must be labelled as a thread with raw terminal as escape hatch");
 assert(appTsx.includes("<span className=\"terminal-kicker\">Thread</span>"), "Agent pane kicker must say Thread, not Agent terminal");
+assert(appTsx.includes("TOOL_TRAY_MODE_STORAGE_KEY"), "Tool tray tab mode must persist locally");
+assert(appTsx.includes("workbench--tools-${toolTrayMode}"), "Workbench must render the active tool tray mode class");
+assert(appTsx.includes("toolTrayMode === \"split\" ? ("), "Editor/browser splitter must render only in split tray mode");
+assert(appTsx.includes("tool-tray-switcher"), "App chrome must expose compact tool tray tabs");
 assert(editorQaFixture.includes("Project threads drawer"), "Editor QA fixture must reflect the project-thread drawer");
 assert(!editorQaFixture.includes(">Drawer<"), "Editor QA fixture must not show a generic Drawer label");
 assert(editorQaFixture.includes("Agent thread and raw terminal"), "Editor QA fixture must reflect the agent-thread surface label");
+assert(editorQaFixture.includes("workbench--tools-split"), "Editor QA fixture must include split tool tray mode");
+assert(editorQaFixture.includes("tool-tray-switcher"), "Editor QA fixture must render tool tray tabs");
+assert(/\.workbench--tools-editor \.browser-preview,\s*\.workbench--tools-browser \.editor-area\s*\{[^}]*display: none;/s.test(appCss), "Single tool tray modes must hide the unused editor/browser tray");
+assert(/\.tool-tray-switcher__button--active\s*\{[^}]*box-shadow: inset 0 -2px 0 var\(--color-accent-border\);/s.test(appCss), "Tool tray active state must use a flat underline accent");
 assert(demo.includes("--accent: #67c3d1;"), "Accepted chrome demo must use steel-cyan #67c3d1");
 assert(demo.includes("--accent-strong: #9bd9e3;"), "Accepted chrome demo must use steel-cyan strong #9bd9e3");
 assert(demo.includes("--accent-soft: #162c33;"), "Accepted chrome demo must use steel-cyan soft #162c33");

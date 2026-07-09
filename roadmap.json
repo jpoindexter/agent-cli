@@ -791,8 +791,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v1",
-      "summary": "Editor, files, browser, git, and raw terminal should feel like tool trays around the agent conversation, not stacked panels.",
-      "done": "Tool surfaces support left, right, bottom, and hidden states with clear splitters, compact tabs, persisted sizes, and no content overlap at narrow widths."
+      "summary": "Editor, files, browser, git, and raw terminal should feel like tool trays around the agent conversation, not stacked panels. Current slice adds persisted Split/Editor/Browser tray tabs and hides unused tray surfaces in single-tray modes.",
+      "done": "Tool surfaces support left, right, bottom, and hidden states with clear splitters, compact tabs, persisted sizes, and no content overlap at narrow widths. Single-tray modes hide unused panes and remove irrelevant splitters."
     },
     {
       "id": "CHROME-COHERENCE-PASS",
@@ -805,6 +805,17 @@
       "blocker": true,
       "summary": "Fix the actual shell before measurement using VS Code/Zed-level chrome craft without copying either product, with demo/cockpit-demo.html as the graphite mood reference and Codex as the clean-composition reference: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, steel-cyan accent, minimal rounded button chrome, resizable splitters, and editor/browser/git/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
       "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
+    },
+    {
+      "id": "DEV-SERVER-DETECT",
+      "title": "Local dev server detection",
+      "column": "next",
+      "tier": "rock",
+      "track": "ui",
+      "size": "S",
+      "launch": "v1",
+      "summary": "When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser.",
+      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project and offers reload/open-external."
     },
     {
       "id": "DAILY-DRIVER-METRICS",
@@ -829,15 +840,15 @@
       "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release."
     },
     {
-      "id": "DEV-SERVER-DETECT",
-      "title": "Local dev server detection",
+      "id": "COMMAND-PALETTE",
+      "title": "VS Code-style command palette",
       "column": "next",
-      "tier": "rock",
+      "tier": "pebble",
       "track": "ui",
       "size": "S",
-      "launch": "v1",
-      "summary": "When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser.",
-      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project and offers reload/open-external."
+      "launch": "v2",
+      "summary": "A compact VS Code-style way to expose actions without adding IDE chrome: open folder, quick open, new agent pane, split, restart, kill, save, search, settings. It should share the same command registry as shortcuts and context menus.",
+      "done": "A keyboard palette can run core app actions, shows shortcuts where assigned, and stays consistent with menu/context-menu labels."
     },
     {
       "id": "SEARCH",
@@ -862,17 +873,6 @@
       "done": "Find text in the active pane scrollback, jump next/previous, and preserve terminal focus behavior."
     },
     {
-      "id": "COMMAND-PALETTE",
-      "title": "VS Code-style command palette",
-      "column": "next",
-      "tier": "pebble",
-      "track": "ui",
-      "size": "S",
-      "launch": "v2",
-      "summary": "A compact VS Code-style way to expose actions without adding IDE chrome: open folder, quick open, new agent pane, split, restart, kill, save, search, settings. It should share the same command registry as shortcuts and context menus.",
-      "done": "A keyboard palette can run core app actions, shows shortcuts where assigned, and stays consistent with menu/context-menu labels."
-    },
-    {
       "id": "SETTINGS-PARITY",
       "title": "Codex-style settings parity",
       "column": "next",
@@ -893,6 +893,28 @@
       "launch": "v2",
       "summary": "Keep settings boring and inspectable: agent commands, AI connections, source-control connections, ignored folders, font, color theme, default layout, browser preview, hooks, git/worktree defaults, environments, and shortcut overrides. This is not a plugin platform.",
       "done": "A local config file controls agent profiles, AI connections, source-control connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
+    },
+    {
+      "id": "KEYBINDINGS-CONFIG",
+      "title": "Configurable keybindings",
+      "column": "next",
+      "tier": "sand",
+      "track": "ui",
+      "size": "S",
+      "launch": "v2",
+      "summary": "After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.",
+      "done": "A local config file can override app-level shortcuts, reports conflicts with terminal/editor reserved bindings, and generates a visible shortcut reference."
+    },
+    {
+      "id": "THEME",
+      "title": "Color themes",
+      "column": "next",
+      "tier": "sand",
+      "track": "ui",
+      "size": "S",
+      "launch": "v2",
+      "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming or break the chrome token contract.",
+      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states."
     },
     {
       "id": "AI-CONNECTIONS",
@@ -981,28 +1003,6 @@
       "launch": "v2",
       "summary": "Make it launch like a real macOS app, not only from `npm run tauri dev`.",
       "done": "A local signed or ad-hoc packaged .app launches, opens folders, and runs agents with documented setup requirements."
-    },
-    {
-      "id": "KEYBINDINGS-CONFIG",
-      "title": "Configurable keybindings",
-      "column": "later",
-      "tier": "sand",
-      "track": "ui",
-      "size": "S",
-      "launch": "v2",
-      "summary": "After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.",
-      "done": "A local config file can override app-level shortcuts, reports conflicts with terminal/editor reserved bindings, and generates a visible shortcut reference."
-    },
-    {
-      "id": "THEME",
-      "title": "Color themes",
-      "column": "later",
-      "tier": "sand",
-      "track": "ui",
-      "size": "S",
-      "launch": "v2",
-      "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming or break the chrome token contract.",
-      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states."
     },
     {
       "id": "SESSION-ARCHIVE",

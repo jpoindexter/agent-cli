@@ -208,6 +208,7 @@ type ActiveDiffReview = {
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
 type WorkbenchLayoutMode = "right" | "left" | "bottom" | "hidden";
+type ToolTrayMode = "split" | "editor" | "browser";
 type WorkbenchSizing = { trayPercent: number; toolSplitPercent: number };
 type AgentSurfaceMode = "chat" | "terminal";
 type SideDrawerMode = "projects" | "files" | "search" | "git" | "browser" | "settings";
@@ -243,6 +244,7 @@ const LINE_HEIGHT = 1.25;
 const clampWorkbenchPercent = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 const WORKBENCH_LAYOUT_STORAGE_KEY = "keelhouse.workbench.layout";
 const WORKBENCH_SIZING_STORAGE_KEY = "keelhouse.workbench.sizing";
+const TOOL_TRAY_MODE_STORAGE_KEY = "keelhouse.workbench.toolTrayMode";
 const AGENT_SURFACE_STORAGE_KEY = "keelhouse.agent.surface";
 const SIDE_DRAWER_WIDTH_STORAGE_KEY = "keelhouse.sideDrawer.width";
 const SIDE_DRAWER_COLLAPSED_STORAGE_KEY = "keelhouse.sideDrawer.collapsed";
@@ -269,6 +271,15 @@ const readStoredWorkbenchSizing = (): WorkbenchSizing => {
     };
   } catch {
     return DEFAULT_WORKBENCH_SIZING;
+  }
+};
+const readStoredToolTrayMode = (): ToolTrayMode => {
+  if (typeof window === "undefined") return "split";
+  try {
+    const value = window.localStorage.getItem(TOOL_TRAY_MODE_STORAGE_KEY);
+    return value === "editor" || value === "browser" || value === "split" ? value : "split";
+  } catch {
+    return "split";
   }
 };
 const readStoredAgentSurfaceMode = (): AgentSurfaceMode => {
@@ -494,6 +505,7 @@ function App() {
   const [agentActivityEvents, setAgentActivityEvents] = useState<AgentActivityEvent[]>([]);
   const [agentActivityFilter, setAgentActivityFilter] = useState<AgentActivityLogFilter>("all");
   const [workbenchLayout, setWorkbenchLayout] = useState<WorkbenchLayoutMode>(readStoredWorkbenchLayout);
+  const [toolTrayMode, setToolTrayMode] = useState<ToolTrayMode>(readStoredToolTrayMode);
   const [workbenchSizing, setWorkbenchSizing] = useState<WorkbenchSizing>(readStoredWorkbenchSizing);
   const [agentSurfaceMode, setAgentSurfaceMode] = useState<AgentSurfaceMode>(readStoredAgentSurfaceMode);
   const [sideDrawerMode, setSideDrawerMode] = useState<SideDrawerMode>("projects");
@@ -609,6 +621,13 @@ function App() {
       // Local layout persistence is best-effort; the workbench remains usable without it.
     }
   }, [workbenchLayout, workbenchSizing]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TOOL_TRAY_MODE_STORAGE_KEY, toolTrayMode);
+    } catch {
+      // Local tray preference is best-effort.
+    }
+  }, [toolTrayMode]);
   useEffect(() => {
     try {
       window.localStorage.setItem(AGENT_SURFACE_STORAGE_KEY, agentSurfaceMode);
@@ -3771,6 +3790,14 @@ function App() {
                 <option value="hidden">Hidden</option>
               </select>
             </label>
+            <label className="drawer-field">
+              <span>Tray tabs</span>
+              <select value={toolTrayMode} onChange={(event) => setToolTrayMode(event.currentTarget.value as ToolTrayMode)}>
+                <option value="split">Split editor + browser</option>
+                <option value="editor">Editor only</option>
+                <option value="browser">Browser only</option>
+              </select>
+            </label>
             <div className="drawer-action-grid">
               <button className="rail-open-button" type="button" onClick={pickWorkspace}>
                 <AppIcon name="folderOpen" />
@@ -3837,7 +3864,7 @@ function App() {
         />
       ) : null}
 
-      <main ref={workbenchRef} className={`workbench workbench--drawer-${workbenchLayout}`} style={workbenchStyle}>
+      <main ref={workbenchRef} className={`workbench workbench--drawer-${workbenchLayout} workbench--tools-${toolTrayMode}`} style={workbenchStyle}>
         <section
           className="editor-area"
           aria-label="Editor"
@@ -4142,19 +4169,21 @@ function App() {
               onPointerDown={(event) => beginWorkbenchResize("tray", event)}
               onKeyDown={(event) => nudgeWorkbenchResize("tray", event)}
             />
-            <button
-              className={`workbench-resizer workbench-resizer--tools workbench-resizer--${workbenchLayout}`}
-              type="button"
-              role="separator"
-              aria-label="Resize editor and browser trays"
-              aria-orientation={workbenchLayout === "bottom" ? "vertical" : "horizontal"}
-              aria-valuemin={25}
-              aria-valuemax={75}
-              aria-valuenow={Math.round(workbenchSizing.toolSplitPercent)}
-              title="Drag to resize editor and browser trays"
-              onPointerDown={(event) => beginWorkbenchResize("tools", event)}
-              onKeyDown={(event) => nudgeWorkbenchResize("tools", event)}
-            />
+            {toolTrayMode === "split" ? (
+              <button
+                className={`workbench-resizer workbench-resizer--tools workbench-resizer--${workbenchLayout}`}
+                type="button"
+                role="separator"
+                aria-label="Resize editor and browser trays"
+                aria-orientation={workbenchLayout === "bottom" ? "vertical" : "horizontal"}
+                aria-valuemin={25}
+                aria-valuemax={75}
+                aria-valuenow={Math.round(workbenchSizing.toolSplitPercent)}
+                title="Drag to resize editor and browser trays"
+                onPointerDown={(event) => beginWorkbenchResize("tools", event)}
+                onKeyDown={(event) => nudgeWorkbenchResize("tools", event)}
+              />
+            ) : null}
           </>
         ) : null}
 
@@ -4310,6 +4339,41 @@ function App() {
                 >
                   <AppIcon name="close" />
                   <span>Hide</span>
+                </button>
+              </div>
+              <div className="tool-tray-switcher" role="tablist" aria-label="Tool tray tabs">
+                <button
+                  className={`tool-tray-switcher__button ${toolTrayMode === "split" ? "tool-tray-switcher__button--active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={toolTrayMode === "split"}
+                  title="Show editor and browser trays"
+                  onClick={() => setToolTrayMode("split")}
+                >
+                  <AppIcon name="workspace" />
+                  <span>Split</span>
+                </button>
+                <button
+                  className={`tool-tray-switcher__button ${toolTrayMode === "editor" ? "tool-tray-switcher__button--active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={toolTrayMode === "editor"}
+                  title="Show editor tray"
+                  onClick={() => setToolTrayMode("editor")}
+                >
+                  <AppIcon name="file" />
+                  <span>Editor</span>
+                </button>
+                <button
+                  className={`tool-tray-switcher__button ${toolTrayMode === "browser" ? "tool-tray-switcher__button--active" : ""}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={toolTrayMode === "browser"}
+                  title="Show browser tray"
+                  onClick={() => setToolTrayMode("browser")}
+                >
+                  <AppIcon name="browser" />
+                  <span>Browser</span>
                 </button>
               </div>
               <div className="terminal-pane-strip" aria-label="Terminal panes">

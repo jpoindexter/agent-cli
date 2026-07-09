@@ -244,7 +244,7 @@
           </div>
         </nav>
       </aside>
-      <main class="workbench workbench--drawer-right">
+      <main class="workbench workbench--drawer-right workbench--tools-split">
         <section class="editor-area" aria-label="Editor">
           <div class="editor-tabbar">
             <div class="editor-tabs" role="tablist" aria-label="Open files">
@@ -356,6 +356,11 @@
                 <button class="layout-switcher__button layout-switcher__button--active" type="button"><svg class="app-icon"><use href="#i-file" /></svg><span>Right</span></button>
                 <button class="layout-switcher__button" type="button"><svg class="app-icon"><use href="#i-browser" /></svg><span>Bottom</span></button>
                 <button class="layout-switcher__button" type="button"><svg class="app-icon"><use href="#i-close" /></svg><span>Hide</span></button>
+              </div>
+              <div class="tool-tray-switcher" role="tablist" aria-label="Tool tray tabs">
+                <button class="tool-tray-switcher__button tool-tray-switcher__button--active" type="button" role="tab" aria-selected="true"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Split</span></button>
+                <button class="tool-tray-switcher__button" type="button" role="tab" aria-selected="false"><svg class="app-icon"><use href="#i-file" /></svg><span>Editor</span></button>
+                <button class="tool-tray-switcher__button" type="button" role="tab" aria-selected="false"><svg class="app-icon"><use href="#i-browser" /></svg><span>Browser</span></button>
               </div>
               <div class="terminal-pane-strip" aria-label="Terminal panes">
                 <button class="terminal-pane-button terminal-pane-button--active" type="button" aria-label="Focus API fix. Double-click to rename." aria-pressed="true"><svg class="app-icon"><use href="#i-loading" /></svg><span>API fix</span></button>
