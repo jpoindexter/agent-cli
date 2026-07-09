@@ -1,0 +1,182 @@
+{
+  "generatedAt": "2026-07-09T17:47:44.276Z",
+  "commit": "7ff377c+dirty",
+  "branch": "main",
+  "northStar": "daily-driver workflow runs completed without opening VS Code",
+  "status": "ready-for-timed-runs",
+  "scenarios": [
+    {
+      "id": "one-project-edit-agent-preview",
+      "title": "One project: talk, edit, preview",
+      "goal": "A single project can keep the agent conversation primary while exposing editor save and browser preview surfaces.",
+      "checks": [
+        {
+          "label": "agent-first workbench label",
+          "file": "app/src/App.tsx",
+          "pass": true,
+          "evidence": "Agent thread and raw terminal"
+        },
+        {
+          "label": "real editor save path",
+          "file": "app/src/App.tsx",
+          "pass": true,
+          "evidence": "write_text_file"
+        },
+        {
+          "label": "composer routes prompts with context",
+          "file": "app/src/composerHarness.ts",
+          "pass": true,
+          "evidence": "composerPromptPayload"
+        },
+        {
+          "label": "terminal-output dev-server detection",
+          "file": "app/src/browserPreview.ts",
+          "pass": true,
+          "evidence": "detectLocalDevServerUrl"
+        },
+        {
+          "label": "selected workbench screenshot",
+          "file": "docs/qa/editor-parity/selected.png",
+          "pass": true,
+          "bytes": 141848
+        },
+        {
+          "label": "narrow composer screenshot",
+          "file": "docs/qa/editor-parity/narrow-composer.png",
+          "pass": true,
+          "bytes": 118855
+        }
+      ],
+      "passed": 6,
+      "total": 6,
+      "status": "ready-for-timed-run"
+    },
+    {
+      "id": "two-agents-same-project",
+      "title": "Two agents: same project",
+      "goal": "One project can own multiple real agent panes with focus, labels, lifecycle, and persisted layout.",
+      "checks": [
+        {
+          "label": "backend can create another pane",
+          "file": "app/src-tauri/src/lib.rs",
+          "pass": true,
+          "evidence": "create_pane"
+        },
+        {
+          "label": "backend can focus a pane",
+          "file": "app/src-tauri/src/lib.rs",
+          "pass": true,
+          "evidence": "focus_pane"
+        },
+        {
+          "label": "backend can close a pane",
+          "file": "app/src-tauri/src/lib.rs",
+          "pass": true,
+          "evidence": "close_pane"
+        },
+        {
+          "label": "frontend scopes panes by project",
+          "file": "app/src/App.tsx",
+          "pass": true,
+          "evidence": "terminalPanesByProject"
+        },
+        {
+          "label": "pane layout persists by session",
+          "file": "app/src/App.tsx",
+          "pass": true,
+          "evidence": "paneLayoutsBySession"
+        },
+        {
+          "label": "pane manager contract doc",
+          "file": "docs/pane-manager.md",
+          "pass": true,
+          "bytes": 1617
+        }
+      ],
+      "passed": 6,
+      "total": 6,
+      "status": "ready-for-timed-run"
+    },
+    {
+      "id": "three-project-switch-relaunch",
+      "title": "Three projects: switch and relaunch",
+      "goal": "The project rail can replace separate VS Code windows by preserving projects, sessions, editor state, panes, and preview URLs.",
+      "checks": [
+        {
+          "label": "open project rail persistence",
+          "file": "app/src/workspaceState.ts",
+          "pass": true,
+          "evidence": "normalizeOpenProjects"
+        },
+        {
+          "label": "project sessions persistence",
+          "file": "app/src/workspaceState.ts",
+          "pass": true,
+          "evidence": "ProjectSessionsByProject"
+        },
+        {
+          "label": "editor session restore",
+          "file": "app/src/sessionRestore.ts",
+          "pass": true,
+          "evidence": "normalizeSessionEditorSnapshots"
+        },
+        {
+          "label": "browser preview persists by session",
+          "file": "app/src/App.tsx",
+          "pass": true,
+          "evidence": "browserPreviewBySession"
+        },
+        {
+          "label": "project rail doc",
+          "file": "docs/project-rail.md",
+          "pass": true,
+          "bytes": 1458
+        },
+        {
+          "label": "session restore doc",
+          "file": "docs/session-restore.md",
+          "pass": true,
+          "bytes": 2013
+        }
+      ],
+      "passed": 6,
+      "total": 6,
+      "status": "ready-for-timed-run"
+    }
+  ],
+  "metrics": {
+    "assetSizes": [
+      {
+        "file": "app/dist/assets/index-B2jnOYLV.js",
+        "bytes": 1166899
+      },
+      {
+        "file": "app/dist/assets/index-fBQw2pQu.css",
+        "bytes": 52715
+      }
+    ],
+    "screenshotSizes": [
+      {
+        "file": "docs/qa/editor-parity/selected.png",
+        "bytes": 141848
+      },
+      {
+        "file": "docs/qa/editor-parity/narrow-composer.png",
+        "bytes": 118855
+      },
+      {
+        "file": "docs/qa/editor-parity/diff-review.png",
+        "bytes": 149203
+      },
+      {
+        "file": "docs/qa/editor-parity/chrome-states.png",
+        "bytes": 148577
+      }
+    ]
+  },
+  "nextManualRuns": [
+    "Time one-project edit + agent + detected preview without opening VS Code.",
+    "Time two-agent same-project run with pane focus/restart/close.",
+    "Time three-project switch/relaunch run with restored sessions and previews."
+  ]
+}

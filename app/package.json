@@ -10,6 +10,7 @@
     "test": "vitest run",
     "qa:editor": "../scripts/capture-editor-qa.sh",
     "qa:chrome-contract": "node ../scripts/check-chrome-contract.mjs",
+    "qa:daily-driver": "node ../scripts/collect-daily-driver-metrics.mjs",
     "tauri": "tauri"
   },
   "dependencies": {

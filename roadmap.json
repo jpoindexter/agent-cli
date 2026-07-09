@@ -825,8 +825,8 @@
       "track": "quality",
       "size": "S",
       "launch": "v1",
-      "summary": "Define how to know the app is actually replacing the VS Code workflow instead of just existing.",
-      "done": "Script and record three workflow runs: one-project edit+agent, two-agent same-project, and three-project switch/relaunch. Track steps, elapsed time, project opens, pane starts/stops, editor saves, crashes, memory/CPU snapshots, and whether VS Code was needed."
+      "summary": "Define and collect the evidence needed to prove Keelhouse can replace the current VS Code workflow instead of merely adding features. Current slice adds a repeatable readiness collector for the three target workflows.",
+      "done": "Script and record three workflow runs: one-project edit+agent, two-agent same-project, and three-project switch/relaunch. Current readiness gate verifies required app surfaces, docs, and screenshots exist and writes docs/qa/daily-driver/latest.json plus latest.md; timed live Tauri runs, elapsed time, crashes, memory/CPU snapshots, and VS Code-needed checks remain next."
     },
     {
       "id": "PERF-BUDGET",

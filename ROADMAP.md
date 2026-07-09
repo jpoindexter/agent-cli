@@ -113,6 +113,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **DEV-SERVER-DETECT:** detect common localhost dev servers and offer to open them in the browser preview.
   - 2026-07-09 slice: terminal output is scanned for local dev-server URLs (`localhost`, `127.0.0.1`, `0.0.0.0`, `::1` with ports); detections are scoped to the emitting project session, logged as browser activity, and offered as explicit Open detected actions in the Browser drawer and preview pane.
 - **DAILY-DRIVER-METRICS:** prove the app can replace the current workflow with scripted one-project edit+agent, two-agent same-project, and three-project switch/relaunch runs.
+  - 2026-07-09 slice: added `npm run qa:daily-driver`, which writes `docs/qa/daily-driver/latest.json` and `.md` with readiness evidence for the three replacement workflows. This proves the required app surfaces/evidence exist; timed live Tauri runs and VS Code comparison remain next.
 - **PERF-BUDGET:** prove this is lighter than the VS Code workflow it replaces across 1-project, 2-agent, and 3-project task runs.
 
 ## v2 — Workflow leverage
