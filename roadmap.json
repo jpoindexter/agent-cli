@@ -636,6 +636,17 @@
       "done": "Verified 2026-07-09: the app shell now uses titlebar/sidebar/main/status grid geometry. The header shows real Keelhouse state and actions: workspace, session, selected agent/pane, process status, Open Folder, and Reload Preview. Fake traffic lights, fake back/forward, the search-shaped folder picker, and the nonfunctional activity rail were removed. Activity drawer navigation remains parked until it switches real drawer content."
     },
     {
+      "id": "DRAWER-MODES-PROJECTS-FILES",
+      "title": "Projects and Files drawer modes",
+      "column": "done",
+      "tier": "pebble",
+      "track": "ui",
+      "size": "S",
+      "launch": "v1",
+      "summary": "Split the side drawer into real modes instead of stacking project/session rows above the file tree.",
+      "done": "Verified 2026-07-09: the side drawer has Projects and Files tabs. Projects shows open projects and task sessions; Files shows workspace root, file actions, and the virtualized tree. The Files drawer reattaches its height observer when opened. Screenshot QA defaults to Projects mode. Verified with npm run build, npm test, npm run qa:editor, selected screenshot inspection, and git diff --check."
+    },
+    {
       "id": "ACTIVITY-DRAWERS",
       "title": "Switchable activity drawers",
       "column": "next",
@@ -644,8 +655,8 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Add activity rail navigation only when it is functional, not decorative. Explorer, project sessions, search, source control, browser/tools, and settings need real side-drawer content with pinned/resizable state.",
-      "done": "Activity rail buttons switch real side-drawer content; drawer width persists; pinned/collapsed state is keyboard reachable; Explorer/project sessions/search/source-control/browser-tools/settings are represented without adding VS Code extension bloat."
+      "summary": "Continue drawer navigation only when it is functional, not decorative. Remaining useful drawers are Search, Source Control/Git, Browser/tools, and Settings.",
+      "done": "Drawer controls switch real side-drawer content; drawer width persists; pinned/collapsed state is keyboard reachable; Search, Source Control/Git, Browser/tools, and Settings are represented with real behavior instead of placeholders."
     },
     {
       "id": "SESSION-RESTORE",

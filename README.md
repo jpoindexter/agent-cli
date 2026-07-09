@@ -21,14 +21,14 @@ Read the product language guide in `docs/product-positioning.md`.
 
 Direction is locked: build our own app using open-source components, not a fork of cmux, Superconductor, hashmark, or zellij. The terminal foundation is verified: real pty -> `libghostty-vt` in Rust -> Tauri IPC -> Canvas 2D.
 
-Already working: keyboard input, paste, selection/copy, scrollback, folder picker, persisted workspace, project/session rail, browser preview, agent launch profiles, named terminal panes, file rail, watcher, recent projects, CodeMirror editing, tabs, save protection, context menus, composer routing, shortcut docs, chrome token polish, and Keelhouse-specific title/sidebar/status shell chrome.
+Already working: keyboard input, paste, selection/copy, scrollback, folder picker, persisted workspace, project/session rail, browser preview, agent launch profiles, named terminal panes, drawer modes for Projects/Files, file rail, watcher, recent projects, CodeMirror editing, tabs, save protection, context menus, composer routing, shortcut docs, chrome token polish, and Keelhouse-specific title/sidebar/status shell chrome.
 
 Current active slice: see `STATE.md`. The roadmap source is `roadmap.json`, rendered to `roadmap.html`; `ROADMAP.md` is the readable companion.
 
 ## Product Shape
 
 - Agent-first workbench: chat/run activity, composer, and selected real agent pane own the main screen.
-- Project/session rail for multiple workspaces and task contexts.
+- Project/session drawer for multiple workspaces and task contexts, with a separate Files drawer for the workspace tree.
 - VS Code/Codex-inspired shell structure adapted to Keelhouse: compact status/action bar, side drawer, resizable trays, and bottom status strip.
 - Dense file explorer with ignores, watching, and git-aware state.
 - CodeMirror editor tray with VS Code-style shortcuts, tabs, dirty state, find/replace, file operations, and file safety.

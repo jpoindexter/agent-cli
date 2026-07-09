@@ -264,6 +264,50 @@ body,
   background: var(--color-rail-bg);
 }
 
+.drawer-mode-switcher {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-strong);
+  padding: 5px;
+}
+
+.drawer-mode-switcher__button {
+  display: inline-flex;
+  min-width: 0;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: default;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.drawer-mode-switcher__button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-mode-switcher__button:hover {
+  background: var(--control-bg-hover);
+  color: var(--color-text);
+}
+
+.drawer-mode-switcher__button--active {
+  border-color: var(--control-border);
+  background: var(--control-bg);
+  color: var(--color-text-strong);
+}
+
 .panel-title,
 .terminal-titlebar,
 .editor-tabbar {
@@ -351,6 +395,7 @@ body,
 }
 
 .rail-open-button:focus-visible,
+.drawer-mode-switcher__button:focus-visible,
 .project-row:focus-visible,
 .session-row:focus-visible,
 .rail-root__button:focus-visible,
@@ -456,8 +501,9 @@ body,
 }
 
 .project-rail {
-  flex: 0 0 auto;
-  border-bottom: 1px solid var(--gray-800);
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 6px 0;
 }
 

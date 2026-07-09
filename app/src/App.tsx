@@ -177,6 +177,7 @@ type SaveEditorFileOptions = { force?: boolean };
 type WorkbenchLayoutMode = "right" | "left" | "bottom" | "hidden";
 type WorkbenchSizing = { trayPercent: number; toolSplitPercent: number };
 type AgentSurfaceMode = "chat" | "terminal";
+type SideDrawerMode = "projects" | "files";
 type EditorBuffer = EditorBufferSnapshot & {
   bytes: number | null;
   modifiedMs: number | null;
@@ -423,6 +424,7 @@ function App() {
   const [workbenchLayout, setWorkbenchLayout] = useState<WorkbenchLayoutMode>(readStoredWorkbenchLayout);
   const [workbenchSizing, setWorkbenchSizing] = useState<WorkbenchSizing>(readStoredWorkbenchSizing);
   const [agentSurfaceMode, setAgentSurfaceMode] = useState<AgentSurfaceMode>(readStoredAgentSurfaceMode);
+  const [sideDrawerMode, setSideDrawerMode] = useState<SideDrawerMode>("projects");
   const workbenchRef = useRef<HTMLElement | null>(null);
   const workbenchStyle = {
     "--tool-tray-size": `${workbenchSizing.trayPercent}%`,
@@ -2515,6 +2517,7 @@ function App() {
   }, [workspacePath]);
 
   useEffect(() => {
+    if (sideDrawerMode !== "files") return;
     const el = railBodyRef.current;
     if (!el) return;
     const update = () => {
@@ -2525,7 +2528,7 @@ function App() {
     const observer = new ResizeObserver(update);
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [sideDrawerMode]);
 
   useEffect(() => {
     if (!workspacePath) {
@@ -2956,54 +2959,80 @@ function App() {
           </button>
         </div>
       </header>
-      <aside className="file-rail" aria-label="Project files">
-        <div className="panel-title panel-title--with-action">
-          <span>Files</span>
+      <aside className="file-rail" aria-label="Project drawer">
+        <div className="drawer-mode-switcher" role="tablist" aria-label="Side drawer">
           <button
-            className="rail-open-button"
+            className={`drawer-mode-switcher__button ${sideDrawerMode === "projects" ? "drawer-mode-switcher__button--active" : ""}`}
             type="button"
-            disabled={!workspacePath}
-            title="New file"
-            aria-label="Create new file"
-            onClick={() => void createFileInRail()}
+            role="tab"
+            aria-selected={sideDrawerMode === "projects"}
+            onClick={() => setSideDrawerMode("projects")}
           >
-            <AppIcon name="filePlus" />
-            <span>File</span>
+            <AppIcon name="workspace" />
+            <span>Projects</span>
           </button>
           <button
-            className="rail-open-button"
+            className={`drawer-mode-switcher__button ${sideDrawerMode === "files" ? "drawer-mode-switcher__button--active" : ""}`}
             type="button"
-            disabled={!workspacePath}
-            title="New folder"
-            aria-label="Create new folder"
-            onClick={() => void createFolderInRail()}
+            role="tab"
+            aria-selected={sideDrawerMode === "files"}
+            onClick={() => setSideDrawerMode("files")}
           >
-            <AppIcon name="folderPlus" />
-            <span>Folder</span>
-          </button>
-          <button
-            className="rail-open-button"
-            type="button"
-            title={shortcutTitle("workspace.open", "Open folder")}
-            aria-label="Open folder"
-            onClick={pickWorkspace}
-          >
-            <AppIcon name="folderOpen" />
-            <span>Open</span>
+            <AppIcon name="file" />
+            <span>Files</span>
           </button>
         </div>
-        <div className="rail-root" title={workspacePath ?? ""}>
-          <button
-            className="rail-root__button"
-            type="button"
-            aria-label={workspacePath ? `Workspace ${basename(workspacePath)}` : "No workspace selected"}
-            onContextMenu={(event) => openContextMenu(event, workspaceContextMenuItems())}
-          >
-            <AppIcon name={workspacePath ? "workspace" : "folderOpen"} />
-            {workspacePath ? basename(workspacePath) : "No workspace"}
-          </button>
-        </div>
-        {visibleOpenProjects.length > 0 ? (
+        {sideDrawerMode === "files" ? (
+          <>
+            <div className="panel-title panel-title--with-action">
+              <span>Files</span>
+              <button
+                className="rail-open-button"
+                type="button"
+                disabled={!workspacePath}
+                title="New file"
+                aria-label="Create new file"
+                onClick={() => void createFileInRail()}
+              >
+                <AppIcon name="filePlus" />
+                <span>File</span>
+              </button>
+              <button
+                className="rail-open-button"
+                type="button"
+                disabled={!workspacePath}
+                title="New folder"
+                aria-label="Create new folder"
+                onClick={() => void createFolderInRail()}
+              >
+                <AppIcon name="folderPlus" />
+                <span>Folder</span>
+              </button>
+              <button
+                className="rail-open-button"
+                type="button"
+                title={shortcutTitle("workspace.open", "Open folder")}
+                aria-label="Open folder"
+                onClick={pickWorkspace}
+              >
+                <AppIcon name="folderOpen" />
+                <span>Open</span>
+              </button>
+            </div>
+            <div className="rail-root" title={workspacePath ?? ""}>
+              <button
+                className="rail-root__button"
+                type="button"
+                aria-label={workspacePath ? `Workspace ${basename(workspacePath)}` : "No workspace selected"}
+                onContextMenu={(event) => openContextMenu(event, workspaceContextMenuItems())}
+              >
+                <AppIcon name={workspacePath ? "workspace" : "folderOpen"} />
+                {workspacePath ? basename(workspacePath) : "No workspace"}
+              </button>
+            </div>
+          </>
+        ) : null}
+        {sideDrawerMode === "projects" && visibleOpenProjects.length > 0 ? (
           <nav className="project-rail" aria-label="Open projects">
             <div className="project-rail__heading">Projects</div>
             {visibleOpenProjects.map((project) => {
@@ -3108,44 +3137,47 @@ function App() {
             })}
           </nav>
         ) : null}
-        <div ref={railBodyRef} className="rail-tree">
-          {fileTreeLoading ? <div className="rail-status">Loading…</div> : null}
-          {fileTreeError ? <div className="rail-status rail-status--error">{fileTreeError}</div> : null}
-          {fileOpError ? <div className="rail-status rail-status--error">{fileOpError}</div> : null}
-          {!fileTreeLoading && !fileTreeError && workspacePath && fileTree.length === 0 ? (
-            <div className="rail-status">Empty folder</div>
-          ) : null}
-          {!workspacePath ? <div className="rail-status">Open a folder</div> : null}
-          {workspacePath && fileTree.length > 0 ? (
-            <Tree<FileTreeNode>
-              ref={treeRef}
-              aria-label="Project files"
-              data={visibleFileTree}
-              idAccessor="id"
-              childrenAccessor="children"
-              rowHeight={24}
-              height={railHeight}
-              width="100%"
-              indent={14}
-              overscanCount={8}
-              disableDrag
-              disableDrop
-              disableEdit
-              disableMultiSelection
-              selection={selectedFile?.id}
-              onActivate={(node) => {
-                if (node.data.kind === "directory") {
-                  node.toggle();
-                } else {
-                  void requestOpenEditorFile(node.data, { focusEditor: true });
-                }
-              }}
-            >
-              {FileTreeRow}
-            </Tree>
-          ) : null}
-          {fileTreeTruncated ? <div className="rail-status rail-status--muted">Showing first 8000 entries</div> : null}
-        </div>
+        {sideDrawerMode === "projects" && visibleOpenProjects.length === 0 ? <div className="rail-status">Open a folder to start a project session</div> : null}
+        {sideDrawerMode === "files" ? (
+          <div ref={railBodyRef} className="rail-tree">
+            {fileTreeLoading ? <div className="rail-status">Loading…</div> : null}
+            {fileTreeError ? <div className="rail-status rail-status--error">{fileTreeError}</div> : null}
+            {fileOpError ? <div className="rail-status rail-status--error">{fileOpError}</div> : null}
+            {!fileTreeLoading && !fileTreeError && workspacePath && fileTree.length === 0 ? (
+              <div className="rail-status">Empty folder</div>
+            ) : null}
+            {!workspacePath ? <div className="rail-status">Open a folder</div> : null}
+            {workspacePath && fileTree.length > 0 ? (
+              <Tree<FileTreeNode>
+                ref={treeRef}
+                aria-label="Project files"
+                data={visibleFileTree}
+                idAccessor="id"
+                childrenAccessor="children"
+                rowHeight={24}
+                height={railHeight}
+                width="100%"
+                indent={14}
+                overscanCount={8}
+                disableDrag
+                disableDrop
+                disableEdit
+                disableMultiSelection
+                selection={selectedFile?.id}
+                onActivate={(node) => {
+                  if (node.data.kind === "directory") {
+                    node.toggle();
+                  } else {
+                    void requestOpenEditorFile(node.data, { focusEditor: true });
+                  }
+                }}
+              >
+                {FileTreeRow}
+              </Tree>
+            ) : null}
+            {fileTreeTruncated ? <div className="rail-status rail-status--muted">Showing first 8000 entries</div> : null}
+          </div>
+        ) : null}
       </aside>
 
       <main ref={workbenchRef} className={`workbench workbench--drawer-${workbenchLayout}`} style={workbenchStyle}>

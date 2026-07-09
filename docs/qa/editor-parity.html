@@ -166,15 +166,10 @@
           <button class="titlebar-action titlebar-action--primary" type="button"><svg class="app-icon"><use href="#i-reload" /></svg><span>Reload Preview</span></button>
         </div>
       </header>
-      <aside class="file-rail" aria-label="Project files">
-        <div class="panel-title panel-title--with-action">
-          <span>Files</span>
-          <button class="rail-open-button" type="button" title="New file" aria-label="Create new file"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>File</span></button>
-          <button class="rail-open-button" type="button" title="New folder" aria-label="Create new folder"><svg class="app-icon"><use href="#i-folder-plus" /></svg><span>Folder</span></button>
-          <button class="rail-open-button" type="button" aria-label="Open folder"><svg class="app-icon"><use href="#i-folder" /></svg><span>Open</span></button>
-        </div>
-        <div class="rail-root" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli">
-          <button class="rail-root__button" type="button" aria-label="Workspace agent cli"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></button>
+      <aside class="file-rail" aria-label="Project drawer">
+        <div class="drawer-mode-switcher" role="tablist" aria-label="Side drawer">
+          <button class="drawer-mode-switcher__button drawer-mode-switcher__button--active" type="button" role="tab" aria-selected="true"><svg class="app-icon"><use href="#i-workspace" /></svg><span>Projects</span></button>
+          <button class="drawer-mode-switcher__button" type="button" role="tab" aria-selected="false"><svg class="app-icon"><use href="#i-file" /></svg><span>Files</span></button>
         </div>
         <nav class="project-rail" aria-label="Open projects">
           <div class="project-rail__heading">Projects</div>
@@ -236,34 +231,6 @@
             </div>
           </div>
         </nav>
-        <div class="rail-tree">
-          <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-down" /></svg></span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
-            <span class="file-node__name">app</span>
-          </div>
-          <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-down" /></svg></span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
-            <span class="file-node__name">src</span>
-          </div>
-          <div class="file-node file-node--selected" style="padding-left: 28px">
-            <span class="file-node__twisty" aria-hidden="true"></span>
-            <span class="file-node__icon file-node__icon--file" aria-hidden="true"><svg class="app-icon"><use href="#i-file" /></svg></span>
-            <span class="file-node__name">App.tsx</span>
-            <span class="file-node__dirty" aria-label="Unsaved changes"></span>
-          </div>
-          <div class="file-node" style="padding-left: 28px">
-            <span class="file-node__twisty" aria-hidden="true"></span>
-            <span class="file-node__icon file-node__icon--file" aria-hidden="true"><svg class="app-icon"><use href="#i-file" /></svg></span>
-            <span class="file-node__name">editorState.ts</span>
-          </div>
-          <div class="file-node">
-            <span class="file-node__twisty" aria-hidden="true"><svg class="app-icon"><use href="#i-chevron-right" /></svg></span>
-            <span class="file-node__icon file-node__icon--directory" aria-hidden="true"><svg class="app-icon"><use href="#i-folder" /></svg></span>
-            <span class="file-node__name">src-tauri</span>
-          </div>
-        </div>
       </aside>
       <main class="workbench workbench--drawer-right">
         <section class="editor-area" aria-label="Editor">
@@ -485,7 +452,7 @@
       const save = document.querySelector(".editor-save");
       if (state === "selected") {
         tab.classList.remove("editor-tab--dirty");
-        railDirty.remove();
+        railDirty?.remove();
         tabDirty.remove();
         badge.remove();
         error.remove();
@@ -496,7 +463,7 @@
         error.remove();
       } else if (state === "context-menu") {
         tab.classList.remove("editor-tab--dirty");
-        railDirty.remove();
+        railDirty?.remove();
         tabDirty.remove();
         badge.remove();
         error.remove();
@@ -578,7 +545,7 @@
         error.remove();
       } else if (state === "no-file") {
         tabs.innerHTML = '<div class="editor-tab editor-tab--empty"><span class="editor-tab__name">No file open</span></div>';
-        railDirty.remove();
+        railDirty?.remove();
         document.querySelector(".file-node--selected")?.classList.remove("file-node--selected");
       }
       if (state === "dirty-modal") {
