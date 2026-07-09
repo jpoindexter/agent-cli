@@ -138,7 +138,15 @@ ${done}${closes}</div>`;
 }
 
 function renderColumn(col, d, tracks) {
-  const inCol = d.cards.filter((c) => c.column === col.id);
+  const byBuildOrder = (a, b) => {
+    const ao = Number.isFinite(a.buildOrder) ? a.buildOrder : Number.POSITIVE_INFINITY;
+    const bo = Number.isFinite(b.buildOrder) ? b.buildOrder : Number.POSITIVE_INFINITY;
+    return ao - bo;
+  };
+  const inCol = d.cards.filter((c) => c.column === col.id).sort(byBuildOrder);
+  if (d.orderMode === 'build') {
+    return `<div class="col" data-status="${esc(col.id)}"><h2 class="s-${esc(col.id)}">${esc(col.label)}</h2>\n${inCol.map((c) => renderCard(c, tracks)).join('\n')}\n</div>`;
+  }
   const tiers = d.tiers?.length ? d.tiers : [{ id: '', label: '' }];
   let groups = '';
   for (const t of tiers) {

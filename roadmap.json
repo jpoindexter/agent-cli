@@ -2,7 +2,7 @@
   "$schema": "./rockmap/roadmap.schema.json",
   "title": "Keelhouse",
   "subtitle": "lean macOS agent cockpit for Jason's real workflow — real CLI agents and composer first, with resizable explorer/editor/browser trays, without IDE bloat",
-  "loop": "Open project folder → talk to one or more real Claude/Codex/Gemini CLI agents in the main cockpit → resize or move trays to inspect/edit files or preview web output → switch projects without separate heavy VS Code windows. Build order: finish shell chrome and tray mechanics first, prove daily-driver replacement, then add search/command/settings leverage, agent hooks/integrations, and only then personalization/distribution.",
+  "loop": "Open project folder -> talk to one or more real Claude/Codex/Gemini CLI agents in the main cockpit -> resize or move trays to inspect/edit files or preview web output -> switch projects without separate heavy VS Code windows. Build order is dependency-first: finish chrome/trays, add search/command leverage, measure daily-driver value and resource use, then settings/AI hooks, transcripts/notifications/worktrees, source-host integrations, packaging, and speculative expansion.",
   "columns": [
     {
       "id": "done",
@@ -119,7 +119,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Lock which external products are useful references so Keelhouse does not drift into a VS Code clone or generic orchestrator.",
-      "done": "Verified 2026-07-09: Zed is the closest chrome-quality reference, but Keelhouse must translate that craft into an agent-first cockpit instead of copying an editor-first IDE. From awesome-agent-orchestrators, ConstellAgent, herdr, parallel-code, and Clave are the closest targeted references. Orbit is useful for agent workflow mechanics, not shell chrome. See docs/reference-products.md."
+      "done": "Verified 2026-07-09: Zed is the closest chrome-quality reference, but Keelhouse must translate that craft into an agent-first cockpit instead of copying an editor-first IDE. From awesome-agent-orchestrators, ConstellAgent, herdr, parallel-code, and Clave are the closest targeted references. Orbit is useful for agent workflow mechanics, not shell chrome. See docs/reference-products.md.",
+      "buildOrder": 1
     },
     {
       "id": "APPROOT",
@@ -131,7 +132,8 @@
       "launch": "v0",
       "blocker": true,
       "summary": "Turn the proven spike into the actual app package: stable naming, app identifier, scripts, dev/build paths, and repo layout. Stop treating the working terminal loop as a side experiment.",
-      "done": "Verified 2026-07-08: app builds/runs from app/; npm package, Rust crate, and Tauri product identifier are renamed; README/ROADMAP point to app/; runtime smoke launched target/debug/agent-cli and spawned claude in the selected cwd."
+      "done": "Verified 2026-07-08: app builds/runs from app/; npm package, Rust crate, and Tauri product identifier are renamed; README/ROADMAP point to app/; runtime smoke launched target/debug/agent-cli and spawned claude in the selected cwd.",
+      "buildOrder": 2
     },
     {
       "id": "OPEN-FOLDER",
@@ -143,7 +145,8 @@
       "launch": "v0",
       "blocker": true,
       "summary": "Native folder picker creates the current workspace, matching the actual VS Code workflow: open app, pick Project A, terminal starts in Project A.",
-      "done": "Verified 2026-07-08: first launch opens a native dialog; selected folder becomes the app workspace; terminal cwd matches it; Cmd+O switches folders."
+      "done": "Verified 2026-07-08: first launch opens a native dialog; selected folder becomes the app workspace; terminal cwd matches it; Cmd+O switches folders.",
+      "buildOrder": 3
     },
     {
       "id": "AGENT-LAUNCH",
@@ -155,7 +158,8 @@
       "launch": "v0",
       "blocker": true,
       "summary": "Replace the current hardcoded login shell with a real agent process launched in the selected workspace. Start with Claude as the v0 default because it is the primary observed workflow.",
-      "done": "Verified 2026-07-08: after folder selection/relaunch, one pane launches `claude` in that cwd from a persisted launch profile; Claude's TUI renders in the canvas."
+      "done": "Verified 2026-07-08: after folder selection/relaunch, one pane launches `claude` in that cwd from a persisted launch profile; Claude's TUI renders in the canvas.",
+      "buildOrder": 4
     },
     {
       "id": "LAST-WORKSPACE",
@@ -167,7 +171,8 @@
       "launch": "v0",
       "blocker": true,
       "summary": "Quit/relaunch should not make the user pick the same project again. Store the last workspace path in a small local persistence layer.",
-      "done": "Verified 2026-07-08 for the current shell-pane default: relaunch reopens the last folder and starts the pane there. Recheck after AGENT-LAUNCH changes the default command."
+      "done": "Verified 2026-07-08 for the current shell-pane default: relaunch reopens the last folder and starts the pane there. Recheck after AGENT-LAUNCH changes the default command.",
+      "buildOrder": 5
     },
     {
       "id": "TERMINAL-HARDEN",
@@ -178,7 +183,8 @@
       "size": "M",
       "launch": "v0",
       "summary": "Close the remaining gaps between 'spike works' and 'can daily-drive one agent': resize behavior, scrollback basics, keyboard audit, copy/selection edge cases, and fast-output smoke tests.",
-      "done": "Verified 2026-07-08: Ghostty viewport scrollback renders, Shift+PageUp/PageDown and wheel scrolling work, resize clamps dimensions, 300-line fast output stays usable, and copy-selection still works."
+      "done": "Verified 2026-07-08: Ghostty viewport scrollback renders, Shift+PageUp/PageDown and wheel scrolling work, resize clamps dimensions, 300-line fast output stays usable, and copy-selection still works.",
+      "buildOrder": 6
     },
     {
       "id": "PROCESS-ENV",
@@ -190,7 +196,8 @@
       "launch": "v0",
       "blocker": true,
       "summary": "Claude/Codex must launch with the same PATH/auth expectations as a normal terminal. Detect missing binaries, auth failures, and bad cwd before dumping the user into a dead pane.",
-      "done": "Verified 2026-07-08: workspace cwd and command are preflighted before pane replacement; missing command renders a visible error with no child process; process exit emits a banner for runtime/auth-style failures; Claude still launches as a direct child in the selected cwd."
+      "done": "Verified 2026-07-08: workspace cwd and command are preflighted before pane replacement; missing command renders a visible error with no child process; process exit emits a banner for runtime/auth-style failures; Claude still launches as a direct child in the selected cwd.",
+      "buildOrder": 7
     },
     {
       "id": "DATA-STORAGE",
@@ -201,7 +208,8 @@
       "size": "S",
       "launch": "v0",
       "summary": "Define where workspace/session state lives and how to reset it when the app gets confused.",
-      "done": "Verified 2026-07-08: docs/local-state.md documents the Tauri Store path, workspace.json schema, reversible reset command, and default launchProfile repair path."
+      "done": "Verified 2026-07-08: docs/local-state.md documents the Tauri Store path, workspace.json schema, reversible reset command, and default launchProfile repair path.",
+      "buildOrder": 8
     },
     {
       "id": "APP-SHELL",
@@ -213,7 +221,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "Build the shape that replaces VS Code for this workflow: left file rail, main editor area, bottom/right terminal pane area. No marketing page, no extra IDE chrome.",
-      "done": "Verified 2026-07-08: one project opens into a stable three-part shell with left file rail surface, editor surface, and bottom terminal panel; terminal resize uses the measured terminal panel; build/tests pass; real Tauri smoke launched Claude in the selected cwd."
+      "done": "Verified 2026-07-08: one project opens into a stable three-part shell with left file rail surface, editor surface, and bottom terminal panel; terminal resize uses the measured terminal panel; build/tests pass; real Tauri smoke launched Claude in the selected cwd.",
+      "buildOrder": 9
     },
     {
       "id": "FILE-RAIL",
@@ -225,7 +234,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "The VS Code feature Jason actually uses: a project tree on the left. Keep it dense, fast, and boring.",
-      "done": "Verified 2026-07-08: backend lists the selected workspace with ignore::WalkBuilder, gitignore/app noisy-folder filtering, and an 8000-entry cap; frontend renders a dense React Arborist tree, directories expand/collapse, and files activate into the editor surface."
+      "done": "Verified 2026-07-08: backend lists the selected workspace with ignore::WalkBuilder, gitignore/app noisy-folder filtering, and an 8000-entry cap; frontend renders a dense React Arborist tree, directories expand/collapse, and files activate into the editor surface.",
+      "buildOrder": 10
     },
     {
       "id": "FILE-WATCHER",
@@ -237,7 +247,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "The rail must reflect real project changes without drowning in node_modules, target, build output, or ignored files.",
-      "done": "Verified 2026-07-08: debounced notify watcher emits workspace-tree-changed for relevant paths only; frontend refreshes the rail from list_workspace_tree; noisy paths are unit-tested; visual smoke showed a newly created top-level directory appear in the rail after launch."
+      "done": "Verified 2026-07-08: debounced notify watcher emits workspace-tree-changed for relevant paths only; frontend refreshes the rail from list_workspace_tree; noisy paths are unit-tested; visual smoke showed a newly created top-level directory appear in the rail after launch.",
+      "buildOrder": 11
     },
     {
       "id": "RECENT-PROJECTS",
@@ -248,7 +259,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Opening the same active projects repeatedly should be cheap, not a folder-picker ceremony every time.",
-      "done": "Verified 2026-07-08: recentFolders persists, dedupes, caps, and prunes missing folders; the rail lists recent projects with an explicit Switch affordance; real Tauri smoke switched from Keelhouse to postures and persisted postures as the active folder."
+      "done": "Verified 2026-07-08: recentFolders persists, dedupes, caps, and prunes missing folders; the rail lists recent projects with an explicit Switch affordance; real Tauri smoke switched from Keelhouse to postures and persisted postures as the active folder.",
+      "buildOrder": 12
     },
     {
       "id": "EDITOR",
@@ -260,7 +272,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "Open files from the rail into a real editor pane. This is not a decorative preview; it is the VS Code/Codex editor surface Jason actually uses.",
-      "done": "Verified 2026-07-08: CodeMirror opens files from the rail with reliable pointer-down activation, line numbers, path context, TS/TSX/JS/JSX/MD syntax modes, dirty/saved status, Save button, and Cmd+S/Ctrl+S. Native UI smoke opened, edited, saved, and confirmed disk contents changed for a real workspace file."
+      "done": "Verified 2026-07-08: CodeMirror opens files from the rail with reliable pointer-down activation, line numbers, path context, TS/TSX/JS/JSX/MD syntax modes, dirty/saved status, Save button, and Cmd+S/Ctrl+S. Native UI smoke opened, edited, saved, and confirmed disk contents changed for a real workspace file.",
+      "buildOrder": 13
     },
     {
       "id": "EDITOR-PARITY-UX",
@@ -272,7 +285,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "Match the coding editor orientation shown in the reference: dense file tree beside a real source editor with path context, gutter, dirty state, restored view position, and active-file reveal.",
-      "done": "Verified 2026-07-08: editor shows breadcrumb path context, stable CodeMirror line gutter, selected file highlight, active-file reveal via React Arborist scrollTo, restored per-file selection/scroll state, dirty markers in editor and rail, and screenshot QA artifacts for selected, dirty, save-error, no-file, missing, and 1024x640 narrow states in docs/qa/editor-parity/."
+      "done": "Verified 2026-07-08: editor shows breadcrumb path context, stable CodeMirror line gutter, selected file highlight, active-file reveal via React Arborist scrollTo, restored per-file selection/scroll state, dirty markers in editor and rail, and screenshot QA artifacts for selected, dirty, save-error, no-file, missing, and 1024x640 narrow states in docs/qa/editor-parity/.",
+      "buildOrder": 14
     },
     {
       "id": "ACTIVE-FILE-SYNC",
@@ -283,7 +297,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "The user must always know which file is active. File rail selection, editor tab title, path bar, watcher refreshes, and workspace restore need to agree.",
-      "done": "Verified 2026-07-08: activeFileByWorkspace persists by canonical workspace root; relaunch restores the saved file into rail selection, editor tab/path, and content; stale paths are cleared; watcher refresh reconciles the selected file to the fresh tree node when it still exists and preserves the missing-file warning when it disappears. Native screenshot proof: docs/qa/active-file-sync/restore.png."
+      "done": "Verified 2026-07-08: activeFileByWorkspace persists by canonical workspace root; relaunch restores the saved file into rail selection, editor tab/path, and content; stale paths are cleared; watcher refresh reconciles the selected file to the fresh tree node when it still exists and preserves the missing-file warning when it disappears. Native screenshot proof: docs/qa/active-file-sync/restore.png.",
+      "buildOrder": 15
     },
     {
       "id": "EDITOR-VIEW-STATE",
@@ -294,7 +309,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Switching files should not throw away the user's place. Cursor, selection, scroll, and focus are part of the editor experience.",
-      "done": "Verified 2026-07-08: per-file view state captures selection anchor/head, scrollTop, and focus intent. Native smoke set first.ts to Ln 5, Col 9, switched to second.ts, switched back, restored the same line/column, then ArrowDown advanced to Ln 6, Col 1, proving CodeMirror focus was restored. Proof screenshots: docs/qa/editor-view-state/restore.png and docs/qa/editor-view-state/focus-restored.png."
+      "done": "Verified 2026-07-08: per-file view state captures selection anchor/head, scrollTop, and focus intent. Native smoke set first.ts to Ln 5, Col 9, switched to second.ts, switched back, restored the same line/column, then ArrowDown advanced to Ln 6, Col 1, proving CodeMirror focus was restored. Proof screenshots: docs/qa/editor-view-state/restore.png and docs/qa/editor-view-state/focus-restored.png.",
+      "buildOrder": 16
     },
     {
       "id": "DIRTY-DRAFT-PROTECTION",
@@ -306,7 +322,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "The userflow audit found the main trust risk: unsaved work can be lost when changing files/projects. This must be blocked before the editor feels real.",
-      "done": "Verified 2026-07-08: dirty file/workspace replacement opens a Save/Discard/Cancel modal with the file name and consequence. Save continues only after write_text_file succeeds; failed saves keep the draft and pending navigation. Covered by npm test flows for save failure, save success, discard, no pending navigation, prompt trigger logic, and modal copy; screenshot proof: docs/qa/dirty-draft-protection/modal.png."
+      "done": "Verified 2026-07-08: dirty file/workspace replacement opens a Save/Discard/Cancel modal with the file name and consequence. Save continues only after write_text_file succeeds; failed saves keep the draft and pending navigation. Covered by npm test flows for save failure, save success, discard, no pending navigation, prompt trigger logic, and modal copy; screenshot proof: docs/qa/dirty-draft-protection/modal.png.",
+      "buildOrder": 17
     },
     {
       "id": "SAVE-ERROR-RECOVERY",
@@ -317,7 +334,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Save failures need a recovery flow, not only a red message. The buffer must remain safe and the next action must be obvious.",
-      "done": "Verified 2026-07-08: failed saves keep the edited buffer, show a scoped Save failed alert with the human error, expose Retry and Open externally, disable duplicate retry/save while a write is running, and clear the error only when the real write path succeeds. Covered by npm build/test and screenshot proof in docs/qa/editor-parity/save-error.png."
+      "done": "Verified 2026-07-08: failed saves keep the edited buffer, show a scoped Save failed alert with the human error, expose Retry and Open externally, disable duplicate retry/save while a write is running, and clear the error only when the real write path succeeds. Covered by npm build/test and screenshot proof in docs/qa/editor-parity/save-error.png.",
+      "buildOrder": 18
     },
     {
       "id": "EDITOR-RESPONSIVE-QA",
@@ -328,7 +346,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "The userflow audit called out screenshot proof for editor states and small desktop widths before claiming parity.",
-      "done": "Verified 2026-07-08: npm run qa:editor captures selected, dirty, save-error, missing-file, no-file, and 1024x640 narrow workbench states into docs/qa/editor-parity/. Visual audit confirmed clear rail/editor/terminal orientation with no overlapping chrome in narrow and no-file states."
+      "done": "Verified 2026-07-08: npm run qa:editor captures selected, dirty, save-error, missing-file, no-file, and 1024x640 narrow workbench states into docs/qa/editor-parity/. Visual audit confirmed clear rail/editor/terminal orientation with no overlapping chrome in narrow and no-file states.",
+      "buildOrder": 19
     },
     {
       "id": "EDITOR-FIND-REPLACE",
@@ -339,7 +358,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Basic file editing needs local find/replace; otherwise the editor is too thin to replace the VS Code surface Jason actually uses.",
-      "done": "Verified 2026-07-08: CodeMirror search is included as a first-class editor extension with Cmd+F/F3/Cmd+G search keybindings, a visible Find button, and replace/replace-all support through the editor-native search panel. Screenshot proof: docs/qa/editor-parity/find-replace.png."
+      "done": "Verified 2026-07-08: CodeMirror search is included as a first-class editor extension with Cmd+F/F3/Cmd+G search keybindings, a visible Find button, and replace/replace-all support through the editor-native search panel. Screenshot proof: docs/qa/editor-parity/find-replace.png.",
+      "buildOrder": 20
     },
     {
       "id": "EDITOR-LANGUAGE-MODES",
@@ -350,7 +370,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "The first editor pass needs credible syntax support for the file types this repo and Jason's projects use most.",
-      "done": "Verified 2026-07-08: editor language extensions cover TypeScript, TSX/JSX, JavaScript, Markdown, HTML, CSS, Rust, JSON, TOML, YAML, and shell scripts/dotfiles. Covered by npm build and focused mode mapping tests."
+      "done": "Verified 2026-07-08: editor language extensions cover TypeScript, TSX/JSX, JavaScript, Markdown, HTML, CSS, Rust, JSON, TOML, YAML, and shell scripts/dotfiles. Covered by npm build and focused mode mapping tests.",
+      "buildOrder": 21
     },
     {
       "id": "SAVE-CONFLICTS",
@@ -362,7 +383,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "Agents and terminals can edit files while the editor is open. The app must not silently overwrite external changes.",
-      "done": "Verified 2026-07-08: read_text_file returns modifiedMs, write_text_file receives the last-seen modifiedMs, and the Rust backend rejects stale writes before overwriting. The editor conflict surface offers Reload, Overwrite, and Open externally. Covered by cargo test stale-write rejection, npm build/test, and screenshot proof at docs/qa/editor-parity/save-conflict.png."
+      "done": "Verified 2026-07-08: read_text_file returns modifiedMs, write_text_file receives the last-seen modifiedMs, and the Rust backend rejects stale writes before overwriting. The editor conflict surface offers Reload, Overwrite, and Open externally. Covered by cargo test stale-write rejection, npm build/test, and screenshot proof at docs/qa/editor-parity/save-conflict.png.",
+      "buildOrder": 22
     },
     {
       "id": "LARGE-FILE-POLICY",
@@ -373,7 +395,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "The editor should fail safely on huge or binary files instead of freezing the app.",
-      "done": "Verified 2026-07-08: backend rejects files over the 2 MB editor cap before full text load, rejects invalid UTF-8/binary files explicitly, and rejects oversized save buffers without touching disk. Covered by cargo tests for large read, binary read, and large save rejection."
+      "done": "Verified 2026-07-08: backend rejects files over the 2 MB editor cap before full text load, rejects invalid UTF-8/binary files explicitly, and rejects oversized save buffers without touching disk. Covered by cargo tests for large read, binary read, and large save rejection.",
+      "buildOrder": 23
     },
     {
       "id": "FILE-OPS",
@@ -384,7 +407,8 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "Replacing the VS Code shell requires basic rail operations, not only open-file. These commands must be reachable from the rail, menu/shortcut paths, and the file context menu where relevant.",
-      "done": "Verified 2026-07-08: create file, create folder, rename, delete, duplicate, and reveal in Finder work from the rail/context menu. Backend guards every mutation against escaping the workspace root; destructive operations confirm; dirty active files are protected. Covered by npm build/test, cargo test file-op guard/roundtrip coverage, and git diff --check."
+      "done": "Verified 2026-07-08: create file, create folder, rename, delete, duplicate, and reveal in Finder work from the rail/context menu. Backend guards every mutation against escaping the workspace root; destructive operations confirm; dirty active files are protected. Covered by npm build/test, cargo test file-op guard/roundtrip coverage, and git diff --check.",
+      "buildOrder": 24
     },
     {
       "id": "EDITOR-TABS",
@@ -395,7 +419,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Let the user bounce between a few files without losing place. This is the minimum editor workflow, not a full IDE tab system.",
-      "done": "Verified 2026-07-08: multiple open files appear as tabs with close controls; switching tabs preserves in-memory drafts; dirty files are marked in tabs and the rail; dirty tab close confirms before discard; rename/delete keeps open tabs aligned. Covered by npm build/test, editorTabs helper tests, screenshot QA, and visual selected/narrow inspection."
+      "done": "Verified 2026-07-08: multiple open files appear as tabs with close controls; switching tabs preserves in-memory drafts; dirty files are marked in tabs and the rail; dirty tab close confirms before discard; rename/delete keeps open tabs aligned. Covered by npm build/test, editorTabs helper tests, screenshot QA, and visual selected/narrow inspection.",
+      "buildOrder": 25
     },
     {
       "id": "AGENT-PROFILES",
@@ -406,7 +431,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Stop hardcoding one command forever. Add simple profiles for Codex, Gemini, Claude, and shell so the pane can launch the desired CLI without burning the wrong quota during testing.",
-      "done": "Verified 2026-07-09: terminal header exposes Codex, Gemini, Claude, and Shell profiles; fresh state defaults to Codex; shows active command/mode details; successful changes restart the pane through open_workspace and persist to workspace.json; missing-command errors stay visible and do not overwrite the saved profile. Covered by npm build/test, cargo missing-command preflight tests, screenshot QA, selected/narrow visual inspection, and docs/local-state.md schema update."
+      "done": "Verified 2026-07-09: terminal header exposes Codex, Gemini, Claude, and Shell profiles; fresh state defaults to Codex; shows active command/mode details; successful changes restart the pane through open_workspace and persist to workspace.json; missing-command errors stay visible and do not overwrite the saved profile. Covered by npm build/test, cargo missing-command preflight tests, screenshot QA, selected/narrow visual inspection, and docs/local-state.md schema update.",
+      "buildOrder": 26
     },
     {
       "id": "PRODUCT-NAME-README",
@@ -417,7 +443,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Lock the user-facing product name and give contributors a clear README/doc map without renaming the repo/package slug prematurely.",
-      "done": "Product name is Keelhouse across PRD, README, product positioning, app metadata, generated roadmap, and docs index; repo/package/storage slug remains agent-cli until an explicit migration."
+      "done": "Product name is Keelhouse across PRD, README, product positioning, app metadata, generated roadmap, and docs index; repo/package/storage slug remains agent-cli until an explicit migration.",
+      "buildOrder": 27
     },
     {
       "id": "AGENT-COMPOSER",
@@ -428,7 +455,8 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "Keep terminal panes as the trusted source-of-truth agent interface, but add a bottom Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.",
-      "done": "Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript."
+      "done": "Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript.",
+      "buildOrder": 28
     },
     {
       "id": "SHORTCUTS",
@@ -439,7 +467,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "Keep VS Code muscle memory for the supported workflow: open folder, quick open/search, save, close, copy/paste, terminal focus, new pane, split/switch pane, and command palette.",
-      "done": "A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, appears in menu items/tooltips where relevant, and explicitly lists terminal/editor/app-chrome conflicts and exceptions."
+      "done": "A documented shortcut map covers the v0.5 workflow, matches VS Code defaults where applicable, appears in menu items/tooltips where relevant, and explicitly lists terminal/editor/app-chrome conflicts and exceptions.",
+      "buildOrder": 29
     },
     {
       "id": "TERMINAL-ROBUSTNESS",
@@ -451,7 +480,8 @@
       "launch": "v0_5",
       "blocker": true,
       "summary": "The terminal is the trusted agent surface, so it needs daily-driver robustness beyond the initial working loop.",
-      "done": "Single-pane terminal verifies Claude/Codex TUIs, alternate screen apps, ANSI/truecolor styling, resize, scrollback, mouse selection, copy, paste, bracketed paste, common keyboard chords, command/cwd/status header, fast-output responsiveness, and screenshot/runtime QA."
+      "done": "Single-pane terminal verifies Claude/Codex TUIs, alternate screen apps, ANSI/truecolor styling, resize, scrollback, mouse selection, copy, paste, bracketed paste, common keyboard chords, command/cwd/status header, fast-output responsiveness, and screenshot/runtime QA.",
+      "buildOrder": 30
     },
     {
       "id": "CONTEXT-MENUS",
@@ -462,7 +492,8 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "macOS pointer workflows need right-click/Control-click affordances, not only visible buttons. Context menus should expose the same command registry as menu bar, shortcuts, and command palette where possible.",
-      "done": "Verified 2026-07-09: current surfaces expose right-click/Control-click menus for the workspace root, project/session rows, file explorer, editor tabs, editor text surface, browser preview, terminal pane, and composer/agent controls. Menus share shortcut labels where active, show disabled and danger states, reuse existing destructive confirmations/dirty guards, and are documented in docs/context-menus.md. Git-marked file rows can open read-only diffs, stage, unstage, and discard unstaged changes."
+      "done": "Verified 2026-07-09: current surfaces expose right-click/Control-click menus for the workspace root, project/session rows, file explorer, editor tabs, editor text surface, browser preview, terminal pane, and composer/agent controls. Menus share shortcut labels where active, show disabled and danger states, reuse existing destructive confirmations/dirty guards, and are documented in docs/context-menus.md. Git-marked file rows can open read-only diffs, stage, unstage, and discard unstaged changes.",
+      "buildOrder": 31
     },
     {
       "id": "CHROME-POLISH-SYSTEM",
@@ -473,7 +504,8 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "Define the workbench chrome system before more surfaces drift: dense rails, calm dark surfaces, tokens, menus, badges, pane headers, settings/sidebar rhythm, command palette, toasts, and restrained motion.",
-      "done": "Verified 2026-07-09: current v0.5 chrome uses primitive -> semantic -> component CSS tokens, shared control/menu/badge/field/overlay states, visible focus, disabled/danger/success/warning states, reduced-motion handling, and screenshot QA for one-project workbench, context menu, recovery alerts, narrow layout, and a chrome state palette. Icon replacement remains ICON-SYSTEM; browser and diff/review now consume these tokens, while settings and command palette remain future surfaces."
+      "done": "Verified 2026-07-09: current v0.5 chrome uses primitive -> semantic -> component CSS tokens, shared control/menu/badge/field/overlay states, visible focus, disabled/danger/success/warning states, reduced-motion handling, and screenshot QA for one-project workbench, context menu, recovery alerts, narrow layout, and a chrome state palette. Icon replacement remains ICON-SYSTEM; browser and diff/review now consume these tokens, while settings and command palette remain future surfaces.",
+      "buildOrder": 32
     },
     {
       "id": "ICON-SYSTEM",
@@ -484,7 +516,8 @@
       "size": "M",
       "launch": "v0_5",
       "summary": "The app should feel like a polished Codex-style workbench, not a raw prototype. Define one consistent icon language for project rail, file explorer, editor, browser, terminal, agent panes, git state, and common actions.",
-      "done": "Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, browser preview, source-control/diff entry points, context-menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Source-host and multi-pane-specific icons remain deferred until those real surfaces land."
+      "done": "Verified 2026-07-09: current v0.5 chrome uses lucide-react through app/src/icons.tsx as one SVG icon contract. File-tree object icons, rail actions, editor actions, terminal status pills, composer controls, browser preview, source-control/diff entry points, context-menu rows, and QA fixtures use currentColor icons on a 16px dense grid. Non-universal controls keep labels, tooltips, or accessible names. Pane status and future activity status mappings cover thinking/running/waiting/error/exited/complete. Source-host and multi-pane-specific icons remain deferred until those real surfaces land.",
+      "buildOrder": 33
     },
     {
       "id": "ACCESSIBILITY-BASICS",
@@ -495,7 +528,8 @@
       "size": "S",
       "launch": "v0_5",
       "summary": "A dense tool still needs visible focus, keyboard reachability, and labelled controls so it can be used without pointer precision.",
-      "done": "Verified 2026-07-09: current v0.5 chrome has explicit labels for rail actions, workspace root, agent profile picker, terminal canvas, composer draft, browser preview controls, and diff review controls; editor tabs put tab semantics on the actual focusable buttons; the terminal canvas is tabbable and has a visible focus ring; context menus focus the first enabled item, support Arrow Up/Down, and close with Escape. Full modal trapping, canvas transcript screen-reader review, and deeper settings/multi-pane accessibility rules remain deferred."
+      "done": "Verified 2026-07-09: current v0.5 chrome has explicit labels for rail actions, workspace root, agent profile picker, terminal canvas, composer draft, browser preview controls, and diff review controls; editor tabs put tab semantics on the actual focusable buttons; the terminal canvas is tabbable and has a visible focus ring; context menus focus the first enabled item, support Arrow Up/Down, and close with Escape. Full modal trapping, canvas transcript screen-reader review, and deeper settings/multi-pane accessibility rules remain deferred.",
+      "buildOrder": 34
     },
     {
       "id": "PROJECT-RAIL",
@@ -507,7 +541,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "The core multi-project workflow: Project A, Project B, Project C live in one app instead of separate VS Code windows. Use a persistent left project/workspace rail, similar in spirit to Codex's sidebar, rather than relying only on top tabs.",
-      "done": "Verified 2026-07-09: the left rail now has persisted openProjects separate from recents, shows at least three project rows in QA, marks active/running/exited/attention states, promotes opened folders into the rail, prunes missing paths, and exposes switch/reveal/copy/close context-menu actions. Switching projects uses the real workspace load path and restores in-session editor tabs, active file, editor buffers, and view state. Project session rows, browser preview URL state, and multiple live panes are now implemented; richer lifecycle state and cross-relaunch session restore stay with their dedicated later cards."
+      "done": "Verified 2026-07-09: the left rail now has persisted openProjects separate from recents, shows at least three project rows in QA, marks active/running/exited/attention states, promotes opened folders into the rail, prunes missing paths, and exposes switch/reveal/copy/close context-menu actions. Switching projects uses the real workspace load path and restores in-session editor tabs, active file, editor buffers, and view state. Project session rows, browser preview URL state, and multiple live panes are now implemented; richer lifecycle state and cross-relaunch session restore stay with their dedicated later cards.",
+      "buildOrder": 35
     },
     {
       "id": "PROJECT-SESSIONS",
@@ -519,7 +554,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.",
-      "done": "Verified 2026-07-09: projectSessions and activeSessionByProject persist in workspace.json; the rail shows nested session rows with active/running/exited/attention states; New session, switch, rename, copy name, delete with last-session protection, and Show more/Show fewer are implemented; selecting sessions snapshots/restores editor tabs, active file, buffers, and view state for current in-memory sessions. Browser URLs and live pane state are implemented; pane labels, transcript references, layout restore, and cross-relaunch snapshot restore remain with their dedicated later cards."
+      "done": "Verified 2026-07-09: projectSessions and activeSessionByProject persist in workspace.json; the rail shows nested session rows with active/running/exited/attention states; New session, switch, rename, copy name, delete with last-session protection, and Show more/Show fewer are implemented; selecting sessions snapshots/restores editor tabs, active file, buffers, and view state for current in-memory sessions. Browser URLs and live pane state are implemented; pane labels, transcript references, layout restore, and cross-relaunch snapshot restore remain with their dedicated later cards.",
+      "buildOrder": 36
     },
     {
       "id": "BROWSER-PREVIEW",
@@ -531,7 +567,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "The stripped VS Code workbench still needs a browser surface for localhost apps, docs, auth flows, and agent-generated pages without context switching.",
-      "done": "Verified 2026-07-09: the workbench has a docked iframe browser preview pane between editor and terminal with Back, Forward, Reload, address/local URL input, Open, and Open externally controls. Preview URLs are normalized, remembered per project and active project session in workspace.json, restored on project/session switch, and exposed through a browser context menu with copy/open/navigation actions. Dev-server auto-detection and agent-controlled browser actions remain with their dedicated later cards."
+      "done": "Verified 2026-07-09: the workbench has a docked iframe browser preview pane between editor and terminal with Back, Forward, Reload, address/local URL input, Open, and Open externally controls. Preview URLs are normalized, remembered per project and active project session in workspace.json, restored on project/session switch, and exposed through a browser context menu with copy/open/navigation actions. Dev-server auto-detection and agent-controlled browser actions remain with their dedicated later cards.",
+      "buildOrder": 37
     },
     {
       "id": "PANE-MANAGER",
@@ -543,7 +580,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Jason often runs multiple Claude/Codex sessions against the same project, and different open projects may run different agents at the same time. Add a pane manager that can create/switch/close multiple terminal panes per project.",
-      "done": "Verified 2026-07-09: backend PtyState owns multiple real pty/process panes keyed by pane id; open_workspace spawns/focuses a pane without killing panes from other projects; create_pane, focus_pane, and close_pane add, focus, and safely kill exactly one selected pane. Grid events include paneId; the frontend caches snapshots by pane and paints only the focused pane. The terminal header exposes a focused pane strip plus New pane profile, New, and Close controls. Project/session state aggregates all panes for the project. Pane names, restart/kill-all, layout restore, and app-owned handles remain with their dedicated later cards."
+      "done": "Verified 2026-07-09: backend PtyState owns multiple real pty/process panes keyed by pane id; open_workspace spawns/focuses a pane without killing panes from other projects; create_pane, focus_pane, and close_pane add, focus, and safely kill exactly one selected pane. Grid events include paneId; the frontend caches snapshots by pane and paints only the focused pane. The terminal header exposes a focused pane strip plus New pane profile, New, and Close controls. Project/session state aggregates all panes for the project. Pane names, restart/kill-all, layout restore, and app-owned handles remain with their dedicated later cards.",
+      "buildOrder": 38
     },
     {
       "id": "PANE-NAMES",
@@ -554,7 +592,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "When several agents run in one project, each pane needs a human label so Jason can remember what it is doing.",
-      "done": "Verified 2026-07-09: terminal panes have editable task labels shown in the pane strip and composer target. Labels normalize input, fall back to profile/index names when blank, persist in workspace.json by project-session plus pane slot, and can be edited by double-clicking the pane pill or using Rename Selected Pane in the terminal context menu."
+      "done": "Verified 2026-07-09: terminal panes have editable task labels shown in the pane strip and composer target. Labels normalize input, fall back to profile/index names when blank, persist in workspace.json by project-session plus pane slot, and can be edited by double-clicking the pane pill or using Rename Selected Pane in the terminal context menu.",
+      "buildOrder": 39
     },
     {
       "id": "AGENT-SESSION-HANDLE",
@@ -566,7 +605,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Define the missing middle layer between real pty panes and the Codex-style composer: a stable app-owned handle for each pane/session.",
-      "done": "Verified 2026-07-09: app/src/agentSessionHandle.ts defines stable pane-backed handles with project/session ids, cwd, pane label, profile id/label, process state, approval mode, exit code, created time, activity metadata, and send/interrupt/readTail/close operations. The composer now sends prompts through the active handle; Stop and Close route through handle methods; terminal context menu can copy the latest 20 rendered terminal lines through readTail. Activity log and future hooks can target the handle contract instead of UI component state."
+      "done": "Verified 2026-07-09: app/src/agentSessionHandle.ts defines stable pane-backed handles with project/session ids, cwd, pane label, profile id/label, process state, approval mode, exit code, created time, activity metadata, and send/interrupt/readTail/close operations. The composer now sends prompts through the active handle; Stop and Close route through handle methods; terminal context menu can copy the latest 20 rendered terminal lines through readTail. Activity log and future hooks can target the handle contract instead of UI component state.",
+      "buildOrder": 40
     },
     {
       "id": "AGENT-ACTIVITY",
@@ -577,7 +617,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Background agents need Codex-style visible status and activity rows when they think, run commands, edit files, call tools, wait for approval/input, error, exit, or complete. Show concise activity/progress summaries and tool events, not hidden chain-of-thought.",
-      "done": "Verified 2026-07-09: app/src/agentActivity.ts normalizes in-memory activity rows scoped by project/session/pane. The selected pane shows a current status row from its handle plus recent rows for prompt sent, app command ran/failed, edited file, created pane, stop sent, copied output, pane closed, complete, and command failed on non-zero exit. Rows render above the composer with shared icons/status colors and accessible labels; the QA fixture covers running, prompt, edited file, ran command, and failed command rows. Approval rows and durable/filterable history are covered by APP-ACTIONS-MINIMAL and AGENT-ACTIVITY-LOG."
+      "done": "Verified 2026-07-09: app/src/agentActivity.ts normalizes in-memory activity rows scoped by project/session/pane. The selected pane shows a current status row from its handle plus recent rows for prompt sent, app command ran/failed, edited file, created pane, stop sent, copied output, pane closed, complete, and command failed on non-zero exit. Rows render above the composer with shared icons/status colors and accessible labels; the QA fixture covers running, prompt, edited file, ran command, and failed command rows. Approval rows and durable/filterable history are covered by APP-ACTIONS-MINIMAL and AGENT-ACTIVITY-LOG.",
+      "buildOrder": 41
     },
     {
       "id": "AGENT-ACTIVITY-LOG",
@@ -588,7 +629,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Each pane/session needs an inspectable timeline of user-safe agent events so Jason can see what happened without reading every terminal line.",
-      "done": "Verified 2026-07-09: agentActivityEvents now persists up to 200 user-safe events with project/session/pane attribution, kind, label, detail, status, timestamp, target, exit code, output reference, and undo hint fields. The selected pane shows a durable timeline below the activity strip with filters for prompts, process, commands, files, tools, git, app actions, approvals, browser, errors, and completion. Startup normalization drops malformed stored rows. Current producers cover prompts, app commands, app-action approvals including Open Diff, file saves, pane lifecycle actions, copied output, and process exits; git mutation, richer browser, and tool producers populate the reserved event fields when those real surfaces land."
+      "done": "Verified 2026-07-09: agentActivityEvents now persists up to 200 user-safe events with project/session/pane attribution, kind, label, detail, status, timestamp, target, exit code, output reference, and undo hint fields. The selected pane shows a durable timeline below the activity strip with filters for prompts, process, commands, files, tools, git, app actions, approvals, browser, errors, and completion. Startup normalization drops malformed stored rows. Current producers cover prompts, app commands, app-action approvals including Open Diff, file saves, pane lifecycle actions, copied output, and process exits; git mutation, richer browser, and tool producers populate the reserved event fields when those real surfaces land.",
+      "buildOrder": 42
     },
     {
       "id": "APP-ACTIONS-MINIMAL",
@@ -599,7 +641,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Permission controls need real enforcement behind them. Add the small action gate for app-owned actions before showing Codex-style approval modes.",
-      "done": "Verified 2026-07-09: app/src/appActions.ts defines app-owned action descriptors with kind, target, risk class, requester, reason, and undo hint; resolves each action to an audit event with approval mode, decision, prompt state, timestamp, and reason. Existing app-owned paths for focus pane, open file, open diff, open browser preview, attach reference, interrupt process, create pane, close pane, and composer commands route through the gate. Prompted, denied, blocked, and composer-originated decisions log approval audit rows to the activity timeline."
+      "done": "Verified 2026-07-09: app/src/appActions.ts defines app-owned action descriptors with kind, target, risk class, requester, reason, and undo hint; resolves each action to an audit event with approval mode, decision, prompt state, timestamp, and reason. Existing app-owned paths for focus pane, open file, open diff, open browser preview, attach reference, interrupt process, create pane, close pane, and composer commands route through the gate. Prompted, denied, blocked, and composer-originated decisions log approval audit rows to the activity timeline.",
+      "buildOrder": 43
     },
     {
       "id": "COMPOSER-HARNESS",
@@ -610,7 +653,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Grow the bottom composer into a Codex-style app-owned harness around real terminal panes: permission mode, goal state, target pane, model/profile, attachments, and stop/send controls.",
-      "done": "Verified 2026-07-09: composer state is scoped by project/session in composerHarnessBySession; the bottom harness shows target project/session/pane, permission mode, profile selector, goal, attachment controls, and send/stop state. Ask, Approve safe, and Full access drive the app-owned action gate. Local file, current editor file, and browser preview/screenshot references can be attached and removed. Prompt sends transparently include goal/attachment context when present, and permission, goal, profile, attachment, prompt, and app-action events log to the activity timeline."
+      "done": "Verified 2026-07-09: composer state is scoped by project/session in composerHarnessBySession; the bottom harness shows target project/session/pane, permission mode, profile selector, goal, attachment controls, and send/stop state. Ask, Approve safe, and Full access drive the app-owned action gate. Local file, current editor file, and browser preview/screenshot references can be attached and removed. Prompt sends transparently include goal/attachment context when present, and permission, goal, profile, attachment, prompt, and app-action events log to the activity timeline.",
+      "buildOrder": 44
     },
     {
       "id": "PROCESS-LIFECYCLE",
@@ -621,7 +665,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "A cockpit needs basic process affordances: restart, kill, status, exited state, and command/cwd visibility.",
-      "done": "Verified 2026-07-09: backend terminate_pane kills a pane child process while keeping the pane/transcript for exit state; backend restart_pane spawns and focuses a fresh process, then removes/kills the replaced process. The frontend preserves pane slot and label across restart, updates project/session status, clears stale snapshots, logs terminate/restart events, and routes both actions through the action gate. The terminal header shows command, mode, cwd, state, Restart, Kill, New, and Close, with narrow responsive icon controls."
+      "done": "Verified 2026-07-09: backend terminate_pane kills a pane child process while keeping the pane/transcript for exit state; backend restart_pane spawns and focuses a fresh process, then removes/kills the replaced process. The frontend preserves pane slot and label across restart, updates project/session status, clears stale snapshots, logs terminate/restart events, and routes both actions through the action gate. The terminal header shows command, mode, cwd, state, Restart, Kill, New, and Close, with narrow responsive icon controls.",
+      "buildOrder": 45
     },
     {
       "id": "AGENT-FIRST-WORKBENCH",
@@ -632,7 +677,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Correct the cockpit hierarchy and interaction model: the default main screen is a Codex-like chat/run surface backed by real terminal agents, while raw terminal, editor, and browser are explicit switchable/resizable surfaces.",
-      "done": "Verified 2026-07-09: agent panel now defaults to Chat, showing activity rows and timeline above the composer; raw terminal stays mounted for the real pty but is only visible through the Terminal tab or Raw terminal action. Editor and browser live in left/right/bottom/hideable trays with draggable splitters; layout position, sizes, and agent surface mode persist in localStorage. Screenshot QA was refreshed for selected and narrow states. Verified with npm run build, npm test, npm run qa:editor, screenshot inspection, and git diff --check."
+      "done": "Verified 2026-07-09: agent panel now defaults to Chat, showing activity rows and timeline above the composer; raw terminal stays mounted for the real pty but is only visible through the Terminal tab or Raw terminal action. Editor and browser live in left/right/bottom/hideable trays with draggable splitters; layout position, sizes, and agent surface mode persist in localStorage. Screenshot QA was refreshed for selected and narrow states. Verified with npm run build, npm test, npm run qa:editor, screenshot inspection, and git diff --check.",
+      "buildOrder": 46
     },
     {
       "id": "VSCODE-CHROME-SHELL",
@@ -644,7 +690,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Correct the outer application chrome toward the useful VS Code/Codex structure without copying controls that do not fit Keelhouse.",
-      "done": "Verified 2026-07-09: the app shell now uses titlebar/sidebar/main/status grid geometry. The header shows real Keelhouse state and actions: workspace, session, selected agent/pane, process status, Open Folder, and Reload Preview. Fake traffic lights, fake back/forward, the search-shaped folder picker, and the nonfunctional activity rail were removed. Activity drawer navigation remains parked until it switches real drawer content."
+      "done": "Verified 2026-07-09: the app shell now uses titlebar/sidebar/main/status grid geometry. The header shows real Keelhouse state and actions: workspace, session, selected agent/pane, process status, Open Folder, and Reload Preview. Fake traffic lights, fake back/forward, the search-shaped folder picker, and the nonfunctional activity rail were removed. Activity drawer navigation remains parked until it switches real drawer content.",
+      "buildOrder": 47
     },
     {
       "id": "DRAWER-MODES-PROJECTS-FILES",
@@ -655,7 +702,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Split the side drawer into real modes instead of stacking project/session rows above the file tree.",
-      "done": "Verified 2026-07-09: the side drawer has Projects and Files tabs. Projects shows open projects and task sessions; Files shows workspace root, file actions, and the virtualized tree. The Files drawer reattaches its height observer when opened. Screenshot QA defaults to Projects mode. Verified with npm run build, npm test, npm run qa:editor, selected screenshot inspection, and git diff --check."
+      "done": "Verified 2026-07-09: the side drawer has Projects and Files tabs. Projects shows open projects and task sessions; Files shows workspace root, file actions, and the virtualized tree. The Files drawer reattaches its height observer when opened. Screenshot QA defaults to Projects mode. Verified with npm run build, npm test, npm run qa:editor, selected screenshot inspection, and git diff --check.",
+      "buildOrder": 48
     },
     {
       "id": "ACTIVITY-DRAWERS",
@@ -667,7 +715,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Continue drawer navigation only when it is functional, not decorative. Borrow Zed's agentic layout principle: project/session thread sidebar plus rearrangeable real panels, not a decorative VS Code rail clone. Remaining useful drawers are Search, Source Control/Git, Browser/tools, and Settings.",
-      "done": "Verified 2026-07-09: the side drawer has Projects, Files, Search, Git, Browser, and Settings modes. Search filters the live file tree and opens editor matches; Git reads real git status through Rust; Browser controls the preview URL/history/reload/external open actions; Settings changes current profile, permission mode, agent surface, tray position, open folder, and file refresh. Drawer width is pointer/keyboard resizable; collapsed icon-only state and width persist locally. Verified with npm run build, npm test, cargo test, npm run qa:editor, selected screenshot inspection, and git diff --check."
+      "done": "Verified 2026-07-09: the side drawer has Projects, Files, Search, Git, Browser, and Settings modes. Search filters the live file tree and opens editor matches; Git reads real git status through Rust; Browser controls the preview URL/history/reload/external open actions; Settings changes current profile, permission mode, agent surface, tray position, open folder, and file refresh. Drawer width is pointer/keyboard resizable; collapsed icon-only state and width persist locally. Verified with npm run build, npm test, cargo test, npm run qa:editor, selected screenshot inspection, and git diff --check.",
+      "buildOrder": 49
     },
     {
       "id": "SESSION-RESTORE",
@@ -678,7 +727,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "After quit/relaunch, the cockpit should come back as the same working context, without pretending to preserve live agent process state.",
-      "done": "Verified 2026-07-09: sessionEditorSnapshots persists per-session editor tabs, active file, dirty buffers, and CodeMirror view state. paneLayoutsBySession persists pane slots, launch profile ids, and labels. Startup normalizes both stores before reopening the last workspace and creates fresh panes from the saved layout without pretending live process memory or transcripts survived relaunch. Covered by npm run build and npm test -- sessionRestore.test.ts."
+      "done": "Verified 2026-07-09: sessionEditorSnapshots persists per-session editor tabs, active file, dirty buffers, and CodeMirror view state. paneLayoutsBySession persists pane slots, launch profile ids, and labels. Startup normalizes both stores before reopening the last workspace and creates fresh panes from the saved layout without pretending live process memory or transcripts survived relaunch. Covered by npm run build and npm test -- sessionRestore.test.ts.",
+      "buildOrder": 50
     },
     {
       "id": "GIT-STATUS",
@@ -689,7 +739,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Small but high-signal replacement for a VS Code affordance Jason likely relies on: dirty/new/deleted markers in the file tree.",
-      "done": "Verified 2026-07-09: file nodes show compact Git tokens for modified, untracked/new, added, deleted, renamed, and staged files. Deleted files that no longer exist on disk are inserted as virtual file rows under their parent folder and cannot be opened as real files. Unsaved editor draft dots remain separate from repository status. Covered by npm run build, npm test -- fileGitStatus.test.ts, and npm run qa:editor."
+      "done": "Verified 2026-07-09: file nodes show compact Git tokens for modified, untracked/new, added, deleted, renamed, and staged files. Deleted files that no longer exist on disk are inserted as virtual file rows under their parent folder and cannot be opened as real files. Unsaved editor draft dots remain separate from repository status. Covered by npm run build, npm test -- fileGitStatus.test.ts, and npm run qa:editor.",
+      "buildOrder": 51
     },
     {
       "id": "DIFF-VIEW",
@@ -700,7 +751,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Jason supervises agents by reading what changed. A file status marker is not enough; he needs to inspect diffs without opening VS Code.",
-      "done": "Verified 2026-07-09: Source Control rows and file-rail Git context menus open a read-only unified diff review in the editor tray. The review shows source/status, additions/deletions, old/new line numbers, diff metadata, synthetic untracked text diffs, and hunk-to-editor jumps for files that still exist. Covered by npm run build, npm test -- diffView.test.ts, cargo test git_, and cargo test synthesizes_untracked_text_diff."
+      "done": "Verified 2026-07-09: Source Control rows and file-rail Git context menus open a read-only unified diff review in the editor tray. The review shows source/status, additions/deletions, old/new line numbers, diff metadata, synthetic untracked text diffs, and hunk-to-editor jumps for files that still exist. Covered by npm run build, npm test -- diffView.test.ts, cargo test git_, and cargo test synthesizes_untracked_text_diff.",
+      "buildOrder": 52
     },
     {
       "id": "GIT-ACTIONS-LITE",
@@ -712,7 +764,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Add only the git actions needed to review/clean agent work, not a full git client.",
-      "done": "Verified 2026-07-09: diff review and Git-marked file context menus expose Stage, Unstage, Discard Unstaged Changes, and Copy shown diff. The blind audit findings were folded into the card: discard is blocked when the same file has an unsaved editor draft; mixed staged/unstaged files use explicit labels (Copy shown diff, whole-file Stage/Unstage); backend git_file_action validates repository-relative paths and re-reads target status before mutation; staged new files, tracked discard, and untracked discard use separate Git command paths; real temp-repo Git tests cover stage/unstage/discard; the slice stops at per-file actions, not branch/commit/push/PR; screenshot QA includes diff-review.png. Covered by npm run build, npm test, cargo test git_file_actions, npm run qa:editor, and git diff --check."
+      "done": "Verified 2026-07-09: diff review and Git-marked file context menus expose Stage, Unstage, Discard Unstaged Changes, and Copy shown diff. The blind audit findings were folded into the card: discard is blocked when the same file has an unsaved editor draft; mixed staged/unstaged files use explicit labels (Copy shown diff, whole-file Stage/Unstage); backend git_file_action validates repository-relative paths and re-reads target status before mutation; staged new files, tracked discard, and untracked discard use separate Git command paths; real temp-repo Git tests cover stage/unstage/discard; the slice stops at per-file actions, not branch/commit/push/PR; screenshot QA includes diff-review.png. Covered by npm run build, npm test, cargo test git_file_actions, npm run qa:editor, and git diff --check.",
+      "buildOrder": 53
     },
     {
       "id": "CHROME-DEMO-CONTRACT",
@@ -724,7 +777,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Treat demo/keelhouse-chrome-demo.html as the visual contract for the app pass.",
-      "done": "Verified 2026-07-09: the accepted demo contract is documented in docs/chrome-contract.md, enforced by npm run qa:chrome-contract, and tied to accepted demo plus real app shell checks."
+      "done": "Verified 2026-07-09: the accepted demo contract is documented in docs/chrome-contract.md, enforced by npm run qa:chrome-contract, and tied to accepted demo plus real app shell checks.",
+      "buildOrder": 54
     },
     {
       "id": "CHROME-QA-GATE",
@@ -735,7 +789,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Every chrome pass must prove the accepted states still hold visually and mechanically.",
-      "done": "Verified 2026-07-09: added npm run qa:chrome-contract and docs/chrome-contract.md; the gate checks required chrome-demo screenshots, steel-cyan tokens, rejected orange/warm accent tokens, rejected chat avatar labels, and flat active-thread treatment. Refreshed editor QA screenshots with npm run qa:editor and spot-checked selected plus narrow-composer states."
+      "done": "Verified 2026-07-09: added npm run qa:chrome-contract and docs/chrome-contract.md; the gate checks required chrome-demo screenshots, steel-cyan tokens, rejected orange/warm accent tokens, rejected chat avatar labels, and flat active-thread treatment. Refreshed editor QA screenshots with npm run qa:editor and spot-checked selected plus narrow-composer states.",
+      "buildOrder": 55
     },
     {
       "id": "STEEL-CYAN-THEME-GATE",
@@ -746,7 +801,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Lock the accepted graphite shell and steel-cyan accent into semantic tokens and QA checks.",
-      "done": "Verified 2026-07-09: app chrome defines steel-cyan primitive tokens, routes semantic accent tokens through them, removes the old blue primary treatment, flattens shared badge/control radii, and the chrome contract gate rejects warm accent drift."
+      "done": "Verified 2026-07-09: app chrome defines steel-cyan primitive tokens, routes semantic accent tokens through them, removes the old blue primary treatment, flattens shared badge/control radii, and the chrome contract gate rejects warm accent drift.",
+      "buildOrder": 56
     },
     {
       "id": "AGENT-THREAD-SURFACE",
@@ -758,7 +814,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Chat/activity is the working surface; raw terminal is available but not the default screen.",
-      "done": "Verified 2026-07-09: chat remains the default surface, raw terminal remains available as an escape hatch, activity renders as thread-style event cards instead of a table, filters remain available, and refreshed QA screenshots show prompt, approval, file, command, and error events above the bottom composer."
+      "done": "Verified 2026-07-09: chat remains the default surface, raw terminal remains available as an escape hatch, activity renders as thread-style event cards instead of a table, filters remain available, and refreshed QA screenshots show prompt, approval, file, command, and error events above the bottom composer.",
+      "buildOrder": 57
     },
     {
       "id": "APP-CHROME-PORT",
@@ -770,7 +827,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Port the accepted demo into the real Tauri app shell without losing current v1 functionality.",
-      "done": "Projects/Files/Search/Git/Browser/Settings drawers, multi-pane sessions, browser preview, editor tray, git diff actions, composer harness, activity log, and process lifecycle still work after the chrome port; screenshots prove the default shell no longer resembles stacked panes."
+      "done": "Projects/Files/Search/Git/Browser/Settings drawers, multi-pane sessions, browser preview, editor tray, git diff actions, composer harness, activity log, and process lifecycle still work after the chrome port; screenshots prove the default shell no longer resembles stacked panes.",
+      "buildOrder": 58
     },
     {
       "id": "CHROME-CONTROL-POLISH",
@@ -781,7 +839,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "Flatten obvious AI-looking rounded rectangles into native-feeling toolbar, menu, dropdown, and command controls.",
-      "done": "Toolbar buttons, menus, dropdowns, command palette rows, settings rows, and tray tabs use consistent outline iconography, subtle hover/focus/disabled states, and labels only where icons are ambiguous."
+      "done": "Toolbar buttons, menus, dropdowns, command palette rows, settings rows, and tray tabs use consistent outline iconography, subtle hover/focus/disabled states, and labels only where icons are ambiguous.",
+      "buildOrder": 59
     },
     {
       "id": "TRAY-DOCKING-UX",
@@ -792,7 +851,8 @@
       "size": "M",
       "launch": "v1",
       "summary": "Editor, files, browser, git, and raw terminal should feel like tool trays around the agent conversation, not stacked panels. Current slice adds persisted Split/Editor/Browser tray tabs and hides unused tray surfaces in single-tray modes.",
-      "done": "Tool surfaces support left, right, bottom, and hidden states with clear splitters, compact tabs, persisted sizes, and no content overlap at narrow widths. Single-tray modes hide unused panes and remove irrelevant splitters."
+      "done": "Tool surfaces support left, right, bottom, and hidden states with clear splitters, compact tabs, persisted sizes, and no content overlap at narrow widths. Single-tray modes hide unused panes and remove irrelevant splitters.",
+      "buildOrder": 60
     },
     {
       "id": "CHROME-COHERENCE-PASS",
@@ -804,7 +864,8 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Fix the actual shell before measurement using VS Code/Zed-level chrome craft without copying either product, with demo/cockpit-demo.html as the graphite mood reference and Codex as the clean-composition reference: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, steel-cyan accent, minimal rounded button chrome, resizable splitters, and editor/browser/git/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
-      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
+      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough.",
+      "buildOrder": 61
     },
     {
       "id": "DEV-SERVER-DETECT",
@@ -815,29 +876,8 @@
       "size": "S",
       "launch": "v1",
       "summary": "When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser. Current slice detects local URLs from terminal output and offers an explicit browser-preview action.",
-      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project/session and offers reload/open-external. OS-level port discovery remains deferred until daily-driver metrics show it is needed."
-    },
-    {
-      "id": "DAILY-DRIVER-METRICS",
-      "title": "Daily-driver success metrics",
-      "column": "next",
-      "tier": "rock",
-      "track": "quality",
-      "size": "S",
-      "launch": "v1",
-      "summary": "Define and collect the evidence needed to prove Keelhouse can replace the current VS Code workflow instead of merely adding features. Current slice adds a repeatable readiness collector for the three target workflows.",
-      "done": "Script and record three workflow runs: one-project edit+agent, two-agent same-project, and three-project switch/relaunch. Current readiness gate verifies required app surfaces, docs, and screenshots exist and writes docs/qa/daily-driver/latest.json plus latest.md; timed live Tauri runs, elapsed time, crashes, memory/CPU snapshots, and VS Code-needed checks remain next."
-    },
-    {
-      "id": "PERF-BUDGET",
-      "title": "Resource and jank budget",
-      "column": "next",
-      "tier": "rock",
-      "track": "quality",
-      "size": "M",
-      "launch": "v1",
-      "summary": "The product exists to avoid VS Code resource bloat. Current slice adds a static budget gate for built assets, evidence artifacts, and lightweight architecture choices before live runtime comparison.",
-      "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release. Current gate writes docs/qa/perf-budget/latest.json and latest.md, enforces JS/CSS caps, checks screenshots/evidence, records the largest-JS soft warning, and keeps packaged Tauri plus VS Code live comparison as the next measurement pass."
+      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project/session and offers reload/open-external. OS-level port discovery remains deferred until daily-driver metrics show it is needed.",
+      "buildOrder": 62
     },
     {
       "id": "COMMAND-PALETTE",
@@ -848,7 +888,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "A compact VS Code-style way to expose actions without adding IDE chrome. Current slice adds a real Shift+Cmd+P palette for existing app-owned actions: open folder, save/find/close tab, pane create/restart/kill/close/clear, browser reload/open detected, drawer switches, tray switches, and composer context attachments.",
-      "done": "A keyboard palette can run core app actions, shows shortcuts where assigned, and stays consistent with menu/context-menu labels. Current slice keeps Cmd+P quick-open, ripgrep text search, and terminal scrollback search with SEARCH and TERMINAL-FIND."
+      "done": "A keyboard palette can run core app actions, shows shortcuts where assigned, and stays consistent with menu/context-menu labels. Current slice keeps Cmd+P quick-open, ripgrep text search, and terminal scrollback search with SEARCH and TERMINAL-FIND.",
+      "buildOrder": 63
     },
     {
       "id": "SEARCH",
@@ -858,8 +899,33 @@
       "track": "files",
       "size": "M",
       "launch": "v2",
-      "summary": "A lightweight replacement for the VS Code search/file-jump behaviors that matter while supervising agents.",
-      "done": "Keyboard-driven file quick-open and ripgrep-backed text search work inside the selected project."
+      "summary": "A lightweight replacement for the VS Code search/file-jump behaviors that matter while supervising agents. Current slice adds Cmd+P Quick Open and Files/Text scopes in the Search drawer.",
+      "done": "Keyboard-driven file quick-open and ripgrep-backed text search work inside the selected project. Current text search uses rg --json when available, falls back to the ignore-aware walker, caps file size/results, and opens hits at the matching line.",
+      "buildOrder": 64
+    },
+    {
+      "id": "DAILY-DRIVER-METRICS",
+      "title": "Daily-driver success metrics",
+      "column": "next",
+      "tier": "rock",
+      "track": "quality",
+      "size": "S",
+      "launch": "v1",
+      "summary": "Define and collect the evidence needed to prove Keelhouse can replace the current VS Code workflow instead of merely adding features. Current slice adds a repeatable readiness collector for the three target workflows.",
+      "done": "Script and record three workflow runs: one-project edit+agent, two-agent same-project, and three-project switch/relaunch. Current readiness gate verifies required app surfaces, docs, and screenshots exist and writes docs/qa/daily-driver/latest.json plus latest.md; timed live Tauri runs, elapsed time, crashes, memory/CPU snapshots, and VS Code-needed checks remain next.",
+      "buildOrder": 65
+    },
+    {
+      "id": "PERF-BUDGET",
+      "title": "Resource and jank budget",
+      "column": "next",
+      "tier": "rock",
+      "track": "quality",
+      "size": "M",
+      "launch": "v1",
+      "summary": "The product exists to avoid VS Code resource bloat. Current slice adds a static budget gate for built assets, evidence artifacts, and lightweight architecture choices before live runtime comparison.",
+      "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release. Current gate writes docs/qa/perf-budget/latest.json and latest.md, enforces JS/CSS caps, checks screenshots/evidence, records the largest-JS soft warning, and keeps packaged Tauri plus VS Code live comparison as the next measurement pass.",
+      "buildOrder": 66
     },
     {
       "id": "TERMINAL-FIND",
@@ -870,7 +936,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Agent output can be long. Search inside terminal scrollback is necessary for reviewing logs and prior agent output.",
-      "done": "Find text in the active pane scrollback, jump next/previous, and preserve terminal focus behavior."
+      "done": "Find text in the active pane scrollback, jump next/previous, and preserve terminal focus behavior.",
+      "buildOrder": 67
     },
     {
       "id": "SETTINGS-PARITY",
@@ -881,7 +948,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Borrow Codex's searchable left-nav settings shape and icon density, but keep only categories that serve the lean VS Code replacement workflow.",
-      "done": "Settings has searchable grouped sections for General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees; Profile, Pets, Usage & billing, Archived chats, and Chat Settings are absent; Appshots and Computer use remain parked."
+      "done": "Settings has searchable grouped sections for General, Appearance, App configuration, Behavior, Keyboard shortcuts, MCP servers, Browser preview, Agent hooks, Connections, Git, Environments, and Worktrees; Profile, Pets, Usage & billing, Archived chats, and Chat Settings are absent; Appshots and Computer use remain parked.",
+      "buildOrder": 68
     },
     {
       "id": "SETTINGS",
@@ -892,7 +960,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Keep settings boring and inspectable: agent commands, AI connections, source-control connections, ignored folders, font, color theme, default layout, browser preview, hooks, git/worktree defaults, environments, and shortcut overrides. This is not a plugin platform.",
-      "done": "A local config file controls agent profiles, AI connections, source-control connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported."
+      "done": "A local config file controls agent profiles, AI connections, source-control connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported.",
+      "buildOrder": 69
     },
     {
       "id": "KEYBINDINGS-CONFIG",
@@ -903,7 +972,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "After the VS Code-compatible default shortcut map stabilizes, allow focused overrides without hardcoding personal preferences into the app.",
-      "done": "A local config file can override app-level shortcuts, reports conflicts with terminal/editor reserved bindings, and generates a visible shortcut reference."
+      "done": "A local config file can override app-level shortcuts, reports conflicts with terminal/editor reserved bindings, and generates a visible shortcut reference.",
+      "buildOrder": 70
     },
     {
       "id": "THEME",
@@ -914,7 +984,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "Support practical color themes across chrome, terminal, rail, and editor. Start with the approved mono-ghost theme; do not expand into plugin theming or break the chrome token contract.",
-      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states."
+      "done": "App chrome, terminal canvas, file rail, and editor can switch between built-in color themes with readable contrast while preserving semantic token roles and component states.",
+      "buildOrder": 71
     },
     {
       "id": "AI-CONNECTIONS",
@@ -925,7 +996,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Users need to hook up real AI tooling: Claude/Codex CLI auth, provider API keys, model defaults, MCP servers, environment variables, permission defaults, and health checks.",
-      "done": "Settings can configure Claude/Codex command profiles, provider/API credentials via OS-safe storage, MCP server entries, env vars, default models, permission policy, and validation checks that explain missing auth or broken connections."
+      "done": "Settings can configure Claude/Codex command profiles, provider/API credentials via OS-safe storage, MCP server entries, env vars, default models, permission policy, and validation checks that explain missing auth or broken connections.",
+      "buildOrder": 72
     },
     {
       "id": "AGENT-HOOKS",
@@ -936,7 +1008,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.",
-      "done": "A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log."
+      "done": "A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log.",
+      "buildOrder": 73
     },
     {
       "id": "TRANSCRIPTS",
@@ -947,7 +1020,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "Completed agent sessions should be reviewable after the process exits without keeping panes open forever.",
-      "done": "A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior."
+      "done": "A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior.",
+      "buildOrder": 74
     },
     {
       "id": "NOTIFICATIONS",
@@ -958,7 +1032,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "When an agent in another project or pane stops or needs input, Jason should not have to manually inspect every pane.",
-      "done": "Background panes can surface in-app badges and optional macOS notifications for exit/attention events."
+      "done": "Background panes can surface in-app badges and optional macOS notifications for exit/attention events.",
+      "buildOrder": 75
     },
     {
       "id": "WORKTREE",
@@ -969,7 +1044,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "One keystroke: new pane = git worktree add + agent launched inside it, named and disposable. The 'multiple agents on one repo, parallel' workflow.",
-      "done": "From a project tab: new-worktree-agent in <5s; cleanup removes the worktree + branch."
+      "done": "From a project tab: new-worktree-agent in <5s; cleanup removes the worktree + branch.",
+      "buildOrder": 76
     },
     {
       "id": "INTEGRATIONS-POLICY",
@@ -980,7 +1056,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "Define the allowed lane for other integrations so Bitbucket, Azure DevOps, Linear, Jira, Slack, or Discord do not turn the app into a plugin hub.",
-      "done": "Documented integration policy classifies integrations as core, first-class, adapter-lane, parked, or out-of-scope; every integration requires a concrete workflow, health check, credential boundary, and app-owned command surface."
+      "done": "Documented integration policy classifies integrations as core, first-class, adapter-lane, parked, or out-of-scope; every integration requires a concrete workflow, health check, credential boundary, and app-owned command surface.",
+      "buildOrder": 77
     },
     {
       "id": "SOURCE-CONTROL-CONNECTIONS",
@@ -991,7 +1068,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Local Git is not enough once agent work needs to move through PR/MR review. Add first-class source-hosting connections without becoming a full forge client.",
-      "done": "Settings detects `git`, `gh`, and `glab` auth health; supports GitHub, GitLab.com, and self-hosted GitLab remotes; opens repo/PR/MR/issue/pipeline links in browser preview or external browser; shows source-host status for the active repo; credentials are stored only through OS-safe storage."
+      "done": "Settings detects `git`, `gh`, and `glab` auth health; supports GitHub, GitLab.com, and self-hosted GitLab remotes; opens repo/PR/MR/issue/pipeline links in browser preview or external browser; shows source-host status for the active repo; credentials are stored only through OS-safe storage.",
+      "buildOrder": 78
     },
     {
       "id": "PACKAGING",
@@ -1002,7 +1080,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Make it launch like a real macOS app, not only from `npm run tauri dev`.",
-      "done": "A local signed or ad-hoc packaged .app launches, opens folders, and runs agents with documented setup requirements."
+      "done": "A local signed or ad-hoc packaged .app launches, opens folders, and runs agents with documented setup requirements.",
+      "buildOrder": 79
     },
     {
       "id": "SESSION-ARCHIVE",
@@ -1013,7 +1092,8 @@
       "size": "S",
       "launch": "v2",
       "summary": "Only after project sessions and transcripts exist, add a way to hide old sessions without turning the product into archived chats.",
-      "done": "A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats."
+      "done": "A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats.",
+      "buildOrder": 80
     },
     {
       "id": "DIRECT-AGENT-HARNESS",
@@ -1024,7 +1104,8 @@
       "size": "M",
       "launch": "v2",
       "summary": "Research-backed future lane: app-owned direct API/MCP agent workflows using human review, resumable state, and tracing, without replacing real Claude/Codex terminal panes.",
-      "done": "A feature-flagged direct agent can run app-owned tools/MCP with approval gates, state restore/resume, tracing/activity log entries, and clear separation from terminal-backed Claude/Codex panes."
+      "done": "A feature-flagged direct agent can run app-owned tools/MCP with approval gates, state restore/resume, tracing/activity log entries, and clear separation from terminal-backed Claude/Codex panes.",
+      "buildOrder": 81
     },
     {
       "id": "REUSE-AUDIT",
@@ -1035,7 +1116,8 @@
       "size": "S",
       "launch": "v3",
       "summary": "Re-check Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without adopting their product shape.",
-      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected."
+      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected.",
+      "buildOrder": 82
     }
   ],
   "shipped": [
@@ -1099,5 +1181,6 @@
       "done": "Native app opens, IPC is wired both directions, frontend and Rust builds pass.",
       "shipped": "2026-07-08"
     }
-  ]
+  ],
+  "orderMode": "build"
 }

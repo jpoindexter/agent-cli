@@ -8,7 +8,7 @@ node rockmap/build-roadmap.mjs roadmap.json roadmap.html
 
 Sequential where risk gates the next step; parallel only when cards are independent. Ship ugly first, but do not lose the actual product shape: Keelhouse replaces Jason's VS Code workflow with an agent-first cockpit: real CLI agents and composer are primary; file explorer, editor, and browser/web preview are resizable trays around them.
 
-Remaining cards are ordered by efficient build dependency: finish the accepted shell chrome, fix control/tray mechanics, pass a full chrome coherence gate, prove the app can replace the VS Code habit, add navigation/search/settings leverage, then add agent hooks, integrations, distribution, and speculative expansion.
+Remaining cards are ordered by efficient build dependency: finish the accepted shell chrome, fix control/tray mechanics, pass a full chrome coherence gate, wire local-preview detection, add command/search leverage, prove the app can replace the VS Code habit, then add settings, agent hooks, integrations, distribution, and speculative expansion.
 
 Current build order uses a Value-vs-Effort pass plus dependency gates: ship high-risk basics before more features, keep quick wins only when they unlock the next slice, and park personalization until the core cockpit works.
 
@@ -122,6 +122,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **COMMAND-PALETTE:** VS Code-style compact action access without adding IDE chrome; uses the same command registry as shortcuts and context menus.
   - 2026-07-09 slice: added a real `Shift+Cmd+P` command palette plus titlebar Commands entry. It filters command labels/details/shortcuts/keywords, runs existing app-owned actions for open/save/find/tabs/panes/browser/drawers/trays/composer attachments, shows shortcut labels where assigned, and keeps `Cmd+P` quick-open/search deferred to `SEARCH`.
 - **SEARCH:** file quick-open and ripgrep-backed text search.
+  - 2026-07-09 slice: added real `Cmd+P` Quick Open for workspace files and upgraded the Search drawer to Files/Text scopes. Text search calls `search_workspace_text`, which uses `rg --json --fixed-strings --ignore-case` when available and falls back to the existing ignore-aware walker. Results show file, line, column, and snippet, then open the file and jump to the matching line.
 - **TERMINAL-FIND:** search active terminal output/scrollback.
 - **SETTINGS-PARITY:** Codex-style searchable settings shell, keeping only useful workbench categories and dropping account/chat novelty categories.
 - **SETTINGS:** inspectable config for agent commands, ignored folders, font/theme, layout, AI connections, and shortcut overrides.
