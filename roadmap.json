@@ -715,18 +715,6 @@
       "done": "Verified 2026-07-09: diff review and Git-marked file context menus expose Stage, Unstage, Discard Unstaged Changes, and Copy shown diff. The blind audit findings were folded into the card: discard is blocked when the same file has an unsaved editor draft; mixed staged/unstaged files use explicit labels (Copy shown diff, whole-file Stage/Unstage); backend git_file_action validates repository-relative paths and re-reads target status before mutation; staged new files, tracked discard, and untracked discard use separate Git command paths; real temp-repo Git tests cover stage/unstage/discard; the slice stops at per-file actions, not branch/commit/push/PR; screenshot QA includes diff-review.png. Covered by npm run build, npm test, cargo test git_file_actions, npm run qa:editor, and git diff --check."
     },
     {
-      "id": "CHROME-COHERENCE-PASS",
-      "title": "Workbench chrome coherence pass",
-      "column": "now",
-      "tier": "rock",
-      "track": "ui",
-      "size": "M",
-      "launch": "v1",
-      "blocker": true,
-      "summary": "Fix the actual shell before measurement using VS Code/Zed-level chrome craft without copying either product, with demo/cockpit-demo.html as the graphite mood reference and Codex as the clean-composition reference: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, steel-cyan accent, minimal rounded button chrome, resizable splitters, and editor/browser/git/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
-      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
-    },
-    {
       "id": "CHROME-DEMO-CONTRACT",
       "title": "Accepted chrome demo contract",
       "column": "now",
@@ -737,6 +725,28 @@
       "blocker": true,
       "summary": "Treat demo/keelhouse-chrome-demo.html as the visual contract for the app pass.",
       "done": "The real app matches the accepted demo direction: graphite shell, steel-cyan accent, direct thread/project sidebar, agent-first center, right/bottom trays, flat toolbar icons, and no orange accents, fake browser chrome, decorative activity rail, or pill-heavy controls."
+    },
+    {
+      "id": "CHROME-QA-GATE",
+      "title": "Chrome screenshot QA gate",
+      "column": "now",
+      "tier": "sand",
+      "track": "quality",
+      "size": "S",
+      "launch": "v1",
+      "summary": "Every chrome pass must prove the accepted states still hold visually and mechanically.",
+      "done": "First-open, create-menu, settings, palette, and narrow screenshots are refreshed; the report includes overflow checks, avatar-label checks, active-row-radius checks, and accent-token checks before the slice is called done."
+    },
+    {
+      "id": "STEEL-CYAN-THEME-GATE",
+      "title": "Graphite and steel-cyan theme gate",
+      "column": "now",
+      "tier": "sand",
+      "track": "ui",
+      "size": "S",
+      "launch": "v1",
+      "summary": "Lock the accepted graphite shell and steel-cyan accent into semantic tokens and QA checks.",
+      "done": "Chrome tokens use graphite surfaces and steel-cyan accents; QA or lint checks catch orange/warm accent drift, purple-heavy gradients, and one-note palette regressions."
     },
     {
       "id": "APP-CHROME-PORT",
@@ -785,26 +795,27 @@
       "done": "Toolbar buttons, menus, dropdowns, command palette rows, settings rows, and tray tabs use consistent outline iconography, subtle hover/focus/disabled states, and labels only where icons are ambiguous."
     },
     {
-      "id": "STEEL-CYAN-THEME-GATE",
-      "title": "Graphite and steel-cyan theme gate",
+      "id": "CHROME-COHERENCE-PASS",
+      "title": "Workbench chrome coherence pass",
       "column": "next",
-      "tier": "sand",
+      "tier": "rock",
+      "track": "ui",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Fix the actual shell before measurement using VS Code/Zed-level chrome craft without copying either product, with demo/cockpit-demo.html as the graphite mood reference and Codex as the clean-composition reference: one large agent-first window, a direct thread/project sidebar on the left, no decorative left activity rail, flat toolbar icons, steel-cyan accent, minimal rounded button chrome, resizable splitters, and editor/browser/git/raw terminal as docked tool panes only when needed. Target walkthrough: demo/keelhouse-chrome-demo.html.",
+      "done": "The default screen reads as one agent-first cockpit, not stacked panes or an editor-first IDE. Projects/sessions appear in a direct left sidebar, not a decorative activity rail; editor/browser/git/raw terminal are movable/resizable tool panes using a typed panel contract inspired by disciplined native workbench chrome; dropdowns/context menus use flat polished chrome; fake navigation/window controls and pill-heavy rounded controls are gone; screenshot QA covers full, narrow, menu, settings, and command-palette states, matching the demo/keelhouse-chrome-demo.html walkthrough."
+    },
+    {
+      "id": "DEV-SERVER-DETECT",
+      "title": "Local dev server detection",
+      "column": "next",
+      "tier": "rock",
       "track": "ui",
       "size": "S",
       "launch": "v1",
-      "summary": "Lock the accepted graphite shell and steel-cyan accent into semantic tokens and QA checks.",
-      "done": "Chrome tokens use graphite surfaces and steel-cyan accents; QA or lint checks catch orange/warm accent drift, purple-heavy gradients, and one-note palette regressions."
-    },
-    {
-      "id": "CHROME-QA-GATE",
-      "title": "Chrome screenshot QA gate",
-      "column": "next",
-      "tier": "sand",
-      "track": "quality",
-      "size": "S",
-      "launch": "v1",
-      "summary": "Every chrome pass must prove the accepted states still hold visually and mechanically.",
-      "done": "First-open, create-menu, settings, palette, and narrow screenshots are refreshed; the report includes overflow checks, avatar-label checks, active-row-radius checks, and accent-token checks before the slice is called done."
+      "summary": "When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser.",
+      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project and offers reload/open-external."
     },
     {
       "id": "DAILY-DRIVER-METRICS",
@@ -827,17 +838,6 @@
       "launch": "v1",
       "summary": "The product exists to avoid VS Code resource bloat. Measure the thing the product promises: memory, CPU, and responsiveness with several projects/panes.",
       "done": "Document baseline memory/CPU/jank for one-project edit+agent, two-agent same-project, three-project switch/relaunch, and fast terminal output runs; compare against the equivalent VS Code workflow and make regressions visible before release."
-    },
-    {
-      "id": "DEV-SERVER-DETECT",
-      "title": "Local dev server detection",
-      "column": "next",
-      "tier": "rock",
-      "track": "ui",
-      "size": "S",
-      "launch": "v1",
-      "summary": "When Claude/Codex starts Vite, Next, Astro, or another dev server, the app should make the local preview obvious without acting like a full browser.",
-      "done": "Detected localhost URLs from terminal output can be opened in the browser preview; the preview remembers the latest URL per project and offers reload/open-external."
     },
     {
       "id": "SEARCH",
