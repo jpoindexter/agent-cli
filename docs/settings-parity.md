@@ -42,3 +42,13 @@ This app should borrow the Codex settings shape where it supports the lean VS Co
 - Every setting maps to a real app behavior or external connection check.
 - Dropped categories do not appear in the UI.
 - Parked categories remain documented but invisible unless promoted.
+
+## Modal Chrome Spec (recorded 2026-07-11 with OVERLAY-PARITY; ships with SETTINGS)
+
+The settings surface follows the accepted demo's overlay chrome exactly (`demo/keelhouse-chrome-demo.html`, `?overlay=settings` scene):
+
+- Modal: `min(900px, calc(100vw - 72px))` wide, `min(560px, calc(100vh - 96px))` tall, 10px radius, 1px `#343642` border, `--menu-bg` background, overlay shadow, on the shared blurred scrim.
+- Header: 42px, title left, flat × close right, hairline bottom border.
+- Two-column grid: 230px left nav / flexible content. Nav buttons are 30px flat rows; active = `#252732` + 3px steel-cyan left stripe (same active grammar as palette rows and sidebar rows).
+- Setting rows: 48px minimum, `label + hint` left (hint 12px muted), control right, hairline separators.
+- Controls: 28px select-like fields on `#15161d` with 4px radius; all buttons follow the app control grammar (flat text-actions, single filled primary per surface at most).
