@@ -15,6 +15,7 @@ export type ProjectSession = {
   title: string;
   status: ProjectSessionStatus;
   updatedAt: number;
+  archived?: boolean;
 };
 
 export type ProjectSessionsByProject = Record<string, ProjectSession[]>;
@@ -118,8 +119,34 @@ const normalizeProjectSession = (value: unknown): ProjectSession | null => {
     title,
     status: normalizeProjectStatus(item.status),
     updatedAt,
+    ...(item.archived === true ? { archived: true } : {}),
   };
 };
+
+export const setProjectSessionArchived = (
+  sessions: ProjectSessionsByProject,
+  path: string,
+  sessionId: string,
+  archived: boolean,
+): ProjectSessionsByProject => {
+  const list = sessions[path];
+  if (!list) return sessions;
+  // Never archive the last un-archived session — a project must keep a live
+  // workbench to return to, mirroring the delete last-session protection.
+  if (archived && list.filter((s) => !s.archived).length <= 1) return sessions;
+  return {
+    ...sessions,
+    [path]: list.map((session) =>
+      session.id === sessionId ? { ...session, archived: archived ? true : undefined } : session,
+    ),
+  };
+};
+
+export const activeSessionsForRail = (sessions: ProjectSession[], showArchived: boolean): ProjectSession[] =>
+  showArchived ? sessions : sessions.filter((session) => !session.archived);
+
+export const archivedSessionCount = (sessions: ProjectSession[]): number =>
+  sessions.filter((session) => session.archived).length;
 
 export const normalizeProjectSessionsByProject = (value: unknown): ProjectSessionsByProject => {
   if (typeof value !== "object" || value == null || Array.isArray(value)) return {};

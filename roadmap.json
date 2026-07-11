@@ -1086,13 +1086,13 @@
     {
       "id": "SESSION-ARCHIVE",
       "title": "Session archive",
-      "column": "later",
+      "column": "done",
       "tier": "sand",
       "track": "workspace",
       "size": "S",
       "launch": "v2",
       "summary": "Only after project sessions and transcripts exist, add a way to hide old sessions without turning the product into archived chats.",
-      "done": "A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats.",
+      "done": "A completed project session can be archived/restored; archived sessions retain transcript references and metadata, stay out of the main rail, and are labeled as work sessions rather than chats. Executed 2026-07-12: optional archived flag on ProjectSession (normalized on load, backward-compatible), Archive/Unarchive session context action with last-active-session protection, rail hides archived by default with a Show archived (n) toggle; pure helpers (setProjectSessionArchived/activeSessionsForRail/archivedSessionCount) tested (146 vitest).",
       "buildOrder": 80
     },
     {

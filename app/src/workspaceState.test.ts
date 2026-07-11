@@ -16,8 +16,11 @@ import {
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  activeSessionsForRail,
+  archivedSessionCount,
   sessionRecencyLabel,
   setActiveProjectSession,
+  setProjectSessionArchived,
   setOpenProjectStatus,
   setProjectSessionStatus,
   upsertProjectSession,
@@ -137,6 +140,27 @@ describe("workspace state helpers", () => {
     expect(sessionRecencyLabel(now - 3 * 604_800_000, now)).toBe("3w");
     expect(sessionRecencyLabel(0, now)).toBe("");
     expect(sessionRecencyLabel(Number.NaN, now)).toBe("");
+  });
+
+  it("archives sessions but protects the last active one and filters the rail", () => {
+    const base = {
+      "/a": [
+        { id: "one", title: "Current work", status: "exited" as const, updatedAt: 1 },
+        { id: "two", title: "Task", status: "running" as const, updatedAt: 2 },
+      ],
+    };
+    const archived = setProjectSessionArchived(base, "/a", "two", true);
+    expect(archived["/a"].find((s) => s.id === "two")?.archived).toBe(true);
+    expect(archivedSessionCount(archived["/a"])).toBe(1);
+    expect(activeSessionsForRail(archived["/a"], false).map((s) => s.id)).toEqual(["one"]);
+    expect(activeSessionsForRail(archived["/a"], true).map((s) => s.id)).toEqual(["one", "two"]);
+
+    // The last un-archived session cannot be archived.
+    const blocked = setProjectSessionArchived(archived, "/a", "one", true);
+    expect(blocked).toBe(archived);
+
+    const restored = setProjectSessionArchived(archived, "/a", "two", false);
+    expect(restored["/a"].find((s) => s.id === "two")?.archived).toBeUndefined();
   });
 
   it("resolves active project sessions with fallback to the first row", () => {

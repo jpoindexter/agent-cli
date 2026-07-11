@@ -47,6 +47,9 @@ import {
   setActiveProjectSession,
   setOpenProjectStatus,
   setProjectSessionStatus,
+  setProjectSessionArchived,
+  activeSessionsForRail,
+  archivedSessionCount,
   upsertOpenProject,
   upsertProjectSession,
 } from "./workspaceState";
@@ -496,6 +499,7 @@ function App() {
   const [projectSessions, setProjectSessions] = useState<ProjectSessionsByProject>({});
   const [activeSessionByProject, setActiveSessionByProjectState] = useState<ActiveSessionByProject>({});
   const [expandedSessionProjects, setExpandedSessionProjects] = useState<Record<string, boolean>>({});
+  const [showArchivedSessions, setShowArchivedSessions] = useState(false);
   const [browserPreviewByProject, setBrowserPreviewByProject] = useState<BrowserPreviewRecords>({});
   const [browserPreviewBySession, setBrowserPreviewBySession] = useState<BrowserPreviewRecords>({});
   const [composerHarnessBySession, setComposerHarnessBySession] = useState<ComposerHarnessRecords>({});
@@ -2864,12 +2868,29 @@ function App() {
     }),
     menuItem("session.rename", "Rename Session", () => void renameProjectSession(projectPath, session), { icon: "file" }),
     menuItem("session.copy-name", "Copy Session Name", () => void writeText(session.title), { icon: "file" }),
+    menuItem(
+      "session.archive",
+      session.archived ? "Unarchive Session" : "Archive Session",
+      () => void archiveProjectSession(projectPath, session, !session.archived),
+      {
+        icon: "close",
+        disabled:
+          !session.archived &&
+          (projectSessionsRef.current[projectPath] ?? []).filter((s) => !s.archived).length <= 1,
+      },
+    ),
     menuItem("session.delete", "Delete Session", () => void deleteProjectSession(projectPath, session), {
       icon: "error",
       danger: true,
       disabled: (projectSessionsRef.current[projectPath] ?? []).length <= 1,
     }),
   ];
+
+  const archiveProjectSession = async (projectPath: string, session: ProjectSession, archived: boolean) => {
+    const next = setProjectSessionArchived(projectSessionsRef.current, projectPath, session.id, archived);
+    if (next === projectSessionsRef.current) return;
+    await persistProjectSessions(next, activeSessionByProjectRef.current);
+  };
 
   const editorTabContextMenuItems = (tab: FileTreeNode): ContextMenuItem[] => [
     menuItem("tab.open", "Open", () => void requestOpenEditorFile(tab, { focusEditor: true }), { icon: "file" }),
@@ -3963,7 +3984,9 @@ function App() {
             {visibleOpenProjects.map((project) => {
               const status = projectRailStatus(project);
               const active = project.path === workspacePath;
-              const sessions = projectSessionsFor(project.path);
+              const allSessions = projectSessionsFor(project.path);
+              const sessions = activeSessionsForRail(allSessions, showArchivedSessions);
+              const archivedCount = archivedSessionCount(allSessions);
               const sessionsExpanded = expandedSessionProjects[project.path] ?? false;
               const visibleSessions = sessionsExpanded ? sessions : sessions.slice(0, 3);
               const hiddenSessionCount = Math.max(0, sessions.length - visibleSessions.length);
@@ -4057,6 +4080,20 @@ function App() {
                         }}
                       >
                         <span>{sessionsExpanded ? "Show fewer" : `Show more (${hiddenSessionCount})`}</span>
+                      </button>
+                    ) : null}
+                    {archivedCount > 0 ? (
+                      <button
+                        className="session-row session-row--more"
+                        type="button"
+                        aria-pressed={showArchivedSessions}
+                        onPointerDown={(event) => {
+                          if (event.button !== 0) return;
+                          event.preventDefault();
+                          setShowArchivedSessions((show) => !show);
+                        }}
+                      >
+                        <span>{showArchivedSessions ? "Hide archived" : `Show archived (${archivedCount})`}</span>
                       </button>
                     ) : null}
                   </div>
