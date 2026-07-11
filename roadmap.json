@@ -1207,13 +1207,13 @@
     {
       "id": "OVERLAY-PARITY",
       "title": "Menus and palette demo parity",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "S",
       "launch": "v1",
       "summary": "Align existing overlays to the demo spec. Context menus: 6px radius, 252px minimum width, 24px uppercase mono section labels, 28px icon/label/shortcut rows, quiet hover. Command palette: 640px, 10px radius, 42px input, 32px rows with left-stripe active. Overlay scrim with blur. The settings modal spec (900x560, 230px left-stripe nav, 48px setting rows) is recorded in docs but ships with SETTINGS.",
-      "done": "Menus and palette match the spec in screenshots; keyboard nav, Escape, and focus behavior regressions pass; the settings modal spec is documented in docs/settings-parity.md for the v2 card.",
+      "done": "Menus and palette match the spec in screenshots; keyboard nav, Escape, and focus behavior regressions pass; the settings modal spec is documented in docs/settings-parity.md for the v2 card. Executed 2026-07-11: menus/palette aligned and screenshot-verified, keyboard regressions green, settings modal spec recorded in docs/settings-parity.md.",
       "buildOrder": 90
     },
     {
