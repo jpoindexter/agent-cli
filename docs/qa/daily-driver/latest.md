@@ -1,7 +1,7 @@
 # Daily Driver Metrics
 
-Generated: 2026-07-10T17:00:18.993Z
-Commit: 651ed4a+dirty
+Generated: 2026-07-11T20:48:04.917Z
+Commit: f12b916
 Status: implementation-ready-for-live-runs
 
 ## Scenarios
