@@ -1267,14 +1267,14 @@
     {
       "id": "A11Y-CHROME-AUDIT",
       "title": "Chrome a11y audit: contrast, targets, motion",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "quality",
       "size": "S",
       "launch": "v1",
       "buildOrder": 95,
       "summary": "Blind-audit 2026-07-11: the 2026-07-11 token retargets (#252732 row-active, #22242d hover, steel-cyan pairs on graphite) shipped with no computed WCAG ratios — contrast was only ever verified for Ghostty ANSI colors. Compute and record AA ratios for every text-on-surface and text-on-interactive pair; verify pointer target sizes including the pseudo-element hit extensions; sweep transitions under prefers-reduced-motion (currently one guard block); give the icon-only drawer mode switcher visible labels or tooltips (its label spans are display:none even when expanded).",
-      "done": "Ratios recorded in docs/chrome-polish-system.md; failing pairs fixed; target-size verification noted per control; reduced-motion guard covers all transitions; drawer mode switcher has hover tooltips or visible labels; npm test and qa gates green."
+      "done": "Ratios recorded in docs/chrome-polish-system.md; failing pairs fixed; target-size verification noted per control; reduced-motion guard covers all transitions; drawer mode switcher has hover tooltips or visible labels; npm test and qa gates green. Executed 2026-07-11: ratios recorded in docs/chrome-polish-system.md; --color-text-subtle retuned #707383->#8f92a1 (only AA failure); reduced-motion verified globally covered; switcher labels moved to visually-hidden clip pattern; pointer-target behavior documented."
     },
     {
       "id": "CHROME-EYEBALL-SIGNOFF",

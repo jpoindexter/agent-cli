@@ -49,7 +49,10 @@
   --color-text: #d7d7d7;
   --color-text-strong: var(--gray-100);
   --color-text-muted: var(--gray-400);
-  --color-text-subtle: var(--gray-500);
+  /* #8f92a1 instead of gray-500 #707383: subtle text carries essential
+     small labels (recency stamps, section headers); 4.7:1+ on every
+     chrome surface incl. row-active. Ratios: docs/chrome-polish-system.md */
+  --color-text-subtle: #8f92a1;
   --color-text-disabled: var(--gray-600);
   --color-warning: var(--yellow-500);
   --color-warning-border: var(--yellow-800);
@@ -344,8 +347,7 @@ body,
   padding: 0;
 }
 
-.file-rail--collapsed .drawer-toolbar > span,
-.file-rail--collapsed .drawer-mode-switcher__button span {
+.file-rail--collapsed .drawer-toolbar > span {
   display: none;
 }
 
@@ -412,8 +414,16 @@ body,
   height: 14px;
 }
 
+/* Visually hidden, not display:none — the label must stay in the
+   accessibility tree so the icon-only switcher keeps its name without
+   relying on title-attribute fallback (A11Y-CHROME-AUDIT). */
 .drawer-mode-switcher__button span {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .drawer-mode-switcher__button:hover {
