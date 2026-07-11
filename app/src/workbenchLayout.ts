@@ -6,7 +6,7 @@ export type WorkbenchSizing = {
   toolSplitPercent: number;
 };
 
-export const DEFAULT_WORKBENCH_LAYOUT: WorkbenchLayoutMode = "hidden";
+export const DEFAULT_WORKBENCH_LAYOUT: WorkbenchLayoutMode = "right";
 export const DEFAULT_TOOL_TRAY_MODE: ToolTrayMode = "editor";
 export const DEFAULT_WORKBENCH_SIZING: WorkbenchSizing = { trayPercent: 30, toolSplitPercent: 58 };
 export const DEFAULT_SIDE_DRAWER_WIDTH = 260;

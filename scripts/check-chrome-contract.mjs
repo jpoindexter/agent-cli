@@ -56,7 +56,7 @@ assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not rend
 assert(appTsx.includes("Project threads"), "Projects drawer must present project sessions as threads");
 assert(appTsx.includes("Agent run and raw terminal"), "Agent surface must be labelled as a run with raw terminal as escape hatch");
 assert(appTsx.includes("<span>Run</span>"), "Agent surface switcher must name the primary surface Run");
-assert(workbenchLayout.includes('DEFAULT_WORKBENCH_LAYOUT: WorkbenchLayoutMode = "hidden"'), "First open must keep the optional tool tray hidden");
+assert(workbenchLayout.includes('DEFAULT_WORKBENCH_LAYOUT: WorkbenchLayoutMode = "right"'), "First open must show the demo layout: tray docked right (FIRST-OPEN-LAYOUT, supersedes hidden-first-open)");
 assert(workbenchLayout.includes('DEFAULT_TOOL_TRAY_MODE: ToolTrayMode = "editor"'), "First tool tray open must default to the editor");
 assert(appTsx.includes("workbench--tools-${toolTrayMode}"), "Workbench must render the active tool tray mode class");
 assert(appTsx.includes("toolTrayMode === \"split\" ? ("), "Editor/browser splitter must render only in split tray mode");

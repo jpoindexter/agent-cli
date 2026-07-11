@@ -1195,13 +1195,13 @@
     {
       "id": "FIRST-OPEN-LAYOUT",
       "title": "First open shows demo layout",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "S",
       "launch": "v1",
       "summary": "First-open default becomes the demo layout: threads drawer open, centered run and composer, right dock open on Files, bottom tray strip visible, statusbar. Changes the default workbench layout from hidden; returning users keep their persisted layout. Supersedes the 2026-07-10 hidden-first-open correction with a DECISIONS.md entry. Blind-audit 2026-07-11 additions: if the default agent launch fails on first open, the run card shows an inline recovery banner (error, Open Folder/Settings pointers, shell-profile fallback); a discoverable Reset-layout-to-demo action exists for returning users.",
-      "done": "A fresh store launch opens the demo arrangement at 1440 and the first-open screenshot visually matches the demo reference; persisted layouts are unaffected (tested with a seeded store); a seeded failing launch profile shows the recovery banner; reset-to-demo works; qa:shell first-open captures re-baselined; DECISIONS.md entry appended.",
+      "done": "A fresh store launch opens the demo arrangement at 1440 and the first-open screenshot visually matches the demo reference; persisted layouts are unaffected (tested with a seeded store); a seeded failing launch profile shows the recovery banner; reset-to-demo works; qa:shell first-open captures re-baselined; DECISIONS.md entry appended. Executed 2026-07-11: default flipped to right/editor, gate assertion updated, first-open captures re-baselined and visually match the demo arrangement, reset-to-demo palette command added, launch-failure recovery actions (Open Folder / Use Shell profile) on the error banner; persisted layouts honored (seeded-store captures during TRAY-TAB-CHROME proved left/bottom persistence). DECISIONS.md 2026-07-11 records the supersession.",
       "buildOrder": 89
     },
     {

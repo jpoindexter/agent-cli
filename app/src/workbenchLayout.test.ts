@@ -11,7 +11,7 @@ import {
 
 describe("workbench layout contract", () => {
   it("opens agent-first without a tool tray consuming the main surface", () => {
-    expect(DEFAULT_WORKBENCH_LAYOUT).toBe("hidden");
+    expect(DEFAULT_WORKBENCH_LAYOUT).toBe("right");
     expect(DEFAULT_TOOL_TRAY_MODE).toBe("editor");
     expect(DEFAULT_SIDE_DRAWER_WIDTH).toBeLessThanOrEqual(280);
   });

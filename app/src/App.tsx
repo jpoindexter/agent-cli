@@ -2878,6 +2878,17 @@ function App() {
       run: () => void pickWorkspace(),
     },
     {
+      id: "layout.reset-demo",
+      label: "Reset Layout to Demo Default",
+      detail: "Tray docked right on Editor, drawer visible",
+      icon: "workspace",
+      keywords: ["layout", "tray", "dock", "first open", "demo"],
+      run: () => {
+        setWorkbenchLayout("right");
+        setToolTrayMode("editor");
+      },
+    },
+    {
       id: "workspace.quick-open",
       label: "Quick Open",
       detail: workspacePath ? "Open files by name or path" : "Open a folder before quick open",
@@ -4862,7 +4873,25 @@ function App() {
 
       {launchError ? (
         <div className="launch-error" role="alert">
-          {launchError}
+          <span className="launch-error__message">{launchError}</span>
+          <span className="launch-error__actions">
+            <button className="editor-command" type="button" onClick={() => void pickWorkspace()}>
+              <AppIcon name="folderOpen" />
+              <span>Open Folder</span>
+            </button>
+            <button
+              className="editor-command"
+              type="button"
+              disabled={launchProfileChanging || launchProfile.id === "shell"}
+              onClick={() => {
+                const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
+                if (shell) void switchLaunchProfile(shell);
+              }}
+            >
+              <AppIcon name="terminal" />
+              <span>Use Shell profile</span>
+            </button>
+          </span>
         </div>
       ) : null}
       {contextMenu ? (
