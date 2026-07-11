@@ -4689,6 +4689,7 @@ function App() {
               hasPane={Boolean(activeTerminalPane)}
               hasSession={Boolean(activeAgentSessionDescriptor)}
               hidden={agentSurfaceMode !== "chat"}
+              metaLabel={activeTerminalPane ? activeTerminalProfile.label : undefined}
               transcript={activeTerminalTranscript}
               onActivityFilterChange={setAgentActivityFilter}
               onShowTerminal={() => setAgentSurfaceMode("terminal")}
@@ -4754,94 +4755,98 @@ function App() {
                 </div>
               </details>
             </div>
-            <div className="agent-composer__attachments" aria-label="Composer attachments">
-              <button
-                className="agent-composer__attachment-button"
-                type="button"
-                disabled={!activeComposerHarnessKey}
-                onClick={() => void attachLocalFileToComposer()}
-              >
-                <AppIcon name="filePlus" />
-                <span>File</span>
-              </button>
-              <button
-                className="agent-composer__attachment-button"
-                type="button"
-                disabled={!activeComposerHarnessKey || !selectedFile}
-                onClick={() => void attachSelectedFileToComposer()}
-              >
-                <AppIcon name="file" />
-                <span>Current</span>
-              </button>
-              <button
-                className="agent-composer__attachment-button"
-                type="button"
-                disabled={!activeComposerHarnessKey}
-                onClick={() => void attachPreviewToComposer()}
-              >
-                <AppIcon name="browser" />
-                <span>Preview</span>
-              </button>
-              {activeComposerHarness.attachments.map((attachment) => (
-                <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>
-                  <span>{attachment.label}</span>
+            <div className="agent-composer__card">
+              <textarea
+                className="agent-composer__input"
+                aria-label="Agent composer draft"
+                value={composerDraft}
+                rows={2}
+                placeholder="Send to selected agent. Use >save, >find, >open, or >clear for app actions."
+                disabled={composerSending}
+                onChange={(event) => {
+                  setComposerDraft(event.currentTarget.value);
+                  setComposerHistoryIndex(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    void submitComposerDraft();
+                  } else if (event.key === "Escape") {
+                    event.currentTarget.blur();
+                  } else if (event.key === "ArrowUp" && !composerDraft && composerHistory.length > 0) {
+                    event.preventDefault();
+                    showPreviousComposerHistory();
+                  } else if (event.key === "ArrowDown" && composerHistoryIndex != null) {
+                    event.preventDefault();
+                    showNextComposerHistory();
+                  }
+                }}
+              />
+              <div className="agent-composer__bar">
+                <div className="agent-composer__attachments" aria-label="Composer attachments">
                   <button
+                    className="agent-composer__attachment-button"
                     type="button"
-                    aria-label={`Remove attachment ${attachment.label}`}
-                    onClick={() => void removeComposerAttachmentById(attachment)}
+                    disabled={!activeComposerHarnessKey}
+                    onClick={() => void attachLocalFileToComposer()}
                   >
-                    <AppIcon name="close" />
+                    <AppIcon name="filePlus" />
+                    <span>File</span>
                   </button>
-                </span>
-              ))}
-            </div>
-            <textarea
-              className="agent-composer__input"
-              aria-label="Agent composer draft"
-              value={composerDraft}
-              rows={2}
-              placeholder="Send to selected agent. Use >save, >find, >open, or >clear for app actions."
-              disabled={composerSending}
-              onChange={(event) => {
-                setComposerDraft(event.currentTarget.value);
-                setComposerHistoryIndex(null);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  void submitComposerDraft();
-                } else if (event.key === "Escape") {
-                  event.currentTarget.blur();
-                } else if (event.key === "ArrowUp" && !composerDraft && composerHistory.length > 0) {
-                  event.preventDefault();
-                  showPreviousComposerHistory();
-                } else if (event.key === "ArrowDown" && composerHistoryIndex != null) {
-                  event.preventDefault();
-                  showNextComposerHistory();
-                }
-              }}
-            />
-            <div className="agent-composer__actions">
-              <button
-                className="agent-composer__button"
-                type="button"
-                title={shortcutTitle("composer.send", "Send")}
-                disabled={composerSending || !composerDraft.trim()}
-                onClick={() => void submitComposerDraft()}
-              >
-                <AppIcon name={composerSending ? "loading" : "send"} />
-                <span>{composerSending ? "Sending" : "Send"}</span>
-              </button>
-              <button
-                className="agent-composer__button"
-                type="button"
-                title="Stop selected pane (Ctrl+C)"
-                disabled={!activeAgentSessionHandle}
-                onClick={() => void interruptActivePane()}
-              >
-                <AppIcon name="stop" />
-                <span>Stop</span>
-              </button>
+                  <button
+                    className="agent-composer__attachment-button"
+                    type="button"
+                    disabled={!activeComposerHarnessKey || !selectedFile}
+                    onClick={() => void attachSelectedFileToComposer()}
+                  >
+                    <AppIcon name="file" />
+                    <span>Current</span>
+                  </button>
+                  <button
+                    className="agent-composer__attachment-button"
+                    type="button"
+                    disabled={!activeComposerHarnessKey}
+                    onClick={() => void attachPreviewToComposer()}
+                  >
+                    <AppIcon name="browser" />
+                    <span>Preview</span>
+                  </button>
+                  {activeComposerHarness.attachments.map((attachment) => (
+                    <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>
+                      <span>{attachment.label}</span>
+                      <button
+                        type="button"
+                        aria-label={`Remove attachment ${attachment.label}`}
+                        onClick={() => void removeComposerAttachmentById(attachment)}
+                      >
+                        <AppIcon name="close" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="agent-composer__actions">
+                  <button
+                    className="agent-composer__button agent-composer__button--danger"
+                    type="button"
+                    title="Stop selected pane (Ctrl+C)"
+                    disabled={!activeAgentSessionHandle}
+                    onClick={() => void interruptActivePane()}
+                  >
+                    <AppIcon name="stop" />
+                    <span>Stop</span>
+                  </button>
+                  <button
+                    className="agent-composer__send"
+                    type="button"
+                    aria-label={composerSending ? "Sending" : "Send"}
+                    title={shortcutTitle("composer.send", "Send")}
+                    disabled={composerSending || !composerDraft.trim()}
+                    onClick={() => void submitComposerDraft()}
+                  >
+                    <AppIcon name={composerSending ? "loading" : "send"} />
+                  </button>
+                </div>
+              </div>
             </div>
             {composerError ? <div className="agent-composer__error">{composerError}</div> : null}
           </div>

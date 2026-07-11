@@ -14,6 +14,7 @@ type AgentRunSurfaceProps = {
   hasPane: boolean;
   hasSession: boolean;
   hidden?: boolean;
+  metaLabel?: string;
   transcript: string;
   onActivityFilterChange: (filter: AgentActivityLogFilter) => void;
   onShowTerminal: () => void;
@@ -25,13 +26,14 @@ export function AgentRunSurface({
   hasPane,
   hasSession,
   hidden = false,
+  metaLabel,
   transcript,
   onActivityFilterChange,
   onShowTerminal,
 }: AgentRunSurfaceProps) {
   return (
     <div className="agent-chat-surface" aria-hidden={hidden}>
-      <AgentRunOutput hasPane={hasPane} transcript={transcript} />
+      <AgentRunOutput hasPane={hasPane} metaLabel={metaLabel} transcript={transcript} />
       <section className={`agent-activity-log ${events.length === 0 ? "agent-activity-log--empty" : ""}`} aria-label="Agent activity timeline">
         <div className="agent-activity-log__toolbar" role="toolbar" aria-label="Filter agent activity timeline">
           <span className="agent-activity-log__title">Activity</span>
