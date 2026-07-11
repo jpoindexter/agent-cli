@@ -4293,3 +4293,57 @@ body,
   --control-bg: #1c1c21;
   --control-bg-hover: #26262c;
 }
+
+/* MOTION-POLISH (2026-07-11): functional micro-motion only — property-
+   specific transitions, sub-200ms, decelerate on enter. The global
+   prefers-reduced-motion block above zeroes all of it. */
+
+.project-row,
+.session-row,
+.file-node,
+.settings-modal__nav-row,
+.command-palette__row,
+.context-menu__item {
+  transition: background var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.titlebar-pill,
+.project-row__state,
+.session-row__state,
+.agent-activity__row {
+  transition: color var(--motion-fast), background var(--motion-fast);
+}
+
+.context-menu.context-menu,
+.command-palette,
+.settings-modal,
+.tool-dock-menu__popover {
+  transition: opacity 140ms cubic-bezier(0, 0, 0.2, 1), translate 140ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.command-palette-backdrop {
+  transition: opacity 140ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.agent-thread-event {
+  transition: opacity 160ms cubic-bezier(0, 0, 0.2, 1), translate 160ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@starting-style {
+  .context-menu,
+  .command-palette,
+  .settings-modal,
+  .tool-dock-menu__popover {
+    opacity: 0;
+    translate: 0 3px;
+  }
+
+  .command-palette-backdrop {
+    opacity: 0;
+  }
+
+  .agent-thread-event {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}

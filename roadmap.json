@@ -1363,14 +1363,14 @@
     {
       "id": "MOTION-POLISH",
       "title": "Micro-motion pass",
-      "column": "next",
+      "column": "done",
       "tier": "sand",
       "track": "ui",
       "size": "S",
       "launch": "v2",
       "buildOrder": 103,
       "summary": "Blind-audit 2026-07-11: chrome-ui-polish.md names micro-motion (row selection, menu open, toast entrance, status change) as a criterion but the chrome has ~5 transition declarations and no entrance/selection motion. Add short functional motion per the app-motion duration/easing conventions, every animation guarded by prefers-reduced-motion.",
-      "done": "Row selection, menu/palette open, activity-row entrance, and status-pill changes have sub-200ms functional motion; reduced-motion disables all of it; no transition:all; screenshots/recording captured."
+      "done": "Row selection, menu/palette open, activity-row entrance, and status-pill changes have sub-200ms functional motion; reduced-motion disables all of it; no transition:all; screenshots/recording captured. Executed 2026-07-12: property-specific sub-200ms transitions for row selection, overlay/menu/palette/settings enters (@starting-style fade-slide, 140ms decelerate), activity-row entrance, and status-pill color shifts; zero transition:all; global prefers-reduced-motion block verified to zero all of it; overlay rendering sanity-checked in the dev shell."
     },
     {
       "id": "APP-COMMANDS-DISCOVERABLE",
