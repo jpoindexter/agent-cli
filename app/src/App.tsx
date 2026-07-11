@@ -4851,6 +4851,18 @@ function App() {
               metaLabel={activeTerminalPane ? activeTerminalProfile.label : undefined}
               transcript={activeTerminalTranscript}
               onActivityFilterChange={setAgentActivityFilter}
+              onClearActivity={() => {
+                const root = workspacePathRef.current;
+                if (!root || !activeSessionId) return;
+                setAgentActivityEvents((events) => {
+                  const next = events.filter(
+                    (event) => event.projectId !== root || event.projectSessionId !== activeSessionId,
+                  );
+                  void storeRef.current?.set("agentActivityEvents", next);
+                  void storeRef.current?.save();
+                  return next;
+                });
+              }}
               onShowTerminal={() => setAgentSurfaceMode("terminal")}
             />
           </div>

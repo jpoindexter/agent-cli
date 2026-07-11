@@ -17,6 +17,7 @@ type AgentRunSurfaceProps = {
   metaLabel?: string;
   transcript: string;
   onActivityFilterChange: (filter: AgentActivityLogFilter) => void;
+  onClearActivity: () => void;
   onShowTerminal: () => void;
 };
 
@@ -29,6 +30,7 @@ export function AgentRunSurface({
   metaLabel,
   transcript,
   onActivityFilterChange,
+  onClearActivity,
   onShowTerminal,
 }: AgentRunSurfaceProps) {
   return (
@@ -38,6 +40,16 @@ export function AgentRunSurface({
         <div className="agent-activity-log__toolbar" role="toolbar" aria-label="Filter agent activity timeline">
           <span className="agent-activity-log__title">Activity</span>
           <span className="agent-activity-log__count">{events.length}</span>
+          <button
+            className="agent-activity-log__clear"
+            type="button"
+            title="Clear this session's activity log"
+            disabled={events.length === 0}
+            onClick={onClearActivity}
+          >
+            <AppIcon name="close" />
+            <span>Clear</span>
+          </button>
           <label className="agent-activity-log__filter-select">
             <span>Filter</span>
             <select value={activityFilter} onChange={(event) => onActivityFilterChange(event.currentTarget.value as AgentActivityLogFilter)}>

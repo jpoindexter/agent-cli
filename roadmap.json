@@ -1303,14 +1303,14 @@
     {
       "id": "WORKBENCH-STATE-GUARDS",
       "title": "Guards for cross-surface state",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "core",
       "size": "M",
       "launch": "v2",
       "buildOrder": 98,
       "summary": "Blind-audit 2026-07-11: shipped features carry unnamed guards. Make explicit: project/session aggregate status rebuilds atomically across concurrent pane exits/restarts; a visible mismatch warning when the focused pane's cwd project differs from the active editor's project; a documented titlebar ownership rule (active pane's project first, then active editor's, then most-recent) when pane/editor/browser point at different projects; and a documented activity-log overflow policy for the 200-event cap (FIFO drop plus a Clear action).",
-      "done": "Each guard has a test or documented rule; mismatch banner ships; titlebar rule implemented and documented; activity-log overflow behavior documented in docs/agent-activity-log.md with UI affordance."
+      "done": "Each guard has a test or documented rule; mismatch banner ships; titlebar rule implemented and documented; activity-log overflow behavior documented in docs/agent-activity-log.md with UI affordance. Executed 2026-07-11: docs/workbench-state-guards.md records the four guards — derived aggregate status and pane/editor project match verified as by-construction invariants (mismatch banner deliberately deferred to WORKTREE which will break the invariant), titlebar ownership rule documented, activity-log FIFO policy documented plus a session-scoped Clear action shipped in the Activity toolbar."
     },
     {
       "id": "STATE-MIGRATION",

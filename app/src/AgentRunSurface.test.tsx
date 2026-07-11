@@ -23,6 +23,7 @@ describe("AgentRunSurface", () => {
         hasSession
         transcript="Agent response"
         onActivityFilterChange={() => undefined}
+        onClearActivity={() => undefined}
         onShowTerminal={() => undefined}
       />,
     );
@@ -31,5 +32,6 @@ describe("AgentRunSurface", () => {
     expect(html).toContain("Edited a file");
     expect(html).toContain("App.tsx");
     expect(html).toContain("Raw terminal");
+    expect(html).toContain("Clear");
   });
 });

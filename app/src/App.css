@@ -3142,6 +3142,35 @@ body,
   font: 10px/1 var(--font-mono);
 }
 
+.agent-activity-log__clear {
+  display: inline-flex;
+  height: 22px;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: default;
+  font: 600 11px var(--font-ui);
+  padding: 0 6px;
+  transition: background var(--motion-fast), color var(--motion-fast);
+}
+
+.agent-activity-log__clear:hover:not(:disabled) {
+  background: var(--toolbar-control-bg-hover);
+  color: var(--steel-cyan-400);
+}
+
+.agent-activity-log__clear:disabled {
+  color: var(--color-text-disabled);
+}
+
+.agent-activity-log__clear .app-icon {
+  width: 12px;
+  height: 12px;
+}
+
 .agent-activity-log__filter-select {
   display: flex;
   margin-left: auto;
