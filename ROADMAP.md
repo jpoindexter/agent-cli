@@ -107,6 +107,21 @@ This is where the clarified product point lands: not "terminal app with optional
 - ~~**CHROME-CONTROL-POLISH:** flatten obvious AI-looking control clusters into native-feeling toolbar/menu/dropdown controls.~~ **DONE 2026-07-10** — redundant activity chips and inline tray/dock buttons were removed; drawer modes use icon tabs; run settings and tool position use compact labelled popovers; shared outline icons and interaction states remain consistent.
 - ~~**TRAY-DOCKING-UX:** make editor and browser optional movable/resizable tools rather than permanent stacked panels.~~ **DONE 2026-07-10** — first open hides tools; Editor is the first-open tool; Editor/Browser/Split and left/right/bottom/hidden states live in one menu; responsive side docks become bottom docks at narrow widths; layout, sizing, and hidden-tray behavior are tested.
 - ~~**CHROME-COHERENCE-PASS:** final integration gate for a clean agent-first shell.~~ **DONE 2026-07-10** — the real first-open shell is coherent at 1440, 1024, and 900px; the native window proves live terminal output; deterministic fixtures retain menu/settings/palette/error coverage without being treated as app-shell proof.
+
+### Chrome re-convergence (added 2026-07-11 — executes before the remaining v1 queue)
+
+The shipped chrome drifted from the accepted `demo/keelhouse-chrome-demo.html` direction: ~50 controls render as boxed rounded-rect buttons against the demo's three-control grammar, and the Run surface is a bare output dump instead of the demo's centered card composition. The token-level `qa:chrome-contract` gate could not see visual weight, so the drift passed. Delta audit: `docs/chrome-delta-audit.md`. These cards re-converge the app in screenshot-verified slices; slice 1 is CHROME-CONTROL-GRAMMAR + RUN-SURFACE-COMPOSITION + COMPOSER-ELEVATION.
+
+- **CHROME-CONTROL-GRAMMAR** (blocker): replace boxed default-button chrome with the demo's three-control grammar — flat 600-weight text actions with accent-strong hover, transparent icon buttons with color-only hover, and a single filled Send. Danger actions become flat danger text-actions; confirmations keep their modals; hit areas stay ≥40px.
+- **RUN-SURFACE-COMPOSITION:** compose Run to the demo rhythm without inventing provider structure — centered `min(860px, 100% - 56px)` column, 12px muted meta rows, calm 600-weight header, terminal-backed output inside a 6px-radius shadowed card, activity as 28px card rows with mono diff badges, approval strips on accent-soft, Inter/SF Mono 13/12/11 scale.
+- **COMPOSER-ELEVATION:** rebuild the composer as the demo's elevated card — 12px radius, hairline border, deep soft shadow, gradient fade wrap, borderless textarea, 34px flat-chip bar, 24px filled ↑ send, Stop as flat danger text.
+- **SIDEBAR-RHYTHM:** demo thread-sidebar spec — 11px/600 uppercase section labels, 34px rows, 600-weight project rows with 7px status dots, 28px-indented session rows with real recency stamps, left-stripe actives; row-level activation replaces boxed Switch affordances.
+- **TITLEBAR-STATUSBAR-PARITY:** 36px gradient titlebar with centered workspace crumb (strong project + faint branch from real git status) and flat right action cluster with accent-strong agent chip; 24px three-section statusbar.
+- **TRAY-TAB-CHROME:** hybrid tray navigation — keep `useWorkbenchLayout` docking (left/right/bottom, resizable, persisted) while docked trays render the demo tab-strip chrome (38px dock strip Files/Editor/Browser/Git + ×, 34px bottom strip Terminal+, steel-cyan top-underline actives, collapsible). Tools popover shrinks to dock-position + hide.
+- **FIRST-OPEN-LAYOUT:** first open shows the demo layout (threads drawer, centered run+composer, right dock on Files, bottom tray strip, statusbar); returning users keep persisted layouts. Supersedes the 2026-07-10 hidden-first-open default via DECISIONS.md.
+- **OVERLAY-PARITY:** align context menus (6px radius, 252px min, uppercase mono section labels, 28px icon/label/kbd rows) and command palette (640px, 10px radius, 42px input, 32px left-stripe rows) to the demo spec; overlay scrim with blur; settings modal spec recorded for the v2 SETTINGS card.
+- **CHROME-CONTRACT-V2:** extend `qa:chrome-contract` so boxed-button drift cannot recur — forbid boxed control backgrounds on toolbar/composer/editor/browser buttons, require the grammar classes, assert composer/run/sidebar/tray spec values, and require `docs/qa/chrome-delta/` demo-vs-app side-by-side artifacts.
+
 - **DEV-SERVER-DETECT:** detect common localhost dev servers and offer to open them in the browser preview.
   - 2026-07-09 slice: terminal output is scanned for local dev-server URLs (`localhost`, `127.0.0.1`, `0.0.0.0`, `::1` with ports); detections are scoped to the emitting project session, logged as browser activity, and offered as explicit Open detected actions in the Browser drawer and preview pane.
 - **DAILY-DRIVER-METRICS:** prove the app can replace the current workflow with scripted one-project edit+agent, two-agent same-project, and three-project switch/relaunch runs.
@@ -135,6 +150,7 @@ This is where the clarified product point lands: not "terminal app with optional
 - **PACKAGING:** local macOS `.app` packaging.
 - **SESSION-ARCHIVE:** archive old project sessions only after sessions and transcripts are real.
 - **DIRECT-AGENT-HARNESS:** optional direct API/MCP agent path for app-owned orchestration, after real terminal panes and approvals are solid.
+- **RUN-CARDS-ADAPTER:** the demo's structured thinking/working-plan/edited-file-with-Review/approval cards, fed by real agent events through AGENT-HOOKS adapters — never inferred from terminal text. Reuses the card components shipped in RUN-SURFACE-COMPOSITION; without hooks, Run stays terminal-backed with no fabricated structure.
 
 ## v3 — Polish and shipping
 

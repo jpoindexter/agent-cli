@@ -250,3 +250,13 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Verified:** 2026-07-08 quick web sanity check found direct conflicts for the obvious terminal/workbench names and no obvious active terminal/developer-tool product using "Keelhouse." This is product naming sanity, not trademark clearance.
 
 **Reversible?** Yes. The app identifiers, package names, and storage paths remain `agent-cli` until a later explicit rename/migration slice.
+
+## 2026-07-11 — Chrome re-convergence to the accepted demo + first-open layout
+
+**Choice:** `demo/keelhouse-chrome-demo.html` is the binding visual contract, now at the control-grammar level, not only tokens. Three-control grammar locked: flat 600-weight text actions (hover → accent-strong), transparent icon buttons (color-only hover), and a single filled Send as the only default filled control. First open now shows the demo layout — threads drawer, centered run+composer, tabbed right dock open on Files, bottom tray strip, statusbar — superseding the 2026-07-10 hidden-first-open default. Trays remain movable/openable/closeable (TRAY-DOCKING-UX retained); the demo look applies to trays wherever they dock (hybrid, not fixed positions).
+
+**Alternatives considered:** (a) full fixed demo layout — rejected because Jason explicitly wants nothing fixed, windows must move/open/close; (b) restyle-only without the tab-strip metaphor or first-open change — rejected because the first-open impression and tray navigation are part of what reads as drift.
+
+**Why:** The shipped chrome passed `qa:chrome-contract` while visually diverging hard from the accepted demo: ~50 controls rendered as boxed rounded-rect buttons against the demo's three-control grammar, and the Run surface was a bare output dump instead of the centered card composition. The gate greps tokens/strings and cannot see visual weight — it verified structure, not taste. Jason confirmed the drift by eye ("looks wack") and re-affirmed the demo as the direction. Delta audit: `docs/chrome-delta-audit.md`. Execution: roadmap cards CHROME-CONTROL-GRAMMAR, RUN-SURFACE-COMPOSITION, COMPOSER-ELEVATION (slice 1, now), then SIDEBAR-RHYTHM, TITLEBAR-STATUSBAR-PARITY, TRAY-TAB-CHROME, FIRST-OPEN-LAYOUT, OVERLAY-PARITY, CHROME-CONTRACT-V2; structured run cards stay gated on AGENT-HOOKS (RUN-CARDS-ADAPTER, v2) — never inferred from terminal text.
+
+**Reversible?** Yes for the first-open default (one constant + re-baselined screenshots). The control grammar is a CSS/component-class change; reverting means re-pointing the shared button classes. CHROME-CONTRACT-V2 will make reintroducing boxed buttons a failing gate, so future reversal requires an explicit DECISIONS.md entry.

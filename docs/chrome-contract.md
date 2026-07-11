@@ -1,8 +1,22 @@
 # Chrome Contract
 
-Status: active guardrail, verified 2026-07-10.
+Status: active guardrail, v2 2026-07-11 (control grammar added after the boxed-button drift; see `docs/chrome-delta-audit.md` and DECISIONS.md 2026-07-11).
 
-Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/session drawer, agent-first center, and editor/browser/git/raw terminal as optional trays.
+Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/session drawer, agent-first center, and editor/browser/git/raw terminal as optional trays. The demo is binding at the control-grammar level, not only tokens.
+
+## Control Grammar (v2, normative)
+
+Exactly three default control types, from the demo:
+
+- **Flat text action:** no background, no border, weight 600, `--color-text` ink, hover → `--steel-cyan-400`. Used for Review/Approve-class actions, lifecycle controls, and labelled toolbar commands. Danger variants stay flat in danger ink.
+- **Transparent icon button:** 16px glyph, no box, color-only hover (muted → ink). Hit area extended to ≥40px via padding.
+- **Filled Send:** the single default filled control — 24px, `--steel-cyan-500` background, white glyph, 4px radius. Modal-confirm primaries are the only other filled buttons.
+
+Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: elevated 12px-radius card with `0 22px 60px rgba(0,0,0,.34)`. Type scale: Inter/SF Mono 13px base / 12px meta+mono / 11px uppercase labels.
+
+## First-Open Layout (v2)
+
+First open shows the demo layout: threads drawer, centered run+composer column (`min(860px, 100% - 56px)`), right dock open on Files with its tab strip, bottom tray strip, statusbar. Returning users keep persisted layouts. Trays remain movable/closable — the demo look applies wherever a tray docks.
 
 ## Required Tokens
 
@@ -19,6 +33,8 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 - Decorative activity rails that do not map to real app modes.
 - Chat/avatar identity blocks such as `You ·` or `Keelhouse ·`.
 - Pill-heavy active rows and obvious rounded-rectangle action chrome.
+- Boxed default buttons (`--control-bg` fill + border) anywhere in titlebar, toolbars, composer, or drawer — this shipped once and passed the token-level gate; CHROME-CONTRACT-V2 makes it a failing check.
+- Border-heavy depth in place of shadow elevation on cards, composer, menus, and overlays.
 
 ## Agent Run Surface
 
