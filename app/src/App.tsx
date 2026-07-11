@@ -43,6 +43,7 @@ import {
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  sessionRecencyLabel,
   setActiveProjectSession,
   setOpenProjectStatus,
   setProjectSessionStatus,
@@ -3601,9 +3602,10 @@ function App() {
             <span>{activeWorkspaceName}</span>
           </button>
           <span className="titlebar-session">{activeSessionTitle}</span>
+          {gitStatus?.branch ? <span className="titlebar-branch">{`⎇ ${gitStatus.branch}`}</span> : null}
         </div>
         <div className="titlebar-agent-context" aria-label="Selected agent context">
-          <span className="titlebar-meta">
+          <span className="titlebar-meta titlebar-meta--agent">
             <AppIcon name="agent" />
             <span>{activeTerminalProfile.label}</span>
           </span>
@@ -3740,12 +3742,8 @@ function App() {
                         <AppIcon name="workspace" />
                         <span>{basename(project.path)}</span>
                       </span>
-                      <span className="project-row__path">{project.path}</span>
                     </span>
-                    <span className="project-row__state">
-                      <AppIcon name={projectRailStatusIcon(status)} />
-                      <span>{active ? "Active" : projectRailStatusLabel(status)}</span>
-                    </span>
+                    <span className="project-row__state" aria-hidden="true" />
                   </button>
                   <div className="session-list" aria-label={`${basename(project.path)} sessions`}>
                     <button
@@ -3786,6 +3784,7 @@ function App() {
                             <span>{session.title}</span>
                           </span>
                           <span className="session-row__state">
+                            <span className="session-row__time">{sessionRecencyLabel(session.updatedAt)}</span>
                             <AppIcon name={projectRailStatusIcon(sessionStatus)} />
                           </span>
                         </button>

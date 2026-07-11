@@ -77,6 +77,21 @@ export const setOpenProjectStatus = (
 
 export const removeOpenProject = (projects: OpenProject[], path: string) => projects.filter((project) => project.path !== path);
 
+const MINUTE_MS = 60_000;
+const HOUR_MS = 3_600_000;
+const DAY_MS = 86_400_000;
+const WEEK_MS = 604_800_000;
+
+export const sessionRecencyLabel = (updatedAt: number, now: number = Date.now()): string => {
+  if (!Number.isFinite(updatedAt) || updatedAt <= 0) return "";
+  const elapsed = now - updatedAt;
+  if (elapsed < MINUTE_MS) return "now";
+  if (elapsed < HOUR_MS) return `${Math.floor(elapsed / MINUTE_MS)}m`;
+  if (elapsed < DAY_MS) return `${Math.floor(elapsed / HOUR_MS)}h`;
+  if (elapsed < WEEK_MS) return `${Math.floor(elapsed / DAY_MS)}d`;
+  return `${Math.floor(elapsed / WEEK_MS)}w`;
+};
+
 export const defaultProjectSession = (updatedAt: number = Date.now()): ProjectSession => ({
   id: `session-${Math.max(0, Math.floor(updatedAt)).toString(36)}`,
   title: "Current work",

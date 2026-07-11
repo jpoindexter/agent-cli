@@ -16,6 +16,7 @@ import {
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
+  sessionRecencyLabel,
   setActiveProjectSession,
   setOpenProjectStatus,
   setProjectSessionStatus,
@@ -125,6 +126,17 @@ describe("workspace state helpers", () => {
     ]);
     expect(removeProjectSession(sessionsByProject, "/a", "one")["/a"]).toEqual([next]);
     expect(removeProjectSession({ "/a": [next] }, "/a", next.id)).toEqual({ "/a": [next] });
+  });
+
+  it("labels session recency in compact relative units", () => {
+    const now = 10 * 604_800_000;
+    expect(sessionRecencyLabel(now - 20_000, now)).toBe("now");
+    expect(sessionRecencyLabel(now - 5 * 60_000, now)).toBe("5m");
+    expect(sessionRecencyLabel(now - 4 * 3_600_000, now)).toBe("4h");
+    expect(sessionRecencyLabel(now - 2 * 86_400_000, now)).toBe("2d");
+    expect(sessionRecencyLabel(now - 3 * 604_800_000, now)).toBe("3w");
+    expect(sessionRecencyLabel(0, now)).toBe("");
+    expect(sessionRecencyLabel(Number.NaN, now)).toBe("");
   });
 
   it("resolves active project sessions with fallback to the first row", () => {

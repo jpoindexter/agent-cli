@@ -43,8 +43,8 @@
   --color-surface-overlay: #202026;
   --color-border: var(--gray-750);
   --color-border-strong: var(--gray-700);
-  --color-row-hover: #242424;
-  --color-row-active: var(--blue-700);
+  --color-row-hover: #22242d;
+  --color-row-active: #252732;
   --color-focus-ring: var(--blue-500);
   --color-text: #d7d7d7;
   --color-text-strong: var(--gray-100);
@@ -109,7 +109,7 @@ body,
   position: relative;
   display: grid;
   grid-template-columns: minmax(52px, var(--side-drawer-width)) minmax(0, 1fr);
-  grid-template-rows: 38px minmax(0, 1fr) 24px;
+  grid-template-rows: 36px minmax(0, 1fr) 24px;
   grid-template-areas:
     "titlebar titlebar"
     "sidebar main"
@@ -127,7 +127,7 @@ body,
   gap: 10px;
   min-width: 0;
   border-bottom: 1px solid var(--panel-border);
-  background: #11161c;
+  background: linear-gradient(#22232b, #1b1c23);
   padding: 0 10px 0 12px;
 }
 
@@ -197,6 +197,17 @@ body,
   font-size: 12px;
 }
 
+.titlebar-meta--agent {
+  color: var(--steel-cyan-400);
+  font-weight: 700;
+}
+
+.titlebar-branch {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+}
+
 .titlebar-pill {
   display: inline-flex;
   height: 24px;
@@ -233,11 +244,11 @@ body,
   display: flex;
   min-width: 0;
   align-items: center;
-  gap: 12px;
-  border-top: 1px solid #18222c;
-  background: #101820;
+  gap: 14px;
+  border-top: 1px solid var(--color-border);
+  background: #1d1e25;
   color: var(--color-text-muted);
-  font-size: 11px;
+  font-size: 12px;
   padding: 0 10px;
 }
 
@@ -798,11 +809,11 @@ body,
 
 .project-rail__heading {
   color: var(--color-text-subtle);
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.04em;
-  line-height: 18px;
-  padding: 0 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 24px;
+  padding: 0 12px;
   text-transform: uppercase;
 }
 
@@ -814,7 +825,7 @@ body,
 .project-row {
   display: grid;
   width: 100%;
-  min-height: 48px;
+  min-height: 34px;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
@@ -822,7 +833,7 @@ body,
   background: transparent;
   color: var(--color-text);
   cursor: default;
-  padding: 5px 12px;
+  padding: 4px 12px;
   text-align: left;
 }
 
@@ -832,7 +843,8 @@ body,
 }
 
 .project-row--active {
-  background: var(--color-info-active);
+  background: var(--color-row-active);
+  box-shadow: inset 3px 0 0 var(--color-accent-border);
 }
 
 .project-row__copy {
@@ -854,51 +866,35 @@ body,
   align-items: center;
   gap: 6px;
   color: var(--color-text-strong);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.project-row__path {
-  color: var(--color-text-subtle);
-  font-size: 11px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .project-row__state {
   display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  border: 1px solid var(--control-border);
-  border-radius: var(--badge-radius);
-  color: var(--color-text);
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 18px;
-  padding: 0 6px;
-}
-
-.project-row__state .app-icon {
-  width: 12px;
-  height: 12px;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
 }
 
 .project-row--running .project-row__state {
-  border-color: var(--color-success-border);
-  color: var(--color-success);
+  background: var(--color-success);
 }
 
 .project-row--exited .project-row__state {
-  color: var(--color-text-subtle);
+  background: var(--color-text-subtle);
 }
 
 .project-row--attention .project-row__state {
-  border-color: var(--color-danger-border);
-  color: var(--color-danger);
+  background: var(--color-danger);
 }
 
 .session-list {
   display: grid;
   gap: 1px;
-  padding: 0 8px 5px 22px;
+  padding: 0 8px 5px 28px;
 }
 
 .session-row {
@@ -925,6 +921,7 @@ body,
 
 .session-row--active {
   background: var(--color-row-active);
+  box-shadow: inset 3px 0 0 var(--color-accent-border);
   color: var(--color-text-strong);
 }
 
@@ -956,9 +953,17 @@ body,
   white-space: nowrap;
 }
 
+.session-row__time {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .session-row__state {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   color: var(--color-text-subtle);
 }
 
