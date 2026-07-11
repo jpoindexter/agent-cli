@@ -35,12 +35,13 @@ const scenarios = [
     title: "One project: talk, edit, preview",
     goal: "A single project can keep the agent conversation primary while exposing editor save and browser preview surfaces.",
     checks: [
-      sourceContains("app/src/App.tsx", "Agent thread and raw terminal", "agent-first workbench label"),
+      sourceContains("app/src/App.tsx", "Agent run and raw terminal", "agent-first workbench label"),
       sourceContains("app/src/App.tsx", "write_text_file", "real editor save path"),
       sourceContains("app/src/composerHarness.ts", "composerPromptPayload", "composer routes prompts with context"),
       sourceContains("app/src/browserPreview.ts", "detectLocalDevServerUrl", "terminal-output dev-server detection"),
-      fileExists("docs/qa/editor-parity/selected.png", "selected workbench screenshot", 1024),
-      fileExists("docs/qa/editor-parity/narrow-composer.png", "narrow composer screenshot", 1024),
+      fileExists("docs/qa/app-shell/first-open-1440.png", "actual app shell at 1440x900", 1024),
+      fileExists("docs/qa/app-shell/first-open-900.png", "actual app shell at 900x640", 1024),
+      fileExists("docs/qa/app-shell/native-run.png", "native Tauri run with live pty output", 1024),
     ],
   },
   {
@@ -79,6 +80,10 @@ const assetSizes = fs.existsSync(rel("app/dist/assets"))
   : [];
 
 const screenshotSizes = [
+  "docs/qa/app-shell/first-open-1440.png",
+  "docs/qa/app-shell/first-open-1024.png",
+  "docs/qa/app-shell/first-open-900.png",
+  "docs/qa/app-shell/native-run.png",
   "docs/qa/editor-parity/selected.png",
   "docs/qa/editor-parity/narrow-composer.png",
   "docs/qa/editor-parity/diff-review.png",
@@ -91,7 +96,7 @@ const evaluated = scenarios.map((scenario) => {
     ...scenario,
     passed,
     total: scenario.checks.length,
-    status: passed === scenario.checks.length ? "ready-for-timed-run" : "missing-evidence",
+    status: passed === scenario.checks.length ? "implementation-ready" : "missing-evidence",
   };
 });
 
@@ -103,8 +108,8 @@ const result = {
   commit: headCommit ? `${headCommit}${dirtySuffix}` : null,
   branch: git("branch --show-current"),
   northStar: "daily-driver workflow runs completed without opening VS Code",
-  status: evaluated.every((scenario) => scenario.status === "ready-for-timed-run")
-    ? "ready-for-timed-runs"
+  status: evaluated.every((scenario) => scenario.status === "implementation-ready")
+    ? "implementation-ready-for-live-runs"
     : "missing-evidence",
   scenarios: evaluated,
   metrics: {
@@ -149,7 +154,7 @@ for (const run of result.nextManualRuns) lines.push(`- ${run}`);
 lines.push("");
 fs.writeFileSync(path.join(outDir, "latest.md"), `${lines.join("\n")}\n`);
 
-if (result.status !== "ready-for-timed-runs") {
+if (result.status !== "implementation-ready-for-live-runs") {
   console.error(`daily-driver metrics failed: ${result.status}`);
   process.exit(1);
 }

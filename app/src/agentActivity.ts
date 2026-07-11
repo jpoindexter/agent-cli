@@ -103,6 +103,26 @@ export const normalizeAgentActivityEvents = (value: unknown): AgentActivityEvent
 export const filterAgentActivityEvents = (events: AgentActivityEvent[], filter: AgentActivityLogFilter) =>
   filter === "all" ? events : events.filter((event) => event.kind === filter);
 
+export const agentActivityFilterLabel = (filter: AgentActivityLogFilter) => {
+  if (filter === "all") return "All";
+  if (filter === "prompt") return "Prompts";
+  if (filter === "process") return "Process";
+  if (filter === "command") return "Commands";
+  if (filter === "file") return "Files";
+  if (filter === "tool") return "Tools";
+  if (filter === "git") return "Git";
+  if (filter === "app") return "App";
+  if (filter === "approval") return "Approvals";
+  if (filter === "browser") return "Browser";
+  if (filter === "error") return "Errors";
+  return "Complete";
+};
+
+export const agentActivityMetaLabel = (event: AgentActivityEvent) =>
+  [event.target, event.exitCode == null ? null : `exit ${event.exitCode}`, event.outputRef, event.undoHint]
+    .filter(Boolean)
+    .join(" · ");
+
 export const agentActivityTimeLabel = (timestamp: number) => {
   const date = new Date(timestamp);
   if (Number.isNaN(date.getTime())) return "--:--";

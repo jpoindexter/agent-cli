@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type KeyboardEvent as ReactKeyboardEvent, type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -113,16 +113,12 @@ import {
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { AppIcon, paneStateAccessibleLabel, paneStateIconName } from "./icons";
-import { agentActivityAccessibleLabel, agentActivityIconName } from "./icons";
 import type { AppIconName } from "./icons";
 import { shortcutKeys, shortcutTitle } from "./shortcuts";
 import { filterCommandPaletteCommands, type CommandPaletteCommand as CommandPaletteCommandBase } from "./commandPalette";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import {
-  AGENT_ACTIVITY_LOG_FILTERS,
   MAX_AGENT_ACTIVITY_LOG_EVENTS,
-  agentActivityTimeLabel,
-  agentCurrentActivity,
   createAgentActivityEvent,
   filterAgentActivityEvents,
   normalizeAgentActivityEvents,
@@ -151,6 +147,11 @@ import {
   paneLayoutFromPanes,
 } from "./sessionRestore";
 import type { PaneLayoutsBySession } from "./sessionRestore";
+import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
+import { useWorkbenchLayout } from "./useWorkbenchLayout";
+import { terminalSnapshotText } from "./terminalTranscript";
+import { AgentRunSurface } from "./AgentRunSurface";
+import { ToolDockMenu } from "./ToolDockMenu";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -217,9 +218,6 @@ type ActiveDiffReview = {
 };
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
-type WorkbenchLayoutMode = "right" | "left" | "bottom" | "hidden";
-type ToolTrayMode = "split" | "editor" | "browser";
-type WorkbenchSizing = { trayPercent: number; toolSplitPercent: number };
 type AgentSurfaceMode = "chat" | "terminal";
 type SideDrawerMode = "projects" | "files" | "search" | "git" | "browser" | "settings";
 type DrawerSearchScope = "files" | "text";
@@ -264,47 +262,7 @@ type CommandPaletteCommand = CommandPaletteCommandBase & {
 const FONT_SIZE = 15;
 const FONT_FAMILY = "JetBrains Mono, monospace";
 const LINE_HEIGHT = 1.25;
-const clampWorkbenchPercent = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
-const WORKBENCH_LAYOUT_STORAGE_KEY = "keelhouse.workbench.layout";
-const WORKBENCH_SIZING_STORAGE_KEY = "keelhouse.workbench.sizing";
-const TOOL_TRAY_MODE_STORAGE_KEY = "keelhouse.workbench.toolTrayMode";
 const AGENT_SURFACE_STORAGE_KEY = "keelhouse.agent.surface";
-const SIDE_DRAWER_WIDTH_STORAGE_KEY = "keelhouse.sideDrawer.width";
-const SIDE_DRAWER_COLLAPSED_STORAGE_KEY = "keelhouse.sideDrawer.collapsed";
-const DEFAULT_WORKBENCH_SIZING: WorkbenchSizing = { trayPercent: 30, toolSplitPercent: 58 };
-const DEFAULT_SIDE_DRAWER_WIDTH = 300;
-const readStoredWorkbenchLayout = (): WorkbenchLayoutMode => {
-  if (typeof window === "undefined") return "right";
-  try {
-    const value = window.localStorage.getItem(WORKBENCH_LAYOUT_STORAGE_KEY);
-    return value === "left" || value === "right" || value === "bottom" || value === "hidden" ? value : "right";
-  } catch {
-    return "right";
-  }
-};
-const readStoredWorkbenchSizing = (): WorkbenchSizing => {
-  if (typeof window === "undefined") return DEFAULT_WORKBENCH_SIZING;
-  try {
-    const raw = window.localStorage.getItem(WORKBENCH_SIZING_STORAGE_KEY);
-    if (!raw) return DEFAULT_WORKBENCH_SIZING;
-    const value = JSON.parse(raw) as Partial<WorkbenchSizing>;
-    return {
-      trayPercent: clampWorkbenchPercent(typeof value.trayPercent === "number" ? value.trayPercent : DEFAULT_WORKBENCH_SIZING.trayPercent, 18, 54),
-      toolSplitPercent: clampWorkbenchPercent(typeof value.toolSplitPercent === "number" ? value.toolSplitPercent : DEFAULT_WORKBENCH_SIZING.toolSplitPercent, 25, 75),
-    };
-  } catch {
-    return DEFAULT_WORKBENCH_SIZING;
-  }
-};
-const readStoredToolTrayMode = (): ToolTrayMode => {
-  if (typeof window === "undefined") return "split";
-  try {
-    const value = window.localStorage.getItem(TOOL_TRAY_MODE_STORAGE_KEY);
-    return value === "editor" || value === "browser" || value === "split" ? value : "split";
-  } catch {
-    return "split";
-  }
-};
 const readStoredAgentSurfaceMode = (): AgentSurfaceMode => {
   if (typeof window === "undefined") return "chat";
   try {
@@ -312,23 +270,6 @@ const readStoredAgentSurfaceMode = (): AgentSurfaceMode => {
     return value === "terminal" ? "terminal" : "chat";
   } catch {
     return "chat";
-  }
-};
-const readStoredSideDrawerWidth = () => {
-  if (typeof window === "undefined") return DEFAULT_SIDE_DRAWER_WIDTH;
-  try {
-    const value = Number(window.localStorage.getItem(SIDE_DRAWER_WIDTH_STORAGE_KEY));
-    return Number.isFinite(value) ? clampWorkbenchPercent(value, 220, 420) : DEFAULT_SIDE_DRAWER_WIDTH;
-  } catch {
-    return DEFAULT_SIDE_DRAWER_WIDTH;
-  }
-};
-const readStoredSideDrawerCollapsed = () => {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.localStorage.getItem(SIDE_DRAWER_COLLAPSED_STORAGE_KEY) === "true";
-  } catch {
-    return false;
   }
 };
 const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
@@ -389,15 +330,6 @@ const flattenFiles = (nodes: FileTreeNode[]): FileTreeNode[] =>
     ...(node.kind === "file" ? [node] : []),
     ...(node.children ? flattenFiles(node.children) : []),
   ]);
-
-const snapshotVisibleText = (snapshot: Snapshot) =>
-  Array.from({ length: snapshot.rows }, (_row, y) =>
-    snapshot.cells
-      .slice(y * snapshot.cols, y * snapshot.cols + snapshot.cols)
-      .map((cell) => cell?.t ?? " ")
-      .join("")
-      .trimEnd(),
-  ).join("\n");
 
 function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode>) {
   const isDirectory = node.data.kind === "directory";
@@ -494,6 +426,8 @@ function App() {
   const editorLoadSeq = useRef(0);
   const latest = useRef<Snapshot | null>(null);
   const frame = useRef<number | null>(null);
+  const transcriptFrame = useRef<number | null>(null);
+  const pendingTerminalTranscript = useRef("");
   const metrics = useRef({ cw: 9, ch: 19 });
   const selection = useRef<SelectionRange | null>(null);
   const selecting = useRef(false);
@@ -502,6 +436,7 @@ function App() {
   const [launchProfileChanging, setLaunchProfileChanging] = useState(false);
   const [terminalPanes, setTerminalPanes] = useState<ManagedTerminalPane[]>([]);
   const [activeTerminalPaneId, setActiveTerminalPaneId] = useState<number | null>(null);
+  const [activeTerminalTranscript, setActiveTerminalTranscript] = useState("");
   const [paneLabelsBySession, setPaneLabelsBySession] = useState<PaneLabelsBySession>({});
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
@@ -551,13 +486,25 @@ function App() {
   const [composerHistoryIndex, setComposerHistoryIndex] = useState<number | null>(null);
   const [agentActivityEvents, setAgentActivityEvents] = useState<AgentActivityEvent[]>([]);
   const [agentActivityFilter, setAgentActivityFilter] = useState<AgentActivityLogFilter>("all");
-  const [workbenchLayout, setWorkbenchLayout] = useState<WorkbenchLayoutMode>(readStoredWorkbenchLayout);
-  const [toolTrayMode, setToolTrayMode] = useState<ToolTrayMode>(readStoredToolTrayMode);
-  const [workbenchSizing, setWorkbenchSizing] = useState<WorkbenchSizing>(readStoredWorkbenchSizing);
+  const {
+    appShellStyle,
+    beginSideDrawerResize,
+    beginWorkbenchResize,
+    nudgeSideDrawerResize,
+    nudgeWorkbenchResize,
+    renderedWorkbenchLayout,
+    setSideDrawerCollapsed,
+    setToolTrayMode,
+    setWorkbenchLayout,
+    sideDrawerCollapsed,
+    toolTrayMode,
+    workbenchLayout,
+    workbenchRef,
+    workbenchSizing,
+    workbenchStyle,
+  } = useWorkbenchLayout();
   const [agentSurfaceMode, setAgentSurfaceMode] = useState<AgentSurfaceMode>(readStoredAgentSurfaceMode);
   const [sideDrawerMode, setSideDrawerMode] = useState<SideDrawerMode>("projects");
-  const [sideDrawerWidth, setSideDrawerWidth] = useState(readStoredSideDrawerWidth);
-  const [sideDrawerCollapsed, setSideDrawerCollapsed] = useState(readStoredSideDrawerCollapsed);
   const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
   const [drawerSearchScope, setDrawerSearchScope] = useState<DrawerSearchScope>("files");
   const [textSearchResults, setTextSearchResults] = useState<WorkspaceTextSearchMatch[]>([]);
@@ -573,115 +520,6 @@ function App() {
   const [diffReview, setDiffReview] = useState<ActiveDiffReview | null>(null);
   const [diffReviewLoading, setDiffReviewLoading] = useState(false);
   const [diffReviewError, setDiffReviewError] = useState<string | null>(null);
-  const workbenchRef = useRef<HTMLElement | null>(null);
-  const workbenchStyle = {
-    "--tool-tray-size": `${workbenchSizing.trayPercent}%`,
-    "--tool-primary-size": `${workbenchSizing.toolSplitPercent}%`,
-  } as CSSProperties;
-  const appShellStyle = {
-    "--side-drawer-width": `${sideDrawerCollapsed ? 52 : sideDrawerWidth}px`,
-  } as CSSProperties;
-  const resizeSideDrawer = (clientX: number) => {
-    setSideDrawerWidth(clampWorkbenchPercent(clientX, 220, 420));
-  };
-  const beginSideDrawerResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (sideDrawerCollapsed) return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    document.body.classList.add("is-resizing-workbench");
-    const move = (pointerEvent: PointerEvent) => resizeSideDrawer(pointerEvent.clientX);
-    const stop = () => {
-      document.body.classList.remove("is-resizing-workbench");
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop, { once: true });
-    window.addEventListener("pointercancel", stop, { once: true });
-  };
-  const nudgeSideDrawerResize = (event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
-    event.preventDefault();
-    setSideDrawerWidth((width) => clampWorkbenchPercent(width + (event.key === "ArrowRight" ? 12 : -12), 220, 420));
-  };
-  const resizeWorkbenchTray = (clientX: number, clientY: number) => {
-    const rect = workbenchRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setWorkbenchSizing((current) => {
-      let trayPercent = current.trayPercent;
-      if (workbenchLayout === "right") {
-        trayPercent = ((rect.right - clientX) / rect.width) * 100;
-      } else if (workbenchLayout === "left") {
-        trayPercent = ((clientX - rect.left) / rect.width) * 100;
-      } else if (workbenchLayout === "bottom") {
-        trayPercent = ((rect.bottom - clientY) / rect.height) * 100;
-      }
-      return { ...current, trayPercent: clampWorkbenchPercent(trayPercent, 18, 54) };
-    });
-  };
-  const resizeWorkbenchTools = (clientX: number, clientY: number) => {
-    const rect = workbenchRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setWorkbenchSizing((current) => {
-      const toolSplitPercent = workbenchLayout === "bottom"
-        ? ((clientX - rect.left) / rect.width) * 100
-        : ((clientY - rect.top) / rect.height) * 100;
-      return { ...current, toolSplitPercent: clampWorkbenchPercent(toolSplitPercent, 25, 75) };
-    });
-  };
-  const beginWorkbenchResize = (kind: "tray" | "tools", event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (workbenchLayout === "hidden") return;
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    document.body.classList.add("is-resizing-workbench");
-    const move = (pointerEvent: PointerEvent) => {
-      if (kind === "tray") {
-        resizeWorkbenchTray(pointerEvent.clientX, pointerEvent.clientY);
-      } else {
-        resizeWorkbenchTools(pointerEvent.clientX, pointerEvent.clientY);
-      }
-    };
-    const stop = () => {
-      document.body.classList.remove("is-resizing-workbench");
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop, { once: true });
-    window.addEventListener("pointercancel", stop, { once: true });
-  };
-  const nudgeWorkbenchResize = (kind: "tray" | "tools", event: ReactKeyboardEvent<HTMLButtonElement>) => {
-    const key = event.key;
-    if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(key)) return;
-    event.preventDefault();
-    const horizontal = workbenchLayout !== "bottom";
-    const delta = key === "ArrowRight" || key === "ArrowDown" ? 3 : -3;
-    setWorkbenchSizing((current) => {
-      if (kind === "tray") {
-        const direction = workbenchLayout === "left" || workbenchLayout === "bottom" ? delta : -delta;
-        return { ...current, trayPercent: clampWorkbenchPercent(current.trayPercent + direction, 18, 54) };
-      }
-      const direction = horizontal ? (key === "ArrowDown" ? 3 : key === "ArrowUp" ? -3 : 0) : (key === "ArrowRight" ? 3 : key === "ArrowLeft" ? -3 : 0);
-      return { ...current, toolSplitPercent: clampWorkbenchPercent(current.toolSplitPercent + direction, 25, 75) };
-    });
-  };
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(WORKBENCH_LAYOUT_STORAGE_KEY, workbenchLayout);
-      window.localStorage.setItem(WORKBENCH_SIZING_STORAGE_KEY, JSON.stringify(workbenchSizing));
-    } catch {
-      // Local layout persistence is best-effort; the workbench remains usable without it.
-    }
-  }, [workbenchLayout, workbenchSizing]);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(TOOL_TRAY_MODE_STORAGE_KEY, toolTrayMode);
-    } catch {
-      // Local tray preference is best-effort.
-    }
-  }, [toolTrayMode]);
   useEffect(() => {
     try {
       window.localStorage.setItem(AGENT_SURFACE_STORAGE_KEY, agentSurfaceMode);
@@ -689,14 +527,6 @@ function App() {
       // Local surface preference is best-effort.
     }
   }, [agentSurfaceMode]);
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SIDE_DRAWER_WIDTH_STORAGE_KEY, String(sideDrawerWidth));
-      window.localStorage.setItem(SIDE_DRAWER_COLLAPSED_STORAGE_KEY, sideDrawerCollapsed ? "true" : "false");
-    } catch {
-      // Local drawer persistence is best-effort.
-    }
-  }, [sideDrawerCollapsed, sideDrawerWidth]);
   const editorDirty = selectedFile != null && editorText !== savedEditorText;
   const dirtyTabPaths = useMemo(
     () => dirtyEditorTabPaths(editorTabs, editorBuffersRef.current, selectedFile?.path ?? null, editorDirty),
@@ -769,22 +599,6 @@ function App() {
     () => agentSessionDescriptors.find((handle) => handle.paneId === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, agentSessionDescriptors],
   );
-  const currentAgentActivity = useMemo(
-    () => agentCurrentActivity(activeAgentSessionDescriptor),
-    [activeAgentSessionDescriptor],
-  );
-  const visibleAgentActivity = useMemo(() => {
-    if (!activeAgentSessionDescriptor) return [];
-    const recent = agentActivityEvents.filter(
-      (event) =>
-        event.projectId === activeAgentSessionDescriptor.projectId &&
-        event.projectSessionId === activeAgentSessionDescriptor.projectSessionId &&
-        event.paneId === activeAgentSessionDescriptor.id,
-    );
-    return currentAgentActivity
-      ? [currentAgentActivity, ...recent.filter((event) => event.id !== currentAgentActivity.id)].slice(0, 4)
-      : recent.slice(0, 4);
-  }, [activeAgentSessionDescriptor, agentActivityEvents, currentAgentActivity]);
   const selectedAgentActivityLog = useMemo(() => {
     if (!activeAgentSessionDescriptor) return [];
     return filterAgentActivityEvents(
@@ -1380,9 +1194,19 @@ function App() {
     setTerminalPanes(panes);
   };
 
+  const publishTerminalTranscript = (snapshot: Snapshot | null) => {
+    pendingTerminalTranscript.current = snapshot ? terminalSnapshotText(snapshot) : "";
+    if (transcriptFrame.current != null) return;
+    transcriptFrame.current = requestAnimationFrame(() => {
+      transcriptFrame.current = null;
+      setActiveTerminalTranscript(pendingTerminalTranscript.current);
+    });
+  };
+
   const setFocusedTerminalPane = (paneId: number | null) => {
     activeTerminalPaneIdRef.current = paneId;
     setActiveTerminalPaneId(paneId);
+    publishTerminalTranscript(paneId == null ? null : terminalSnapshotsRef.current[paneId] ?? null);
   };
 
   const terminalPanesForProject = (root: string | null) => (root ? terminalPanesByProjectRef.current[root] ?? [] : []);
@@ -1445,7 +1269,7 @@ function App() {
   };
 
   const detectLocalDevServerFromSnapshot = (paneId: number, snapshot: Snapshot) => {
-    const url = detectLocalDevServerUrl(snapshotVisibleText(snapshot));
+    const url = detectLocalDevServerUrl(terminalSnapshotText(snapshot));
     if (!url) return;
     const projectEntry = Object.entries(terminalPanesByProjectRef.current).find(([, panes]) => panes.some((pane) => pane.id === paneId));
     const root = projectEntry?.[0] ?? workspacePathRef.current;
@@ -2426,26 +2250,6 @@ function App() {
 
   const projectSessionStatus = (projectPath: string, session: ProjectSession): ProjectRailStatus =>
     projectPath === workspacePath && session.id === activeSessionId ? activeProjectStatus() : session.status;
-
-  const agentActivityFilterLabel = (filter: AgentActivityLogFilter) => {
-    if (filter === "all") return "All";
-    if (filter === "prompt") return "Prompts";
-    if (filter === "process") return "Process";
-    if (filter === "command") return "Commands";
-    if (filter === "file") return "Files";
-    if (filter === "tool") return "Tools";
-    if (filter === "git") return "Git";
-    if (filter === "app") return "App";
-    if (filter === "approval") return "Approvals";
-    if (filter === "browser") return "Browser";
-    if (filter === "error") return "Errors";
-    return "Complete";
-  };
-
-  const agentActivityMetaLabel = (event: AgentActivityEvent) =>
-    [event.target, event.exitCode == null ? null : `exit ${event.exitCode}`, event.outputRef, event.undoHint]
-      .filter(Boolean)
-      .join(" · ");
 
   const visibleOpenProjects = openProjects.length > 0
     ? openProjects
@@ -3698,6 +3502,7 @@ function App() {
       detectLocalDevServerFromSnapshot(ev.payload.paneId, ev.payload.snapshot);
       if (ev.payload.paneId === activeTerminalPaneIdRef.current) {
         latest.current = ev.payload.snapshot;
+        publishTerminalTranscript(ev.payload.snapshot);
         requestPaint();
       }
     });
@@ -3771,6 +3576,7 @@ function App() {
       window.removeEventListener("resize", sendTerminalResize);
       resizeObserver.disconnect();
       if (frame.current != null) cancelAnimationFrame(frame.current);
+      if (transcriptFrame.current != null) cancelAnimationFrame(transcriptFrame.current);
     };
   }, []);
 
@@ -3816,10 +3622,12 @@ function App() {
             <AppIcon name="folderOpen" />
             <span>Open Folder</span>
           </button>
-          <button className="titlebar-action titlebar-action--primary" type="button" onClick={() => void reloadBrowserPreview()}>
-            <AppIcon name="reload" />
-            <span>Reload Preview</span>
-          </button>
+          {renderedWorkbenchLayout !== "hidden" && toolTrayMode !== "editor" ? (
+            <button className="titlebar-action titlebar-action--primary" type="button" onClick={() => void reloadBrowserPreview()}>
+              <AppIcon name="reload" />
+              <span>Reload Preview</span>
+            </button>
+          ) : null}
         </div>
       </header>
       <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label={`${drawerActiveTitle} drawer`}>
@@ -4246,13 +4054,13 @@ function App() {
             <label className="drawer-field">
               <span>Agent surface</span>
               <select value={agentSurfaceMode} onChange={(event) => setAgentSurfaceMode(event.currentTarget.value as AgentSurfaceMode)}>
-                <option value="chat">Chat run view</option>
+                <option value="chat">Agent run</option>
                 <option value="terminal">Raw terminal</option>
               </select>
             </label>
             <label className="drawer-field">
               <span>Tool tray</span>
-              <select value={workbenchLayout} onChange={(event) => setWorkbenchLayout(event.currentTarget.value as WorkbenchLayoutMode)}>
+              <select value={renderedWorkbenchLayout} onChange={(event) => setWorkbenchLayout(event.currentTarget.value as WorkbenchLayoutMode)}>
                 <option value="left">Left</option>
                 <option value="right">Right</option>
                 <option value="bottom">Bottom</option>
@@ -4333,7 +4141,7 @@ function App() {
         />
       ) : null}
 
-      <main ref={workbenchRef} className={`workbench workbench--drawer-${workbenchLayout} workbench--tools-${toolTrayMode}`} style={workbenchStyle}>
+      <main ref={workbenchRef} className={`workbench workbench--drawer-${renderedWorkbenchLayout} workbench--tools-${toolTrayMode}`} style={workbenchStyle}>
         <section
           className="editor-area"
           aria-label="Editor"
@@ -4623,14 +4431,14 @@ function App() {
           )}
         </section>
 
-        {workbenchLayout !== "hidden" ? (
+        {renderedWorkbenchLayout !== "hidden" ? (
           <>
             <button
-              className={`workbench-resizer workbench-resizer--tray workbench-resizer--${workbenchLayout}`}
+              className={`workbench-resizer workbench-resizer--tray workbench-resizer--${renderedWorkbenchLayout}`}
               type="button"
               role="separator"
               aria-label="Resize tool tray"
-              aria-orientation={workbenchLayout === "bottom" ? "horizontal" : "vertical"}
+              aria-orientation={renderedWorkbenchLayout === "bottom" ? "horizontal" : "vertical"}
               aria-valuemin={18}
               aria-valuemax={54}
               aria-valuenow={Math.round(workbenchSizing.trayPercent)}
@@ -4640,11 +4448,11 @@ function App() {
             />
             {toolTrayMode === "split" ? (
               <button
-                className={`workbench-resizer workbench-resizer--tools workbench-resizer--${workbenchLayout}`}
+                className={`workbench-resizer workbench-resizer--tools workbench-resizer--${renderedWorkbenchLayout}`}
                 type="button"
                 role="separator"
                 aria-label="Resize editor and browser trays"
-                aria-orientation={workbenchLayout === "bottom" ? "vertical" : "horizontal"}
+                aria-orientation={renderedWorkbenchLayout === "bottom" ? "vertical" : "horizontal"}
                 aria-valuemin={25}
                 aria-valuemax={75}
                 aria-valuenow={Math.round(workbenchSizing.toolSplitPercent)}
@@ -4728,7 +4536,7 @@ function App() {
           </div>
         </section>
 
-        <section className="terminal-panel" aria-label="Agent thread and raw terminal">
+        <section className="terminal-panel" aria-label="Agent run and raw terminal">
           <div className="terminal-titlebar">
             <div className="terminal-profile">
               <span className="terminal-kicker">Thread</span>
@@ -4759,11 +4567,11 @@ function App() {
                   type="button"
                   role="tab"
                   aria-selected={agentSurfaceMode === "chat"}
-                  title="Show chat run view"
+                  title="Show agent run"
                   onClick={() => setAgentSurfaceMode("chat")}
                 >
                   <AppIcon name="agent" />
-                  <span>Chat</span>
+                  <span>Run</span>
                 </button>
                 <button
                   className={`agent-surface-switcher__button ${agentSurfaceMode === "terminal" ? "agent-surface-switcher__button--active" : ""}`}
@@ -4777,83 +4585,12 @@ function App() {
                   <span>Terminal</span>
                 </button>
               </div>
-              <div className="layout-switcher" role="group" aria-label="Tool drawer layout">
-                <button
-                  className={`layout-switcher__button ${workbenchLayout === "left" ? "layout-switcher__button--active" : ""}`}
-                  type="button"
-                  title="Move tool drawer left"
-                  aria-pressed={workbenchLayout === "left"}
-                  onClick={() => setWorkbenchLayout("left")}
-                >
-                  <AppIcon name="file" />
-                  <span>Left</span>
-                </button>
-                <button
-                  className={`layout-switcher__button ${workbenchLayout === "right" ? "layout-switcher__button--active" : ""}`}
-                  type="button"
-                  title="Move tool drawer right"
-                  aria-pressed={workbenchLayout === "right"}
-                  onClick={() => setWorkbenchLayout("right")}
-                >
-                  <AppIcon name="file" />
-                  <span>Right</span>
-                </button>
-                <button
-                  className={`layout-switcher__button ${workbenchLayout === "bottom" ? "layout-switcher__button--active" : ""}`}
-                  type="button"
-                  title="Move tool tray bottom"
-                  aria-pressed={workbenchLayout === "bottom"}
-                  onClick={() => setWorkbenchLayout("bottom")}
-                >
-                  <AppIcon name="browser" />
-                  <span>Bottom</span>
-                </button>
-                <button
-                  className={`layout-switcher__button ${workbenchLayout === "hidden" ? "layout-switcher__button--active" : ""}`}
-                  type="button"
-                  title="Hide tool drawer"
-                  aria-pressed={workbenchLayout === "hidden"}
-                  onClick={() => setWorkbenchLayout("hidden")}
-                >
-                  <AppIcon name="close" />
-                  <span>Hide</span>
-                </button>
-              </div>
-              <div className="tool-tray-switcher" role="tablist" aria-label="Tool tray tabs">
-                <button
-                  className={`tool-tray-switcher__button ${toolTrayMode === "split" ? "tool-tray-switcher__button--active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={toolTrayMode === "split"}
-                  title="Show editor and browser trays"
-                  onClick={() => setToolTrayMode("split")}
-                >
-                  <AppIcon name="workspace" />
-                  <span>Split</span>
-                </button>
-                <button
-                  className={`tool-tray-switcher__button ${toolTrayMode === "editor" ? "tool-tray-switcher__button--active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={toolTrayMode === "editor"}
-                  title="Show editor tray"
-                  onClick={() => setToolTrayMode("editor")}
-                >
-                  <AppIcon name="file" />
-                  <span>Editor</span>
-                </button>
-                <button
-                  className={`tool-tray-switcher__button ${toolTrayMode === "browser" ? "tool-tray-switcher__button--active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={toolTrayMode === "browser"}
-                  title="Show browser tray"
-                  onClick={() => setToolTrayMode("browser")}
-                >
-                  <AppIcon name="browser" />
-                  <span>Browser</span>
-                </button>
-              </div>
+              <ToolDockMenu
+                layout={renderedWorkbenchLayout}
+                toolMode={toolTrayMode}
+                onLayoutChange={setWorkbenchLayout}
+                onToolModeChange={setToolTrayMode}
+              />
               <div className="terminal-pane-strip" aria-label="Terminal panes">
                 {terminalPanes.map((pane, index) => {
                   const label = terminalPaneLabel(pane, index);
@@ -4946,87 +4683,20 @@ function App() {
                 aria-label={`${activeTerminalProfile.label} terminal pane. Type to send keyboard input to the active process.`}
               />
             </div>
-            <div className="agent-chat-surface" aria-hidden={agentSurfaceMode !== "chat"}>
-              <div className="agent-activity" aria-label="Agent activity" aria-live="polite">
-                {visibleAgentActivity.length > 0 ? (
-                  visibleAgentActivity.map((event) => (
-                    <div
-                      className={`agent-activity__row agent-activity__row--${event.status}`}
-                      key={event.id}
-                      title={event.detail}
-                    >
-                      <AppIcon
-                        name={agentActivityIconName(event.status)}
-                        label={agentActivityAccessibleLabel(event.status, event.label)}
-                      />
-                      <span className="agent-activity__label">{event.label}</span>
-                      {event.detail ? <span className="agent-activity__detail">{event.detail}</span> : null}
-                    </div>
-                  ))
-                ) : (
-                  <div className="agent-activity__row agent-activity__row--waiting">
-                    <AppIcon name="waiting" label="No recent agent activity" />
-                    <span className="agent-activity__label">No recent activity</span>
-                  </div>
-                )}
-              </div>
-              <section className="agent-activity-log" aria-label="Agent activity timeline">
-                <div className="agent-activity-log__toolbar" role="toolbar" aria-label="Filter agent activity timeline">
-                  <span className="agent-activity-log__title">Thread</span>
-                  <div className="agent-activity-log__filters">
-                    {AGENT_ACTIVITY_LOG_FILTERS.map((filter) => (
-                      <button
-                        className={`agent-activity-log__filter ${agentActivityFilter === filter ? "agent-activity-log__filter--active" : ""}`}
-                        type="button"
-                        key={filter}
-                        aria-pressed={agentActivityFilter === filter}
-                        onClick={() => setAgentActivityFilter(filter)}
-                      >
-                        {agentActivityFilterLabel(filter)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="agent-activity-log__list">
-                  {selectedAgentActivityLog.length > 0 ? (
-                    selectedAgentActivityLog.map((event) => (
-                      <article className={`agent-thread-event agent-thread-event--${event.status}`} key={event.id}>
-                        <div className="agent-thread-event__icon">
-                          <AppIcon
-                            name={agentActivityIconName(event.status)}
-                            label={agentActivityAccessibleLabel(event.status, event.label)}
-                          />
-                        </div>
-                        <div className="agent-thread-event__body">
-                          <div className="agent-thread-event__header">
-                            <strong>{event.label}</strong>
-                            <span>{agentActivityTimeLabel(event.timestamp)}</span>
-                            <span>{agentActivityFilterLabel(event.kind)}</span>
-                          </div>
-                          {event.detail ? <div className="agent-thread-event__detail">{event.detail}</div> : null}
-                          {agentActivityMetaLabel(event) ? <div className="agent-thread-event__meta">{agentActivityMetaLabel(event)}</div> : null}
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="agent-activity-log__empty">
-                      {activeAgentSessionDescriptor ? "No matching activity yet" : "No pane selected"}
-                    </div>
-                  )}
-                </div>
-              </section>
-              <div className="agent-chat-terminal-hint">
-                <button className="agent-chat-terminal-hint__button" type="button" onClick={() => setAgentSurfaceMode("terminal")}>
-                  <AppIcon name="terminal" />
-                  <span>Raw terminal</span>
-                </button>
-              </div>
-            </div>
+            <AgentRunSurface
+              activityFilter={agentActivityFilter}
+              events={selectedAgentActivityLog}
+              hasPane={Boolean(activeTerminalPane)}
+              hasSession={Boolean(activeAgentSessionDescriptor)}
+              hidden={agentSurfaceMode !== "chat"}
+              transcript={activeTerminalTranscript}
+              onActivityFilterChange={setAgentActivityFilter}
+              onShowTerminal={() => setAgentSurfaceMode("terminal")}
+            />
           </div>
           <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
-            <div className="agent-composer__harness">
+            <div className="agent-composer__topline">
               <div className="agent-composer__target" title={workspacePath ?? ""}>
-                <span>Target</span>
                 <strong>
                   <AppIcon name="agent" />
                   <span>{activeTerminalProfile.label}</span>
@@ -5035,46 +4705,54 @@ function App() {
                 <span>{activeSessionId ?? "No session"}</span>
                 <span>{activeTerminalPaneLabel ?? "No pane"}</span>
               </div>
-              <label className="agent-composer__field">
-                <span>Permission</span>
-                <select
-                  aria-label="Composer permission mode"
-                  value={activeComposerHarness.approvalMode}
-                  disabled={!activeComposerHarnessKey}
-                  onChange={(event) => void setComposerApprovalMode(event.currentTarget.value as AgentApprovalMode)}
-                >
-                  <option value="ask">Ask</option>
-                  <option value="approveSafe">Approve safe</option>
-                  <option value="fullAccess">Full access</option>
-                </select>
-              </label>
-              <label className="agent-composer__field">
-                <span>Profile</span>
-                <select
-                  aria-label="Composer profile"
-                  value={activeComposerHarness.selectedProfileId}
-                  disabled={!activeComposerHarnessKey || launchProfileChanging}
-                  onChange={(event) => void setComposerProfile(event.currentTarget.value)}
-                >
-                  {LAUNCH_PROFILES.map((profile) => (
-                    <option key={profile.id} value={profile.id}>
-                      {profile.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="agent-composer__field agent-composer__field--goal">
-                <span>Goal</span>
-                <input
-                  aria-label="Composer goal"
-                  value={activeComposerHarness.goal}
-                  maxLength={160}
-                  placeholder="No goal"
-                  disabled={!activeComposerHarnessKey}
-                  onChange={(event) => void setComposerGoal(event.currentTarget.value)}
-                  onBlur={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
-                />
-              </label>
+              <details className="agent-composer__settings">
+                <summary>
+                  <AppIcon name="settings" />
+                  <span>Run settings</span>
+                </summary>
+                <div className="agent-composer__harness">
+                  <label className="agent-composer__field">
+                    <span>Permission</span>
+                    <select
+                      aria-label="Composer permission mode"
+                      value={activeComposerHarness.approvalMode}
+                      disabled={!activeComposerHarnessKey}
+                      onChange={(event) => void setComposerApprovalMode(event.currentTarget.value as AgentApprovalMode)}
+                    >
+                      <option value="ask">Ask</option>
+                      <option value="approveSafe">Approve safe</option>
+                      <option value="fullAccess">Full access</option>
+                    </select>
+                  </label>
+                  <label className="agent-composer__field">
+                    <span>Profile</span>
+                    <select
+                      aria-label="Composer profile"
+                      value={activeComposerHarness.selectedProfileId}
+                      disabled={!activeComposerHarnessKey || launchProfileChanging}
+                      onChange={(event) => void setComposerProfile(event.currentTarget.value)}
+                    >
+                      {LAUNCH_PROFILES.map((profile) => (
+                        <option key={profile.id} value={profile.id}>
+                          {profile.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="agent-composer__field agent-composer__field--goal">
+                    <span>Goal</span>
+                    <input
+                      aria-label="Composer goal"
+                      value={activeComposerHarness.goal}
+                      maxLength={160}
+                      placeholder="No goal"
+                      disabled={!activeComposerHarnessKey}
+                      onChange={(event) => void setComposerGoal(event.currentTarget.value)}
+                      onBlur={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
+                    />
+                  </label>
+                </div>
+              </details>
             </div>
             <div className="agent-composer__attachments" aria-label="Composer attachments">
               <button
@@ -5331,7 +5009,7 @@ function App() {
           <span>{terminalStatusLabel}</span>
         </span>
         <span className="status-bar__spacer" />
-        <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Chat" : "Terminal"}</span>
+        <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Run" : "Terminal"}</span>
         <span className="status-bar__item">Prettier</span>
       </footer>
     </div>

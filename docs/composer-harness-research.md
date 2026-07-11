@@ -15,9 +15,11 @@ The Codex-style bottom composer can be more than a text box, but it should not r
 ### v0.5: Prompt Router
 
 - Bottom composer sends text to the selected real terminal pane through the pty.
+- The default Run view presents the visible terminal viewport as readable output; it is not a reconstructed provider chat.
 - Shows selected project/session/pane target.
 - Supports send, stop/interrupt, multiline input, history, and paste.
 - No direct model API and no fake chat transcript.
+- Do not infer thinking, tool calls, or structured messages from CLI text. Provider-specific visibility requires hooks, ACP, or a direct API adapter.
 - Uses the agent session handle contract in `docs/harness-contract.md`. The current implementation wraps the selected real pane with send, interrupt, readTail, close, process state, approval mode, and activity metadata.
 
 ### v1: Harness Shell

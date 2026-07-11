@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-09T19:31:59.616Z",
-  "commit": "3bab4d7+dirty",
+  "generatedAt": "2026-07-10T17:00:35.550Z",
+  "commit": "651ed4a+dirty",
   "branch": "main",
   "status": "baseline-ready",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
@@ -8,14 +8,14 @@
     {
       "id": "total-js-assets",
       "label": "Total built JS assets",
-      "actualBytes": 1177077,
+      "actualBytes": 1177684,
       "limitBytes": 1400000,
       "pass": true
     },
     {
       "id": "total-css-assets",
       "label": "Total built CSS assets",
-      "actualBytes": 55684,
+      "actualBytes": 60263,
       "limitBytes": 90000,
       "pass": true
     }
@@ -24,7 +24,7 @@
     {
       "id": "largest-js-vite-warning",
       "label": "Largest JS chunk stays below Vite warning size",
-      "actualBytes": 1177077,
+      "actualBytes": 1177684,
       "limitBytes": 500000,
       "pass": false,
       "note": "Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning."
@@ -70,24 +70,32 @@
       "id": "daily-driver-ready",
       "label": "Daily-driver readiness gate has passed",
       "file": "docs/qa/daily-driver/latest.json",
-      "pattern": "ready-for-timed-runs",
+      "pattern": "implementation-ready-for-live-runs",
       "pass": true
     }
   ],
   "artifactChecks": [
     {
       "id": "chrome-first-open",
-      "label": "Chrome first-open screenshot",
-      "file": "docs/qa/chrome-demo/first-open.png",
-      "bytes": 179314,
+      "label": "Actual app first-open screenshot",
+      "file": "docs/qa/app-shell/first-open-1440.png",
+      "bytes": 56695,
       "minBytes": 1024,
       "pass": true
     },
     {
-      "id": "chrome-workbench",
-      "label": "Chrome workbench screenshot",
-      "file": "docs/qa/chrome-demo/workbench.png",
-      "bytes": 144158,
+      "id": "chrome-narrow",
+      "label": "Actual app narrow screenshot",
+      "file": "docs/qa/app-shell/first-open-900.png",
+      "bytes": 45307,
+      "minBytes": 1024,
+      "pass": true
+    },
+    {
+      "id": "native-run",
+      "label": "Native Tauri run screenshot",
+      "file": "docs/qa/app-shell/native-run.png",
+      "bytes": 323328,
       "minBytes": 1024,
       "pass": true
     },
@@ -95,7 +103,7 @@
       "id": "editor-selected",
       "label": "Editor selected-state screenshot",
       "file": "docs/qa/editor-parity/selected.png",
-      "bytes": 141848,
+      "bytes": 133328,
       "minBytes": 1024,
       "pass": true
     },
@@ -103,7 +111,7 @@
       "id": "daily-driver-report",
       "label": "Daily-driver report",
       "file": "docs/qa/daily-driver/latest.md",
-      "bytes": 2078,
+      "bytes": 2175,
       "minBytes": 1024,
       "pass": true
     }
@@ -111,20 +119,20 @@
   "metrics": {
     "assets": [
       {
-        "file": "app/dist/assets/index-CjFoKLNO.js",
-        "bytes": 1177077,
+        "file": "app/dist/assets/index-ByHPnGN6.js",
+        "bytes": 1177684,
         "ext": ".js"
       },
       {
-        "file": "app/dist/assets/index-DpBqtRsg.css",
-        "bytes": 55684,
+        "file": "app/dist/assets/index-QYLZd6iW.css",
+        "bytes": 60263,
         "ext": ".css"
       }
     ],
     "totals": {
-      "totalJsBytes": 1177077,
-      "totalCssBytes": 55684,
-      "largestJsBytes": 1177077
+      "totalJsBytes": 1177684,
+      "totalCssBytes": 60263,
+      "largestJsBytes": 1177684
     }
   },
   "nextLiveMeasurements": [

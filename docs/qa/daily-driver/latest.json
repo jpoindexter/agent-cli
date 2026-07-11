@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-09T19:31:59.266Z",
-  "commit": "3bab4d7+dirty",
+  "generatedAt": "2026-07-10T17:00:18.993Z",
+  "commit": "651ed4a+dirty",
   "branch": "main",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
-  "status": "ready-for-timed-runs",
+  "status": "implementation-ready-for-live-runs",
   "scenarios": [
     {
       "id": "one-project-edit-agent-preview",
@@ -14,7 +14,7 @@
           "label": "agent-first workbench label",
           "file": "app/src/App.tsx",
           "pass": true,
-          "evidence": "Agent thread and raw terminal"
+          "evidence": "Agent run and raw terminal"
         },
         {
           "label": "real editor save path",
@@ -35,21 +35,27 @@
           "evidence": "detectLocalDevServerUrl"
         },
         {
-          "label": "selected workbench screenshot",
-          "file": "docs/qa/editor-parity/selected.png",
+          "label": "actual app shell at 1440x900",
+          "file": "docs/qa/app-shell/first-open-1440.png",
           "pass": true,
-          "bytes": 141848
+          "bytes": 56695
         },
         {
-          "label": "narrow composer screenshot",
-          "file": "docs/qa/editor-parity/narrow-composer.png",
+          "label": "actual app shell at 900x640",
+          "file": "docs/qa/app-shell/first-open-900.png",
           "pass": true,
-          "bytes": 118855
+          "bytes": 45307
+        },
+        {
+          "label": "native Tauri run with live pty output",
+          "file": "docs/qa/app-shell/native-run.png",
+          "pass": true,
+          "bytes": 323328
         }
       ],
-      "passed": 6,
-      "total": 6,
-      "status": "ready-for-timed-run"
+      "passed": 7,
+      "total": 7,
+      "status": "implementation-ready"
     },
     {
       "id": "two-agents-same-project",
@@ -95,7 +101,7 @@
       ],
       "passed": 6,
       "total": 6,
-      "status": "ready-for-timed-run"
+      "status": "implementation-ready"
     },
     {
       "id": "three-project-switch-relaunch",
@@ -141,36 +147,52 @@
       ],
       "passed": 6,
       "total": 6,
-      "status": "ready-for-timed-run"
+      "status": "implementation-ready"
     }
   ],
   "metrics": {
     "assetSizes": [
       {
-        "file": "app/dist/assets/index-CjFoKLNO.js",
-        "bytes": 1177077
+        "file": "app/dist/assets/index-ByHPnGN6.js",
+        "bytes": 1177684
       },
       {
-        "file": "app/dist/assets/index-DpBqtRsg.css",
-        "bytes": 55684
+        "file": "app/dist/assets/index-QYLZd6iW.css",
+        "bytes": 60263
       }
     ],
     "screenshotSizes": [
       {
+        "file": "docs/qa/app-shell/first-open-1440.png",
+        "bytes": 56695
+      },
+      {
+        "file": "docs/qa/app-shell/first-open-1024.png",
+        "bytes": 51591
+      },
+      {
+        "file": "docs/qa/app-shell/first-open-900.png",
+        "bytes": 45307
+      },
+      {
+        "file": "docs/qa/app-shell/native-run.png",
+        "bytes": 323328
+      },
+      {
         "file": "docs/qa/editor-parity/selected.png",
-        "bytes": 141848
+        "bytes": 133328
       },
       {
         "file": "docs/qa/editor-parity/narrow-composer.png",
-        "bytes": 118855
+        "bytes": 110772
       },
       {
         "file": "docs/qa/editor-parity/diff-review.png",
-        "bytes": 149203
+        "bytes": 140732
       },
       {
         "file": "docs/qa/editor-parity/chrome-states.png",
-        "bytes": 148577
+        "bytes": 140274
       }
     ]
   },

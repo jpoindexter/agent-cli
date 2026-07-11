@@ -1,0 +1,25 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, it } from "vitest";
+
+type WindowConfig = {
+  width?: number;
+  height?: number;
+  minWidth?: number;
+  minHeight?: number;
+  center?: boolean;
+};
+
+describe("native first-open window", () => {
+  it("opens as a workbench instead of a small utility window", () => {
+    const config = JSON.parse(readFileSync(new URL("../src-tauri/tauri.conf.json", import.meta.url), "utf8")) as {
+      app: { windows: WindowConfig[] };
+    };
+    const window = config.app.windows[0];
+
+    expect(window.width).toBeGreaterThanOrEqual(1280);
+    expect(window.height).toBeGreaterThanOrEqual(800);
+    expect(window.minWidth).toBeGreaterThanOrEqual(900);
+    expect(window.minHeight).toBeGreaterThanOrEqual(640);
+    expect(window.center).toBe(true);
+  });
+});

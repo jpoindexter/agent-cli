@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "qa:shell": "../scripts/capture-app-shell-qa.sh",
     "qa:editor": "../scripts/capture-editor-qa.sh",
     "qa:chrome-contract": "node ../scripts/check-chrome-contract.mjs",
     "qa:daily-driver": "node ../scripts/collect-daily-driver-metrics.mjs",

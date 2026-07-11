@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   agentActivityStatusFromProcess,
+  agentActivityFilterLabel,
+  agentActivityMetaLabel,
   agentActivityTimeLabel,
   agentCurrentActivity,
   createAgentActivityEvent,
@@ -85,5 +87,16 @@ describe("agent activity", () => {
 
   it("formats invalid activity time defensively", () => {
     expect(agentActivityTimeLabel(Number.NaN)).toBe("--:--");
+  });
+
+  it("formats compact activity labels and provenance", () => {
+    expect(agentActivityFilterLabel("approval")).toBe("Approvals");
+    expect(agentActivityFilterLabel("complete")).toBe("Complete");
+    expect(agentActivityMetaLabel({
+      ...createAgentActivityEvent(handle, { kind: "command", label: "Ran command", status: "complete", timestamp: 400 }),
+      target: "npm test",
+      exitCode: 0,
+      outputRef: "terminal",
+    })).toBe("npm test · exit 0 · terminal");
   });
 });

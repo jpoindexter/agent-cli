@@ -133,14 +133,15 @@ const sourceChecks = [
     id: "daily-driver-ready",
     label: "Daily-driver readiness gate has passed",
     file: "docs/qa/daily-driver/latest.json",
-    pattern: "ready-for-timed-runs",
-    pass: dailyDriver?.status === "ready-for-timed-runs",
+    pattern: "implementation-ready-for-live-runs",
+    pass: dailyDriver?.status === "implementation-ready-for-live-runs",
   },
 ];
 
 const artifactChecks = [
-  fileCheck("chrome-first-open", "Chrome first-open screenshot", "docs/qa/chrome-demo/first-open.png", 1024),
-  fileCheck("chrome-workbench", "Chrome workbench screenshot", "docs/qa/chrome-demo/workbench.png", 1024),
+  fileCheck("chrome-first-open", "Actual app first-open screenshot", "docs/qa/app-shell/first-open-1440.png", 1024),
+  fileCheck("chrome-narrow", "Actual app narrow screenshot", "docs/qa/app-shell/first-open-900.png", 1024),
+  fileCheck("native-run", "Native Tauri run screenshot", "docs/qa/app-shell/native-run.png", 1024),
   fileCheck("editor-selected", "Editor selected-state screenshot", "docs/qa/editor-parity/selected.png", 1024),
   fileCheck("daily-driver-report", "Daily-driver report", "docs/qa/daily-driver/latest.md", 1024),
 ];

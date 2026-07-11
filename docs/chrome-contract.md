@@ -1,8 +1,8 @@
 # Chrome Contract
 
-Status: active guardrail, verified 2026-07-09.
+Status: active guardrail, verified 2026-07-10.
 
-Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/thread drawer, agent-first center, and editor/browser/git/raw terminal as trays.
+Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/session drawer, agent-first center, and editor/browser/git/raw terminal as optional trays.
 
 ## Required Tokens
 
@@ -20,18 +20,18 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 - Chat/avatar identity blocks such as `You ·` or `Keelhouse ·`.
 - Pill-heavy active rows and obvious rounded-rectangle action chrome.
 
-## Agent Thread Surface
+## Agent Run Surface
 
-- Chat/activity is the default surface; raw terminal remains available as an escape hatch.
-- Activity renders as a thread of prompt, approval, file, command, error, browser, git, and app events.
-- Event rows use `agent-thread-event` cards with status icons and compact metadata, not a spreadsheet-like log table.
-- The composer stays pinned below the thread.
+- Run is the default surface and shows the visible active terminal viewport; raw terminal remains an escape hatch for direct TUI interaction.
+- Activity is separate provenance for observable prompt, approval, file, command, error, browser, git, and app events.
+- Keelhouse does not infer structured chat, tool events, or thinking from terminal text. Those require an explicit adapter or hook.
+- The composer stays pinned below output and activity.
 
 ## Real App Port Signals
 
 - The side drawer uses mode-aware product nouns. The default Projects mode is `Project threads`, not a generic `Drawer`.
-- The center work surface is labelled as `Agent thread and raw terminal`: chat/thread is primary, raw terminal is explicit.
-- QA fixtures must mirror those nouns so visual snapshots catch drift back to stacked-pane or terminal-first language.
+- The center work surface is labelled as `Agent run and raw terminal`: Run is primary, raw terminal is explicit.
+- The first-open tool tray is hidden. Opening Tools defaults to Editor and can dock left, right, or bottom.
 
 ## Control Chrome Signals
 
@@ -43,7 +43,7 @@ Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` directio
 
 ## Tool Tray Signals
 
-- The workbench exposes compact tray tabs for `Split`, `Editor`, and `Browser`.
+- One compact Tools menu exposes `Editor`, `Browser`, and `Split editor and browser` plus dock position.
 - `Split` shows editor and browser trays with the secondary splitter.
 - `Editor` and `Browser` modes hide the unused tray and remove the secondary editor/browser splitter.
 - Tray mode is a local workbench preference so daily-driver layout does not reset between launches.
@@ -56,12 +56,13 @@ Run from `app/`:
 npm run qa:chrome-contract
 ```
 
-The gate checks the accepted demo, app chrome sources, required chrome screenshots, steel-cyan tokens, rejected warm accent tokens, rejected avatar labels, and flat active-thread treatment.
+The gate checks the accepted demo, real app-shell sources, 1440/1024/900 first-open screenshots, steel-cyan tokens, rejected warm accents/avatar labels, the terminal-backed Run contract, hidden first-open tray, and compact Tools menu.
 
-For visible chrome changes, also run:
+For visible chrome changes, run both:
 
 ```bash
+npm run qa:shell
 npm run qa:editor
 ```
 
-Spot-check at least `docs/qa/editor-parity/selected.png` and `docs/qa/editor-parity/narrow-composer.png`.
+`qa:shell` captures the actual React app. `qa:editor` remains a deterministic fixture for editor, menu, diff, modal, and failure states; fixture evidence alone is not enough to claim the app shell works. Native proof for this reset is `docs/qa/app-shell/native-run.png`.

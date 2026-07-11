@@ -4,7 +4,7 @@ The app should show Codex-style visible agent activity: concise state and event 
 
 ## Event Types
 
-- Thinking / planning summary: `Thinking...`, `Planning next edit`, `Reviewing output`.
+- Provider/hook summary: `Thinking...`, `Planning next edit`, `Reviewing output` only when supplied by an explicit trusted adapter.
 - File events: `Read file`, `Edited a file`, `Created file`, `Deleted file`, `Renamed file`, `Opened diff`.
 - Command events: `Ran command`, `Command finished`, `Command failed`, with cwd, exit code, and expandable output link.
 - Tool/app events: `Opened browser preview`, `Focused pane`, `Created pane`, `Switched project`, `Requested approval`.
@@ -23,6 +23,7 @@ The app should show Codex-style visible agent activity: concise state and event 
 - Show labels and icons for every event; icon-only activity is not enough.
 - Attribute agent-originated actions to the pane/session/profile that caused them.
 - Never display hidden chain-of-thought. Show user-safe summaries, command/tool names, file paths, diffs, outputs, approvals, and errors.
+- Never synthesize thinking, tool calls, or structured messages by scraping terminal text.
 - Mutating events should link to review/undo surfaces where possible.
 - Retain activity with session metadata and transcript references after the process exits.
 
@@ -34,4 +35,4 @@ The app should show Codex-style visible agent activity: concise state and event 
 
 ## Current Implementation
 
-AGENT-ACTIVITY implements the compact current/recent activity strip above the composer. AGENT-ACTIVITY-LOG adds the durable, filterable per-pane/session timeline below that strip and persists up to 200 user-safe events in local state. Git/source-control, approval, browser, diff, and undo producers are reserved in the event model and become populated as their real app-owned surfaces land.
+AGENT-ACTIVITY and AGENT-ACTIVITY-LOG provide observable app-owned provenance below the terminal-backed Run output and persist up to 200 user-safe events. Provider-native summaries and structured tool events remain part of DIRECT-AGENT-HARNESS or explicit CLI hooks; they are not present in the terminal-backed path today.

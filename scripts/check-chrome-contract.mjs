@@ -12,6 +12,9 @@ const assert = (condition, message) => {
 
 const appCss = read("app/src/App.css");
 const appTsx = read("app/src/App.tsx");
+const agentRunSurface = read("app/src/AgentRunSurface.tsx");
+const toolDockMenu = read("app/src/ToolDockMenu.tsx");
+const workbenchLayout = read("app/src/workbenchLayout.ts");
 const editorQaFixture = read("docs/qa/editor-parity.html");
 const demo = read("demo/keelhouse-chrome-demo.html");
 
@@ -19,6 +22,8 @@ const rejectedWarmAccent = /#e07a4f|#251b16|#d9a079|var\(--orange\)|orange accen
 const checkedText = [
   ["app/src/App.css", appCss],
   ["app/src/App.tsx", appTsx],
+  ["app/src/AgentRunSurface.tsx", agentRunSurface],
+  ["app/src/ToolDockMenu.tsx", toolDockMenu],
   ["demo/keelhouse-chrome-demo.html", demo],
 ];
 
@@ -43,17 +48,20 @@ assert(/\.terminal-title\s*\{[^}]*display: none;/s.test(appCss), "Terminal toolb
 assert(appCss.includes("container-type: inline-size;"), "Browser preview must use container-aware chrome behavior");
 assert(/@container \(max-width: 280px\)\s*\{[\s\S]*?\.browser-button--go\s*\{[^}]*display: none;/s.test(appCss), "Narrow browser tray must hide the Open button to prevent toolbar overlap");
 assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-style agent event cards");
-assert(appTsx.includes("agent-thread-event"), "App surface must render thread-style agent event cards");
-assert(appTsx.includes("agent-activity-log__title\">Thread"), "Agent activity surface must label the center feed as Thread");
+assert(agentRunSurface.includes("agent-thread-event"), "Agent run surface must render provenance activity rows");
+assert(agentRunSurface.includes("agent-activity-log__title\">Activity"), "Agent run surface must label provenance as Activity");
+assert(agentRunSurface.includes("Raw terminal"), "Agent run surface must expose the raw terminal escape hatch");
 assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
 assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
 assert(appTsx.includes("Project threads"), "Projects drawer must present project sessions as threads");
-assert(appTsx.includes("Agent thread and raw terminal"), "Agent surface must be labelled as a thread with raw terminal as escape hatch");
-assert(appTsx.includes("<span className=\"terminal-kicker\">Thread</span>"), "Agent pane kicker must say Thread, not Agent terminal");
-assert(appTsx.includes("TOOL_TRAY_MODE_STORAGE_KEY"), "Tool tray tab mode must persist locally");
+assert(appTsx.includes("Agent run and raw terminal"), "Agent surface must be labelled as a run with raw terminal as escape hatch");
+assert(appTsx.includes("<span>Run</span>"), "Agent surface switcher must name the primary surface Run");
+assert(workbenchLayout.includes('DEFAULT_WORKBENCH_LAYOUT: WorkbenchLayoutMode = "hidden"'), "First open must keep the optional tool tray hidden");
+assert(workbenchLayout.includes('DEFAULT_TOOL_TRAY_MODE: ToolTrayMode = "editor"'), "First tool tray open must default to the editor");
 assert(appTsx.includes("workbench--tools-${toolTrayMode}"), "Workbench must render the active tool tray mode class");
 assert(appTsx.includes("toolTrayMode === \"split\" ? ("), "Editor/browser splitter must render only in split tray mode");
-assert(appTsx.includes("tool-tray-switcher"), "App chrome must expose compact tool tray tabs");
+assert(toolDockMenu.includes("Hide tools"), "Tool dock menu must expose a direct way to return to the agent-only layout");
+assert(toolDockMenu.includes('aria-label="Tools and dock position"'), "Tool dock controls must use one compact, labelled menu");
 assert(appTsx.includes("commandPaletteOpen"), "App chrome must expose a command palette state");
 assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command palette must show its shortcut label");
 assert(appCss.includes(".command-palette"), "App CSS must style the command palette surface");
@@ -63,7 +71,6 @@ assert(appTsx.includes("search_workspace_text"), "Search drawer must call the wo
 assert(appTsx.includes("search-scope-tabs"), "Search drawer must expose Files/Text scopes");
 assert(editorQaFixture.includes("Project threads drawer"), "Editor QA fixture must reflect the project-thread drawer");
 assert(!editorQaFixture.includes(">Drawer<"), "Editor QA fixture must not show a generic Drawer label");
-assert(editorQaFixture.includes("Agent thread and raw terminal"), "Editor QA fixture must reflect the agent-thread surface label");
 assert(editorQaFixture.includes("workbench--tools-split"), "Editor QA fixture must include split tool tray mode");
 assert(editorQaFixture.includes("tool-tray-switcher"), "Editor QA fixture must render tool tray tabs");
 assert(/\.workbench--tools-editor \.browser-preview,\s*\.workbench--tools-browser \.editor-area\s*\{[^}]*display: none;/s.test(appCss), "Single tool tray modes must hide the unused editor/browser tray");
@@ -75,11 +82,9 @@ assert(/\.thread-row\.active\s*\{[^}]*box-shadow: inset 3px 0 0 var\(--accent\);
 assert(!/\.thread-row\.active\s*\{[^}]*border-radius/s.test(demo), "Accepted demo active thread row must stay flat, not rounded");
 
 const requiredScreenshots = [
-  "docs/qa/chrome-demo/first-open.png",
-  "docs/qa/chrome-demo/create-menu.png",
-  "docs/qa/chrome-demo/settings.png",
-  "docs/qa/chrome-demo/palette.png",
-  "docs/qa/chrome-demo/narrow.png",
+  "docs/qa/app-shell/first-open-1440.png",
+  "docs/qa/app-shell/first-open-1024.png",
+  "docs/qa/app-shell/first-open-900.png",
 ];
 
 for (const file of requiredScreenshots) {

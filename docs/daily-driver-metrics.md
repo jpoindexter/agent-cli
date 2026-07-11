@@ -8,7 +8,7 @@ Daily-driver workflow runs completed without opening VS Code.
 
 ## Instrumented Scenarios
 
-1. **One project: talk, edit, preview** — agent thread stays primary, editor save path exists, composer routes prompts with context, and browser preview can open detected localhost servers.
+1. **One project: talk, edit, preview** — the agent Run stays primary, editor save path exists, composer routes prompts with context, and browser preview can open detected localhost servers.
 2. **Two agents: same project** — one project owns multiple real panes, with focus, close, labels, lifecycle, and layout persistence.
 3. **Three projects: switch and relaunch** — project rail, sessions, editor snapshots, pane layout, and browser preview URLs survive switching and relaunch boundaries.
 
@@ -18,6 +18,7 @@ Run from `app/` after build and editor QA:
 
 ```bash
 npm run build
+npm run qa:shell
 npm run qa:editor
 npm run qa:daily-driver
 ```
@@ -29,4 +30,4 @@ The collector writes:
 
 ## Current Boundary
 
-The current collector verifies that required code paths, docs, and screenshot evidence exist for the three workflow runs. It does not yet time live Tauri runs or compare memory/CPU against VS Code. Those measurements belong to the next pass after this readiness gate is stable.
+The current collector verifies implementation readiness: required code paths, docs, and actual app-shell screenshots exist for the three workflow runs. It does not prove the North Star, time live Tauri runs, or compare memory/CPU against VS Code. Those claims require recorded end-to-end runs and remain open.

@@ -1,17 +1,17 @@
 # Performance Budget
 
-Generated: 2026-07-09T19:31:59.616Z
-Commit: 3bab4d7+dirty
+Generated: 2026-07-10T17:00:35.550Z
+Commit: 651ed4a+dirty
 Status: baseline-ready
 
 ## Hard Budgets
 
-- PASS Total built JS assets: 1149.5 KiB / 1367.2 KiB
-- PASS Total built CSS assets: 54.4 KiB / 87.9 KiB
+- PASS Total built JS assets: 1150.1 KiB / 1367.2 KiB
+- PASS Total built CSS assets: 58.9 KiB / 87.9 KiB
 
 ## Soft Budgets
 
-- WARN Largest JS chunk stays below Vite warning size: 1149.5 KiB / 488.3 KiB
+- WARN Largest JS chunk stays below Vite warning size: 1150.1 KiB / 488.3 KiB
   - Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning.
 
 ## Source Checks
@@ -25,10 +25,11 @@ Status: baseline-ready
 
 ## Artifact Checks
 
-- PASS Chrome first-open screenshot - docs/qa/chrome-demo/first-open.png (175.1 KiB)
-- PASS Chrome workbench screenshot - docs/qa/chrome-demo/workbench.png (140.8 KiB)
-- PASS Editor selected-state screenshot - docs/qa/editor-parity/selected.png (138.5 KiB)
-- PASS Daily-driver report - docs/qa/daily-driver/latest.md (2.0 KiB)
+- PASS Actual app first-open screenshot - docs/qa/app-shell/first-open-1440.png (55.4 KiB)
+- PASS Actual app narrow screenshot - docs/qa/app-shell/first-open-900.png (44.2 KiB)
+- PASS Native Tauri run screenshot - docs/qa/app-shell/native-run.png (315.8 KiB)
+- PASS Editor selected-state screenshot - docs/qa/editor-parity/selected.png (130.2 KiB)
+- PASS Daily-driver report - docs/qa/daily-driver/latest.md (2.1 KiB)
 
 ## Next Live Measurements
 

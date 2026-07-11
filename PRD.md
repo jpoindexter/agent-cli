@@ -29,7 +29,7 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Run real Codex/Gemini/Claude/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Keep the terminal robust enough for daily agent work: Ghostty-backed VT fidelity, alternate-screen TUIs, ANSI/truecolor styling, resize, scrollback, selection/copy/paste, bracketed paste, common keyboard chords, fast-output responsiveness, and clear pane lifecycle state.
 - Keep terminal panes as the source-of-truth agent interface. Add a Codex-style composer/harness for routing prompts/instructions to the selected agent pane or app-level actions; do not replace Claude/Codex's real terminal UI with a custom chat clone.
-- Make the selected agent pane, composer, and visible activity timeline the primary workbench surface. Default to a Codex-like chat/run view backed by the real pty; expose raw terminal as an explicit switchable view for exact TUI escape hatches. The code editor and browser preview are first-class tools, but they should behave like movable, resizable trays around the agent cockpit rather than the default main screen.
+- Make the selected agent pane, composer, and visible activity timeline the primary workbench surface. Default to a readable terminal-backed Run view; expose raw terminal as an explicit switchable view for exact TUI interaction. The code editor and browser preview are first-class tools, but they behave like movable, resizable trays around the agent cockpit rather than the default main screen.
 - Use VS Code/Codex-like application structure for the shell: compact top status/action bar, persistent side drawer, draggable workbench trays, and bottom status strip. Adapt the pattern to Keelhouse state and actions; do not copy fake window controls, fake browser navigation, decorative activity rails, or controls that imply unavailable behavior.
 - Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.
 - Let agents hook into the app through a built-in, permissioned MCP/API surface for app-owned actions such as listing projects, reading open files, opening diffs, focusing panes, creating panes, and reporting task status.
@@ -72,7 +72,7 @@ The chrome should feel Codex-level: dense, calm, readable, and intentional acros
 
 ## Editor and Terminal Parity
 
-The editor and terminal are the product core. The editor should feel like a real coding editor beside a dense file tree, not a text preview. The terminal should remain the trusted source-of-truth for Claude/Codex/shell sessions, not a simulated transcript. Detailed criteria live in `docs/editor-terminal-parity.md`.
+The agent run is the product core. Its terminal process remains the trusted source of truth for Claude/Codex/Gemini/shell sessions; the editor and browser are robust supporting tools that open only when needed. The Run surface may present the visible terminal viewport cleanly, but it must never invent a provider-native transcript or imply access to hidden reasoning. Detailed criteria live in `docs/editor-terminal-parity.md`.
 
 ## Agent Activity Timeline
 
@@ -80,7 +80,7 @@ Agent panes need Codex-style activity visibility: compact current state in pane 
 
 ## Composer Harness
 
-Use a bottom composer like Codex as the lightweight control surface over real panes. v0.5 routes prompts to the selected pty. v1 adds harness controls: permission mode, goal chip, target pane, model/profile selector, attachments/screenshot references, stop/send state, and activity logging. v2 may add an optional direct API/MCP agent harness, but only for app-owned orchestration; real Claude/Codex terminal panes remain first-class. Research and phased scope live in `docs/composer-harness-research.md`.
+Use a bottom composer like Codex as the lightweight control surface over real panes. v0.5 routes prompts to the selected pty. v1 adds harness controls plus a terminal-backed Run view: permission mode, goal, target pane, profile selector, attachment references, stop/send state, visible terminal output, and app-owned activity logging. Structured provider messages, tool events, resumable model state, or provider-authored thinking summaries require a direct adapter, ACP, hooks, or API integration; they are not inferred from terminal text. Real Claude/Codex/Gemini terminal panes remain first-class. Research and phased scope live in `docs/composer-harness-research.md`.
 
 ## Harness Contract
 
@@ -123,11 +123,12 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Browser/web preview opens localhost apps, docs, auth flows, and generated pages inside the workbench.
 - [x] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [x] Pane lifecycle controls and icon badges cover thinking, running, waiting, errored, exited, restart, terminate, and attention-needed states.
-- [ ] Agent activity rows show recent thinking/planning summaries, file edits, commands, tool/app actions, approvals, errors, and completion per pane/session.
+- [x] Agent activity rows show observable app-owned prompts, file saves, commands, pane lifecycle, approvals, errors, and completion per pane/session.
+- [ ] Provider-native structured messages, tool events, and user-safe planning summaries are supplied by an explicit adapter/hook/API path, never terminal-text heuristics.
 - [x] Each pane/session exposes an app-owned agent session handle with send, interrupt, readTail, close, state, cwd, profile, approval mode, and activity metadata.
 - [x] App-owned actions use a minimal action gate with risk class, approval decision, audit event, and undo/rollback hint where possible.
 - [x] Composer harness supports permission mode, goal state, model/profile selector, attachments, and approval logging for app-owned actions.
-- [x] The workbench hierarchy is agent-first: chat/run activity plus composer owns the main surface, raw terminal is switchable, and editor/browser preview sit in left/right/bottom/hideable trays with draggable splitters.
+- [x] The workbench hierarchy is agent-first: terminal-backed Run output plus composer owns the main surface, raw terminal is switchable, and editor/browser preview sit in left/right/bottom/hideable trays with draggable splitters.
 - [x] The app shell has Keelhouse-specific chrome: top status/action bar, persistent side drawer, main agent surface, and bottom status strip.
 - [x] The side drawer can switch between real Projects/Sessions and Files content without adding decorative navigation chrome.
 - [x] Drawer controls switch real side-drawer content, with persisted resizable/collapsible drawers for projects, files, search, source control, browser/tools, and settings.
