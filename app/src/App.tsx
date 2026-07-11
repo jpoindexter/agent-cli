@@ -162,6 +162,7 @@ import { useWorkbenchLayout } from "./useWorkbenchLayout";
 import { terminalSnapshotText } from "./terminalTranscript";
 import { migrateWorkspaceStore } from "./workspaceMigrations";
 import { SettingsModal } from "./SettingsModal";
+import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
 import { nextTerminalFindIndex, terminalFindCountLabel, terminalFindHitLabel } from "./terminalFind";
 import type { TerminalFindHit } from "./terminalFind";
 import { AgentRunSurface } from "./AgentRunSurface";
@@ -503,6 +504,7 @@ function App() {
   const [terminalFindLastQuery, setTerminalFindLastQuery] = useState("");
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [crashNotice, setCrashNotice] = useState<string | null>(null);
   const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
   const [appTheme, setAppTheme] = useState<"graphite" | "mono-ghost">("graphite");
 
@@ -1514,6 +1516,7 @@ function App() {
     } catch (err) {
       const message = String(err);
       setLaunchError(message);
+      void invoke("log_health_event", { message: `open_workspace failed: ${message}` }).catch(() => {});
       setManagedTerminalPanes(previousPanes);
       setFocusedTerminalPane(previousActivePaneId);
       if (isMissingWorkspaceError(message)) {
@@ -3452,7 +3455,14 @@ function App() {
       const cw = Math.max(1, Math.round(ctx.measureText("M").width));
       const ch = Math.round(FONT_SIZE * LINE_HEIGHT);
       metrics.current = { cw, ch };
+      const staleLock = await invoke<boolean>("begin_session").catch(() => false);
       await initWorkspace();
+      const recovery = deriveCrashRecovery(staleLock, openProjectsRef.current.length);
+      setCrashNotice(crashRecoveryMessage(recovery));
+      const cleanup = () => {
+        void invoke("end_session_clean").catch(() => {});
+      };
+      window.addEventListener("beforeunload", cleanup);
     };
 
     const scrollViewport = (delta: number) => {
@@ -5121,6 +5131,15 @@ function App() {
           }}
           onTrayModeChange={setToolTrayMode}
         />
+      ) : null}
+      {crashNotice ? (
+        <div className="crash-notice" role="status">
+          <AppIcon name="reload" />
+          <span>{crashNotice}</span>
+          <button className="editor-command" type="button" aria-label="Dismiss recovery notice" onClick={() => setCrashNotice(null)}>
+            <AppIcon name="close" />
+          </button>
+        </div>
       ) : null}
       {launchError ? (
         <div className="launch-error" role="alert">

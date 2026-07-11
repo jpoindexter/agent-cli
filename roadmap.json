@@ -1327,14 +1327,14 @@
     {
       "id": "CRASH-RESILIENCE",
       "title": "Crash detection and recovery",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "quality",
       "size": "M",
       "launch": "v2",
       "buildOrder": 100,
       "summary": "Blind-audit 2026-07-11 (outside view): reference-class daily-driver tools all handle crashes; Keelhouse has no card for it. Detect abnormal app exits (marker file cleared on clean quit), offer session restore with a 'recovered from crash' notice on next launch, log backend panics/pty failures to a local health log, and surface basic health (last crash, pane failures) in the status bar or settings.",
-      "done": "Kill -9 the app mid-session: next launch detects the crash, restores projects/sessions per SESSION-RESTORE, and shows the notice; health log exists and is documented; no telemetry leaves the machine."
+      "done": "Kill -9 the app mid-session: next launch detects the crash, restores projects/sessions per SESSION-RESTORE, and shows the notice; health log exists and is documented; no telemetry leaves the machine. Executed 2026-07-12: begin_session/.session-lock + end_session_clean (beforeunload) detect unclean shutdown; deriveCrashRecovery gates the banner on stale-lock AND restorable projects (tested); log_health_event appends launch/pty failures to a capped local health.log; SESSION-RESTORE reopens state. Local-only, documented in docs/local-state.md. 138 vitest / 36 cargo."
     },
     {
       "id": "TERMINAL-INTL-INPUT",

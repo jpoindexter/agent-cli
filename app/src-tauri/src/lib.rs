@@ -857,6 +857,55 @@ fn scroll_pty(state: State<PtyState>, delta: isize) {
     state.send(Msg::Scroll { delta });
 }
 
+fn app_state_file(app: &AppHandle, name: &str) -> Result<PathBuf, String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Could not resolve app data dir: {e}"))?;
+    std::fs::create_dir_all(&dir).map_err(|e| format!("Could not create app data dir: {e}"))?;
+    Ok(dir.join(name))
+}
+
+const HEALTH_LOG_CAP_BYTES: u64 = 128 * 1024;
+
+/// Marks a running session. Present at startup ⇒ the previous session did not
+/// close cleanly (the clean-close path removes it). Returns whether a stale
+/// marker was found so the frontend can offer recovery.
+#[tauri::command]
+fn begin_session(app: AppHandle) -> Result<bool, String> {
+    let lock = app_state_file(&app, ".session-lock")?;
+    let crashed = lock.exists();
+    std::fs::write(&lock, "running").map_err(|e| format!("Could not write session lock: {e}"))?;
+    Ok(crashed)
+}
+
+#[tauri::command]
+fn end_session_clean(app: AppHandle) -> Result<(), String> {
+    let lock = app_state_file(&app, ".session-lock")?;
+    if lock.exists() {
+        std::fs::remove_file(&lock).map_err(|e| format!("Could not clear session lock: {e}"))?;
+    }
+    Ok(())
+}
+
+/// Append one line to a size-capped local health log. Local-only; no telemetry.
+#[tauri::command]
+fn log_health_event(app: AppHandle, message: String) -> Result<(), String> {
+    let path = app_state_file(&app, "health.log")?;
+    if std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0) > HEALTH_LOG_CAP_BYTES {
+        let _ = std::fs::remove_file(&path);
+    }
+    let line = format!("{}\n", message.replace('\n', " "));
+    use std::io::Write;
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .map_err(|e| format!("Could not open health log: {e}"))?;
+    file.write_all(line.as_bytes())
+        .map_err(|e| format!("Could not write health log: {e}"))
+}
+
 #[tauri::command]
 fn scroll_terminal_to_row(state: State<PtyState>, row: u32) {
     state.send(Msg::ScrollToRow { row });
@@ -2317,6 +2366,9 @@ pub fn run() {
             scroll_pty,
             scroll_terminal_to_row,
             search_terminal_scrollback,
+            begin_session,
+            end_session_clean,
+            log_health_event,
             open_workspace,
             create_pane,
             focus_pane,

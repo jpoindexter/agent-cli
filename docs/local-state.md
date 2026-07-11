@@ -170,3 +170,10 @@ If `folder` points at a missing project, move `workspace.json` aside and relaunc
 - Missing or garbage `schemaVersion` values are treated as version 0.
 - v0 → v1 stamps the version and canonicalizes `recentFolders` (dedupe/drop blanks) — the shape the read-path normalizers already produced in memory.
 - Future shape changes to any persisted key (sessions, pane layouts, composer harness, activity events) MUST land as a new migration step plus a version bump, with a test loading the previous shape.
+
+## Crash Resilience (CRASH-RESILIENCE, 2026-07-12)
+
+- `begin_session` writes `.session-lock` in the app data dir on startup and returns whether a stale lock was found (previous session did not close cleanly). `end_session_clean` removes it; the frontend calls it on `beforeunload`.
+- Recovery is only claimed when a stale lock coincides with restorable projects (`deriveCrashRecovery`), so first-ever and clean-slate launches never show a false notice. On recovery the shell shows a dismissible banner and relies on existing SESSION-RESTORE to reopen projects/sessions.
+- `log_health_event` appends to a size-capped (128 KB, drop-and-restart) local `health.log`; pty/open-workspace launch failures are logged. Local-only — nothing leaves the machine.
+- Boundary: SIGKILL/SIGTERM leave the lock in place (that is the point — it signals the crash on next launch); only the real close path clears it.

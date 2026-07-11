@@ -4057,6 +4057,35 @@ body,
   white-space: nowrap;
 }
 
+.crash-notice {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 10;
+  display: flex;
+  max-width: 520px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 8px;
+  background: var(--surface-card);
+  color: var(--color-text);
+  font: 13px var(--font-ui);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-card);
+}
+
+.crash-notice > .app-icon {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--steel-cyan-400);
+}
+
+.crash-notice span {
+  flex: 1 1 auto;
+}
+
 .launch-error {
   position: fixed;
   left: 16px;
