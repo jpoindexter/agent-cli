@@ -1110,13 +1110,13 @@
     {
       "id": "REUSE-AUDIT",
       "title": "Mine old projects for reusable pieces",
-      "column": "later",
+      "column": "done",
       "tier": "sand",
       "track": "research",
       "size": "S",
       "launch": "v3",
       "summary": "Re-check Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without adopting their product shape.",
-      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected.",
+      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected. Executed 2026-07-12: docs/reuse-audit.md surveys spike-ghostty-vt (shipped as the terminal foundation), spike editor test (decision input), rockmap (live roadmap tooling), both demos (chrome + mono-ghost), and ghostty config as pulled-in; zellij trial, superconductor reference, and rockmap schema as parked. No dead reuse debt; one licensing watch-item (superconductor super.icns must not ship — flagged for PACKAGING).",
       "buildOrder": 82
     },
     {

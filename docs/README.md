@@ -44,6 +44,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `search.md`: Cmd+P quick-open plus project file/text search behavior.
 - `context-menus.md`: right-click/Control-click coverage and deferred Git mutation actions.
 - `chrome-polish-system.md`: current token/state system and deferred chrome surfaces.
+- `reuse-audit.md`: 2026-07-12 audit of spike/reference reuse vs parked material.
 - `chrome-delta-audit.md`: 2026-07-11 audit of the drift from the accepted demo that drove the chrome re-convergence cards.
 - `blind-audit-chrome-roadmap-2026-07-11.md`: 16-framework blind-spot audit of the re-convergence and roadmap coverage; source of cards 93-106 and the contract caveats.
 - `icon-system.md`: SVG icon family, status mapping, and QA fixture coverage.
