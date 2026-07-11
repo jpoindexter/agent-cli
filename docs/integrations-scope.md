@@ -31,3 +31,18 @@ Integrations should support the core loop: inspect/edit code, run agents, review
 - Every mutating action needs visible user intent and an undo/recovery path where possible.
 - Agents can request integration actions only through permissioned app-owned commands with attribution.
 - No arbitrary third-party plugins or unreviewed extension execution.
+
+## Policy (INTEGRATIONS-POLICY, 2026-07-11)
+
+Classification lanes are **core** (Local Git), **first-class** (GitHub, GitLab), **adapter-lane** (Bitbucket/Azure DevOps, Linear/Jira, Slack/Discord), **parked**, and **out-of-scope**. No integration ships in any lane unless it names all four of:
+
+1. **Concrete workflow** — the daily-driver task it serves (not "might be useful").
+2. **Health check** — a visible, testable auth/connectivity probe with an actionable failure message.
+3. **Credential boundary** — existing CLI auth or OS keychain only; never plaintext config, never app-managed passwords.
+4. **App-owned command surface** — its actions route through the same command registry as menus/palette/context menus and the app-action gate for risky operations.
+
+**Parked** (promotable via PARKED.md, never silently): notification targets beyond macOS notifications (Slack/Discord webhooks), issue-tracker linking (Linear/Jira), Bitbucket/Azure DevOps.
+
+**Out of scope** (requires a DECISIONS.md entry to revisit): plugin marketplace or third-party extension loading, chat clients, project-management surfaces, cloud fleet orchestration, telemetry-based integrations.
+
+Promotion path: adapter-lane → first-class requires a recorded month of real use plus the four requirements above; anything → core requires a DECISIONS.md entry.

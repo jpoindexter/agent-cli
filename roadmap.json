@@ -1050,13 +1050,13 @@
     {
       "id": "INTEGRATIONS-POLICY",
       "title": "Integration adapter policy",
-      "column": "next",
+      "column": "done",
       "tier": "sand",
       "track": "quality",
       "size": "S",
       "launch": "v2",
       "summary": "Define the allowed lane for other integrations so Bitbucket, Azure DevOps, Linear, Jira, Slack, or Discord do not turn the app into a plugin hub.",
-      "done": "Documented integration policy classifies integrations as core, first-class, adapter-lane, parked, or out-of-scope; every integration requires a concrete workflow, health check, credential boundary, and app-owned command surface.",
+      "done": "Documented integration policy classifies integrations as core, first-class, adapter-lane, parked, or out-of-scope; every integration requires a concrete workflow, health check, credential boundary, and app-owned command surface. Executed 2026-07-11: policy section added to docs/integrations-scope.md with the five lanes, four per-integration requirements, parked/out-of-scope lists, and promotion paths.",
       "buildOrder": 77
     },
     {
