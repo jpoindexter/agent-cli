@@ -95,6 +95,13 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     keywords: ["color", "dark", "font", "inter", "appearance"],
   },
   {
+    id: "app.notifications",
+    categoryId: "app",
+    label: "Background notifications",
+    hint: "Send a macOS notification when an agent exits in a project you are not viewing. Off by default.",
+    keywords: ["notification", "badge", "background", "macos", "alert"],
+  },
+  {
     id: "shortcuts.reference",
     categoryId: "shortcuts",
     label: "Active shortcuts",

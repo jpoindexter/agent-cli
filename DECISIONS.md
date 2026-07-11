@@ -280,3 +280,11 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Why:** WINDOW-LIFECYCLE (blind-audit card). Real-path verified 2026-07-12: moved the native window to 150,120, quit via real Cmd+Q (`.window-state.json` written — note: SIGTERM bypasses the save hook, only the real close path persists), relaunched, and the frame restored to exactly 150,120 @ 1440x901. Off-screen clamping is plugin-provided (monitor intersection on restore) and mixed-DPI canvas rendering across display moves remains a manual-verify note.
 
 **Reversible?** Yes — remove the plugin registration and the crate; the state file is inert.
+
+## 2026-07-12 — Background agent notifications via tauri-plugin-notification
+
+**Choice:** Adopt `tauri-plugin-notification` (v2, MIT/Apache-2.0, tauri-apps org; Rust crate + `@tauri-apps/plugin-notification` npm) for optional native macOS notifications on background agent exits. Added `notification:default` to the capabilities allowlist.
+
+**Why:** NOTIFICATIONS card. Attention badges (project-rail count of unseen background exits) are always on and free; native OS notifications are opt-in (Settings → App configuration → Background notifications, default OFF) and only request permission when enabled. Only exits in a non-focused project count as background; focusing a project clears its badges.
+
+**Reversible?** Yes — remove the plugin, the capability, and the settings row; badge counting is pure frontend state.

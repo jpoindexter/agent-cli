@@ -897,6 +897,19 @@ body,
   background: var(--color-text-subtle);
 }
 
+.project-row__badge {
+  display: inline-grid;
+  min-width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-accent-muted);
+  color: var(--steel-cyan-400);
+  font: 600 10px/1 var(--font-mono);
+  padding: 0 4px;
+}
+
 .project-row--running .project-row__state {
   background: var(--color-success);
 }

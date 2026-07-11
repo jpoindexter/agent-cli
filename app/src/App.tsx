@@ -163,6 +163,15 @@ import { terminalSnapshotText } from "./terminalTranscript";
 import { migrateWorkspaceStore } from "./workspaceMigrations";
 import { SettingsModal } from "./SettingsModal";
 import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
+import {
+  addBackgroundExit,
+  backgroundExitCountForProject,
+  clearBackgroundExitsForProject,
+  isBackgroundExit,
+  notificationBody,
+  type BackgroundExit,
+} from "./backgroundExits";
+import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
 import { nextTerminalFindIndex, terminalFindCountLabel, terminalFindHitLabel } from "./terminalFind";
 import type { TerminalFindHit } from "./terminalFind";
 import { AgentRunSurface } from "./AgentRunSurface";
@@ -505,6 +514,12 @@ function App() {
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [crashNotice, setCrashNotice] = useState<string | null>(null);
+  const [backgroundExits, setBackgroundExits] = useState<BackgroundExit[]>([]);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const notificationsEnabledRef = useRef(false);
+  useEffect(() => {
+    notificationsEnabledRef.current = notificationsEnabled;
+  }, [notificationsEnabled]);
   const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
   const [appTheme, setAppTheme] = useState<"graphite" | "mono-ghost">("graphite");
 
@@ -1601,6 +1616,7 @@ function App() {
   };
 
   const requestOpenWorkspace = async (path: string) => {
+    setBackgroundExits((exits) => clearBackgroundExitsForProject(exits, path));
     if (dirtyTabPaths.length > 1) {
       const ok = window.confirm(`Switch workspace and discard ${dirtyTabPaths.length} unsaved editor tabs?`);
       if (!ok) return false;
@@ -3505,6 +3521,7 @@ function App() {
       setKeybindingOverrides(savedKeybindings);
       const savedTheme = await store.get<unknown>("appTheme");
       if (savedTheme === "mono-ghost") setAppTheme("mono-ghost");
+      if ((await store.get<unknown>("notificationsEnabled")) === true) setNotificationsEnabled(true);
       const initialOpenProjects = savedOpenProjects.length > 0 ? savedOpenProjects : openProjectsFromRecent(savedRecent);
       const initialProjectSessions = initialOpenProjects.reduce(
         (sessions, project) => ensureProjectSessions(sessions, project.path, Date.now()),
@@ -3696,6 +3713,18 @@ function App() {
       if (!wasIntentionallyTerminated && ev.payload.paneId === activeTerminalPaneIdRef.current) setLaunchError(ev.payload.message);
       void updateOpenProjectStatus(workspacePathRef.current, nextStatus);
       void updateActiveSessionStatus(workspacePathRef.current, nextStatus);
+      if (!wasIntentionallyTerminated && root && isBackgroundExit(root, workspacePathRef.current)) {
+        const label = pane ? terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex) : "Agent";
+        const exit = { paneId: String(ev.payload.paneId), projectPath: root, label, failed: ev.payload.code !== 0 };
+        setBackgroundExits((exits) => addBackgroundExit(exits, exit));
+        if (notificationsEnabledRef.current) {
+          void (async () => {
+            let granted = await isPermissionGranted();
+            if (!granted) granted = (await requestPermission()) === "granted";
+            if (granted) sendNotification({ title: "Keelhouse", body: notificationBody(exit) });
+          })().catch(() => {});
+        }
+      }
     });
 
     window.addEventListener("keydown", onKey);
@@ -3895,7 +3924,13 @@ function App() {
                         <span>{basename(project.path)}</span>
                       </span>
                     </span>
-                    <span className="project-row__state" aria-hidden="true" />
+                    {backgroundExitCountForProject(backgroundExits, project.path) > 0 && project.path !== workspacePath ? (
+                      <span className="project-row__badge" aria-label={`${backgroundExitCountForProject(backgroundExits, project.path)} background exits`}>
+                        {backgroundExitCountForProject(backgroundExits, project.path)}
+                      </span>
+                    ) : (
+                      <span className="project-row__state" aria-hidden="true" />
+                    )}
                   </button>
                   <div className="session-list" aria-label={`${basename(project.path)} sessions`}>
                     <button
@@ -5104,6 +5139,13 @@ function App() {
             void persistBrowserPreviewUrl(workspacePathRef.current, activeSessionId, normalized);
           }}
           keybindingOverrides={keybindingOverrides}
+          notificationsEnabled={notificationsEnabled}
+          onNotificationsChange={(enabled) => {
+            setNotificationsEnabled(enabled);
+            void storeRef.current?.set("notificationsEnabled", enabled);
+            void storeRef.current?.save();
+            if (enabled) void requestPermission().catch(() => {});
+          }}
           theme={appTheme}
           onThemeChange={(theme) => {
             setAppTheme(theme);

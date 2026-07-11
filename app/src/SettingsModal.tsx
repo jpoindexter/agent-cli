@@ -31,6 +31,7 @@ type SettingsModalProps = {
   initialQuery?: string;
   keybindingOverrides?: KeybindingOverrides;
   layout: WorkbenchLayoutMode;
+  notificationsEnabled?: boolean;
   theme?: "graphite" | "mono-ghost";
   profileId: string;
   profiles: SettingsProfileOption[];
@@ -39,6 +40,7 @@ type SettingsModalProps = {
   onBrowserUrlCommit: (url: string) => void;
   onClose: () => void;
   onKeybindingOverrideChange?: (id: string, keys: string[] | null) => void;
+  onNotificationsChange?: (enabled: boolean) => void;
   onThemeChange?: (theme: "graphite" | "mono-ghost") => void;
   onLayoutChange: (layout: WorkbenchLayoutMode) => void;
   onProfileChange: (profileId: string) => void;
@@ -55,6 +57,7 @@ export function SettingsModal({
   initialQuery = "",
   keybindingOverrides = {},
   layout,
+  notificationsEnabled = false,
   theme = "graphite",
   profileId,
   profiles,
@@ -64,6 +67,7 @@ export function SettingsModal({
   onClose,
   onKeybindingOverrideChange,
   onLayoutChange,
+  onNotificationsChange,
   onThemeChange,
   onProfileChange,
   onResetLayout,
@@ -183,6 +187,19 @@ export function SettingsModal({
     }
     if (row.id === "app.ignored") {
       return <span className="settings-modal__value">{IGNORED_FOLDERS.join("  ")}</span>;
+    }
+    if (row.id === "app.notifications") {
+      return (
+        <select
+          className="settings-modal__select"
+          aria-label="Background notifications"
+          value={notificationsEnabled ? "on" : "off"}
+          onChange={(event) => onNotificationsChange?.(event.currentTarget.value === "on")}
+        >
+          <option value="off">Off</option>
+          <option value="on">On</option>
+        </select>
+      );
     }
     if (row.id === "app.theme") {
       return (

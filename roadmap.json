@@ -1026,13 +1026,13 @@
     {
       "id": "NOTIFICATIONS",
       "title": "Background agent notifications",
-      "column": "next",
+      "column": "done",
       "tier": "sand",
       "track": "ui",
       "size": "S",
       "launch": "v2",
       "summary": "When an agent in another project or pane stops or needs input, Jason should not have to manually inspect every pane.",
-      "done": "Background panes can surface in-app badges and optional macOS notifications for exit/attention events.",
+      "done": "Background panes can surface in-app badges and optional macOS notifications for exit/attention events. Executed 2026-07-12: background-exit badge count on project-rail rows (backgroundExits.ts pure helpers + tests), cleared on project focus; optional native macOS notification via tauri-plugin-notification gated behind a default-off Settings toggle that only requests permission when enabled. 141 vitest / 36 cargo.",
       "buildOrder": 75
     },
     {
