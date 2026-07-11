@@ -270,3 +270,13 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Why:** the chrome contract is only enforceable if the type it specifies actually ships. Local woff2 assets keep the no-CDN/offline posture; per-weight latin files are ~45KB each at runtime.
 
 **Reversible?** Yes — remove the five imports and the dependency; fallback stack takes over.
+
+## 2026-07-12 — Window frame persistence via tauri-plugin-window-state
+
+**Choice:** Adopt the official `tauri-plugin-window-state` (v2.4.1, MIT/Apache-2.0, tauri-apps org, Rust-side only — no npm package needed) for window position/size persist and restore.
+
+**Alternatives considered:** hand-rolled onMoved/onResized listeners writing to the store — more code to own for behavior the official plugin already covers, including monitor-intersection validation on restore.
+
+**Why:** WINDOW-LIFECYCLE (blind-audit card). Real-path verified 2026-07-12: moved the native window to 150,120, quit via real Cmd+Q (`.window-state.json` written — note: SIGTERM bypasses the save hook, only the real close path persists), relaunched, and the frame restored to exactly 150,120 @ 1440x901. Off-screen clamping is plugin-provided (monitor intersection on restore) and mixed-DPI canvas rendering across display moves remains a manual-verify note.
+
+**Reversible?** Yes — remove the plugin registration and the crate; the state file is inert.

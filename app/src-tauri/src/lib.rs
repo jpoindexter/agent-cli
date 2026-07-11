@@ -2250,6 +2250,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_store::Builder::new().build())
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .menu(|handle| {
             let menu = Menu::default(handle)?;
             let open =
