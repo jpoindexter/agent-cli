@@ -5,7 +5,7 @@ import { filterSettingsRows, SETTINGS_CATEGORIES, SETTINGS_ROWS, settingsRowsFor
 describe("settings modal data", () => {
   it("only exposes categories whose rows exist and map to real behavior", () => {
     const ids = SETTINGS_CATEGORIES.map((category) => category.id);
-    expect(ids).toEqual(["general", "layout", "browser", "git"]);
+    expect(ids).toEqual(["general", "layout", "app", "browser", "git", "shortcuts"]);
     for (const id of ids) {
       expect(settingsRowsForCategory(SETTINGS_ROWS, id).length).toBeGreaterThan(0);
     }

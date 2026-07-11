@@ -1,6 +1,6 @@
 import type { AppIconName } from "./icons";
 
-export type SettingsCategoryId = "general" | "layout" | "browser" | "git";
+export type SettingsCategoryId = "general" | "layout" | "app" | "browser" | "git" | "shortcuts";
 
 export type SettingsCategory = {
   id: SettingsCategoryId;
@@ -9,14 +9,17 @@ export type SettingsCategory = {
 };
 
 /* Only categories whose rows map to real app behavior today render.
-   MCP servers, Agent hooks, Connections, Environments, Worktrees,
-   Keyboard shortcuts, and Appearance arrive with their roadmap cards
-   (AI-CONNECTIONS, AGENT-HOOKS, KEYBINDINGS-CONFIG, THEME). */
+   MCP servers, Agent hooks, Connections, Environments, and Worktrees
+   arrive with their roadmap cards (AI-CONNECTIONS, AGENT-HOOKS, WORKTREE);
+   shortcut OVERRIDES arrive with KEYBINDINGS-CONFIG (the reference here
+   is read-only); theme variants arrive with THEME. */
 export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { id: "general", label: "General", icon: "agent" },
   { id: "layout", label: "Layout", icon: "workspace" },
+  { id: "app", label: "App configuration", icon: "settings" },
   { id: "browser", label: "Browser preview", icon: "browser" },
   { id: "git", label: "Git", icon: "git" },
+  { id: "shortcuts", label: "Keyboard shortcuts", icon: "file" },
 ];
 
 export type SettingsRowDef = {
@@ -77,7 +80,32 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     hint: "Detected from the active workspace via git status.",
     keywords: ["branch", "repo", "status", "changes", "health"],
   },
+  {
+    id: "app.ignored",
+    categoryId: "app",
+    label: "Ignored folders",
+    hint: "Filtered from the file tree and watcher in addition to .gitignore. Fixed for now.",
+    keywords: ["node_modules", "gitignore", "tree", "watcher", "exclude"],
+  },
+  {
+    id: "app.theme",
+    categoryId: "app",
+    label: "Theme and font",
+    hint: "Graphite with steel-cyan accent; Inter is bundled. More themes arrive with the THEME card.",
+    keywords: ["color", "dark", "font", "inter", "appearance"],
+  },
+  {
+    id: "shortcuts.reference",
+    categoryId: "shortcuts",
+    label: "Active shortcuts",
+    hint: "Read-only reference. Overrides and conflict detection arrive with KEYBINDINGS-CONFIG.",
+    keywords: ["keys", "keyboard", "bindings", "cmd", "reference"],
+  },
 ];
+
+/* Mirrors the backend noisy-dir filter (is_noisy_dir in lib.rs) — keep in
+   sync by hand until a real need makes it configurable. */
+export const IGNORED_FOLDERS = [".git", ".next", ".turbo", ".vite", "build", "coverage", "dist", "node_modules", "target"];
 
 export const filterSettingsRows = (rows: SettingsRowDef[], query: string): SettingsRowDef[] => {
   const needle = query.trim().toLowerCase();

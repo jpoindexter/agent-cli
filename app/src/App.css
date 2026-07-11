@@ -3979,6 +3979,40 @@ body,
   padding: 18px 0;
 }
 
+.settings-modal__row--block {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding-bottom: 12px;
+}
+
+.settings-modal__shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.settings-modal__shortcuts th {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  padding: 4px 12px 4px 0;
+}
+
+.settings-modal__shortcuts td {
+  border-top: 1px solid var(--line-soft, #232530);
+  color: var(--color-text);
+  padding: 5px 12px 5px 0;
+}
+
+.settings-modal__shortcuts td:nth-child(2) {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
 .launch-error {
   position: fixed;
   left: 16px;

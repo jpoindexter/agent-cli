@@ -954,13 +954,13 @@
     {
       "id": "SETTINGS",
       "title": "Settings for commands, themes, and shortcuts",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "M",
       "launch": "v2",
       "summary": "Keep settings boring and inspectable: agent commands, AI connections, source-control connections, ignored folders, font, color theme, default layout, browser preview, hooks, git/worktree defaults, environments, and shortcut overrides. This is not a plugin platform.",
-      "done": "A local config file controls agent profiles, AI connections, source-control connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported.",
+      "done": "A local config file controls agent profiles, AI connections, source-control connections, font/theme, ignored folders, default pane layout, browser preview, hooks, Git/worktree behavior, environments, and app-level keybindings; bad config reports actionable errors and plugins/extensions are not supported. Executed 2026-07-11: settings modal now covers agent commands (launch profiles), permission default, layout, browser preview URL, git health, ignored-folders (read-only mirror of the backend filter), theme/font status, and a read-only active-shortcut reference table from shortcuts.ts. AI connections stay with AI-CONNECTIONS; shortcut overrides stay with KEYBINDINGS-CONFIG; theme variants stay with THEME.",
       "buildOrder": 69
     },
     {

@@ -5,12 +5,14 @@ import type { AgentApprovalMode } from "./agentSessionHandle";
 import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 import {
   filterSettingsRows,
+  IGNORED_FOLDERS,
   SETTINGS_CATEGORIES,
   SETTINGS_ROWS,
   settingsRowsForCategory,
   type SettingsCategoryId,
   type SettingsRowDef,
 } from "./settingsModalData";
+import { SHORTCUTS } from "./shortcuts";
 
 type SettingsProfileOption = { id: string; label: string };
 
@@ -163,8 +165,35 @@ export function SettingsModal({
         </span>
       );
     }
+    if (row.id === "app.ignored") {
+      return <span className="settings-modal__value">{IGNORED_FOLDERS.join("  ")}</span>;
+    }
+    if (row.id === "app.theme") {
+      return <span className="settings-modal__value">Graphite · steel-cyan · Inter</span>;
+    }
     return null;
   };
+
+  const shortcutTable = (
+    <table className="settings-modal__shortcuts">
+      <thead>
+        <tr>
+          <th scope="col">Action</th>
+          <th scope="col">Keys</th>
+          <th scope="col">Scope</th>
+        </tr>
+      </thead>
+      <tbody>
+        {SHORTCUTS.filter((shortcut) => shortcut.status === "active" || shortcut.status === "native").map((shortcut) => (
+          <tr key={shortcut.id}>
+            <td>{shortcut.label}</td>
+            <td>{shortcut.keys.join(" / ")}</td>
+            <td>{shortcut.scope}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
 
   return (
     <div
@@ -217,15 +246,25 @@ export function SettingsModal({
             {visibleRows.length === 0 ? (
               <div className="settings-modal__empty">No settings match “{query.trim()}”.</div>
             ) : (
-              visibleRows.map((row) => (
-                <div className="settings-modal__row" key={row.id}>
-                  <div className="settings-modal__copy">
-                    <strong>{row.label}</strong>
-                    <span>{row.hint}</span>
+              visibleRows.map((row) =>
+                row.id === "shortcuts.reference" ? (
+                  <div className="settings-modal__row settings-modal__row--block" key={row.id}>
+                    <div className="settings-modal__copy">
+                      <strong>{row.label}</strong>
+                      <span>{row.hint}</span>
+                    </div>
+                    {shortcutTable}
                   </div>
-                  {control(row)}
-                </div>
-              ))
+                ) : (
+                  <div className="settings-modal__row" key={row.id}>
+                    <div className="settings-modal__copy">
+                      <strong>{row.label}</strong>
+                      <span>{row.hint}</span>
+                    </div>
+                    {control(row)}
+                  </div>
+                ),
+              )
             )}
           </div>
         </div>
