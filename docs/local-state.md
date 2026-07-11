@@ -161,3 +161,12 @@ To restore the default Codex profile while keeping the last folder, edit only `l
 ```
 
 If `folder` points at a missing project, move `workspace.json` aside and relaunch. Do not hand-edit paths while the app is running; the store autosaves.
+
+## Schema Versioning (STATE-MIGRATION, 2026-07-11)
+
+`workspace.json` carries a `schemaVersion` integer (current: 1). On startup the app reads all store entries, runs `migrateWorkspaceStore` (`app/src/workspaceMigrations.ts`), and persists the result once if anything changed. The contract:
+
+- Each migration step upgrades exactly one version and never deletes keys it does not understand — a newer app leaves unknown keys intact so an older app can still read what it recognizes (downgrade-safe).
+- Missing or garbage `schemaVersion` values are treated as version 0.
+- v0 → v1 stamps the version and canonicalizes `recentFolders` (dedupe/drop blanks) — the shape the read-path normalizers already produced in memory.
+- Future shape changes to any persisted key (sessions, pane layouts, composer harness, activity events) MUST land as a new migration step plus a version bump, with a test loading the previous shape.

@@ -153,6 +153,7 @@ import type { PaneLayoutsBySession } from "./sessionRestore";
 import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 import { useWorkbenchLayout } from "./useWorkbenchLayout";
 import { terminalSnapshotText } from "./terminalTranscript";
+import { migrateWorkspaceStore } from "./workspaceMigrations";
 import { nextTerminalFindIndex, terminalFindCountLabel, terminalFindHitLabel } from "./terminalFind";
 import type { TerminalFindHit } from "./terminalFind";
 import { AgentRunSurface } from "./AgentRunSurface";
@@ -3440,6 +3441,14 @@ function App() {
     const initWorkspace = async () => {
       const store = await load("workspace.json", { autoSave: true, defaults: {} });
       storeRef.current = store;
+      const storedEntries = Object.fromEntries(await store.entries());
+      const migration = migrateWorkspaceStore(storedEntries);
+      if (migration.migrated) {
+        for (const [key, value] of Object.entries(migration.data)) {
+          await store.set(key, value);
+        }
+        await store.save();
+      }
       const savedRecent = normalizeRecentProjects(await store.get<unknown>("recentFolders"));
       const savedOpenProjects = normalizeOpenProjects(await store.get<unknown>("openProjects"));
       const savedProjectSessions = normalizeProjectSessionsByProject(await store.get<unknown>("projectSessions"));

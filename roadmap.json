@@ -1315,14 +1315,14 @@
     {
       "id": "STATE-MIGRATION",
       "title": "Versioned workspace.json migrations",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "workspace",
       "size": "S",
       "launch": "v2",
       "buildOrder": 99,
       "summary": "Blind-audit 2026-07-11 (outside view): no card owns what happens to persisted state when the schema changes after daily-driver adoption. Add a schemaVersion to workspace.json, an upgrade path with per-version normalizers (the existing normalize* functions are the seed), a downgrade-safe fallback (never destroy unknown keys), and tests that load real v1-shaped stores through the migration.",
-      "done": "workspace.json carries schemaVersion; migration module with tests covering current-shape and legacy-shape stores; docs/local-state.md documents the versioning contract."
+      "done": "workspace.json carries schemaVersion; migration module with tests covering current-shape and legacy-shape stores; docs/local-state.md documents the versioning contract. Executed 2026-07-11: workspaceMigrations.ts with versioned steps (v0->v1 stamps + canonicalizes recents, unknown keys preserved), startup migration in the store bootstrap, tests for legacy/current/garbage-version stores, contract documented in docs/local-state.md."
     },
     {
       "id": "CRASH-RESILIENCE",
