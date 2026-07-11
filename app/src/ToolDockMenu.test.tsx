@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ToolDockMenu } from "./ToolDockMenu";
 
 describe("ToolDockMenu", () => {
-  it("keeps every tray and docking action behind one compact control", () => {
+  it("keeps docking position-only; surface switching belongs to the tray tab strip", () => {
     const html = renderToStaticMarkup(
       <ToolDockMenu
         layout="hidden"
@@ -15,9 +15,7 @@ describe("ToolDockMenu", () => {
     );
 
     expect(html).toContain("Tools");
-    expect(html).toContain("Editor");
-    expect(html).toContain("Browser");
-    expect(html).toContain("Split editor and browser");
+    expect(html).not.toContain("Split editor and browser");
     expect(html).toContain("Dock left");
     expect(html).toContain("Dock right");
     expect(html).toContain("Dock bottom");

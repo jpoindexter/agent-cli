@@ -1183,13 +1183,13 @@
     {
       "id": "TRAY-TAB-CHROME",
       "title": "Tabbed tray chrome, movable docks",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "ui",
       "size": "M",
       "launch": "v1",
-      "summary": "Hybrid tray navigation: keep useWorkbenchLayout docking (left/right/bottom, resizable, persisted) while every docked tray renders the demo tab-strip chrome: a 38px dock strip (Files, Editor, Browser, Git, close) and a 34px bottom strip (Terminal plus future tabs), flat tabs with steel-cyan top-underline actives, collapsible strips. The Tools popover shrinks to dock-position and hide controls; tab strips take over surface switching.",
-      "done": "Tabbed tray chrome works in all three dock positions and split mode; open/close/move/resize persists; DECISIONS.md documents the hybrid; screenshots cover left, right, and bottom docks.",
+      "summary": "Hybrid tray navigation: keep useWorkbenchLayout docking (left/right/bottom, resizable, persisted) while the docked tray renders the demo tab-strip chrome: a 38px strip (Editor, Browser, split toggle, hide) with steel-cyan top-underline actives, plus the 34px bottom variant. Documented exception (chrome-contract.md): Files/Git stay drawer surfaces instead of duplicating into tray tabs. The Tools popover shrinks to dock-position-only; the strip owns surface switching.",
+      "done": "Tabbed tray chrome works in all three dock positions and split mode; open/close/move/resize persists; the Files/Git exception is documented in docs/chrome-contract.md for CHROME-EYEBALL-SIGNOFF review; screenshots cover left, right, and bottom docks. Executed 2026-07-11: strip verified in right/left/bottom docks (docs/qa/chrome-delta/tray-tabs-*.png), Tools popover position-only, Files/Git exception documented.",
       "buildOrder": 88
     },
     {

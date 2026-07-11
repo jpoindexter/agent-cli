@@ -57,6 +57,10 @@ First open shows the demo layout: threads drawer, centered run+composer column (
 - Terminal toolbar metadata is deliberately reduced to avoid collisions with agent/tray controls; selected profile is already visible in the app titlebar and pane chips.
 - Browser preview chrome responds to tray width; narrow trays hide the redundant Open button before controls overlap.
 
+## Documented Exceptions (grammar-scale, per CHROME-EYEBALL-SIGNOFF)
+
+- **Tray tab strip is Editor/Browser, not Files/Editor/Browser/Git.** The demo's right dock shows four tabs, but Keelhouse's Files tree and Git panel already live in the side drawer (ACTIVITY-DRAWERS, verified 2026-07-09). Duplicating those surfaces in the tray would double their state (height observers, tree instances, selection) for no workflow gain. The tray strip carries the demo's tab treatment for the surfaces the tray actually hosts; Files/Git keep the same visual grammar inside the drawer. Revisit only if daily-driver use shows the drawer round-trip is a real friction.
+
 ## Tool Tray Signals
 
 - One compact Tools menu exposes `Editor`, `Browser`, and `Split editor and browser` plus dock position.

@@ -12,13 +12,11 @@ type ToolDockMenuProps = {
 
 export function ToolDockMenu({ layout, toolMode, onLayoutChange, onToolModeChange }: ToolDockMenuProps) {
   const close = (event: MouseEvent<HTMLElement>) => event.currentTarget.closest("details")?.removeAttribute("open");
-  const chooseTool = (mode: ToolTrayMode, event: MouseEvent<HTMLButtonElement>) => {
-    onToolModeChange(mode);
-    if (layout === "hidden") onLayoutChange("right");
-    close(event);
-  };
   const chooseLayout = (next: WorkbenchLayoutMode, event: MouseEvent<HTMLButtonElement>) => {
     onLayoutChange(next);
+    // Surface switching lives in the tray tab strip; opening from hidden
+    // restores the last tool mode so the menu stays position-only.
+    if (layout === "hidden" && next !== "hidden") onToolModeChange(toolMode);
     close(event);
   };
   return (
@@ -28,16 +26,6 @@ export function ToolDockMenu({ layout, toolMode, onLayoutChange, onToolModeChang
         <span>Tools</span>
       </summary>
       <div className="tool-dock-menu__popover" role="menu">
-        <span className="tool-dock-menu__label">Show</span>
-        <button className={toolMode === "editor" ? "is-active" : ""} type="button" role="menuitem" onClick={(event) => chooseTool("editor", event)}>
-          <AppIcon name="file" /><span>Editor</span>
-        </button>
-        <button className={toolMode === "browser" ? "is-active" : ""} type="button" role="menuitem" onClick={(event) => chooseTool("browser", event)}>
-          <AppIcon name="browser" /><span>Browser</span>
-        </button>
-        <button className={toolMode === "split" ? "is-active" : ""} type="button" role="menuitem" onClick={(event) => chooseTool("split", event)}>
-          <AppIcon name="workspace" /><span>Split editor and browser</span>
-        </button>
         <span className="tool-dock-menu__label">Position</span>
         <button className={layout === "left" ? "is-active" : ""} type="button" role="menuitem" onClick={(event) => chooseLayout("left", event)}>
           <AppIcon name="file" /><span>Dock left</span>
