@@ -77,8 +77,8 @@
   --run-column-width: min(860px, calc(100% - 56px));
   --control-height-sm: 22px;
   --control-height-md: 28px;
-  --menu-bg: var(--color-surface-overlay);
-  --menu-item-hover: var(--gray-775);
+  --menu-bg: #1b1c23;
+  --menu-item-hover: #252732;
   --badge-radius: 4px;
   --shadow-overlay: 0 18px 40px rgba(0, 0, 0, 0.42);
   --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -598,22 +598,22 @@ body,
   position: fixed;
   z-index: 30;
   display: grid;
-  min-width: 190px;
-  padding: 5px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--control-radius);
+  min-width: 252px;
+  padding: 5px 0;
+  border: 1px solid #343642;
+  border-radius: 6px;
   background: var(--menu-bg);
   box-shadow: var(--shadow-overlay);
 }
 
 .context-menu__item {
   display: flex;
-  height: 26px;
+  height: 28px;
   align-items: center;
   justify-content: space-between;
   gap: 22px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 0;
   background: transparent;
   color: var(--color-text);
   cursor: default;
@@ -657,31 +657,33 @@ body,
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.36);
+  background: rgba(0, 0, 0, 0.48);
+  backdrop-filter: blur(3px);
   padding-top: 9vh;
 }
 
 .command-palette {
   display: grid;
-  width: min(680px, calc(100vw - 40px));
+  width: min(640px, calc(100vw - 72px));
   max-height: min(560px, calc(100vh - 96px));
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
+  border: 1px solid #343642;
+  border-radius: 10px;
   background: var(--menu-bg);
   box-shadow: var(--shadow-overlay);
 }
 
 .command-palette__field {
   display: grid;
+  min-height: 42px;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   border-bottom: 1px solid var(--color-border);
-  background: #181c22;
+  background: #15161d;
   color: var(--color-text-muted);
-  padding: 9px 12px;
+  padding: 0 13px;
 }
 
 .command-palette__field input {
@@ -706,23 +708,25 @@ body,
 .command-palette__row {
   display: grid;
   width: 100%;
-  min-height: 42px;
+  min-height: 32px;
   grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   border: 0;
   border-radius: 4px;
   background: transparent;
   color: var(--color-text);
   cursor: default;
   font: inherit;
-  padding: 5px 9px;
+  padding: 3px 9px;
   text-align: left;
 }
 
 .command-palette__row:hover:not(:disabled),
 .command-palette__row--active:not(:disabled) {
   background: var(--menu-item-hover);
+  box-shadow: inset 3px 0 0 var(--color-accent-border);
+  color: var(--color-text-strong);
 }
 
 .command-palette__row:disabled {
