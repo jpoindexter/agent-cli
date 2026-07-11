@@ -172,6 +172,14 @@ import {
   type BackgroundExit,
 } from "./backgroundExits";
 import { isPermissionGranted, requestPermission, sendNotification } from "@tauri-apps/plugin-notification";
+import {
+  addPaneTranscript,
+  buildPaneTranscript,
+  normalizePaneTranscripts,
+  transcriptsForSession,
+  transcriptTimeLabel,
+  type PaneTranscript,
+} from "./paneTranscripts";
 import { nextTerminalFindIndex, terminalFindCountLabel, terminalFindHitLabel } from "./terminalFind";
 import type { TerminalFindHit } from "./terminalFind";
 import { AgentRunSurface } from "./AgentRunSurface";
@@ -515,6 +523,9 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [crashNotice, setCrashNotice] = useState<string | null>(null);
   const [backgroundExits, setBackgroundExits] = useState<BackgroundExit[]>([]);
+  const [paneTranscripts, setPaneTranscripts] = useState<PaneTranscript[]>([]);
+  const [transcriptsOpen, setTranscriptsOpen] = useState(false);
+  const [openTranscriptId, setOpenTranscriptId] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const notificationsEnabledRef = useRef(false);
   useEffect(() => {
@@ -2883,6 +2894,42 @@ function App() {
     menuItem("editor.copy-path", "Copy File Path", () => selectedFile && void copyPathToClipboard(selectedFile.path), { icon: "file", disabled: !selectedFile }),
   ];
 
+  const persistPaneTranscript = (
+    projectId: string,
+    projectSessionId: string,
+    pane: { label?: string | null; profile: { label: string } },
+    paneIndex: number,
+    text: string,
+    savedAt: number,
+  ) => {
+    const transcript = buildPaneTranscript({
+      id: `transcript-${savedAt.toString(36)}-${Math.max(0, paneIndex)}`,
+      projectId,
+      projectSessionId,
+      paneLabel: terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex),
+      profileLabel: pane.profile.label,
+      savedAt,
+      text,
+    });
+    setPaneTranscripts((current) => {
+      const next = addPaneTranscript(current, transcript);
+      void storeRef.current?.set("paneTranscripts", next);
+      void storeRef.current?.save();
+      return next;
+    });
+  };
+
+  const saveActivePaneTranscript = () => {
+    const pane = activeTerminalPane;
+    const root = workspacePathRef.current;
+    const sessionId = activeSessionId;
+    if (!pane || !root || !sessionId) return;
+    const snapshot = terminalSnapshotsRef.current[pane.id];
+    if (!snapshot) return;
+    const paneIndex = terminalPanes.findIndex((p) => p.id === pane.id);
+    persistPaneTranscript(root, sessionId, pane, paneIndex, terminalSnapshotText(snapshot), Date.now());
+  };
+
   const terminalContextMenuItems = (): ContextMenuItem[] => [
     menuItem("terminal.new-pane", `New ${launchProfile.label} Pane`, () => void createTerminalPane(launchProfile), {
       icon: "terminal",
@@ -2890,6 +2937,10 @@ function App() {
     }),
     menuItem("terminal.rename-pane", "Rename Selected Pane", () => activeTerminalPane && void renameTerminalPane(activeTerminalPane), {
       icon: "terminal",
+      disabled: !activeTerminalPane,
+    }),
+    menuItem("terminal.save-transcript", "Save Transcript", saveActivePaneTranscript, {
+      icon: "file",
       disabled: !activeTerminalPane,
     }),
     menuItem("terminal.restart-pane", "Restart Selected Process", () => activeTerminalPane && void restartTerminalPane(activeTerminalPane), {
@@ -2984,6 +3035,14 @@ function App() {
       keywords: ["composer", "app command", ...info.aliases],
       run: () => void runComposerAppCommand(info.command),
     })),
+    {
+      id: "transcripts.open",
+      label: "Review Transcripts",
+      detail: "Saved output from completed panes",
+      icon: "file",
+      keywords: ["transcript", "history", "output", "log"],
+      run: () => setTranscriptsOpen(true),
+    },
     {
       id: "settings.open",
       label: "Open Settings",
@@ -3522,6 +3581,7 @@ function App() {
       const savedTheme = await store.get<unknown>("appTheme");
       if (savedTheme === "mono-ghost") setAppTheme("mono-ghost");
       if ((await store.get<unknown>("notificationsEnabled")) === true) setNotificationsEnabled(true);
+      setPaneTranscripts(normalizePaneTranscripts(await store.get<unknown>("paneTranscripts")));
       const initialOpenProjects = savedOpenProjects.length > 0 ? savedOpenProjects : openProjectsFromRecent(savedRecent);
       const initialProjectSessions = initialOpenProjects.reduce(
         (sessions, project) => ensureProjectSessions(sessions, project.path, Date.now()),
@@ -3713,6 +3773,10 @@ function App() {
       if (!wasIntentionallyTerminated && ev.payload.paneId === activeTerminalPaneIdRef.current) setLaunchError(ev.payload.message);
       void updateOpenProjectStatus(workspacePathRef.current, nextStatus);
       void updateActiveSessionStatus(workspacePathRef.current, nextStatus);
+      if (root && sessionId && pane) {
+        const snapshot = terminalSnapshotsRef.current[ev.payload.paneId];
+        if (snapshot) persistPaneTranscript(root, sessionId, pane, paneIndex, terminalSnapshotText(snapshot), Date.now());
+      }
       if (!wasIntentionallyTerminated && root && isBackgroundExit(root, workspacePathRef.current)) {
         const label = pane ? terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex) : "Agent";
         const exit = { paneId: String(ev.payload.paneId), projectPath: root, label, failed: ev.payload.code !== 0 };
@@ -5174,6 +5238,58 @@ function App() {
           onTrayModeChange={setToolTrayMode}
         />
       ) : null}
+      {transcriptsOpen ? (() => {
+        const sessionTranscripts = workspacePath && activeSessionId
+          ? transcriptsForSession(paneTranscripts, workspacePath, activeSessionId)
+          : [];
+        const open = sessionTranscripts.find((t) => t.id === openTranscriptId) ?? sessionTranscripts[0] ?? null;
+        return (
+          <div
+            className="command-palette-backdrop"
+            role="presentation"
+            onPointerDown={(event) => {
+              if (event.target === event.currentTarget) setTranscriptsOpen(false);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setTranscriptsOpen(false);
+              }
+            }}
+          >
+            <div className="transcripts-modal" role="dialog" aria-modal="true" aria-label="Saved transcripts">
+              <header className="settings-modal__head">
+                <strong>Transcripts</strong>
+                <button className="settings-modal__close" type="button" aria-label="Close transcripts" onClick={() => setTranscriptsOpen(false)}>
+                  <AppIcon name="close" />
+                </button>
+              </header>
+              <div className="settings-modal__grid">
+                <nav className="settings-modal__nav" aria-label="Saved transcripts">
+                  {sessionTranscripts.length === 0 ? (
+                    <div className="settings-modal__empty">No saved transcripts for this session yet.</div>
+                  ) : (
+                    sessionTranscripts.map((transcript) => (
+                      <button
+                        key={transcript.id}
+                        className={`settings-modal__nav-row ${open?.id === transcript.id ? "settings-modal__nav-row--active" : ""}`}
+                        type="button"
+                        onClick={() => setOpenTranscriptId(transcript.id)}
+                      >
+                        <AppIcon name="file" />
+                        <span>{`${transcript.paneLabel} · ${transcriptTimeLabel(transcript.savedAt, Date.now())}`}</span>
+                      </button>
+                    ))
+                  )}
+                </nav>
+                <div className="settings-modal__content">
+                  {open ? <pre className="transcripts-modal__body" aria-label={`Transcript from ${open.paneLabel}`}>{open.text}</pre> : null}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })() : null}
       {crashNotice ? (
         <div className="crash-notice" role="status">
           <AppIcon name="reload" />

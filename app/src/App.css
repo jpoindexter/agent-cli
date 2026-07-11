@@ -4070,6 +4070,28 @@ body,
   white-space: nowrap;
 }
 
+.transcripts-modal {
+  display: grid;
+  width: min(900px, calc(100vw - 72px));
+  height: min(560px, calc(100vh - 96px));
+  grid-template-rows: 42px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--overlay-border);
+  border-radius: 10px;
+  background: var(--menu-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.transcripts-modal__body {
+  margin: 0;
+  height: 100%;
+  overflow: auto;
+  color: var(--color-text);
+  font: 12px/1.55 var(--font-mono);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .crash-notice {
   position: fixed;
   left: 16px;

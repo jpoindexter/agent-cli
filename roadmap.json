@@ -1014,13 +1014,13 @@
     {
       "id": "TRANSCRIPTS",
       "title": "Pane transcript capture",
-      "column": "next",
+      "column": "done",
       "tier": "sand",
       "track": "core",
       "size": "S",
       "launch": "v2",
       "summary": "Completed agent sessions should be reviewable after the process exits without keeping panes open forever.",
-      "done": "A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior.",
+      "done": "A pane can save a plain-text transcript/log path for later review, with clear retention/reset behavior. Executed 2026-07-12: pane transcripts captured on exit and via a Save Transcript context action, persisted per project/session in paneTranscripts (capped 60 / 100k chars, empty dropped, tail-truncated), reviewable in a read-only modal (Review Transcripts palette command) listing by pane label + relative time. Pure helpers tested (145 vitest). Text-only, no ANSI replay.",
       "buildOrder": 74
     },
     {
