@@ -13,7 +13,7 @@ PANE-MANAGER adds real multi-pane terminal support without turning the terminal 
 - Grid events include `paneId`; the frontend caches snapshots by pane and paints only the focused pane.
 - The terminal header shows a pane strip, active pane state, New pane profile selector, New, and Close controls.
 - Project running/exited/attention state currently aggregates all panes for that project, so switching projects does not imply background panes stopped.
-- **Known v1 gap (2026-07-12):** live pane ownership is still keyed by project. Session layout metadata is persisted separately, but switching or creating a same-project session reuses the project's live processes. `SESSION-PANE-ISOLATION` must key process sets and active-pane state by project + session before task threads can claim independent agents.
+- **v1 isolation checkpoint (2026-07-12):** live pane and active-pane maps are now keyed by project + session; background exits are attributed to the owning session; deleting a thread closes only its panes. Build/tests/package are green. The packaged thread-switch/relaunch criterion remains unexecuted because macOS locked before both Computer Use attempts; see `docs/qa/daily-driver/session-pane-isolation.md`.
 
 ## Deliberate Boundaries
 

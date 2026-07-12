@@ -1,17 +1,17 @@
 # Performance Budget
 
-Generated: 2026-07-12T21:56:25.612Z
-Commit: f1e5b1e+dirty
+Generated: 2026-07-12T22:08:43.020Z
+Commit: f34b277+dirty
 Status: baseline-ready
 
 ## Hard Budgets
 
-- PASS Total built JS assets: 1187.4 KiB / 1367.2 KiB
+- PASS Total built JS assets: 1188.4 KiB / 1367.2 KiB
 - PASS Total built CSS assets: 83.0 KiB / 87.9 KiB
 
 ## Soft Budgets
 
-- WARN Largest JS chunk stays below Vite warning size: 1187.4 KiB / 488.3 KiB
+- WARN Largest JS chunk stays below Vite warning size: 1188.4 KiB / 488.3 KiB
   - Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning.
 
 ## Source Checks
@@ -30,7 +30,7 @@ Status: baseline-ready
 - PASS Actual app narrow screenshot - docs/qa/app-shell/first-open-900.png (39.4 KiB)
 - PASS Native Tauri run screenshot - docs/qa/app-shell/native-run.png (315.8 KiB)
 - PASS Editor selected-state screenshot - docs/qa/editor-parity/selected.png (123.7 KiB)
-- PASS Daily-driver report - docs/qa/daily-driver/latest.md (2.1 KiB)
+- PASS Daily-driver report - docs/qa/daily-driver/latest.md (2.2 KiB)
 - PASS Live-captured render-perf snapshot (frame time/IPC payload/jank) - docs/qa/perf-budget/render-perf-live.json (0.3 KiB)
 - PASS Packaged two-pane render-perf snapshot - docs/qa/perf-budget/render-perf-2-pane.json (0.3 KiB)
 - PASS Packaged four-pane render-perf snapshot - docs/qa/perf-budget/render-perf-4-pane.json (0.3 KiB)

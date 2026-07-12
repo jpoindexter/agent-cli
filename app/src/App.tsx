@@ -199,6 +199,7 @@ import type { TerminalFindHit } from "./terminalFind";
 import { AgentRunSurface } from "./AgentRunSurface";
 import { ToolDockMenu } from "./ToolDockMenu";
 import { ToolTrayTabs } from "./ToolTrayTabs";
+import { paneContextBelongsToProject, paneContextKey, paneContextParts, removeProjectPaneContexts } from "./paneOwnership";
 import "./App.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
@@ -222,8 +223,8 @@ type ManagedTerminalPane = {
   exitCode: number | null;
   createdAt: number;
 };
-type TerminalPanesByProject = Record<string, ManagedTerminalPane[]>;
-type ActiveTerminalPaneByProject = Record<string, number>;
+type TerminalPanesByContext = Record<string, ManagedTerminalPane[]>;
+type ActiveTerminalPaneByContext = Record<string, number>;
 type PaneLabelRecord = { slot: number; label: string; updatedAt: number };
 type PaneLabelsBySession = Record<string, PaneLabelRecord[]>;
 type FileTreeNode = {
@@ -454,8 +455,8 @@ function App() {
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const intentionallyTerminatedPaneIdsRef = useRef<Set<number>>(new Set());
   const terminalPanesRef = useRef<ManagedTerminalPane[]>([]);
-  const terminalPanesByProjectRef = useRef<TerminalPanesByProject>({});
-  const activeTerminalPaneByProjectRef = useRef<ActiveTerminalPaneByProject>({});
+  const terminalPanesByContextRef = useRef<TerminalPanesByContext>({});
+  const activeTerminalPaneByContextRef = useRef<ActiveTerminalPaneByContext>({});
   const paneLabelsBySessionRef = useRef<PaneLabelsBySession>({});
   const paneLayoutsBySessionRef = useRef<PaneLayoutsBySession>({});
   const activeTerminalPaneIdRef = useRef<number | null>(null);
@@ -1149,7 +1150,7 @@ function App() {
   const persistPaneLayoutForSession = (
     root: string | null,
     sessionId: string | null,
-    panes: ManagedTerminalPane[] = root ? terminalPanesForProject(root) : [],
+    panes: ManagedTerminalPane[] = terminalPanesForSession(root, sessionId),
   ) => {
     if (!root || !sessionId) return;
     const key = sessionSnapshotKey(root, sessionId);
@@ -1158,13 +1159,6 @@ function App() {
     if (records.length > 0) next[key] = records;
     else delete next[key];
     persistPaneLayoutsBySession(next);
-  };
-
-  const ensurePaneLayoutForSession = (root: string | null, sessionId: string | null, panes: ManagedTerminalPane[]) => {
-    if (!root || !sessionId) return;
-    const key = sessionSnapshotKey(root, sessionId);
-    if (paneLayoutsBySessionRef.current[key]?.length) return;
-    persistPaneLayoutForSession(root, sessionId, panes);
   };
 
   const removePersistedSessionRestore = (root: string, sessionId: string) => {
@@ -1317,12 +1311,14 @@ function App() {
     await persistOpenProjects(next);
   };
 
-  const updateActiveSessionStatus = async (path: string | null, status: ProjectRailStatus) => {
-    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, path);
+  const updateSessionStatus = async (path: string | null, sessionId: string | null, status: ProjectRailStatus) => {
     if (!path || !sessionId) return;
     const nextSessions = setProjectSessionStatus(projectSessionsRef.current, path, sessionId, status);
     await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
   };
+
+  const updateActiveSessionStatus = async (path: string | null, status: ProjectRailStatus) =>
+    updateSessionStatus(path, activeSessionForProject(path), status);
 
   const setManagedTerminalPanes = (panes: ManagedTerminalPane[]) => {
     terminalPanesRef.current = panes;
@@ -1344,27 +1340,63 @@ function App() {
     publishTerminalTranscript(paneId == null ? null : terminalSnapshotsRef.current[paneId] ?? null);
   };
 
-  const terminalPanesForProject = (root: string | null) => (root ? terminalPanesByProjectRef.current[root] ?? [] : []);
+  const activeSessionForProject = (root: string | null) =>
+    activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
 
-  const activePaneForProject = (root: string | null, panes: ManagedTerminalPane[] = terminalPanesForProject(root)) => {
-    if (!root) return null;
-    const saved = activeTerminalPaneByProjectRef.current[root];
+  const terminalPanesForSession = (
+    root: string | null,
+    sessionId: string | null = activeSessionForProject(root),
+  ) => {
+    const key = paneContextKey(root, sessionId);
+    return key ? terminalPanesByContextRef.current[key] ?? [] : [];
+  };
+
+  const terminalPanesForProject = (root: string | null) => {
+    if (!root) return [];
+    return Object.entries(terminalPanesByContextRef.current)
+      .filter(([key]) => paneContextBelongsToProject(key, root))
+      .flatMap(([, panes]) => panes);
+  };
+
+  const paneContextForPaneId = (paneId: number) => {
+    const entry = Object.entries(terminalPanesByContextRef.current).find(([, panes]) =>
+      panes.some((pane) => pane.id === paneId)
+    );
+    if (!entry) return null;
+    const parts = paneContextParts(entry[0]);
+    return parts ? { key: entry[0], panes: entry[1], ...parts } : null;
+  };
+
+  const activePaneForSession = (
+    root: string | null,
+    sessionId: string | null = activeSessionForProject(root),
+    panes: ManagedTerminalPane[] = terminalPanesForSession(root, sessionId),
+  ) => {
+    const key = paneContextKey(root, sessionId);
+    if (!key) return null;
+    const saved = activeTerminalPaneByContextRef.current[key];
     return panes.some((pane) => pane.id === saved) ? saved : panes[0]?.id ?? null;
   };
 
-  const setProjectTerminalPanes = (root: string, panes: ManagedTerminalPane[], activePaneId: number | null = activePaneForProject(root, panes)) => {
-    terminalPanesByProjectRef.current = { ...terminalPanesByProjectRef.current, [root]: panes };
+  const setSessionTerminalPanes = (
+    root: string,
+    sessionId: string,
+    panes: ManagedTerminalPane[],
+    activePaneId: number | null = activePaneForSession(root, sessionId, panes),
+  ) => {
+    const key = paneContextKey(root, sessionId);
+    if (!key) return;
+    terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [key]: panes };
     if (activePaneId == null) {
-      const { [root]: _removedActive, ...nextActive } = activeTerminalPaneByProjectRef.current;
-      activeTerminalPaneByProjectRef.current = nextActive;
+      const { [key]: _removedActive, ...nextActive } = activeTerminalPaneByContextRef.current;
+      activeTerminalPaneByContextRef.current = nextActive;
     } else {
-      activeTerminalPaneByProjectRef.current = { ...activeTerminalPaneByProjectRef.current, [root]: activePaneId };
+      activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [key]: activePaneId };
     }
-    if (workspacePathRef.current === root) {
+    if (workspacePathRef.current === root && activeSessionForProject(root) === sessionId) {
       setManagedTerminalPanes(panes);
       setFocusedTerminalPane(activePaneId);
     }
-    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
     persistPaneLayoutForSession(root, sessionId, panes);
   };
 
@@ -1372,17 +1404,27 @@ function App() {
     return projectStatusFromTerminalPanes(panes);
   };
 
+  const projectStatusForRoot = (root: string | null): ProjectRailStatus =>
+    terminalPaneProjectStatus(terminalPanesForProject(root));
+
+  const activeSessionStatus = (): ProjectRailStatus => terminalPaneProjectStatus(terminalPanesRef.current);
+
   const activeProjectStatus = (): ProjectRailStatus => {
-    return terminalPaneProjectStatus();
+    return projectStatusForRoot(workspacePathRef.current);
   };
 
   const setPaneState = (paneId: number, state: TerminalPaneState, exitCode: number | null = null) => {
-    const root = Object.entries(terminalPanesByProjectRef.current).find(([, panes]) => panes.some((pane) => pane.id === paneId))?.[0] ?? workspacePathRef.current;
-    const currentPanes = root ? terminalPanesForProject(root) : terminalPanesRef.current;
+    const context = paneContextForPaneId(paneId);
+    const currentPanes = context?.panes ?? terminalPanesRef.current;
     const next = currentPanes.map((pane) =>
       pane.id === paneId ? { ...pane, state, exitCode } : pane,
     );
-    if (root) setProjectTerminalPanes(root, next, activePaneForProject(root, next));
+    if (context) setSessionTerminalPanes(
+      context.projectRoot,
+      context.sessionId,
+      next,
+      activePaneForSession(context.projectRoot, context.sessionId, next),
+    );
     else setManagedTerminalPanes(next);
     return next;
   };
@@ -1406,12 +1448,12 @@ function App() {
   const detectLocalDevServerFromSnapshot = (paneId: number, snapshot: Snapshot) => {
     const url = detectLocalDevServerUrl(terminalSnapshotText(snapshot));
     if (!url) return;
-    const projectEntry = Object.entries(terminalPanesByProjectRef.current).find(([, panes]) => panes.some((pane) => pane.id === paneId));
-    const root = projectEntry?.[0] ?? workspacePathRef.current;
-    const panes = projectEntry?.[1] ?? terminalPanesRef.current;
+    const context = paneContextForPaneId(paneId);
+    const root = context?.projectRoot ?? workspacePathRef.current;
+    const panes = context?.panes ?? terminalPanesRef.current;
     const paneIndex = panes.findIndex((pane) => pane.id === paneId);
     const pane = paneIndex >= 0 ? panes[paneIndex] : null;
-    const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+    const sessionId = context?.sessionId ?? activeSessionForProject(root);
     if (!root || !sessionId || !pane) return;
     const previous = detectedLocalDevServerRef.current;
     if (previous?.url === url && previous.paneId === paneId && previous.projectId === root && previous.projectSessionId === sessionId) return;
@@ -1502,23 +1544,33 @@ function App() {
     launchProfileRef.current = launchProfile;
   }, [launchProfile]);
 
-  const openWorkspaceDirect = async (path: string, profileOverride: LaunchProfile = launchProfileRef.current) => {
+  const openWorkspaceDirect = async (
+    path: string,
+    profileOverride: LaunchProfile = launchProfileRef.current,
+    options: { captureCurrentSession?: boolean } = {},
+  ) => {
     const previousRoot = workspacePathRef.current;
-    captureCurrentSessionSnapshot();
+    if (options.captureCurrentSession !== false) captureCurrentSessionSnapshot();
     const store = storeRef.current;
     const profile = profileOverride;
     const previousPanes = terminalPanesRef.current;
     const previousActivePaneId = activeTerminalPaneIdRef.current;
     setFocusedTerminalPane(null);
     try {
-      const existingPanes = terminalPanesForProject(path);
-      const requestedSessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, path);
+      const preparedSessions = ensureProjectSessions(projectSessionsRef.current, path, Date.now());
+      const requestedSessionId = activeProjectSessionId(activeSessionByProjectRef.current, preparedSessions, path);
+      const preparedActiveSessions = requestedSessionId
+        ? setActiveProjectSession(activeSessionByProjectRef.current, path, requestedSessionId)
+        : activeSessionByProjectRef.current;
+      projectSessionsRef.current = preparedSessions;
+      activeSessionByProjectRef.current = preparedActiveSessions;
+      const existingPanes = terminalPanesForSession(path, requestedSessionId);
       const requestedLayout = requestedSessionId ? paneLayoutsBySessionRef.current[sessionSnapshotKey(path, requestedSessionId)] : null;
       const fallbackLayout = [{ slot: 0, profileId: profile.id, label: savedPaneLabelForSlot(path, 0, requestedSessionId) }];
       const initialLayout = requestedLayout && requestedLayout.length > 0 ? requestedLayout : fallbackLayout;
       let root = path;
       let nextProjectPanes = existingPanes;
-      let nextActivePaneId = activePaneForProject(path, existingPanes);
+      let nextActivePaneId = activePaneForSession(path, requestedSessionId, existingPanes);
       if (existingPanes.length > 0 && nextActivePaneId != null) {
         await invoke("focus_pane", { paneId: nextActivePaneId });
       } else {
@@ -1560,8 +1612,10 @@ function App() {
           ];
         }
       }
-      terminalPanesByProjectRef.current = { ...terminalPanesByProjectRef.current, [root]: nextProjectPanes };
-      if (nextActivePaneId != null) activeTerminalPaneByProjectRef.current = { ...activeTerminalPaneByProjectRef.current, [root]: nextActivePaneId };
+      const contextKey = paneContextKey(root, requestedSessionId);
+      if (!contextKey || !requestedSessionId) throw new Error("Workspace session context is unavailable");
+      terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [contextKey]: nextProjectPanes };
+      if (nextActivePaneId != null) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: nextActivePaneId };
       setManagedTerminalPanes(nextProjectPanes);
       setFocusedTerminalPane(nextActivePaneId);
       const cached = nextActivePaneId == null ? null : terminalSnapshotsRef.current[nextActivePaneId];
@@ -1575,11 +1629,11 @@ function App() {
       setTimeout(sendTerminalResize, 0);
       const now = Date.now();
       const nextRecent = pushRecentProject(recentProjectsRef.current, root);
-      const previousStatus = previousRoot ? terminalPaneProjectStatus(terminalPanesForProject(previousRoot)) : "exited";
+      const previousStatus = previousRoot ? projectStatusForRoot(previousRoot) : "exited";
       const nextOpen = upsertOpenProject(
         previousRoot && previousRoot !== root ? setOpenProjectStatus(openProjectsRef.current, previousRoot, previousStatus) : openProjectsRef.current,
         root,
-        terminalPaneProjectStatus(nextProjectPanes),
+        projectStatusForRoot(root),
       );
       let nextSessions = projectSessionsRef.current;
       let nextActiveSessions = activeSessionByProjectRef.current;
@@ -1623,8 +1677,8 @@ function App() {
         const nextOpen = removeOpenProject(openProjectsRef.current, path);
         const { [path]: _removedSessions, ...nextSessions } = projectSessionsRef.current;
         const { [path]: _removedActiveSession, ...nextActiveSessions } = activeSessionByProjectRef.current;
-        const { [path]: _removedProjectPanes, ...nextProjectPanesByProject } = terminalPanesByProjectRef.current;
-        const { [path]: _removedActivePane, ...nextActivePanesByProject } = activeTerminalPaneByProjectRef.current;
+        const nextProjectPanesByContext = removeProjectPaneContexts(terminalPanesByContextRef.current, path);
+        const nextActivePanesByContext = removeProjectPaneContexts(activeTerminalPaneByContextRef.current, path);
         const { [path]: _removedBrowserProject, ...nextBrowserProjects } = browserPreviewByProjectRef.current;
         const nextBrowserSessions = Object.fromEntries(
           Object.entries(browserPreviewBySessionRef.current).filter(([key]) => !key.startsWith(`${path}\n`)),
@@ -1642,8 +1696,8 @@ function App() {
         openProjectsRef.current = nextOpen;
         projectSessionsRef.current = nextSessions;
         activeSessionByProjectRef.current = nextActiveSessions;
-        terminalPanesByProjectRef.current = nextProjectPanesByProject;
-        activeTerminalPaneByProjectRef.current = nextActivePanesByProject;
+        terminalPanesByContextRef.current = nextProjectPanesByContext;
+        activeTerminalPaneByContextRef.current = nextActivePanesByContext;
         browserPreviewByProjectRef.current = nextBrowserProjects;
         browserPreviewBySessionRef.current = nextBrowserSessions;
         composerHarnessBySessionRef.current = nextComposerHarness;
@@ -1729,14 +1783,13 @@ function App() {
     let nextActiveSessions = setActiveProjectSession(activeSessionByProjectRef.current, projectPath, sessionId);
     const previousSessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, projectPath);
     if (sameProject && previousSessionId && previousSessionId !== sessionId) {
-      nextSessions = setProjectSessionStatus(nextSessions, projectPath, previousSessionId, activeProjectStatus(), now);
+      nextSessions = setProjectSessionStatus(nextSessions, projectPath, previousSessionId, activeSessionStatus(), now);
     }
-    nextSessions = setProjectSessionStatus(nextSessions, projectPath, sessionId, sameProject ? activeProjectStatus() : "exited", now);
+    const targetStatus = terminalPaneProjectStatus(terminalPanesForSession(projectPath, sessionId));
+    nextSessions = setProjectSessionStatus(nextSessions, projectPath, sessionId, sameProject ? targetStatus : "exited", now);
     await persistProjectSessions(nextSessions, nextActiveSessions);
     if (sameProject) {
-      ensurePaneLayoutForSession(projectPath, sessionId, terminalPanesForProject(projectPath));
-      restoreSessionEditorSnapshot(projectPath, sessionId);
-      restoreBrowserPreview(projectPath, sessionId);
+      await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
     } else {
       await requestOpenWorkspace(projectPath);
     }
@@ -1749,16 +1802,14 @@ function App() {
     const existing = projectSessionsRef.current[projectPath] ?? [];
     const session = {
       ...newProjectSession(existing, now),
-      status: sameProject ? activeProjectStatus() : "exited" as ProjectRailStatus,
+      status: "exited" as ProjectRailStatus,
     };
     const nextSessions = upsertProjectSession(projectSessionsRef.current, projectPath, session);
     const nextActiveSessions = setActiveProjectSession(activeSessionByProjectRef.current, projectPath, session.id);
     await persistProjectSessions(nextSessions, nextActiveSessions);
     await persistBrowserPreviewUrl(projectPath, session.id, sameProject ? browserUrlRef.current : browserPreviewByProjectRef.current[projectPath] ?? DEFAULT_BROWSER_PREVIEW_URL);
     if (sameProject) {
-      persistPaneLayoutForSession(projectPath, session.id, terminalPanesForProject(projectPath));
-      restoreSessionEditorSnapshot(projectPath, session.id);
-      restoreBrowserPreview(projectPath, session.id);
+      await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
     } else {
       await requestOpenWorkspace(projectPath);
     }
@@ -1781,6 +1832,23 @@ function App() {
     if (existing.length <= 1) return;
     const ok = window.confirm(`Delete session "${session.title}"? Editor context saved only in this app session will be removed.`);
     if (!ok) return;
+    const contextKey = paneContextKey(projectPath, session.id);
+    const ownedPanes = terminalPanesForSession(projectPath, session.id);
+    try {
+      for (const pane of ownedPanes) {
+        await invoke("close_pane", { paneId: pane.id });
+        delete terminalSnapshotsRef.current[pane.id];
+      }
+    } catch (err) {
+      setLaunchError(`Could not close session panes: ${String(err)}`);
+      return;
+    }
+    if (contextKey) {
+      const { [contextKey]: _removedPanes, ...nextPaneContexts } = terminalPanesByContextRef.current;
+      const { [contextKey]: _removedActive, ...nextActiveContexts } = activeTerminalPaneByContextRef.current;
+      terminalPanesByContextRef.current = nextPaneContexts;
+      activeTerminalPaneByContextRef.current = nextActiveContexts;
+    }
     const nextSessions = removeProjectSession(projectSessionsRef.current, projectPath, session.id);
     const fallbackSessionId = activeProjectSessionId(activeSessionByProjectRef.current, nextSessions, projectPath);
     const nextActiveSessions = fallbackSessionId
@@ -1797,8 +1865,7 @@ function App() {
     await persistComposerHarnessRecords(nextComposerHarness);
     await persistProjectSessions(nextSessions, nextActiveSessions);
     if (workspacePathRef.current === projectPath && activeSessionId === session.id) {
-      restoreSessionEditorSnapshot(projectPath, fallbackSessionId);
-      restoreBrowserPreview(projectPath, fallbackSessionId);
+      await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
     }
   };
 
@@ -1846,7 +1913,7 @@ function App() {
       await invoke("terminate_pane", { paneId: pane.id });
       intentionallyTerminatedPaneIdsRef.current.add(pane.id);
       const nextPanes = setPaneState(pane.id, "exited", null);
-      await updateOpenProjectStatus(root, terminalPaneProjectStatus(nextPanes));
+      await updateOpenProjectStatus(root, projectStatusForRoot(root));
       await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
       recordAgentActivity(activeAgentSessionDescriptor, {
         kind: "process",
@@ -1867,7 +1934,8 @@ function App() {
 
   const restartTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
     const root = workspacePathRef.current;
-    if (!root || !pane || launchProfileChanging) return false;
+    const sessionId = activeSessionForProject(root);
+    if (!root || !sessionId || !pane || launchProfileChanging) return false;
     const label = terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot);
     const audit = await gateAppAction(createAppAction({
       kind: "restart-process",
@@ -1881,21 +1949,20 @@ function App() {
     setLaunchProfileChanging(true);
     try {
       const result = await invoke<OpenPaneResponse>("restart_pane", { path: root, paneId: pane.id, profile: pane.profile });
-      const nextPanes = terminalPanesForProject(root).map((item) =>
+      const nextPanes = terminalPanesForSession(root, sessionId).map((item) =>
         item.id === pane.id
           ? { ...item, id: result.paneId, state: "running" as TerminalPaneState, exitCode: null, createdAt: Date.now() }
           : item,
       );
       delete terminalSnapshotsRef.current[pane.id];
       latest.current = null;
-      setProjectTerminalPanes(root, nextPanes, result.paneId);
+      setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
       requestTerminalPaintRef.current();
       setLaunchError(null);
       setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, terminalPaneProjectStatus(nextPanes));
+      await updateOpenProjectStatus(root, projectStatusForRoot(root));
       await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
       const restarted = nextPanes.find((item) => item.id === result.paneId);
-      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
       if (restarted && sessionId) {
         recordAgentActivity(
           buildAgentSessionHandleDescriptor({
@@ -2191,7 +2258,9 @@ function App() {
     try {
       await invoke("focus_pane", { paneId });
       const root = workspacePathRef.current;
-      if (root) activeTerminalPaneByProjectRef.current = { ...activeTerminalPaneByProjectRef.current, [root]: paneId };
+      const sessionId = activeSessionForProject(root);
+      const contextKey = paneContextKey(root, sessionId);
+      if (contextKey) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: paneId };
       setFocusedTerminalPane(paneId);
       const cached = terminalSnapshotsRef.current[paneId];
       if (cached) {
@@ -2207,7 +2276,8 @@ function App() {
 
   const createTerminalPane = async (profile: LaunchProfile = launchProfileRef.current) => {
     const root = workspacePathRef.current ?? workspacePath;
-    if (!root || launchProfileChanging) return;
+    const sessionId = activeSessionForProject(root);
+    if (!root || !sessionId || launchProfileChanging) return;
     const audit = await gateAppAction(createAppAction({
       kind: "create-pane",
       label: "Create pane",
@@ -2220,7 +2290,7 @@ function App() {
     setLaunchProfileChanging(true);
     try {
       const result = await invoke<OpenPaneResponse>("create_pane", { path: root, profile });
-      const existingPanes = terminalPanesForProject(root);
+      const existingPanes = terminalPanesForSession(root, sessionId);
       const slot = existingPanes.length;
       const pane = {
         id: result.paneId,
@@ -2233,8 +2303,7 @@ function App() {
         createdAt: Date.now(),
       };
       const nextPanes = [...existingPanes, pane];
-      setProjectTerminalPanes(root, nextPanes, result.paneId);
-      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+      setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
       if (sessionId) {
         recordAgentActivity(
           buildAgentSessionHandleDescriptor({
@@ -2258,7 +2327,7 @@ function App() {
       await storeRef.current?.save();
       setLaunchError(null);
       setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, terminalPaneProjectStatus(nextPanes));
+      await updateOpenProjectStatus(root, projectStatusForRoot(root));
       await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
     } catch (err) {
       setLaunchError(String(err));
@@ -2271,8 +2340,9 @@ function App() {
 
   const closeTerminalPane = async (paneId: number) => {
     const root = workspacePathRef.current;
-    if (!root) return false;
-    const pane = terminalPanesForProject(root).find((item) => item.id === paneId);
+    const sessionId = activeSessionForProject(root);
+    if (!root || !sessionId) return false;
+    const pane = terminalPanesForSession(root, sessionId).find((item) => item.id === paneId);
     if (!pane) return false;
     const audit = await gateAppAction(createAppAction({
       kind: "close-pane",
@@ -2285,18 +2355,18 @@ function App() {
     if (audit.decision !== "approved") return false;
     try {
       const result = await invoke<ClosePaneResponse>("close_pane", { paneId });
-      const remaining = terminalPanesForProject(root).filter((item) => item.id !== paneId);
+      const remaining = terminalPanesForSession(root, sessionId).filter((item) => item.id !== paneId);
       const nextActive = result.activePaneId != null && remaining.some((item) => item.id === result.activePaneId)
         ? result.activePaneId
         : remaining[0]?.id ?? null;
       delete terminalSnapshotsRef.current[paneId];
-      setProjectTerminalPanes(root, remaining, nextActive);
+      setSessionTerminalPanes(root, sessionId, remaining, nextActive);
       if (nextActive != null) await invoke("focus_pane", { paneId: nextActive });
       latest.current = nextActive == null ? null : terminalSnapshotsRef.current[nextActive] ?? null;
       requestTerminalPaintRef.current();
       setLaunchError(null);
       const status = terminalPaneProjectStatus(remaining);
-      await updateOpenProjectStatus(root, status);
+      await updateOpenProjectStatus(root, projectStatusForRoot(root));
       await updateActiveSessionStatus(root, status);
       if (nextActive != null) setTimeout(sendTerminalResize, 0);
       return true;
@@ -2310,7 +2380,8 @@ function App() {
 
   const createWorktreePane = async (profile: LaunchProfile = launchProfileRef.current) => {
     const root = workspacePathRef.current ?? workspacePath;
-    if (!root || launchProfileChanging) return;
+    const sessionId = activeSessionForProject(root);
+    if (!root || !sessionId || launchProfileChanging) return;
     const rawLabel = window.prompt("Worktree label (used for the branch name)");
     const label = rawLabel?.trim();
     if (!label) return;
@@ -2327,7 +2398,7 @@ function App() {
     try {
       const worktree = await invoke<WorktreeResponse>("create_project_worktree", { root, label });
       const result = await invoke<OpenPaneResponse>("create_pane", { path: worktree.path, profile });
-      const existingPanes = terminalPanesForProject(root);
+      const existingPanes = terminalPanesForSession(root, sessionId);
       const slot = existingPanes.length;
       const pane: ManagedTerminalPane = {
         id: result.paneId,
@@ -2340,7 +2411,7 @@ function App() {
         createdAt: Date.now(),
       };
       const nextPanes = [...existingPanes, pane];
-      setProjectTerminalPanes(root, nextPanes, result.paneId);
+      setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
       setWorktrees((current) => {
         const next = addWorktree(current, {
           paneId: String(result.paneId),
@@ -2354,7 +2425,6 @@ function App() {
         void storeRef.current?.save();
         return next;
       });
-      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
       if (sessionId) {
         recordAgentActivity(
           buildAgentSessionHandleDescriptor({
@@ -2373,7 +2443,7 @@ function App() {
       await storeRef.current?.save();
       setLaunchError(null);
       setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, terminalPaneProjectStatus(nextPanes));
+      await updateOpenProjectStatus(root, projectStatusForRoot(root));
       await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
     } catch (err) {
       setLaunchError(String(err));
@@ -2451,16 +2521,17 @@ function App() {
 
   const renameTerminalPane = async (pane: ManagedTerminalPane) => {
     const root = workspacePathRef.current;
-    if (!root) return;
-    const currentIndex = terminalPanesForProject(root).findIndex((item) => item.id === pane.id);
+    const sessionId = activeSessionForProject(root);
+    if (!root || !sessionId) return;
+    const currentIndex = terminalPanesForSession(root, sessionId).findIndex((item) => item.id === pane.id);
     const current = terminalPaneLabelForDisplay(pane.label, pane.profile.label, currentIndex >= 0 ? currentIndex : pane.slot);
     const value = window.prompt("Pane name or task label", current);
     if (value == null) return;
     const nextLabel = normalizeTerminalPaneLabel(value);
-    const nextPanes = terminalPanesForProject(root).map((item) =>
+    const nextPanes = terminalPanesForSession(root, sessionId).map((item) =>
       item.id === pane.id ? { ...item, label: nextLabel } : item,
     );
-    setProjectTerminalPanes(root, nextPanes, pane.id);
+    setSessionTerminalPanes(root, sessionId, nextPanes, pane.id);
     await persistPaneLabel(root, pane.slot, nextLabel);
   };
 
@@ -2500,7 +2571,7 @@ function App() {
   const projectSessionsFor = (projectPath: string) => projectSessions[projectPath] ?? [];
 
   const projectSessionStatus = (projectPath: string, session: ProjectSession): ProjectRailStatus =>
-    projectPath === workspacePath && session.id === activeSessionId ? activeProjectStatus() : session.status;
+    projectPath === workspacePath && session.id === activeSessionId ? activeSessionStatus() : session.status;
 
   const visibleOpenProjects = openProjects.length > 0
     ? openProjects
@@ -3128,7 +3199,7 @@ function App() {
   const exportRenderPerfSnapshot = async () => {
     const root = workspacePathRef.current;
     if (!root) return;
-    const paneCount = terminalPanesForProject(root).length;
+    const paneCount = terminalPanesForSession(root).length;
     const snapshot = buildSnapshot(renderPerfRef.current, paneCount, new Date().toISOString());
     const absolutePath = `${root}/docs/qa/perf-budget/render-perf-live.json`;
     // write_text_file's `path` is a raw filesystem path, not root-relative, and
@@ -4011,12 +4082,13 @@ function App() {
     });
     const unlistenPaneExit = listen<PaneExit>("pane-exit", (ev) => {
       const wasIntentionallyTerminated = intentionallyTerminatedPaneIdsRef.current.delete(ev.payload.paneId);
-      const root = Object.entries(terminalPanesByProjectRef.current).find(([, panes]) => panes.some((pane) => pane.id === ev.payload.paneId))?.[0] ?? workspacePathRef.current;
+      const context = paneContextForPaneId(ev.payload.paneId);
+      const root = context?.projectRoot ?? workspacePathRef.current;
       const nextPanes = setPaneState(ev.payload.paneId, "exited", ev.payload.code);
       const nextStatus = terminalPaneProjectStatus(nextPanes);
       const paneIndex = nextPanes.findIndex((pane) => pane.id === ev.payload.paneId);
       const pane = paneIndex >= 0 ? nextPanes[paneIndex] : null;
-      const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
+      const sessionId = context?.sessionId ?? activeSessionForProject(root);
       if (root && sessionId && pane) {
         recordAgentActivity(
           buildAgentSessionHandleDescriptor({
@@ -4038,13 +4110,17 @@ function App() {
         );
       }
       if (!wasIntentionallyTerminated && ev.payload.paneId === activeTerminalPaneIdRef.current) setLaunchError(ev.payload.message);
-      void updateOpenProjectStatus(workspacePathRef.current, nextStatus);
-      void updateActiveSessionStatus(workspacePathRef.current, nextStatus);
+      void updateOpenProjectStatus(root, projectStatusForRoot(root));
+      void updateSessionStatus(root, sessionId, nextStatus);
       if (root && sessionId && pane) {
         const snapshot = terminalSnapshotsRef.current[ev.payload.paneId];
         if (snapshot) persistPaneTranscript(root, sessionId, pane, paneIndex, terminalSnapshotText(snapshot), Date.now());
       }
-      if (!wasIntentionallyTerminated && root && isBackgroundExit(root, workspacePathRef.current)) {
+      const exitedInBackground = root && (
+        isBackgroundExit(root, workspacePathRef.current)
+        || sessionId !== activeSessionForProject(root)
+      );
+      if (!wasIntentionallyTerminated && root && exitedInBackground) {
         const label = pane ? terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex) : "Agent";
         const exit = { paneId: String(ev.payload.paneId), projectPath: root, label, failed: ev.payload.code !== 0 };
         setBackgroundExits((exits) => addBackgroundExit(exits, exit));

@@ -1,7 +1,7 @@
 # Daily Driver Metrics
 
-Generated: 2026-07-12T21:56:25.418Z
-Commit: f1e5b1e+dirty
+Generated: 2026-07-12T22:08:42.863Z
+Commit: f34b277+dirty
 Status: implementation-ready-for-live-runs
 
 ## Scenarios
@@ -22,12 +22,13 @@ Status: implementation-ready (7/7)
 ### Two agents: same project
 
 Goal: One project can own multiple real agent panes with focus, labels, lifecycle, and persisted layout.
-Status: implementation-ready (6/6)
+Status: implementation-ready (7/7)
 
 - PASS backend can create another pane — app/src-tauri/src/lib.rs
 - PASS backend can focus a pane — app/src-tauri/src/lib.rs
 - PASS backend can close a pane — app/src-tauri/src/lib.rs
-- PASS frontend scopes panes by project — app/src/App.tsx
+- PASS frontend scopes live panes by project and session — app/src/App.tsx
+- PASS workspace restore binds panes to the requested session — app/src/App.tsx
 - PASS pane layout persists by session — app/src/App.tsx
 - PASS pane manager contract doc — docs/pane-manager.md
 

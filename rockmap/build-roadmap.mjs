@@ -95,6 +95,7 @@ details>summary::marker,details>summary::-webkit-details-marker{display:none}
 details>summary::before{content:"\\25b8 "}
 details[open]>summary::before{content:"\\25be "}
 .done{font-size:.72rem;color:#7a8898;margin-top:.3rem;padding:.35rem .5rem;background:#0c0f14;border-left:2px solid #1e2737;line-height:1.5}
+.progress{font-size:.72rem;color:#a0aab8;margin-top:.3rem;padding:.35rem .5rem;background:#0c0f14;border-left:2px solid #384454;line-height:1.5}
 .closes{font-size:.58rem;color:#3e4a5c;font-family:ui-monospace,monospace;margin-top:.3rem}
 .sh-section{margin-top:1.75rem}
 .sh-section>summary{color:#3e4a5c;cursor:pointer;font-size:.78rem;padding:.45rem .7rem;background:#10141b;border:1px solid #1e2737;list-style:none;font-family:ui-monospace,monospace}
@@ -130,11 +131,12 @@ function renderCard(c, tracks, shipped = false) {
   const badgesHtml = badges.length ? `<div class="badges">${badges.join('')}</div>` : '';
   const tick = shipped && c.shipped ? ` ✓ ${esc(c.shipped)}` : '';
   const done = c.done ? `<details><summary>Done criteria</summary><p class="done">${esc(c.done)}${tick}</p></details>` : '';
+  const progress = c.progress ? `<details><summary>Progress</summary><p class="progress">${esc(c.progress)}</p></details>` : '';
   const closes = c.closes ? `<div class="closes">${esc(c.closes)}</div>` : '';
   return `<div class="card${shipped ? ' s-shipped' : ''}" data-track="${esc(c.track ?? '')}" data-id="${esc(c.id)}" data-size="${esc(c.size ?? '')}" data-tier="${esc(c.tier ?? '')}" data-launch="${esc(c.launch ?? '')}">
 <div class="hd">${sz}<span class="ttl">${esc(c.id)} &middot; ${esc(c.title)}</span>${lens}</div>
 ${badgesHtml}<p class="sum">${esc(c.summary ?? '')}</p>
-${done}${closes}</div>`;
+${progress}${done}${closes}</div>`;
 }
 
 function renderColumn(col, d, tracks) {
