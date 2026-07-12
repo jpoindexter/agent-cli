@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-12T19:54:00.893Z",
-  "commit": "7c3aa73+dirty",
+  "generatedAt": "2026-07-12T20:47:15.231Z",
+  "commit": "f5e9776+dirty",
   "branch": "main",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
   "status": "implementation-ready-for-live-runs",
@@ -11,10 +11,10 @@
       "goal": "A single project can keep the agent conversation primary while exposing editor save and browser preview surfaces.",
       "checks": [
         {
-          "label": "agent-first workbench label",
+          "label": "agent-first conversation label",
           "file": "app/src/App.tsx",
           "pass": true,
-          "evidence": "Agent run and raw terminal"
+          "evidence": "Agent conversation with optional raw terminal"
         },
         {
           "label": "real editor save path",
@@ -38,13 +38,13 @@
           "label": "actual app shell at 1440x900",
           "file": "docs/qa/app-shell/first-open-1440.png",
           "pass": true,
-          "bytes": 55817
+          "bytes": 54758
         },
         {
           "label": "actual app shell at 900x640",
           "file": "docs/qa/app-shell/first-open-900.png",
           "pass": true,
-          "bytes": 41949
+          "bytes": 40368
         },
         {
           "label": "native Tauri run with live pty output",
@@ -153,12 +153,12 @@
   "metrics": {
     "assetSizes": [
       {
-        "file": "app/dist/assets/index-B8l9SaVz.js",
-        "bytes": 1217316
+        "file": "app/dist/assets/index-BkLhtsvh.js",
+        "bytes": 1215895
       },
       {
-        "file": "app/dist/assets/index-DE4HR0Qp.css",
-        "bytes": 87989
+        "file": "app/dist/assets/index-DBiVMzoU.css",
+        "bytes": 84852
       },
       {
         "file": "app/dist/assets/inter-latin-400-normal-C38fXH4l.woff2",
@@ -204,15 +204,15 @@
     "screenshotSizes": [
       {
         "file": "docs/qa/app-shell/first-open-1440.png",
-        "bytes": 55817
+        "bytes": 54758
       },
       {
         "file": "docs/qa/app-shell/first-open-1024.png",
-        "bytes": 44058
+        "bytes": 42136
       },
       {
         "file": "docs/qa/app-shell/first-open-900.png",
-        "bytes": 41949
+        "bytes": 40368
       },
       {
         "file": "docs/qa/app-shell/native-run.png",

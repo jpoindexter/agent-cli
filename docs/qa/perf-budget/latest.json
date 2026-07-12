@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-12T19:54:01.137Z",
-  "commit": "7c3aa73+dirty",
+  "generatedAt": "2026-07-12T20:47:15.474Z",
+  "commit": "f5e9776+dirty",
   "branch": "main",
   "status": "baseline-ready",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
@@ -8,14 +8,14 @@
     {
       "id": "total-js-assets",
       "label": "Total built JS assets",
-      "actualBytes": 1217316,
+      "actualBytes": 1215895,
       "limitBytes": 1400000,
       "pass": true
     },
     {
       "id": "total-css-assets",
       "label": "Total built CSS assets",
-      "actualBytes": 87989,
+      "actualBytes": 84852,
       "limitBytes": 90000,
       "pass": true
     }
@@ -24,7 +24,7 @@
     {
       "id": "largest-js-vite-warning",
       "label": "Largest JS chunk stays below Vite warning size",
-      "actualBytes": 1217316,
+      "actualBytes": 1215895,
       "limitBytes": 500000,
       "pass": false,
       "note": "Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning."
@@ -86,7 +86,7 @@
       "id": "chrome-first-open",
       "label": "Actual app first-open screenshot",
       "file": "docs/qa/app-shell/first-open-1440.png",
-      "bytes": 55817,
+      "bytes": 54758,
       "minBytes": 1024,
       "pass": true
     },
@@ -94,7 +94,7 @@
       "id": "chrome-narrow",
       "label": "Actual app narrow screenshot",
       "file": "docs/qa/app-shell/first-open-900.png",
-      "bytes": 41949,
+      "bytes": 40368,
       "minBytes": 1024,
       "pass": true
     },
@@ -118,7 +118,7 @@
       "id": "daily-driver-report",
       "label": "Daily-driver report",
       "file": "docs/qa/daily-driver/latest.md",
-      "bytes": 2175,
+      "bytes": 2178,
       "minBytes": 1024,
       "pass": true
     },
@@ -134,13 +134,13 @@
   "metrics": {
     "assets": [
       {
-        "file": "app/dist/assets/index-B8l9SaVz.js",
-        "bytes": 1217316,
+        "file": "app/dist/assets/index-BkLhtsvh.js",
+        "bytes": 1215895,
         "ext": ".js"
       },
       {
-        "file": "app/dist/assets/index-DE4HR0Qp.css",
-        "bytes": 87989,
+        "file": "app/dist/assets/index-DBiVMzoU.css",
+        "bytes": 84852,
         "ext": ".css"
       },
       {
@@ -195,9 +195,9 @@
       }
     ],
     "totals": {
-      "totalJsBytes": 1217316,
-      "totalCssBytes": 87989,
-      "largestJsBytes": 1217316
+      "totalJsBytes": 1215895,
+      "totalCssBytes": 84852,
+      "largestJsBytes": 1215895
     }
   },
   "nextLiveMeasurements": [

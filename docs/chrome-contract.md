@@ -16,7 +16,7 @@ Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint
 
 ## First-Open Layout (v2)
 
-First open shows the demo layout: threads drawer, centered run+composer column (`min(860px, 100% - 56px)`), right dock open on Files with its tab strip, bottom tray strip, statusbar. Returning users keep persisted layouts. Trays remain movable/closable — the demo look applies wherever a tray docks.
+First open shows the demo layout: threads drawer, centered conversation+composer column (`min(860px, 100% - 56px)`), right dock open on Files with its tab strip, and statusbar. Returning users keep persisted layouts. Trays remain movable/closable; raw terminal replaces the center conversation only while its titlebar icon is active.
 
 ## Required Tokens
 
@@ -38,7 +38,7 @@ First open shows the demo layout: threads drawer, centered run+composer column (
 
 ## Agent Run Surface
 
-- Run is the default surface and shows the visible active terminal viewport; raw terminal remains an escape hatch for direct TUI interaction.
+- The agent conversation is the default surface and shows the visible terminal-backed transcript; raw terminal remains an alternate view for direct TUI interaction.
 - Activity is separate provenance for observable prompt, approval, file, command, error, browser, git, and app events.
 - Keelhouse does not infer structured chat, tool events, or thinking from terminal text. Those require an explicit adapter or hook.
 - The composer stays pinned below output and activity.
@@ -46,7 +46,7 @@ First open shows the demo layout: threads drawer, centered run+composer column (
 ## Real App Port Signals
 
 - The side drawer uses mode-aware product nouns. The default Projects mode is `Project threads`, not a generic `Drawer`.
-- The center work surface is labelled as `Agent run and raw terminal`: Run is primary, raw terminal is explicit.
+- The center work surface is labelled as an agent conversation with an optional raw terminal. One persistent titlebar icon switches between them; no in-thread switcher or bottom Terminal tray may duplicate that mode.
 - The first-open tool tray is hidden. Opening Tools defaults to Editor and can dock left, right, or bottom.
 
 ## Control Chrome Signals

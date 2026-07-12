@@ -3300,7 +3300,7 @@ function App() {
     {
       id: "layout.reset-demo",
       label: "Reset Layout to Demo Default",
-      detail: "Threads visible, Files docked right, Terminal tray collapsed",
+      detail: "Threads visible, Files docked right, agent chat centered",
       icon: "workspace",
       keywords: ["layout", "tray", "dock", "first open", "demo"],
       run: resetInterface,
@@ -4129,7 +4129,14 @@ function App() {
             <button className={`titlebar-action ${renderedWorkbenchLayout !== "hidden" && toolTrayMode === "git" ? "titlebar-action--active" : ""}`} type="button" title="Toggle Git" aria-label="Toggle Git" aria-pressed={renderedWorkbenchLayout !== "hidden" && toolTrayMode === "git"} onClick={() => toggleToolPanel("git")}>
               <AppIcon name="git" />
             </button>
-            <button className={`titlebar-action ${agentSurfaceMode === "terminal" ? "titlebar-action--active" : ""}`} type="button" title="Toggle Terminal" aria-label="Toggle Terminal" aria-pressed={agentSurfaceMode === "terminal"} onClick={() => setAgentSurfaceMode(agentSurfaceMode === "terminal" ? "chat" : "terminal")}>
+            <button
+              className={`titlebar-action ${agentSurfaceMode === "terminal" ? "titlebar-action--active" : ""}`}
+              type="button"
+              title={agentSurfaceMode === "terminal" ? "Return to agent chat" : "Open raw terminal"}
+              aria-label={agentSurfaceMode === "terminal" ? "Return to agent chat" : "Open raw terminal"}
+              aria-pressed={agentSurfaceMode === "terminal"}
+              onClick={() => setAgentSurfaceMode(agentSurfaceMode === "terminal" ? "chat" : "terminal")}
+            >
               <AppIcon name="terminal" />
             </button>
           </div>
@@ -4600,7 +4607,7 @@ function App() {
             <label className="drawer-field">
               <span>Agent surface</span>
               <select value={agentSurfaceMode} onChange={(event) => setAgentSurfaceMode(event.currentTarget.value as AgentSurfaceMode)}>
-                <option value="chat">Agent run</option>
+                <option value="chat">Conversation</option>
                 <option value="terminal">Raw terminal</option>
               </select>
             </label>
@@ -5160,7 +5167,7 @@ function App() {
           </div>
         </section>
 
-        <section className="terminal-panel" aria-label="Agent run and raw terminal">
+        <section className={`terminal-panel terminal-panel--${agentSurfaceMode}`} aria-label="Agent conversation with optional raw terminal">
           <div className="terminal-titlebar">
             <div className="terminal-profile">
               <span className="terminal-kicker">Thread</span>
@@ -5192,30 +5199,6 @@ function App() {
               <button className="terminal-tab-action" type="button" title="Thread settings" aria-label="Thread settings" onClick={() => setSettingsOpen(true)}>
                 <AppIcon name="settings" />
               </button>
-              <div className="agent-surface-switcher" role="tablist" aria-label="Agent surface">
-                <button
-                  className={`agent-surface-switcher__button ${agentSurfaceMode === "chat" ? "agent-surface-switcher__button--active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={agentSurfaceMode === "chat"}
-                  title="Show agent run"
-                  onClick={() => setAgentSurfaceMode("chat")}
-                >
-                  <AppIcon name="agent" />
-                  <span>Run</span>
-                </button>
-                <button
-                  className={`agent-surface-switcher__button ${agentSurfaceMode === "terminal" ? "agent-surface-switcher__button--active" : ""}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={agentSurfaceMode === "terminal"}
-                  title="Show raw terminal"
-                  onClick={() => setAgentSurfaceMode("terminal")}
-                >
-                  <AppIcon name="terminal" />
-                  <span>Terminal</span>
-                </button>
-              </div>
               <ToolDockMenu
                 layout={renderedWorkbenchLayout}
                 toolMode={toolTrayMode}
@@ -5387,7 +5370,7 @@ function App() {
               transcript={activeTerminalTranscript}
             />
           </div>
-          <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
+          <div className="agent-composer" aria-label="Agent composer" hidden={agentSurfaceMode !== "chat"} onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
             <div className="agent-composer__topline">
               <div className="agent-composer__target" title={workspacePath ?? ""}>
                 <strong>
@@ -5539,34 +5522,6 @@ function App() {
             ) : null}
           </div>
         </section>
-        <div className="terminal-tray" aria-label="Terminal tray">
-          <button
-            className="terminal-tray__toggle"
-            type="button"
-            aria-pressed={agentSurfaceMode === "terminal"}
-            onClick={() => setAgentSurfaceMode(agentSurfaceMode === "terminal" ? "chat" : "terminal")}
-          >
-            <AppIcon name="terminal" />
-            <span>Terminal</span>
-          </button>
-          <div className="terminal-tray__panes" aria-label="Terminal panes">
-            {terminalPanes.map((pane, index) => (
-              <button
-                className={pane.id === activeTerminalPaneId ? "terminal-tray__pane terminal-tray__pane--active" : "terminal-tray__pane"}
-                type="button"
-                key={pane.id}
-                title={terminalPaneStateLabel(pane.state, pane.exitCode)}
-                onClick={() => void focusTerminalPane(pane.id)}
-              >
-                <AppIcon name={paneStateIconName(pane.state)} />
-                <span>{terminalPaneLabel(pane, index)}</span>
-              </button>
-            ))}
-          </div>
-          <button className="terminal-tray__new" type="button" title={`New ${launchProfile.label} pane`} aria-label={`New ${launchProfile.label} pane`} disabled={!workspacePath || launchProfileChanging} onClick={() => void createTerminalPane(launchProfile)}>
-            <AppIcon name="filePlus" />
-          </button>
-        </div>
       </main>
 
       {settingsOpen ? (
@@ -5878,7 +5833,7 @@ function App() {
           </span>
         </div>
         <div className="status-bar__group status-bar__group--right">
-          <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Run" : "Terminal"}</span>
+          <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Chat" : "Raw terminal"}</span>
           <span className="status-bar__item">Prettier</span>
         </div>
       </footer>

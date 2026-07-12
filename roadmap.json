@@ -1143,8 +1143,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v1",
-      "summary": "Compose the center as one continuous agent thread: terminal-backed transcript and app-owned provenance events flow inline, the composer stays anchored at the bottom, and raw terminal access lives in a dedicated bottom tray. Do not infer provider chat, tools, or hidden reasoning from terminal text.",
-      "done": "Corrected 2026-07-12 after native comparison with the approved demo: removed the separate Run card and Activity dashboard, flattened transcript and provenance into one thread surface, anchored the compact composer, and moved raw terminal access to the bottom tray. Native 1440/1024/900 captures verify the composition; provider-native structure remains adapter-owned.",
+      "summary": "Compose the center as one continuous agent thread: terminal-backed transcript and app-owned provenance events flow inline, the composer stays anchored at the bottom, and raw terminal is an alternate view opened from one persistent titlebar icon. Do not duplicate the same shell in a bottom tray or infer provider chat, tools, or hidden reasoning from terminal text.",
+      "done": "Corrected 2026-07-12 after native comparison with the approved demo and Jason's terminal-duplication review: removed the separate Run card, Activity dashboard, in-thread Run/Terminal switcher, and bottom Terminal tray. Transcript and provenance now share one thread surface with an anchored composer; one titlebar icon switches to the real raw terminal and back. Provider-native structure remains adapter-owned.",
       "buildOrder": 84
     },
     {
@@ -1203,8 +1203,8 @@
       "track": "ui",
       "size": "S",
       "launch": "v1",
-      "summary": "First-open default becomes the demo layout: threads drawer open, centered run and composer, right dock open on Files, bottom tray strip visible, statusbar. Changes the default workbench layout from hidden; returning users keep their persisted layout. Supersedes the 2026-07-10 hidden-first-open correction with a DECISIONS.md entry. Blind-audit 2026-07-11 additions: if the default agent launch fails on first open, the run card shows an inline recovery banner (error, Open Folder/Settings pointers, shell-profile fallback); a discoverable Reset-layout-to-demo action exists for returning users.",
-      "done": "Corrected and reverified 2026-07-12: versioned layout preferences open with the approved project-thread sidebar, continuous agent thread and composer, Files-first right dock, terminal bottom tray, and statusbar. The macOS titlebar uses native overlay chrome, and Reset interface restores this default after panels or the sidebar are closed. Narrow windows default to chat while the persistent icons can reopen one full-width tool view.",
+      "summary": "First-open default becomes the demo layout: threads drawer open, centered conversation and composer, right dock open on Files, and statusbar. Raw terminal is available from the persistent titlebar icon instead of occupying a duplicate bottom tray. Changes the default workbench layout from hidden; returning users keep their persisted layout. Supersedes the 2026-07-10 hidden-first-open correction with a DECISIONS.md entry. Blind-audit 2026-07-11 additions: if the default agent launch fails on first open, the conversation shows an inline recovery banner (error, Open Folder/Settings pointers, shell-profile fallback); a discoverable Reset-layout-to-demo action exists for returning users.",
+      "done": "Corrected and reverified 2026-07-12: versioned layout preferences open with the approved project-thread sidebar, continuous agent conversation and composer, Files-first right dock, and statusbar. The macOS titlebar uses native overlay chrome; its terminal icon switches the center to the raw TUI without rendering a second tray. Reset interface restores this default after panels or the sidebar are closed. Narrow windows default to chat while persistent icons reopen one full-width tool view.",
       "buildOrder": 89
     },
     {

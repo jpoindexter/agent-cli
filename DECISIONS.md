@@ -253,7 +253,7 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 
 ## 2026-07-11 — Chrome re-convergence to the accepted demo + first-open layout
 
-**Choice:** `demo/keelhouse-chrome-demo.html` is the binding visual contract, now at the control-grammar level, not only tokens. Three-control grammar locked: flat 600-weight text actions (hover → accent-strong), transparent icon buttons (color-only hover), and a single filled Send as the only default filled control. First open now shows the demo layout — threads drawer, centered run+composer, tabbed right dock open on Files, bottom tray strip, statusbar — superseding the 2026-07-10 hidden-first-open default. Trays remain movable/openable/closeable (TRAY-DOCKING-UX retained); the demo look applies to trays wherever they dock (hybrid, not fixed positions).
+**Choice:** `demo/keelhouse-chrome-demo.html` is the binding visual contract, now at the control-grammar level, not only tokens. Three-control grammar locked: flat 600-weight text actions (hover → accent-strong), transparent icon buttons (color-only hover), and a single filled Send as the only default filled control. First open now shows the demo layout — threads drawer, centered conversation+composer, tabbed right dock open on Files, and statusbar — superseding the 2026-07-10 hidden-first-open default. Trays remain movable/openable/closeable (TRAY-DOCKING-UX retained); the demo look applies to trays wherever they dock (hybrid, not fixed positions). The raw terminal is an alternate center view, not a persistent bottom tray.
 
 **Alternatives considered:** (a) full fixed demo layout — rejected because Jason explicitly wants nothing fixed, windows must move/open/close; (b) restyle-only without the tab-strip metaphor or first-open change — rejected because the first-open impression and tray navigation are part of what reads as drift.
 
@@ -296,3 +296,13 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Why:** The full imports bundled unused Cyrillic, Greek, Vietnamese, and Latin-extension font-face declarations and pushed production CSS to 98.6 KB, above the 90,000-byte hard budget. Subset imports preserve the accepted Inter metrics and offline posture while reducing CSS to 87,989 bytes without loosening the gate.
 
 **Reversible?** Yes. Restore the broad imports if the product localizes its chrome, then set a measured multilingual asset budget instead of silently exceeding the current cap.
+
+## 2026-07-12 — Raw terminal replaces chat instead of duplicating it
+
+**Choice:** Keep the terminal-backed agent conversation as the default center surface. The persistent titlebar terminal icon switches that center to the real raw TUI and back. Do not render a second Terminal tray or an additional Run/Terminal switcher inside the thread header.
+
+**Why:** Native review exposed that the prior bottom tray represented the same shell process already visible in the conversation, making the product look like two terminals rather than one agent workspace. One conceptual object now has one mode control; terminal pane lifecycle controls appear only in raw-terminal mode.
+
+**Verified:** Source contract rejects a persistent `terminal-tray` and duplicate `agent-surface-switcher`; native visual and interaction verification remains part of CHROME-EYEBALL-SIGNOFF.
+
+**Reversible?** Yes, but restoring a simultaneous terminal requires a distinct process or workflow and an explicit product decision. It must not mirror the active conversation shell.
