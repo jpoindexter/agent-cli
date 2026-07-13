@@ -106,7 +106,7 @@ import {
   removeComposerAttachment,
   upsertComposerAttachment,
 } from "./composerHarness";
-import type { ComposerAttachment, ComposerHarnessRecords, ComposerHarnessState } from "./composerHarness";
+import type { ComposerAttachment, ComposerHarnessRecords, ComposerHarnessState, ComposerReasoningEffort } from "./composerHarness";
 import {
   appActionAuditLabel,
   createAppAction,
@@ -325,6 +325,19 @@ const FONT_SIZE = 15;
 const FONT_FAMILY = '"JetBrains Mono", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", monospace';
 const LINE_HEIGHT = 1.25;
 const AGENT_SURFACE_STORAGE_KEY = "keelhouse.agent.surface.v2";
+const COMPOSER_REASONING_OPTIONS: { value: ComposerReasoningEffort; label: string }[] = [
+  { value: "default", label: "Default" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "xhigh", label: "Extra high" },
+];
+
+const composerApprovalLabel = (mode: AgentApprovalMode) =>
+  mode === "fullAccess" ? "Full access" : mode === "approveSafe" ? "Approve" : "Ask";
+
+const composerReasoningLabel = (effort: ComposerReasoningEffort) =>
+  COMPOSER_REASONING_OPTIONS.find((option) => option.value === effort)?.label ?? "Default";
 const readStoredAgentSurfaceMode = (): AgentSurfaceMode => {
   if (typeof window === "undefined") return "chat";
   try {
@@ -2193,6 +2206,8 @@ function App() {
             providerThreadId: previousConversation.providerThreadId ?? null,
             prompt: payload,
             approvalMode: activeComposerHarness.approvalMode,
+            model: activeComposerHarness.model.trim() || null,
+            reasoningEffort: activeComposerHarness.reasoningEffort === "default" ? null : activeComposerHarness.reasoningEffort,
           },
         });
       } else {
@@ -2274,6 +2289,17 @@ function App() {
   const setComposerGoal = async (goal: string, options: { log?: boolean } = {}) => {
     const next = await updateActiveComposerHarness((state) => ({ ...state, goal: goal.slice(0, 160) }));
     if (options.log && next?.goal) logComposerHarnessEvent("Goal updated", next.goal);
+  };
+
+  const setComposerModel = async (model: string, options: { log?: boolean } = {}) => {
+    const next = await updateActiveComposerHarness((state) => ({ ...state, model: model.slice(0, 128) }));
+    if (options.log && next?.model.trim()) logComposerHarnessEvent("Model override changed", next.model.trim());
+  };
+
+  const setComposerReasoningEffort = async (reasoningEffort: ComposerReasoningEffort) => {
+    const next = await updateActiveComposerHarness((state) => ({ ...state, reasoningEffort }));
+    if (!next) return;
+    logComposerHarnessEvent("Reasoning effort changed", composerReasoningLabel(reasoningEffort));
   };
 
   const addComposerAttachment = async (attachment: ComposerAttachment) => {
@@ -5555,56 +5581,6 @@ function App() {
             />
           </div>
           <div className="agent-composer" aria-label="Agent composer" hidden={agentSurfaceMode !== "chat"} onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
-            <div className="agent-composer__topline">
-              <div className="agent-composer__target" title={workspacePath ?? ""}>
-                <strong>
-                  <AppIcon name="agent" />
-                  <span>{activeTerminalProfile.label}</span>
-                </strong>
-                <span>{workspacePath ? basename(workspacePath) : "No workspace"}</span>
-                <span>{activeSessionId ?? "No chat"}</span>
-                <span>{activeTerminalPaneLabel ?? "No pane"}</span>
-              </div>
-              <details className="agent-composer__settings">
-                <summary>
-                  <AppIcon name="settings" />
-                  <span>Run settings</span>
-                </summary>
-                <div className="agent-composer__harness">
-                  <label className="agent-composer__field">
-                    <span>Permission</span>
-                    <select
-                      aria-label="Composer permission mode"
-                      value={activeComposerHarness.approvalMode}
-                      disabled={!activeComposerHarnessKey}
-                      onChange={(event) => void setComposerApprovalMode(event.currentTarget.value as AgentApprovalMode)}
-                    >
-                      <option value="ask">Ask</option>
-                      <option value="approveSafe">Approve safe</option>
-                      <option value="fullAccess">Full access</option>
-                    </select>
-                  </label>
-                  <label className="agent-composer__field">
-                    <span>Provider</span>
-                    <select aria-label="Chat provider" value="codex" disabled>
-                      <option value="codex">Codex</option>
-                    </select>
-                  </label>
-                  <label className="agent-composer__field agent-composer__field--goal">
-                    <span>Goal</span>
-                    <input
-                      aria-label="Composer goal"
-                      value={activeComposerHarness.goal}
-                      maxLength={160}
-                      placeholder="No goal"
-                      disabled={!activeComposerHarnessKey}
-                      onChange={(event) => void setComposerGoal(event.currentTarget.value)}
-                      onBlur={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
-                    />
-                  </label>
-                </div>
-              </details>
-            </div>
             <div className="agent-composer__card">
               <textarea
                 className="agent-composer__input"
@@ -5642,47 +5618,139 @@ function App() {
                     disabled={!activeComposerHarnessKey}
                     onClick={() => void attachLocalFileToComposer()}
                   >
-                    <AppIcon name="filePlus" />
+                    <AppIcon name="plus" />
                   </button>
-                  <span className="agent-composer__meta agent-composer__meta--accent">
-                    {activeComposerHarness.approvalMode === "fullAccess" ? "Full access" : activeComposerHarness.approvalMode === "approveSafe" ? "Approve safe" : "Ask"}
-                  </span>
-                  <span className="agent-composer__meta">Goal</span>
-                  <span className="agent-composer__meta">Codex</span>
-                  {activeComposerHarness.attachments.map((attachment) => (
-                    <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>
-                      <span>{attachment.label}</span>
-                      <button
-                        type="button"
-                        aria-label={`Remove attachment ${attachment.label}`}
-                        onClick={() => void removeComposerAttachmentById(attachment)}
-                      >
-                        <AppIcon name="close" />
-                      </button>
-                    </span>
-                  ))}
+                  <details className="agent-composer__menu agent-composer__menu--permission">
+                    <summary className={`agent-composer__control ${activeComposerHarness.approvalMode === "fullAccess" ? "agent-composer__control--warning" : ""}`}>
+                      <AppIcon name="shield" />
+                      <span>{composerApprovalLabel(activeComposerHarness.approvalMode)}</span>
+                      <AppIcon name="chevronDown" />
+                    </summary>
+                    <div className="agent-composer__popover agent-composer__popover--permission" role="menu" aria-label="Composer permission mode">
+                      <div className="agent-composer__popover-title">Permission mode</div>
+                      {([
+                        ["ask", "Ask for approval", "Confirm edits, commands, and network access."],
+                        ["approveSafe", "Approve safe actions", "Run workspace-scoped actions and ask for riskier access."],
+                        ["fullAccess", "Full access", "Allow unrestricted file and network access."],
+                      ] as const).map(([value, label, description]) => (
+                        <button
+                          className={`agent-composer__menu-option ${activeComposerHarness.approvalMode === value ? "agent-composer__menu-option--selected" : ""}`}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={activeComposerHarness.approvalMode === value}
+                          key={value}
+                          onClick={(event) => {
+                            event.currentTarget.closest("details")?.removeAttribute("open");
+                            void setComposerApprovalMode(value);
+                          }}
+                        >
+                          <AppIcon name={activeComposerHarness.approvalMode === value ? "check" : "shield"} />
+                          <span><strong>{label}</strong><small>{description}</small></span>
+                        </button>
+                      ))}
+                    </div>
+                  </details>
+                  <details className="agent-composer__menu agent-composer__menu--goal">
+                    <summary className={`agent-composer__control ${activeComposerHarness.goal ? "agent-composer__control--active" : ""}`}>
+                      <AppIcon name="target" />
+                      <span>Goal</span>
+                    </summary>
+                    <div className="agent-composer__popover agent-composer__popover--goal">
+                      <label className="agent-composer__popover-field">
+                        <span>Goal for this chat</span>
+                        <input
+                          aria-label="Composer goal"
+                          value={activeComposerHarness.goal}
+                          maxLength={160}
+                          placeholder="Optional outcome to keep in context"
+                          disabled={!activeComposerHarnessKey}
+                          onChange={(event) => void setComposerGoal(event.currentTarget.value)}
+                          onBlur={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
+                        />
+                      </label>
+                      {activeComposerHarness.goal ? (
+                        <button className="agent-composer__clear" type="button" onClick={() => void setComposerGoal("")}>Clear goal</button>
+                      ) : null}
+                    </div>
+                  </details>
+                  <div className="agent-composer__attachment-list">
+                    {activeComposerHarness.attachments.map((attachment) => (
+                      <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>
+                        <span>{attachment.label}</span>
+                        <button
+                          type="button"
+                          aria-label={`Remove attachment ${attachment.label}`}
+                          onClick={() => void removeComposerAttachmentById(attachment)}
+                        >
+                          <AppIcon name="close" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <div className="agent-composer__actions">
-                  <button
-                    className="agent-composer__button agent-composer__button--danger"
-                    type="button"
-                    aria-label="Stop current chat run"
-                    title="Stop current chat run"
-                    disabled={!activeChatConversation.activeRunId}
-                    onClick={() => void stopActiveChatRun()}
-                  >
-                    <AppIcon name="stop" />
-                  </button>
-                  <button
-                    className="agent-composer__send"
-                    type="button"
-                    aria-label={composerSending ? "Sending" : "Send"}
-                    title={shortcutTitle("composer.send", "Send")}
-                    disabled={composerSending || Boolean(activeChatConversation.activeRunId) || !composerDraft.trim()}
-                    onClick={() => void submitComposerDraft()}
-                  >
-                    <AppIcon name={composerSending ? "loading" : "send"} />
-                  </button>
+                  <details className="agent-composer__menu agent-composer__menu--runtime">
+                    <summary className="agent-composer__control agent-composer__control--runtime">
+                      <AppIcon name="agent" />
+                      <span>Codex</span>
+                      {activeComposerHarness.model.trim() ? <span className="agent-composer__control-detail">{activeComposerHarness.model.trim()}</span> : null}
+                      {activeComposerHarness.reasoningEffort !== "default" ? <span className="agent-composer__control-detail">{composerReasoningLabel(activeComposerHarness.reasoningEffort)}</span> : null}
+                      <AppIcon name="chevronDown" />
+                    </summary>
+                    <div className="agent-composer__popover agent-composer__popover--runtime">
+                      <div className="agent-composer__popover-title">Codex run settings</div>
+                      <label className="agent-composer__popover-field">
+                        <span>Model override</span>
+                        <input
+                          aria-label="Codex model override"
+                          value={activeComposerHarness.model}
+                          maxLength={128}
+                          placeholder="Use Codex config default"
+                          disabled={!activeComposerHarnessKey}
+                          onChange={(event) => void setComposerModel(event.currentTarget.value)}
+                          onBlur={() => void setComposerModel(activeComposerHarness.model, { log: true })}
+                        />
+                      </label>
+                      <fieldset className="agent-composer__reasoning">
+                        <legend>Reasoning effort</legend>
+                        <div>
+                          {COMPOSER_REASONING_OPTIONS.map((option) => (
+                            <button
+                              className={activeComposerHarness.reasoningEffort === option.value ? "is-selected" : ""}
+                              type="button"
+                              aria-pressed={activeComposerHarness.reasoningEffort === option.value}
+                              key={option.value}
+                              onClick={() => void setComposerReasoningEffort(option.value)}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </fieldset>
+                    </div>
+                  </details>
+                  {activeChatConversation.activeRunId ? (
+                    <button
+                      className="agent-composer__send agent-composer__send--stop"
+                      type="button"
+                      aria-label="Stop current chat run"
+                      title="Stop current chat run"
+                      onClick={() => void stopActiveChatRun()}
+                    >
+                      <AppIcon name="stop" />
+                    </button>
+                  ) : (
+                    <button
+                      className="agent-composer__send"
+                      type="button"
+                      aria-label={composerSending ? "Sending" : "Send"}
+                      title={shortcutTitle("composer.send", "Send")}
+                      disabled={composerSending || !composerDraft.trim()}
+                      onClick={() => void submitComposerDraft()}
+                    >
+                      <AppIcon name={composerSending ? "loading" : "send"} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

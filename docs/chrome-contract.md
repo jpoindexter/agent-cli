@@ -1,6 +1,6 @@
 # Chrome Contract
 
-Status: v2 gate prepared and packaged native engineering review complete 2026-07-13. Jason's explicit sign-off remains before the contract is formally locked. Control grammar was added after the boxed-button drift; see `docs/chrome-delta-audit.md` and DECISIONS.md 2026-07-11.
+Status: v2 gate prepared and the 2026-07-13 composer/selection correction has refreshed packaged-native evidence. Jason's explicit sign-off remains before the contract is formally locked. Control grammar was added after the boxed-button drift; see `docs/chrome-delta-audit.md` and DECISIONS.md 2026-07-11.
 
 Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/chat drawer, agent-first center, and editor/browser/git/raw terminal as optional trays. The demo is binding at the control-grammar level, not only tokens.
 
@@ -10,9 +10,9 @@ Exactly three default control types, from the demo:
 
 - **Flat text action:** no background, no border, weight 600, `--color-text` ink, hover → `--steel-cyan-400`. Used for Review/Approve-class actions, lifecycle controls, and labelled toolbar commands. Danger variants stay flat in danger ink.
 - **Transparent icon button:** 16px glyph, no box, color-only hover (muted → ink). Hit area extended to ≥40px via padding.
-- **Filled Send:** the single default filled control — 24px, `--steel-cyan-500` background, white glyph, 4px radius. Modal-confirm primaries are the only other filled buttons.
+- **Filled Send/Stop position:** the single default filled control position — 28px circular Send at rest; Stop replaces Send while a chat run is active. Modal-confirm primaries are the only other filled buttons.
 
-Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: integrated 8px-radius surface with restrained `0 10px 28px rgba(0,0,0,.24)` depth. Type scale: Inter/SF Mono 14px conversation / 13px controls / 12px meta+mono / 11px uppercase labels.
+Actives: tabs may use a steel-cyan top/bottom underline with subtle tint; rows use quiet `#252732` background contrast only. Decorative left stripes are prohibited in project/chat rows, files, settings, command results, and user prompts. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: integrated 8px-radius surface with restrained depth. Type scale: Inter/SF Mono 14px conversation / 13px controls / 12px meta+mono / 11px uppercase labels.
 
 ## First-Open Layout (v2)
 
@@ -32,6 +32,7 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 - Fake browser/window chrome inside the app shell.
 - Decorative activity rails that do not map to real app modes.
 - Chat/avatar identity blocks such as `You ·` or `Keelhouse ·`.
+- Decorative cyan side highlights on selected rows, prompts, files, settings, or palette results.
 - Pill-heavy active rows and obvious rounded-rectangle action chrome.
 - Boxed default buttons (`--control-bg` fill + border) anywhere in titlebar, toolbars, composer, or drawer — this shipped once and passed the token-level gate; CHROME-CONTRACT-V2 makes it a failing check.
 - Border-heavy depth in place of shadow elevation on cards, composer, menus, and overlays.
@@ -43,6 +44,8 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 - Observable prompt, approval, file, command, error, browser, git, and app events appear as inline provenance in the conversation.
 - Keelhouse does not infer structured chat, tool events, or thinking from terminal text. Codex JSON events provide the first explicit adapter; other providers route to raw terminal until their adapters land.
 - The composer stays pinned below output and activity.
+- Its footer exposes real attachment, permission, goal, Codex model, reasoning effort, stop, and send controls. Static labels must not stand in for hidden settings.
+- Permission, goal, model, and reasoning state persist per chat and reach the native Codex run request. Unsupported controls such as voice input stay absent rather than appearing as dead chrome.
 
 ## Real App Port Signals
 
@@ -60,12 +63,14 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 
 ## Native Engineering Review
 
-**Engineering verdict: corrected composition holds in populated native states.** The rebuilt packaged `Keelhouse.app` was reviewed through Computer Use at 1232×768 and 919×653 with restored multi-project chat history. The center now groups turns, right-offsets broad user prompts, keeps provider/tool/error output inline, aligns the composer to the same axis, removes duplicate titlebar actions, and reduces status-bar weight. The narrow layout wraps long prompts without overlap and keeps the composer anchored. Raw terminal remains a distinct titlebar toggle.
+**Engineering verdict: corrected composition and controls hold in populated native states.** The rebuilt packaged `Keelhouse.app` was reviewed through Computer Use at 1232px and 900px widths with restored multi-project chat history. Selected project/chat rows and user prompts use surface contrast without cyan side rules. The composer keeps `Attach / Ask / Goal / Codex / Send` visible at both widths; approval and Codex runtime popovers open above it without clipping; long prompts wrap without overlap. Model/reasoning command wiring is covered separately by Rust tests. Jason's aesthetic sign-off remains open.
 
 Native evidence:
 
 - `docs/qa/chrome-v2/native-desktop.png` — packaged desktop layout after Reset interface.
 - `docs/qa/chrome-v2/native-900.png` — packaged minimum-width layout with the tool dock collapsed.
+- `docs/qa/chrome-v2/native-composer-permission.png` — packaged approval-mode menu.
+- `docs/qa/chrome-v2/native-composer-runtime.png` — packaged model/reasoning menu.
 
 The transient crash-recovery notice is dismissible status feedback, not persistent chrome; it was dismissed before sign-off captures. A restored Browser preference may show the target page's own white or error surface, but first-open/reset remains Files-first.
 
@@ -86,7 +91,7 @@ Run from `app/`:
 npm run qa:chrome-contract
 ```
 
-The gate checks the accepted demo, real app-shell sources, exact 1440/1024/900 first-open dimensions, populated and overlay evidence, packaged native desktop/minimum-window screenshots, steel-cyan tokens, rejected warm accents/avatar labels, flat toolbar grammar, centered composer values, Files-first tray structure, crumb overflow, and detached-HEAD labeling.
+The gate checks the accepted demo, real app-shell sources, exact 1440/1024/900 first-open dimensions, populated and overlay evidence, packaged native desktop/minimum-window screenshots, steel-cyan tokens, rejected warm accents/avatar labels, absence of decorative side highlights, functional composer controls, native model/reasoning wiring, flat toolbar grammar, centered composer values, Files-first tray structure, crumb overflow, and detached-HEAD labeling.
 
 For visible chrome changes, run both:
 

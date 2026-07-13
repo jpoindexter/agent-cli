@@ -11,11 +11,11 @@ Why this exists: the shipped chrome passed `npm run qa:chrome-contract` while vi
 | Rows | Active = `#252732` + `inset 3px 0 0 var(--accent)` left stripe; hover `#22242d`; 34px min | Row-active token exists; rows carry boxed affordances (Switch buttons) | Restyle |
 | Run surface | Centered `min(860px, 100% - 56px)` column; 12px muted meta; thinking = 2px left border; cards 6px radius `#191a22` + `0 12px 34px` shadow; approval = accent-soft strip | Full-width dump, bold "Live agent output" banner, no cards, no rhythm | Recompose |
 | Composer | Elevated card: 12px radius, `#343642` border, `0 22px 60px` shadow, gradient wrap, borderless textarea (78px min), 34px flat-chip bar, 24px filled ↑ send | 4px-radius input + boxed Send/Stop + boxed chips | Recompose |
-| Sidebar | 11px/600 uppercase section labels (`.06em`, faint), 34px rows, 28px-indent thread rows with recency stamps, 7px dots, left-stripe active | "PROJECT THREADS" header + icon mode-switcher + boxed row affordances | Restyle |
+| Sidebar | 11px/600 uppercase section labels (`.06em`, faint), 34px rows, 28px-indent chat rows with recency stamps, 7px dots, background-only active state | "PROJECT THREADS" header + icon mode-switcher + boxed row affordances | Restyle |
 | Titlebar/status | 36px gradient titlebar (`linear-gradient(#22232b,#1b1c23)`): centered crumb (strong project + faint `⎇ branch`), flat top actions, accent agent chip; 24px 3-section statusbar | 38px flat titlebar with boxed Commands/Open Folder; statusbar close (24px, 11px) | Restyle |
 | Tray/dock nav | Tab strips: dock `Files/Editor/Browser/Git + ×` (38px), tray `Terminal/Processes/Logs/Browser Preview` (34px), underline actives, collapsible | Tools popover + drawer modes; movable trays (KEEP); no tab-strip metaphor | Structural (hybrid) |
 | First-open | Demo layout visible: sidebar + run + right dock (Files) + tray strip | `DEFAULT_WORKBENCH_LAYOUT: "hidden"` — tools hidden | Default change |
-| Overlays | Menus 6px radius, 24px uppercase-mono labels, 28px `icon\|label\|kbd` rows; palette 640px/10px radius/42px input/32px left-stripe rows; settings modal 900×560 with 230px nav | Context menu 4–5px radius, palette 6px — close; settings modal not built (v2) | Align |
+| Overlays | Menus use compact `icon\|label\|kbd` rows and background-only selection; palette and settings navigation use the same active-state grammar | Context menu 4–5px radius, palette 6px — close; settings modal not built (v2) | Align |
 | Typography | Inter 13px base / 12px meta+mono / 11px labels; 600 headers | Not on the demo scale | Restyle |
 | Depth | Shadows for elevation (card `0 12px 34px`, composer `0 22px 60px`, menu `0 18px 42px`); borders as hairlines only | Border-heavy, minimal shadow | Restyle |
 

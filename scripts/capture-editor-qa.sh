@@ -29,6 +29,9 @@ capture() {
 }
 
 capture selected 1440,900
+capture composer-permission 1440,900
+capture composer-goal 1440,900
+capture composer-runtime 1440,900
 capture dirty 1440,900
 capture context-menu 1440,900
 capture diff-review 1440,900

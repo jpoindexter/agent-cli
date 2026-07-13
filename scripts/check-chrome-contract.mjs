@@ -86,7 +86,9 @@ assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-styl
 assert(/\.agent-composer__card\s*\{[^}]*width:\s*var\(--run-column-width\);[^}]*border:\s*1px solid #30323d;[^}]*border-radius:\s*8px;[^}]*background:\s*#1c1d24;/s.test(appCss), "Composer must preserve the restrained integrated-surface grammar");
 assert(appCss.includes("--run-column-width: min(56rem, calc(100% - var(--run-column-pad)));"), "Conversation and composer must share the populated-state reading axis");
 assert(appCss.includes(".chat-thread__content"), "Chat output must use the same centered reading axis as the composer");
-assert(/\.chat-message--user\s*\{[^}]*width:\s*min\(100%, 46rem\);[^}]*margin-left:\s*auto;[^}]*border-left:\s*2px solid #67c3d1;/s.test(appCss), "User prompts must be broad right-offset turn anchors, not tiny bubbles or full-width slabs");
+assert(/\.chat-message--user\s*\{[^}]*width:\s*min\(100%, 46rem\);[^}]*margin-left:\s*auto;[^}]*border:\s*0;[^}]*background:\s*#1a1b22;/s.test(appCss), "User prompts must use surface contrast without a decorative side rule");
+assert(!/box-shadow:\s*inset\s+-?\d+px\s+0\s+0/.test(appCss), "App selections must use background contrast instead of decorative side highlights");
+assert(!/border-left:\s*\d+px\s+solid\s+(?:#67c3d1|var\(--color-accent-border\))/.test(appCss), "App content must not restore cyan side highlights");
 assert(appCss.includes("grid-template-rows: 44px minmax(0, 1fr) 20px;"), "Application chrome must preserve the calm 44px toolbar and low-weight 20px status strip");
 assert(/\.project-rail__heading\s*\{[^}]*font-size:\s*11px;[^}]*font-weight:\s*600;[^}]*text-transform:\s*uppercase;/s.test(appCss), "Project section labels must preserve the compact uppercase rhythm");
 assert(chatThreadSurface.includes('className="chat-thread"'), "Chat surface must render a persistent message timeline");
@@ -104,6 +106,12 @@ assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a
 assert(!appTsx.includes('className="terminal-tray"'), "Agent chat and raw terminal must not be duplicated as a persistent bottom tray");
 assert(appTsx.includes('title={agentSurfaceMode === "terminal" ? "Return to agent chat" : "Open raw terminal"}'), "Titlebar terminal icon must clearly switch between agent chat and the raw terminal");
 assert(appTsx.includes('aria-label="Agent composer" hidden={agentSurfaceMode !== "chat"}'), "Raw terminal mode must hide the agent composer instead of stacking chat controls over the TUI");
+assert(appTsx.includes('aria-label="Composer permission mode"'), "Composer must expose the real approval-mode menu");
+assert(appTsx.includes('aria-label="Composer goal"'), "Composer must expose its persisted goal control");
+assert(appTsx.includes('aria-label="Codex model override"'), "Composer must expose a real Codex model override");
+assert(appTsx.includes("COMPOSER_REASONING_OPTIONS.map"), "Composer must expose reasoning effort choices");
+assert(appTsx.includes('reasoningEffort: activeComposerHarness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
+assert(chatHarness.includes('model_reasoning_effort=\\\"{effort}\\\"'), "Native chat runs must apply the selected Codex reasoning effort");
 assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
 assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
 assert(appTsx.includes("Project chats"), "Projects drawer must present independent chats under each project");
@@ -144,6 +152,7 @@ assert(!editorQaFixture.includes("<span>Threads</span>"), "Editor QA fixture mus
 assert(!editorQaFixture.includes("Project sessions"), "Editor QA fixture must not present workspace sessions as the chat product noun");
 assert(editorQaFixture.includes('class="chat-thread"'), "Editor QA fixture must render the structured chat timeline");
 assert(editorQaFixture.includes("chat-message--user") && editorQaFixture.includes("chat-message--assistant"), "Editor QA fixture must show populated user and assistant chat messages");
+assert(editorQaFixture.includes("agent-composer__menu--permission") && editorQaFixture.includes("agent-composer__menu--runtime"), "Editor QA fixture must show the functional composer control grammar");
 assert(!editorQaFixture.includes('class="agent-activity"'), "Editor QA fixture must not restore the superseded separate activity strip");
 assert(!editorQaFixture.includes(">Drawer<"), "Editor QA fixture must not show a generic Drawer label");
 assert(editorQaFixture.includes("workbench--tools-editor"), "Editor QA fixture must include the current single-editor tray mode");
@@ -153,7 +162,8 @@ assert(/\.tool-tray-switcher__button--active\s*\{[^}]*box-shadow: inset 0 -2px 0
 assert(demo.includes("--accent: #67c3d1;"), "Accepted chrome demo must use steel-cyan #67c3d1");
 assert(demo.includes("--accent-strong: #9bd9e3;"), "Accepted chrome demo must use steel-cyan strong #9bd9e3");
 assert(demo.includes("--accent-soft: #162c33;"), "Accepted chrome demo must use steel-cyan soft #162c33");
-assert(/\.thread-row\.active\s*\{[^}]*box-shadow: inset 3px 0 0 var\(--accent\);/s.test(demo), "Accepted demo active thread row must use flat left accent rule");
+assert(/\.thread-row\.active\s*\{[^}]*background:\s*#252732;[^}]*color:\s*var\(--ink\);/s.test(demo), "Accepted demo active thread row must use quiet background contrast");
+assert(!/box-shadow:\s*inset\s+-?\d+px\s+0\s+0/.test(demo), "Accepted demo must not restore decorative side highlights");
 assert(!/\.thread-row\.active\s*\{[^}]*border-radius/s.test(demo), "Accepted demo active thread row must stay flat, not rounded");
 
 const requiredScreenshots = [
@@ -168,9 +178,14 @@ const requiredScreenshots = [
   "docs/qa/chrome-delta/density-populated-900.png",
   "docs/qa/editor-parity/context-menu.png",
   "docs/qa/editor-parity/chrome-states.png",
+  "docs/qa/editor-parity/composer-permission.png",
+  "docs/qa/editor-parity/composer-goal.png",
+  "docs/qa/editor-parity/composer-runtime.png",
   "docs/qa/chrome-demo/palette.png",
   "docs/qa/chrome-v2/native-desktop.png",
   "docs/qa/chrome-v2/native-900.png",
+  "docs/qa/chrome-v2/native-composer-permission.png",
+  "docs/qa/chrome-v2/native-composer-runtime.png",
 ];
 
 const pngDimensions = (absolute) => {

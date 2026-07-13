@@ -23,12 +23,15 @@ import {
   LoaderCircle,
   ExternalLink,
   PanelBottom,
+  Plus,
   RotateCw,
   Save,
   Search,
   Send,
   SlidersHorizontal,
   Square,
+  Target,
+  ShieldCheck,
   X,
 } from "lucide-react";
 import type { TerminalPaneState } from "./terminalPane";
@@ -57,12 +60,15 @@ export type AppIconName =
   | "idle"
   | "loading"
   | "openExternal"
+  | "plus"
   | "reload"
   | "save"
   | "search"
   | "send"
   | "settings"
+  | "shield"
   | "stop"
+  | "target"
   | "thinking"
   | "terminal"
   | "waiting"
@@ -90,12 +96,15 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   idle: Circle,
   loading: LoaderCircle,
   openExternal: ExternalLink,
+  plus: Plus,
   reload: RotateCw,
   save: Save,
   search: Search,
   send: Send,
   settings: SlidersHorizontal,
+  shield: ShieldCheck,
   stop: Square,
+  target: Target,
   thinking: Brain,
   terminal: PanelBottom,
   waiting: Clock3,

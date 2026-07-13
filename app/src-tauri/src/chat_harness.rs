@@ -28,6 +28,8 @@ pub(crate) struct ChatRunRequest {
     provider_thread_id: Option<String>,
     prompt: String,
     approval_mode: String,
+    model: Option<String>,
+    reasoning_effort: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -87,6 +89,35 @@ fn sandbox_for_approval_mode(mode: &str) -> &'static str {
     }
 }
 
+fn codex_runtime_options(request: &ChatRunRequest) -> Result<String, String> {
+    let mut options = Vec::new();
+    if let Some(model) = request
+        .model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        if model.len() > 128 || model.chars().any(char::is_control) {
+            return Err("The Codex model override is invalid.".into());
+        }
+        options.push(format!("-m {}", shell_quote(model)));
+    }
+    if let Some(effort) = request.reasoning_effort.as_deref() {
+        if !matches!(effort, "low" | "medium" | "high" | "xhigh") {
+            return Err("The Codex reasoning effort is invalid.".into());
+        }
+        options.push(format!(
+            "-c {}",
+            shell_quote(&format!("model_reasoning_effort=\"{effort}\""))
+        ));
+    }
+    Ok(if options.is_empty() {
+        String::new()
+    } else {
+        format!(" {}", options.join(" "))
+    })
+}
+
 fn isolate_chat_process(command: &mut Command) {
     #[cfg(unix)]
     command.process_group(0);
@@ -110,12 +141,18 @@ fn codex_command_line(request: &ChatRunRequest) -> Result<String, String> {
             request.provider
         ));
     }
+    let runtime_options = codex_runtime_options(request)?;
     let line = if let Some(thread_id) = request.provider_thread_id.as_deref() {
         let thread_id = validate_thread_id(thread_id)?;
-        format!("exec codex exec resume --json {} -", shell_quote(thread_id))
+        format!(
+            "exec codex exec resume --json{} {} -",
+            runtime_options,
+            shell_quote(thread_id)
+        )
     } else {
         format!(
-            "exec codex exec --json --color never -s {} -C {} -",
+            "exec codex exec --json --color never{} -s {} -C {} -",
+            runtime_options,
             shell_quote(sandbox_for_approval_mode(&request.approval_mode)),
             shell_quote(&request.project_path),
         )
@@ -291,6 +328,8 @@ mod tests {
             provider_thread_id: thread.map(str::to_string),
             prompt: "hello".into(),
             approval_mode: mode.into(),
+            model: None,
+            reasoning_effort: None,
         }
     }
 
@@ -356,5 +395,35 @@ mod tests {
             "exec codex exec resume --json '019f5a64-56ac-7e73-b554-138e0e8352b4' -"
         );
         assert!(codex_command_line(&request(Some("bad; rm -rf"), "ask")).is_err());
+    }
+
+    #[test]
+    fn applies_model_and_reasoning_to_new_and_resumed_chats() {
+        let mut new_request = request(None, "ask");
+        new_request.model = Some("gpt-5.5".into());
+        new_request.reasoning_effort = Some("high".into());
+        assert_eq!(
+            codex_command_line(&new_request).unwrap(),
+            "exec codex exec --json --color never -m 'gpt-5.5' -c 'model_reasoning_effort=\"high\"' -s 'read-only' -C '/tmp/repo with spaces' -"
+        );
+
+        let mut resumed = request(Some("thread-1"), "fullAccess");
+        resumed.model = Some("o3".into());
+        resumed.reasoning_effort = Some("medium".into());
+        assert_eq!(
+            codex_command_line(&resumed).unwrap(),
+            "exec codex exec resume --json -m 'o3' -c 'model_reasoning_effort=\"medium\"' 'thread-1' -"
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_runtime_overrides() {
+        let mut invalid_model = request(None, "ask");
+        invalid_model.model = Some("bad\nmodel".into());
+        assert!(codex_command_line(&invalid_model).is_err());
+
+        let mut invalid_effort = request(None, "ask");
+        invalid_effort.reasoning_effort = Some("maximum".into());
+        assert!(codex_command_line(&invalid_effort).is_err());
     }
 }

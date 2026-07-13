@@ -426,21 +426,38 @@
             </div>
           </div>
           <div class="agent-composer" aria-label="Agent composer">
-            <div class="agent-composer__topline">
-              <div class="agent-composer__target" title="/Users/jasonpoindexter/Documents/GitHub/apps/agent cli"><strong><svg class="app-icon"><use href="#i-agent" /></svg><span>Codex</span></strong><span>agent cli</span><span>API fix</span></div>
-            </div>
             <div class="agent-composer__card">
               <textarea class="agent-composer__input" rows="2" aria-label="Agent composer draft" placeholder="Ask Keelhouse to run agents, open files, inspect git, or use the browser...">Summarize the selected file and propose the next edit.</textarea>
               <div class="agent-composer__bar">
                 <div class="agent-composer__attachments" aria-label="Composer context">
                   <button class="agent-composer__attachment-button" type="button" aria-label="Attach file"><svg class="app-icon"><use href="#i-file-plus" /></svg></button>
-                  <span class="agent-composer__meta agent-composer__meta--accent">Ask</span>
-                  <span class="agent-composer__meta">Goal</span>
-                  <span class="agent-composer__meta">Codex</span>
-                  <span class="agent-composer__attachment" title="app/src/App.tsx"><span>App.tsx</span><button type="button" aria-label="Remove attachment App.tsx"><svg class="app-icon"><use href="#i-close" /></svg></button></span>
+                  <details class="agent-composer__menu agent-composer__menu--permission">
+                    <summary class="agent-composer__control"><svg class="app-icon"><use href="#i-check" /></svg><span>Ask approval</span><svg class="app-icon"><use href="#i-chevron-down" /></svg></summary>
+                    <div class="agent-composer__popover agent-composer__popover--permission" role="menu" aria-label="Composer permission mode">
+                      <div class="agent-composer__popover-title">Permission mode</div>
+                      <button class="agent-composer__menu-option agent-composer__menu-option--selected" type="button"><svg class="app-icon"><use href="#i-check" /></svg><span><strong>Ask for approval</strong><small>Confirm edits, commands, and network access.</small></span></button>
+                      <button class="agent-composer__menu-option" type="button"><svg class="app-icon"><use href="#i-agent" /></svg><span><strong>Approve safe actions</strong><small>Run workspace-scoped actions and ask for riskier access.</small></span></button>
+                      <button class="agent-composer__menu-option" type="button"><svg class="app-icon"><use href="#i-agent" /></svg><span><strong>Full access</strong><small>Allow unrestricted file and network access.</small></span></button>
+                    </div>
+                  </details>
+                  <details class="agent-composer__menu agent-composer__menu--goal">
+                    <summary class="agent-composer__control agent-composer__control--active"><svg class="app-icon"><use href="#i-agent" /></svg><span>Goal</span></summary>
+                    <div class="agent-composer__popover agent-composer__popover--goal">
+                      <label class="agent-composer__popover-field"><span>Goal for this chat</span><input value="Ship the next verified slice" placeholder="Optional outcome to keep in context" /></label>
+                      <button class="agent-composer__clear" type="button">Clear goal</button>
+                    </div>
+                  </details>
+                  <div class="agent-composer__attachment-list"><span class="agent-composer__attachment" title="app/src/App.tsx"><span>App.tsx</span><button type="button" aria-label="Remove attachment App.tsx"><svg class="app-icon"><use href="#i-close" /></svg></button></span></div>
                 </div>
                 <div class="agent-composer__actions">
-                  <button class="agent-composer__button agent-composer__button--danger" type="button" aria-label="Stop selected pane"><svg class="app-icon"><use href="#i-stop" /></svg></button>
+                  <details class="agent-composer__menu agent-composer__menu--runtime">
+                    <summary class="agent-composer__control agent-composer__control--runtime"><svg class="app-icon"><use href="#i-agent" /></svg><span>Codex</span><span class="agent-composer__control-detail">Default</span><span class="agent-composer__control-detail">High</span><svg class="app-icon"><use href="#i-chevron-down" /></svg></summary>
+                    <div class="agent-composer__popover agent-composer__popover--runtime">
+                      <div class="agent-composer__popover-title">Codex run settings</div>
+                      <label class="agent-composer__popover-field"><span>Model override</span><input value="" placeholder="Use Codex config default" /></label>
+                      <fieldset class="agent-composer__reasoning"><legend>Reasoning effort</legend><div><button type="button">Default</button><button type="button">Low</button><button type="button">Medium</button><button class="is-selected" type="button">High</button><button type="button">Extra high</button></div></fieldset>
+                    </div>
+                  </details>
                   <button class="agent-composer__send" type="button" aria-label="Send"><svg class="app-icon"><use href="#i-send" /></svg></button>
                 </div>
               </div>
@@ -467,7 +484,12 @@
       const error = document.querySelector(".editor-error");
       const status = document.querySelector(".editor-status");
       const save = document.querySelector(".editor-save");
-      if (state === "selected") {
+      if (state === "narrow-composer") {
+        const workbench = document.querySelector(".workbench");
+        workbench?.classList.remove("workbench--drawer-right", "workbench--tools-editor");
+        workbench?.classList.add("workbench--drawer-hidden");
+      }
+      if (["selected", "composer-permission", "composer-goal", "composer-runtime"].includes(state)) {
         tab.classList.remove("editor-tab--dirty");
         railDirty?.remove();
         tabDirty.remove();
@@ -634,6 +656,15 @@
             </div>
           </div>`,
         );
+      }
+      if (state === "composer-permission") {
+        document.querySelector(".agent-composer__menu--permission")?.setAttribute("open", "");
+      }
+      if (state === "composer-goal") {
+        document.querySelector(".agent-composer__menu--goal")?.setAttribute("open", "");
+      }
+      if (state === "composer-runtime") {
+        document.querySelector(".agent-composer__menu--runtime")?.setAttribute("open", "");
       }
     </script>
   </body>

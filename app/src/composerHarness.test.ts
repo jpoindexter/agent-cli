@@ -14,6 +14,8 @@ describe("composer harness", () => {
     expect(normalizeComposerHarnessState({
       approvalMode: "fullAccess",
       goal: " ship it ",
+      model: " gpt-5.5 ",
+      reasoningEffort: "high",
       selectedProfileId: "gemini",
       attachments: [
         { id: "a", kind: "file", label: "App.tsx", target: "/repo/App.tsx", createdAt: 10 },
@@ -22,6 +24,8 @@ describe("composer harness", () => {
     })).toEqual({
       approvalMode: "fullAccess",
       goal: "ship it",
+      model: "gpt-5.5",
+      reasoningEffort: "high",
       selectedProfileId: "gemini",
       attachments: [{ id: "a", kind: "file", label: "App.tsx", target: "/repo/App.tsx", createdAt: 10 }],
     });
@@ -45,6 +49,8 @@ describe("composer harness", () => {
     expect(composerPromptPayload("do it", {
       approvalMode: "ask",
       goal: "Fix API",
+      model: "",
+      reasoningEffort: "default",
       selectedProfileId: "codex",
       attachments: [createComposerAttachment({ kind: "file", label: "App.tsx", target: "/repo/App.tsx" }, 100)],
     })).toContain("Goal: Fix API\n\nAttachments:\n- file: App.tsx (/repo/App.tsx)\n\ndo it");

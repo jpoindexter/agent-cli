@@ -1,6 +1,7 @@
 import type { AgentApprovalMode } from "./agentSessionHandle";
 
 export type ComposerAttachmentKind = "file" | "browser" | "screenshot";
+export type ComposerReasoningEffort = "default" | "low" | "medium" | "high" | "xhigh";
 
 export type ComposerAttachment = {
   id: string;
@@ -13,6 +14,8 @@ export type ComposerAttachment = {
 export type ComposerHarnessState = {
   approvalMode: AgentApprovalMode;
   goal: string;
+  model: string;
+  reasoningEffort: ComposerReasoningEffort;
   selectedProfileId: string;
   attachments: ComposerAttachment[];
 };
@@ -24,12 +27,17 @@ export const MAX_COMPOSER_ATTACHMENTS = 6;
 export const defaultComposerHarnessState = (selectedProfileId = "codex"): ComposerHarnessState => ({
   approvalMode: "ask",
   goal: "",
+  model: "",
+  reasoningEffort: "default",
   selectedProfileId,
   attachments: [],
 });
 
 export const normalizeAgentApprovalMode = (value: unknown): AgentApprovalMode =>
   value === "approveSafe" || value === "fullAccess" || value === "ask" ? value : "ask";
+
+export const normalizeComposerReasoningEffort = (value: unknown): ComposerReasoningEffort =>
+  value === "low" || value === "medium" || value === "high" || value === "xhigh" ? value : "default";
 
 export const normalizeComposerAttachment = (value: unknown): ComposerAttachment | null => {
   if (typeof value !== "object" || value == null || Array.isArray(value)) return null;
@@ -55,6 +63,8 @@ export const normalizeComposerHarnessState = (
   return {
     approvalMode: normalizeAgentApprovalMode(item.approvalMode),
     goal: typeof item.goal === "string" ? item.goal.trim().slice(0, 160) : "",
+    model: typeof item.model === "string" ? item.model.trim().slice(0, 128) : "",
+    reasoningEffort: normalizeComposerReasoningEffort(item.reasoningEffort),
     selectedProfileId,
     attachments: Array.isArray(item.attachments)
       ? item.attachments.flatMap((attachment) => {
