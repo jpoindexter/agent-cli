@@ -1129,15 +1129,15 @@
     {
       "id": "CHAT-RICH-MESSAGES",
       "title": "Codex-grade message rendering",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "ui",
       "size": "M",
       "launch": "v1",
       "blocker": true,
-  "summary": "Reimplement the useful ChatPane patterns from Hashmark in React: safe Markdown/GFM, syntax-highlighted code with copy, progressive response updates, compact tool rows, retry/error recovery, elapsed state, scroll anchoring, and Jump to latest. Do not copy Hashmark's raw-HTML renderer or chat avatars.",
-  "progress": "Safe Markdown/GFM, highlighted code copy, compact tool rows, retry, elapsed state, scroll anchoring, Jump to latest, and accessible live status are implemented. The transport now uses codex app-server provider deltas; 55 Rust and 193 frontend tests, production build, package build, and chrome contract pass. Final unlocked native visual/stop confirmation remains before Done.",
-      "done": "Assistant Markdown, lists, tables, links, and code render safely while streaming; code blocks expose language and Copy; tool rows collapse after completion and preserve output/error; scrolling up stops auto-follow and exposes Jump to latest; Retry preserves the failed/partial turn; no hidden reasoning or terminal text is fabricated as chat content; keyboard and screen-reader states are tested.",
+  "summary": "Completed 2026-07-13: safe Markdown/GFM, highlighted code copy, progressive provider deltas, compact tool rows, retry/error recovery, elapsed state, scroll anchoring, Jump to latest, and accessible run status render in the structured chat surface without raw HTML, avatars, hidden reasoning, or terminal-text inference.",
+  "progress": "Packaged native inspection rendered a preserved real Markdown turn with heading, list, safe link, fenced TypeScript highlighting, language label, and working Code copied state. The persisted multi-chat transcript exposes the previously executed process-group Stop as Codex run stopped while the cancelled completion token remains absent. Automated coverage verifies valid GFM tables, unsafe HTML/link/image rejection, progressive updates, compact tool states, retry ownership, scroll anchoring, Jump to latest, elapsed labels, and live-region semantics.",
+      "done": "Executed 2026-07-13: current packaged app visual inspection plus the real Codex stop/recovery transcript satisfy the native rendering and Stop criteria; 218 frontend tests, 62 Rust tests, production build, and diff check pass. Evidence: docs/qa/chat-rich-messages/README.md and docs/qa/daily-driver/codex-multi-chat.md.",
       "buildOrder": 90.22
     },
     {
