@@ -193,8 +193,8 @@
       </header>
       <aside class="file-rail" aria-label="Project chats drawer">
         <div class="drawer-toolbar">
-          <span>Threads</span>
-          <button class="drawer-collapse-button" type="button" aria-label="New thread"><svg class="app-icon"><use href="#i-file-plus" /></svg></button>
+          <span>Chats</span>
+          <button class="drawer-collapse-button" type="button" aria-label="New chat"><svg class="app-icon"><use href="#i-file-plus" /></svg></button>
           <button class="drawer-collapse-button" type="button" aria-label="Reset interface"><svg class="app-icon"><use href="#i-reload" /></svg></button>
           <button class="drawer-collapse-button" type="button" aria-label="Collapse side drawer"><svg class="app-icon"><use href="#i-chevron-down" /></svg></button>
         </div>
@@ -208,21 +208,21 @@
               </span>
               <span class="project-row__state" aria-hidden="true"></span>
             </button>
-            <div class="session-list" aria-label="agent cli sessions">
-              <button class="session-row session-row--new" type="button" aria-label="New session in agent cli"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
-              <button class="session-row session-row--active session-row--running" type="button" aria-current="page" aria-label="Active session Project sessions, Running">
-                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Project sessions</span></span>
+            <div class="session-list" aria-label="agent cli chats">
+              <button class="session-row session-row--new" type="button" aria-label="New chat in agent cli"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New chat</span></span></button>
+              <button class="session-row session-row--active session-row--running" type="button" aria-current="page" aria-label="Active chat API fix, Running">
+                <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>API fix</span></span>
                 <span class="session-row__state"><svg class="app-icon"><use href="#i-loading" /></svg></span>
               </button>
-              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Update Codex handoff, Exited">
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to chat Update Codex handoff, Exited">
                 <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Update Codex handoff</span></span>
                 <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
               </button>
-              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Blocks, Exited">
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to chat Blocks, Exited">
                 <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Blocks</span></span>
                 <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
               </button>
-              <button class="session-row session-row--more" type="button" aria-expanded="false" aria-label="Show 2 more sessions in agent cli"><span>Show more (2)</span></button>
+              <button class="session-row session-row--more" type="button" aria-expanded="false" aria-label="Show 2 more chats in agent cli"><span>Show more (2)</span></button>
             </div>
           </div>
           <div class="project-group">
@@ -233,9 +233,9 @@
               </span>
               <span class="project-row__state" aria-hidden="true"></span>
             </button>
-            <div class="session-list" aria-label="postures sessions">
-              <button class="session-row session-row--new" type="button" aria-label="New session in postures"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
-              <button class="session-row session-row--exited" type="button" aria-label="Switch to session Build routine site, Exited">
+            <div class="session-list" aria-label="postures chats">
+              <button class="session-row session-row--new" type="button" aria-label="New chat in postures"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New chat</span></span></button>
+              <button class="session-row session-row--exited" type="button" aria-label="Switch to chat Build routine site, Exited">
                 <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Build routine site</span></span>
                 <span class="session-row__state"><svg class="app-icon"><use href="#i-workspace" /></svg></span>
               </button>
@@ -249,9 +249,9 @@
               </span>
               <span class="project-row__state" aria-hidden="true"></span>
             </button>
-            <div class="session-list" aria-label="Vanta sessions">
-              <button class="session-row session-row--new" type="button" aria-label="New session in Vanta"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New session</span></span></button>
-              <button class="session-row session-row--attention" type="button" aria-label="Switch to session Harness audit, Needs attention">
+            <div class="session-list" aria-label="Vanta chats">
+              <button class="session-row session-row--new" type="button" aria-label="New chat in Vanta"><span class="session-row__copy"><svg class="app-icon"><use href="#i-file-plus" /></svg><span>New chat</span></span></button>
+              <button class="session-row session-row--attention" type="button" aria-label="Switch to chat Harness audit, Needs attention">
                 <span class="session-row__copy"><svg class="app-icon"><use href="#i-file" /></svg><span>Harness audit</span></span>
                 <span class="session-row__state"><svg class="app-icon"><use href="#i-error" /></svg></span>
               </button>
@@ -361,7 +361,7 @@
             <iframe
               class="browser-frame"
               title="Browser preview: http://localhost:5173/"
-              srcdoc="<style>body{margin:0;background:#f6f7f8;color:#101010;font-family:Inter,system-ui,sans-serif}.demo{display:grid;place-content:center;height:100vh;text-align:center}.demo h1{font-size:22px;margin:0 0 8px}.demo p{font-size:13px;color:#5f6368;margin:0}</style><div class='demo'><h1>Local preview</h1><p>localhost:5173 · project session state</p></div>"
+              srcdoc="<style>body{margin:0;background:#f6f7f8;color:#101010;font-family:Inter,system-ui,sans-serif}.demo{display:grid;place-content:center;height:100vh;text-align:center}.demo h1{font-size:22px;margin:0 0 8px}.demo p{font-size:13px;color:#5f6368;margin:0}</style><div class='demo'><h1>Local preview</h1><p>localhost:5173 · selected chat context</p></div>"
             ></iframe>
           </div>
         </section>
@@ -369,7 +369,7 @@
           <div class="terminal-titlebar">
             <div class="terminal-profile">
               <span class="terminal-kicker">Thread</span>
-              <span class="terminal-title"><svg class="app-icon"><use href="#i-agent" /></svg><span>Codex</span></span>
+              <span class="terminal-title"><svg class="app-icon"><use href="#i-agent" /></svg><span>API fix</span></span>
               <span class="terminal-command">codex</span>
               <span class="terminal-mode">login shell</span>
               <span class="terminal-state terminal-state--running"><svg class="app-icon"><use href="#i-loading" /></svg><span>Running</span></span>
@@ -412,21 +412,17 @@
               <canvas class="term" width="960" height="260" tabindex="0" role="application" aria-label="Codex terminal pane. Type to send keyboard input to the active process."></canvas>
             </div>
             <div class="agent-chat-surface">
-              <div class="agent-activity" aria-label="Agent activity" aria-live="polite">
-                <div class="agent-activity__row agent-activity__row--running"><svg class="app-icon"><use href="#i-loading" /></svg><span class="agent-activity__label">Running</span><span class="agent-activity__detail">API fix - Codex</span></div>
-                <div class="agent-activity__row agent-activity__row--thinking"><svg class="app-icon"><use href="#i-thinking" /></svg><span class="agent-activity__label">Prompt sent</span><span class="agent-activity__detail">API fix</span></div>
-                <div class="agent-activity__row agent-activity__row--complete"><svg class="app-icon"><use href="#i-check" /></svg><span class="agent-activity__label">Edited a file</span><span class="agent-activity__detail">App.tsx</span></div>
-                <div class="agent-activity__row agent-activity__row--complete"><svg class="app-icon"><use href="#i-check" /></svg><span class="agent-activity__label">Ran command</span><span class="agent-activity__detail">save</span></div>
-                <div class="agent-activity__row agent-activity__row--error"><svg class="app-icon"><use href="#i-error" /></svg><span class="agent-activity__label">Command failed</span><span class="agent-activity__detail">npm test</span></div>
+              <div class="chat-thread" aria-label="Chat messages" aria-live="polite">
+                <article class="chat-message chat-message--user"><header><strong>You</strong></header><div class="chat-message__text">Fix the first failing test and explain the change.</div></article>
+                <article class="chat-message chat-message--assistant"><header><strong>Codex</strong><span class="chat-message__running">Working</span></header><div class="chat-message__text">I found the stale project-session wording in the chrome fixture. I am updating it to the structured chat model and rerunning the visual contract.</div></article>
+                <article class="chat-message chat-message--tool"><header><strong>Activity</strong></header><details class="chat-tool" open><summary>Ran command</summary><pre>npm test -- shellCssContract.test.ts</pre></details></article>
+                <section class="agent-activity-log" aria-label="App activity timeline">
+                  <div class="agent-activity-log__list">
+                    <article class="agent-thread-event agent-thread-event--complete"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-check" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Edited a file</strong><span>08:33</span><span>Files</span></div><div class="agent-thread-event__detail">docs/qa/editor-parity.html</div><div class="agent-thread-event__meta">review diff</div></div></article>
+                    <article class="agent-thread-event agent-thread-event--error"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-error" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Command failed</strong><span>08:35</span><span>Errors</span></div><div class="agent-thread-event__detail">stale fixture contract</div><div class="agent-thread-event__meta">exit 1 · app action</div></div></article>
+                  </div>
+                </section>
               </div>
-              <section class="agent-activity-log" aria-label="Agent activity timeline">
-                <div class="agent-activity-log__list">
-                  <article class="agent-thread-event agent-thread-event--thinking"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-thinking" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Prompt sent</strong><span>08:32</span><span>Prompts</span></div><div class="agent-thread-event__detail">API fix</div><div class="agent-thread-event__meta">terminal</div></div></article>
-                  <article class="agent-thread-event agent-thread-event--complete"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-check" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Action approved</strong><span>08:32</span><span>Approvals</span></div><div class="agent-thread-event__detail">Save file</div><div class="agent-thread-event__meta">review diff</div></div></article>
-                  <article class="agent-thread-event agent-thread-event--complete"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-check" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Edited a file</strong><span>08:33</span><span>Files</span></div><div class="agent-thread-event__detail">App.tsx</div><div class="agent-thread-event__meta">review diff</div></div></article>
-                  <article class="agent-thread-event agent-thread-event--error"><div class="agent-thread-event__icon"><svg class="app-icon"><use href="#i-error" /></svg></div><div class="agent-thread-event__body"><div class="agent-thread-event__header"><strong>Command failed</strong><span>08:35</span><span>Errors</span></div><div class="agent-thread-event__detail">npm test</div><div class="agent-thread-event__meta">exit 1 · terminal</div></div></article>
-                </div>
-              </section>
             </div>
           </div>
           <div class="agent-composer" aria-label="Agent composer">
@@ -454,7 +450,7 @@
       </main>
       <footer class="status-bar" aria-label="Workspace status">
         <div class="status-bar__group status-bar__group--left"><span class="status-bar__item"><svg class="app-icon"><use href="#i-workspace" /></svg><span>agent cli</span></span></div>
-        <div class="status-bar__group status-bar__group--center"><span class="status-bar__item">Project sessions</span><span class="status-bar__item"><svg class="app-icon"><use href="#i-loading" /></svg><span>Codex</span><span>Running</span></span></div>
+        <div class="status-bar__group status-bar__group--center"><span class="status-bar__item">API fix</span><span class="status-bar__item"><svg class="app-icon"><use href="#i-loading" /></svg><span>Codex</span><span>Running</span></span></div>
         <div class="status-bar__group status-bar__group--right"><span class="status-bar__item">Chat</span><span class="status-bar__item">Prettier</span></div>
       </footer>
     </div>

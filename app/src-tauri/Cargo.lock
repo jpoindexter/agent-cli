@@ -13,6 +13,7 @@ name = "agent-cli"
 version = "0.1.0"
 dependencies = [
  "ignore",
+ "libc",
  "libghostty-vt",
  "notify",
  "notify-debouncer-mini",

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-12T22:08:42.863Z",
-  "commit": "f34b277+dirty",
+  "generatedAt": "2026-07-13T09:37:45.434Z",
+  "commit": "0edecb3+dirty",
   "branch": "main",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
   "status": "implementation-ready-for-live-runs",
@@ -38,13 +38,13 @@
           "label": "actual app shell at 1440x900",
           "file": "docs/qa/app-shell/first-open-1440.png",
           "pass": true,
-          "bytes": 54758
+          "bytes": 61269
         },
         {
           "label": "actual app shell at 900x640",
           "file": "docs/qa/app-shell/first-open-900.png",
           "pass": true,
-          "bytes": 40368
+          "bytes": 47112
         },
         {
           "label": "native Tauri run with live pty output",
@@ -59,50 +59,50 @@
     },
     {
       "id": "two-agents-same-project",
-      "title": "Two agents: same project",
-      "goal": "One project can own multiple real agent panes with focus, labels, lifecycle, and persisted layout.",
+      "title": "Two structured chats: same project",
+      "goal": "One project can own multiple independent provider-backed chats with separate messages, run state, cancellation, and persisted provider identity.",
       "checks": [
         {
-          "label": "backend can create another pane",
-          "file": "app/src-tauri/src/lib.rs",
+          "label": "chat records are keyed independently",
+          "file": "app/src/chatConversation.ts",
           "pass": true,
-          "evidence": "create_pane"
+          "evidence": "ChatConversationRecords"
         },
         {
-          "label": "backend can focus a pane",
-          "file": "app/src-tauri/src/lib.rs",
+          "label": "provider identity persists per chat",
+          "file": "app/src/chatConversation.ts",
           "pass": true,
-          "evidence": "focus_pane"
+          "evidence": "providerThreadId"
         },
         {
-          "label": "backend can close a pane",
-          "file": "app/src-tauri/src/lib.rs",
+          "label": "backend owns multiple live runs by id",
+          "file": "app/src-tauri/src/chat_harness.rs",
           "pass": true,
-          "evidence": "close_pane"
+          "evidence": "ChatRunState"
         },
         {
-          "label": "frontend scopes live panes by project and session",
-          "file": "app/src/App.tsx",
+          "label": "each chat run owns an isolated process group",
+          "file": "app/src-tauri/src/chat_harness.rs",
           "pass": true,
-          "evidence": "terminalPanesByContext"
+          "evidence": "process_group(0)"
         },
         {
-          "label": "workspace restore binds panes to the requested session",
-          "file": "app/src/App.tsx",
+          "label": "structured messages render separately from raw terminal",
+          "file": "app/src/ChatThreadSurface.tsx",
           "pass": true,
-          "evidence": "paneContextKey(root, requestedSessionId)"
+          "evidence": "ChatThreadSurface"
         },
         {
-          "label": "pane layout persists by session",
-          "file": "app/src/App.tsx",
+          "label": "executed packaged multi-chat record",
+          "file": "docs/qa/daily-driver/codex-multi-chat.md",
           "pass": true,
-          "evidence": "paneLayoutsBySession"
+          "bytes": 3204
         },
         {
-          "label": "pane manager contract doc",
-          "file": "docs/pane-manager.md",
+          "label": "packaged multi-chat screenshot",
+          "file": "docs/qa/daily-driver/codex-multi-chat-native.png",
           "pass": true,
-          "bytes": 2032
+          "bytes": 773369
         }
       ],
       "passed": 7,
@@ -159,12 +159,12 @@
   "metrics": {
     "assetSizes": [
       {
-        "file": "app/dist/assets/index-BApo8pt5.js",
-        "bytes": 1216932
+        "file": "app/dist/assets/index-D0qNotY0.css",
+        "bytes": 86707
       },
       {
-        "file": "app/dist/assets/index-BdR901f9.css",
-        "bytes": 85006
+        "file": "app/dist/assets/index-eNGzsiBi.js",
+        "bytes": 1222756
       },
       {
         "file": "app/dist/assets/inter-latin-400-normal-C38fXH4l.woff2",
@@ -210,15 +210,15 @@
     "screenshotSizes": [
       {
         "file": "docs/qa/app-shell/first-open-1440.png",
-        "bytes": 54758
+        "bytes": 61269
       },
       {
         "file": "docs/qa/app-shell/first-open-1024.png",
-        "bytes": 42136
+        "bytes": 49008
       },
       {
         "file": "docs/qa/app-shell/first-open-900.png",
-        "bytes": 40368
+        "bytes": 47112
       },
       {
         "file": "docs/qa/app-shell/native-run.png",
@@ -226,25 +226,26 @@
       },
       {
         "file": "docs/qa/editor-parity/selected.png",
-        "bytes": 126634
+        "bytes": 127889
       },
       {
         "file": "docs/qa/editor-parity/narrow-composer.png",
-        "bytes": 86916
+        "bytes": 83691
       },
       {
         "file": "docs/qa/editor-parity/diff-review.png",
-        "bytes": 136696
+        "bytes": 137959
       },
       {
         "file": "docs/qa/editor-parity/chrome-states.png",
-        "bytes": 132370
+        "bytes": 134160
       }
     ]
   },
   "nextManualRuns": [
     "Time one-project edit + agent + detected preview without opening VS Code.",
-    "Time two-agent same-project run with pane focus/restart/close.",
-    "Time three-project switch/relaunch run with restored sessions and previews."
+    "Repeat two-chat same-project latency capture with exact send/switch/stop timestamps.",
+    "Time three-project switch/relaunch run with restored sessions and previews.",
+    "Run a real Gemini prompt/response in Raw terminal after accepting the project trust prompt."
   ]
 }

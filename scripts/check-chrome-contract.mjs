@@ -135,6 +135,12 @@ assert(appTsx.includes("quickOpenOpen"), "App chrome must expose a Cmd+P quick-o
 assert(appTsx.includes("search_workspace_text"), "Search drawer must call the workspace text search command");
 assert(appTsx.includes("search-scope-tabs"), "Search drawer must expose Files/Text scopes");
 assert(editorQaFixture.includes("Project chats drawer"), "Editor QA fixture must reflect the project-chat drawer");
+assert(editorQaFixture.includes("<span>Chats</span>"), "Editor QA fixture must use the current Chats drawer title");
+assert(!editorQaFixture.includes("<span>Threads</span>"), "Editor QA fixture must not restore the superseded Threads title");
+assert(!editorQaFixture.includes("Project sessions"), "Editor QA fixture must not present workspace sessions as the chat product noun");
+assert(editorQaFixture.includes('class="chat-thread"'), "Editor QA fixture must render the structured chat timeline");
+assert(editorQaFixture.includes("chat-message--user") && editorQaFixture.includes("chat-message--assistant"), "Editor QA fixture must show populated user and assistant chat messages");
+assert(!editorQaFixture.includes('class="agent-activity"'), "Editor QA fixture must not restore the superseded separate activity strip");
 assert(!editorQaFixture.includes(">Drawer<"), "Editor QA fixture must not show a generic Drawer label");
 assert(editorQaFixture.includes("workbench--tools-editor"), "Editor QA fixture must include the current single-editor tray mode");
 assert(editorQaFixture.includes("tool-tray-switcher"), "Editor QA fixture must render tool tray tabs");
@@ -159,15 +165,45 @@ const requiredScreenshots = [
   "docs/qa/editor-parity/context-menu.png",
   "docs/qa/editor-parity/chrome-states.png",
   "docs/qa/chrome-demo/palette.png",
+  "docs/qa/chrome-v2/native-desktop.png",
+  "docs/qa/chrome-v2/native-900.png",
 ];
+
+const pngDimensions = (absolute) => {
+  const data = fs.readFileSync(absolute);
+  const signature = "89504e470d0a1a0a";
+  if (data.length < 24 || data.subarray(0, 8).toString("hex") !== signature) return null;
+  return { width: data.readUInt32BE(16), height: data.readUInt32BE(20) };
+};
+
+const exactScreenshotDimensions = new Map([
+  ["docs/qa/app-shell/first-open-1440.png", { width: 1440, height: 900 }],
+  ["docs/qa/app-shell/first-open-1024.png", { width: 1024, height: 640 }],
+  ["docs/qa/app-shell/first-open-900.png", { width: 900, height: 640 }],
+]);
 
 for (const file of requiredScreenshots) {
   const absolute = path.join(root, file);
   assert(fs.existsSync(absolute), `Missing chrome QA screenshot ${file}`);
   if (fs.existsSync(absolute)) {
     assert(fs.statSync(absolute).size > 1024, `Chrome QA screenshot ${file} looks empty`);
+    const dimensions = pngDimensions(absolute);
+    assert(dimensions != null, `Chrome QA screenshot ${file} must be a real PNG`);
+    const expected = exactScreenshotDimensions.get(file);
+    if (dimensions && expected) {
+      assert(
+        dimensions.width === expected.width && dimensions.height === expected.height,
+        `Chrome QA screenshot ${file} must be ${expected.width}x${expected.height}, got ${dimensions.width}x${dimensions.height}`,
+      );
+    }
   }
 }
+
+const nativeDesktop = pngDimensions(path.join(root, "docs/qa/chrome-v2/native-desktop.png"));
+const nativeNarrow = pngDimensions(path.join(root, "docs/qa/chrome-v2/native-900.png"));
+assert(nativeDesktop && nativeDesktop.width >= 1200 && nativeDesktop.height >= 700, "Packaged desktop chrome proof must be at least 1200x700");
+assert(nativeNarrow && nativeNarrow.width >= 900 && nativeNarrow.width <= 930, "Packaged narrow chrome proof must be captured at the 900px minimum window");
+assert(nativeNarrow && nativeNarrow.height >= 640 && nativeNarrow.height <= 670, "Packaged narrow chrome proof must be captured near the 640px minimum height");
 
 if (fail.length > 0) {
   console.error("Chrome contract check failed:");

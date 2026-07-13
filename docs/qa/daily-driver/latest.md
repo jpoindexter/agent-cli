@@ -1,7 +1,7 @@
 # Daily Driver Metrics
 
-Generated: 2026-07-12T22:08:42.863Z
-Commit: f34b277+dirty
+Generated: 2026-07-13T09:37:45.434Z
+Commit: 0edecb3+dirty
 Status: implementation-ready-for-live-runs
 
 ## Scenarios
@@ -19,18 +19,18 @@ Status: implementation-ready (7/7)
 - PASS actual app shell at 900x640 — docs/qa/app-shell/first-open-900.png
 - PASS native Tauri run with live pty output — docs/qa/app-shell/native-run.png
 
-### Two agents: same project
+### Two structured chats: same project
 
-Goal: One project can own multiple real agent panes with focus, labels, lifecycle, and persisted layout.
+Goal: One project can own multiple independent provider-backed chats with separate messages, run state, cancellation, and persisted provider identity.
 Status: implementation-ready (7/7)
 
-- PASS backend can create another pane — app/src-tauri/src/lib.rs
-- PASS backend can focus a pane — app/src-tauri/src/lib.rs
-- PASS backend can close a pane — app/src-tauri/src/lib.rs
-- PASS frontend scopes live panes by project and session — app/src/App.tsx
-- PASS workspace restore binds panes to the requested session — app/src/App.tsx
-- PASS pane layout persists by session — app/src/App.tsx
-- PASS pane manager contract doc — docs/pane-manager.md
+- PASS chat records are keyed independently — app/src/chatConversation.ts
+- PASS provider identity persists per chat — app/src/chatConversation.ts
+- PASS backend owns multiple live runs by id — app/src-tauri/src/chat_harness.rs
+- PASS each chat run owns an isolated process group — app/src-tauri/src/chat_harness.rs
+- PASS structured messages render separately from raw terminal — app/src/ChatThreadSurface.tsx
+- PASS executed packaged multi-chat record — docs/qa/daily-driver/codex-multi-chat.md
+- PASS packaged multi-chat screenshot — docs/qa/daily-driver/codex-multi-chat-native.png
 
 ### Three projects: switch and relaunch
 
@@ -47,6 +47,7 @@ Status: implementation-ready (6/6)
 ## Next Manual Runs
 
 - Time one-project edit + agent + detected preview without opening VS Code.
-- Time two-agent same-project run with pane focus/restart/close.
+- Repeat two-chat same-project latency capture with exact send/switch/stop timestamps.
 - Time three-project switch/relaunch run with restored sessions and previews.
+- Run a real Gemini prompt/response in Raw terminal after accepting the project trust prompt.
 

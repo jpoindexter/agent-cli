@@ -2,8 +2,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
+#[cfg(unix)]
+use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::mpsc::{channel, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -85,6 +87,22 @@ fn sandbox_for_approval_mode(mode: &str) -> &'static str {
     }
 }
 
+fn isolate_chat_process(command: &mut Command) {
+    #[cfg(unix)]
+    command.process_group(0);
+}
+
+fn terminate_chat_process(child: &mut Child, process_group_id: u32) {
+    #[cfg(unix)]
+    {
+        let result = unsafe { libc::kill(-(process_group_id as i32), libc::SIGTERM) };
+        if result == 0 {
+            return;
+        }
+    }
+    let _ = child.kill();
+}
+
 fn codex_command_line(request: &ChatRunRequest) -> Result<String, String> {
     if request.provider != "codex" {
         return Err(format!(
@@ -152,9 +170,11 @@ pub(crate) fn start_chat_run(
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
+    isolate_chat_process(&mut command);
     let mut child = command
         .spawn()
         .map_err(|error| format!("Could not launch structured Codex chat: {error}"))?;
+    let process_group_id = child.id();
     if let Some(mut stdin) = child.stdin.take() {
         stdin
             .write_all(prompt.as_bytes())
@@ -205,7 +225,7 @@ pub(crate) fn start_chat_run(
             match stop_rx.try_recv() {
                 Ok(()) => {
                     stopped = true;
-                    let _ = child.kill();
+                    terminate_chat_process(&mut child, process_group_id);
                 }
                 Err(TryRecvError::Disconnected) => {}
                 Err(TryRecvError::Empty) => {}
@@ -272,6 +292,48 @@ mod tests {
             prompt: "hello".into(),
             approval_mode: mode.into(),
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn stop_terminates_the_entire_chat_process_group() {
+        let mut command = Command::new("/bin/sh");
+        command
+            .arg("-c")
+            .arg("sleep 30")
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null());
+        isolate_chat_process(&mut command);
+        let mut child = command.spawn().expect("spawn isolated chat process");
+        let process_group_id = child.id();
+
+        std::thread::sleep(Duration::from_millis(50));
+        terminate_chat_process(&mut child, process_group_id);
+
+        let deadline = std::time::Instant::now() + Duration::from_secs(2);
+        while std::time::Instant::now() < deadline {
+            if child
+                .try_wait()
+                .expect("poll stopped chat process")
+                .is_some()
+            {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        assert!(
+            child
+                .try_wait()
+                .expect("poll terminated chat process")
+                .is_some(),
+            "chat process did not exit after cancellation"
+        );
+        assert_ne!(
+            unsafe { libc::kill(-(process_group_id as i32), 0) },
+            0,
+            "a descendant remained alive in the chat process group"
+        );
     }
 
     #[test]

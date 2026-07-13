@@ -46,16 +46,16 @@ const scenarios = [
   },
   {
     id: "two-agents-same-project",
-    title: "Two agents: same project",
-    goal: "One project can own multiple real agent panes with focus, labels, lifecycle, and persisted layout.",
+    title: "Two structured chats: same project",
+    goal: "One project can own multiple independent provider-backed chats with separate messages, run state, cancellation, and persisted provider identity.",
     checks: [
-      sourceContains("app/src-tauri/src/lib.rs", "create_pane", "backend can create another pane"),
-      sourceContains("app/src-tauri/src/lib.rs", "focus_pane", "backend can focus a pane"),
-      sourceContains("app/src-tauri/src/lib.rs", "close_pane", "backend can close a pane"),
-      sourceContains("app/src/App.tsx", "terminalPanesByContext", "frontend scopes live panes by project and session"),
-      sourceContains("app/src/App.tsx", "paneContextKey(root, requestedSessionId)", "workspace restore binds panes to the requested session"),
-      sourceContains("app/src/App.tsx", "paneLayoutsBySession", "pane layout persists by session"),
-      fileExists("docs/pane-manager.md", "pane manager contract doc", 1024),
+      sourceContains("app/src/chatConversation.ts", "ChatConversationRecords", "chat records are keyed independently"),
+      sourceContains("app/src/chatConversation.ts", "providerThreadId", "provider identity persists per chat"),
+      sourceContains("app/src-tauri/src/chat_harness.rs", "ChatRunState", "backend owns multiple live runs by id"),
+      sourceContains("app/src-tauri/src/chat_harness.rs", "process_group(0)", "each chat run owns an isolated process group"),
+      sourceContains("app/src/ChatThreadSurface.tsx", "ChatThreadSurface", "structured messages render separately from raw terminal"),
+      fileExists("docs/qa/daily-driver/codex-multi-chat.md", "executed packaged multi-chat record", 1024),
+      fileExists("docs/qa/daily-driver/codex-multi-chat-native.png", "packaged multi-chat screenshot", 1024),
     ],
   },
   {
@@ -119,8 +119,9 @@ const result = {
   },
   nextManualRuns: [
     "Time one-project edit + agent + detected preview without opening VS Code.",
-    "Time two-agent same-project run with pane focus/restart/close.",
+    "Repeat two-chat same-project latency capture with exact send/switch/stop timestamps.",
     "Time three-project switch/relaunch run with restored sessions and previews.",
+    "Run a real Gemini prompt/response in Raw terminal after accepting the project trust prompt.",
   ],
 };
 

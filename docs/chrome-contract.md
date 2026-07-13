@@ -1,6 +1,6 @@
 # Chrome Contract
 
-Status: v2 guardrail prepared; final lock remains pending CHROME-EYEBALL-SIGNOFF. Control grammar was added after the boxed-button drift; see `docs/chrome-delta-audit.md` and DECISIONS.md 2026-07-11.
+Status: v2 gate prepared and packaged native engineering review complete 2026-07-13. Jason's explicit sign-off remains before the contract is formally locked. Control grammar was added after the boxed-button drift; see `docs/chrome-delta-audit.md` and DECISIONS.md 2026-07-11.
 
 Keelhouse chrome follows the accepted `demo/keelhouse-chrome-demo.html` direction: graphite surfaces, steel-cyan accent, direct project/chat drawer, agent-first center, and editor/browser/git/raw terminal as optional trays. The demo is binding at the control-grammar level, not only tokens.
 
@@ -57,9 +57,18 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 - Terminal toolbar metadata is deliberately reduced to avoid collisions with agent/tray controls; selected profile is already visible in the app titlebar and pane chips.
 - Browser preview chrome responds to tray width; narrow trays hide the redundant Open button before controls overlap.
 
-## Documented Exceptions (grammar-scale, per CHROME-EYEBALL-SIGNOFF)
+## Native Engineering Review
 
-No new exceptions are locked yet. Jason's sign-off must record any control-density exception before CHROME-CONTRACT-V2 is marked complete.
+**Engineering verdict: no grammar exception found.** The packaged `Keelhouse.app` was reviewed through Computer Use after Reset interface at 1232×768 desktop and 915×652 minimum-window evidence. Desktop restores Chats + continuous chat/composer + Files-right; the narrow layout removes the dock rather than compressing or overlapping chat. The side drawer, active chat stripe, titlebar toggles, composer, status bar, and tool tabs remain readable and coherent. Reset interface recovered the approved Files-first layout from a stale Browser-right preference. Raw terminal remained a distinct titlebar toggle.
+
+Native evidence:
+
+- `docs/qa/chrome-v2/native-desktop.png` — packaged desktop layout after Reset interface.
+- `docs/qa/chrome-v2/native-900.png` — packaged minimum-width layout with the tool dock collapsed.
+
+The transient crash-recovery notice is dismissible status feedback, not persistent chrome; it was dismissed before sign-off captures. A restored Browser preference may show the target page's own white or error surface, but first-open/reset remains Files-first.
+
+This review is implementation evidence, not a substitute for Jason's explicit visual sign-off. `CHROME-EYEBALL-SIGNOFF` and the formal `CHROME-CONTRACT-V2` lock remain open until that verdict is recorded.
 
 ## Tool Tray Signals
 
@@ -76,7 +85,7 @@ Run from `app/`:
 npm run qa:chrome-contract
 ```
 
-The gate checks the accepted demo, real app-shell sources, 1440/1024/900 first-open and populated screenshots, overlay evidence, steel-cyan tokens, rejected warm accents/avatar labels, flat toolbar grammar, centered composer values, Files-first tray structure, crumb overflow, and detached-HEAD labeling.
+The gate checks the accepted demo, real app-shell sources, exact 1440/1024/900 first-open dimensions, populated and overlay evidence, packaged native desktop/minimum-window screenshots, steel-cyan tokens, rejected warm accents/avatar labels, flat toolbar grammar, centered composer values, Files-first tray structure, crumb overflow, and detached-HEAD labeling.
 
 For visible chrome changes, run both:
 
@@ -85,4 +94,4 @@ npm run qa:shell
 npm run qa:editor
 ```
 
-`qa:shell` captures the actual React app. `qa:editor` remains a deterministic fixture for editor, menu, diff, modal, and failure states; fixture evidence alone is not enough to claim the app shell works. Native proof for this reset is `docs/qa/app-shell/native-run.png`.
+`qa:shell` captures the actual React app. `qa:editor` remains a deterministic fixture for editor, menu, diff, modal, and failure states; fixture evidence alone is not enough to claim the app shell works. Packaged native proof is stored under `docs/qa/chrome-v2/`.
