@@ -4843,7 +4843,6 @@ body,
   font-weight: 400;
 }
 
-.session-row__copy > .app-icon,
 .session-row__state > .app-icon {
   display: none;
 }

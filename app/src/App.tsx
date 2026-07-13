@@ -4995,7 +4995,6 @@ function App() {
                           onContextMenu={(event) => openContextMenu(event, projectSessionContextMenuItems(project.path, session))}
                         >
                           <span className="session-row__copy">
-                            <AppIcon name="file" />
                             <span>{session.title}</span>
                           </span>
                           <span className="session-row__state">
