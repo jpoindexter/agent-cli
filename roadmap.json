@@ -1162,7 +1162,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v1",
-      "summary": "Adapt Hashmark's useful Compose behaviors without its provider sprawl: per-chat draft/history, Up/Down recall, @file search, removable file/editor/browser context chips, paste/drop images, visible model/permission state, and accurate context payloads.",
+  "summary": "Adapt Hashmark's useful Compose behaviors without its provider sprawl: per-chat draft/history, Up/Down recall, @file search, removable file/editor/browser context chips, paste/drop images, visible model/permission state, and accurate context payloads.",
+  "progress": "Draft text and 20-entry Up/Down recall history now persist independently in each chat's composer harness and restore on chat switch/relaunch. Existing removable file/browser chips and visible model/permission state remain. Bounded readable file payloads, @file search, image paste/drop, sent-context inspection, and preflight rejection for unsafe attachments remain.",
       "done": "Switching chats preserves independent drafts and sent history; @file attaches bounded readable content with visible removable chips; images can paste/drop with preview and removal; Enter/Shift+Enter/Escape/Up/Down remain predictable; the exact context sent to Codex is inspectable; oversized/binary/sensitive attachments fail before transmission with a clear reason.",
       "buildOrder": 90.24
     },

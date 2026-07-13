@@ -18,6 +18,8 @@ export type ComposerHarnessState = {
   reasoningEffort: ComposerReasoningEffort;
   selectedProfileId: string;
   attachments: ComposerAttachment[];
+  draft: string;
+  history: string[];
 };
 
 export type ComposerHarnessRecords = Record<string, ComposerHarnessState>;
@@ -31,6 +33,8 @@ export const defaultComposerHarnessState = (selectedProfileId = "codex"): Compos
   reasoningEffort: "default",
   selectedProfileId,
   attachments: [],
+  draft: "",
+  history: [],
 });
 
 export const normalizeAgentApprovalMode = (value: unknown): AgentApprovalMode =>
@@ -71,6 +75,10 @@ export const normalizeComposerHarnessState = (
           const normalized = normalizeComposerAttachment(attachment);
           return normalized ? [normalized] : [];
         }).slice(0, MAX_COMPOSER_ATTACHMENTS)
+      : [],
+    draft: typeof item.draft === "string" ? item.draft.slice(0, 100_000) : "",
+    history: Array.isArray(item.history)
+      ? item.history.flatMap((entry) => typeof entry === "string" && entry.trim() ? [entry.slice(0, 100_000)] : []).slice(-20)
       : [],
   };
 };

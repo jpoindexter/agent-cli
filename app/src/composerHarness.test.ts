@@ -17,6 +17,8 @@ describe("composer harness", () => {
       model: " gpt-5.5 ",
       reasoningEffort: "high",
       selectedProfileId: "gemini",
+      draft: "continue here",
+      history: ["first", "second"],
       attachments: [
         { id: "a", kind: "file", label: "App.tsx", target: "/repo/App.tsx", createdAt: 10 },
         { id: "", kind: "file", label: "bad", target: "/bad", createdAt: 10 },
@@ -28,6 +30,8 @@ describe("composer harness", () => {
       reasoningEffort: "high",
       selectedProfileId: "gemini",
       attachments: [{ id: "a", kind: "file", label: "App.tsx", target: "/repo/App.tsx", createdAt: 10 }],
+      draft: "continue here",
+      history: ["first", "second"],
     });
   });
 
@@ -53,6 +57,8 @@ describe("composer harness", () => {
       reasoningEffort: "default",
       selectedProfileId: "codex",
       attachments: [createComposerAttachment({ kind: "file", label: "App.tsx", target: "/repo/App.tsx" }, 100)],
+      draft: "",
+      history: [],
     })).toContain("Goal: Fix API\n\nAttachments:\n- file: App.tsx (/repo/App.tsx)\n\ndo it");
   });
 });

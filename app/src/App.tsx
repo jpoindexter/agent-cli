@@ -1279,6 +1279,26 @@ function App() {
     await storeRef.current?.save();
   };
 
+  useEffect(() => {
+    setComposerDraft(activeComposerHarness.draft);
+    setComposerHistory(activeComposerHarness.history);
+    setComposerHistoryIndex(null);
+  }, [activeComposerHarness.draft, activeComposerHarness.history, activeComposerHarnessKey]);
+
+  useEffect(() => {
+    const key = activeComposerHarnessKey;
+    if (!key) return;
+    const timer = window.setTimeout(() => {
+      const previous = composerHarnessBySessionRef.current[key] ?? defaultComposerHarnessState(launchProfileRef.current.id);
+      if (previous.draft === composerDraft && previous.history === composerHistory) return;
+      void persistComposerHarnessRecords({
+        ...composerHarnessBySessionRef.current,
+        [key]: { ...previous, draft: composerDraft, history: composerHistory },
+      });
+    }, 180);
+    return () => window.clearTimeout(timer);
+  }, [activeComposerHarnessKey, composerDraft, composerHistory]);
+
   const updateActiveComposerHarness = async (updater: (state: ComposerHarnessState) => ComposerHarnessState) => {
     const key = activeComposerHarnessKey;
     if (!key) return null;
@@ -2248,9 +2268,11 @@ function App() {
           status: "complete",
         });
       }
-      setComposerHistory((history) => composerHistoryAfterSubmit(history, submittedDraft));
+      const nextHistory = composerHistoryAfterSubmit(composerHistory, submittedDraft);
+      setComposerHistory(nextHistory);
       setComposerHistoryIndex(null);
       setComposerDraft("");
+      void updateActiveComposerHarness((state) => ({ ...state, draft: "", history: nextHistory }));
     } catch (err) {
       setComposerError(String(err));
       const chatId = activeComposerHarnessKey;
