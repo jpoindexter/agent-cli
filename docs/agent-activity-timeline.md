@@ -35,4 +35,4 @@ The app should show Codex-style visible agent activity: concise state and event 
 
 ## Current Implementation
 
-AGENT-ACTIVITY and AGENT-ACTIVITY-LOG provide observable app-owned provenance below the terminal-backed Run output and persist up to 200 user-safe events. Provider-native summaries and structured tool events remain part of DIRECT-AGENT-HARNESS or explicit CLI hooks; they are not present in the terminal-backed path today.
+AGENT-ACTIVITY and AGENT-ACTIVITY-LOG provide observable app-owned provenance alongside the structured chat timeline and persist up to 200 user-safe events. Provider-native summaries and structured tool events belong to DIRECT-AGENT-HARNESS and its provider adapters; raw-terminal activity remains separate and is never promoted into chat messages by text inference.

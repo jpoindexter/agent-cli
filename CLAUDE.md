@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-**Keelhouse** — a native macOS agent cockpit (Tauri 2 + React/TS frontend, Rust backend) that replaces Jason's VS Code workflow with an agent-first cockpit: project/session drawer, a readable terminal-backed Run surface for real `claude`/`codex`/`gemini` CLI panes, and a composer as the main surface. Raw terminal, CodeMirror editor, and browser preview are fast, switchable/resizable trays around that core loop — not the default screen.
+**Keelhouse** — a native macOS agent cockpit (Tauri 2 + React/TS frontend, Rust backend) that replaces Jason's VS Code workflow with an agent-first cockpit: projects contain multiple persistent Codex-style chats, and structured conversation plus composer is the main surface. Raw authenticated CLI terminals, CodeMirror editor, files, Git, and browser preview are fast, switchable/resizable trays around that core loop — not the default screen.
 
 The repo/package/binary slug stays `agent-cli`; **Keelhouse** is the locked product name used in user-facing docs and app metadata. Don't rename the slug without a DECISIONS.md entry.
 

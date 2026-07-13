@@ -10,7 +10,7 @@
 
 Jason works across 5-10 active projects. The real workflow is not "use VS Code as an IDE"; it is: open a project folder in VS Code, use the left file explorer, edit files in the editor, run one or more Codex/Gemini/Claude CLI sessions in integrated terminals pointed at that project, and preview local web work in a browser. When a second or third project is active, it becomes another VS Code window with its own folder and agent terminal(s).
 
-VS Code is useful here as a workbench: Explorer, editor, integrated terminal, shortcut muscle memory, theming/settings, and enough browser/web preview for local app work. But the center of gravity is not the code editor; Jason spends most of the session talking to and supervising real terminal agents, then pulls code/browser surfaces in as needed. Everything else is resource-heavy chrome around that agent-first loop. Existing tools each miss something: cmux (great reference, but someone else's app), zellij (static config, no native "open a folder"), Superconductor (closed source, chat UI not real terminal), hashmark/Hallmark-style approaches (reimplement chat UI or show one agent at a time instead of hosting real CLIs).
+VS Code is useful here as a workbench: Explorer, editor, integrated terminal, shortcut muscle memory, theming/settings, and enough browser/web preview for local app work. But the center of gravity is not the code editor; Jason spends most of the session talking to and supervising real agents, then pulls code/browser surfaces in as needed. Everything else is resource-heavy chrome around that agent-first loop. Existing tools each contribute part of the answer: cmux is a strong external reference; zellij proved too static; Superconductor is closed source; Hashmark is directly reusable prior art for multi-chat persistence, structured streams, approvals, MCP, and orchestration, but its editor/orchestrator chrome and unsafe shortcuts are not the Keelhouse product shape. See `docs/reuse-audit.md`.
 
 ## Core Job
 
@@ -29,6 +29,8 @@ The app must cover the parts of VS Code Jason actually uses. Default behavior sh
 - Run real Codex/Gemini/Claude/shell sessions in real ptys, with correct env/PATH/auth handling.
 - Keep the terminal robust enough for daily agent work: Ghostty-backed VT fidelity, alternate-screen TUIs, ANSI/truecolor styling, resize, scrollback, selection/copy/paste, bracketed paste, common keyboard chords, fast-output responsiveness, and clear pane lifecycle state.
 - Make a structured, persisted chat timeline and composer the primary workbench surface. Provider adapters own user messages, assistant messages, tool activity, resumable thread ids, stop state, and errors; never infer that structure from terminal text.
+- Persist production chat history in a migrated SQLite store: chats, provider thread ids, messages/blocks, run status, usage, forks, and bookmarks. Keep lightweight workbench preferences in Tauri Store.
+- Reach Codex-grade chat behavior: safe Markdown/code rendering, progressive output, compact tool rows, real provider approvals, retry/error recovery, scroll anchoring, per-chat drafts/history, inspectable context chips, search, pinning, and bookmarks.
 - Expose raw terminal as an explicit alternate center view for exact TUI interaction and providers without a structured adapter. The code editor, Git, files, and browser preview remain movable, resizable trays around the chat. First open defaults to the chat rail, centered conversation/composer, and tabbed right dock. Do not mirror the raw terminal inside the chat timeline.
 - Use VS Code/Codex-like application structure for the shell: compact top status/action bar, persistent side drawer, draggable workbench trays, and bottom status strip. Adapt the pattern to Keelhouse state and actions; do not copy fake window controls, fake browser navigation, decorative activity rails, or controls that imply unavailable behavior.
 - Run multiple agent panes per project, and allow different open projects to run different agents at the same time. Each pane needs a visible name/task label, status, cwd, command, restart, and kill controls.
@@ -72,7 +74,7 @@ The chrome should feel Codex-level: dense, calm, readable, and intentional acros
 
 `demo/keelhouse-chrome-demo.html` is the binding visual contract (re-affirmed 2026-07-11 after the shipped chrome drifted to boxed-button density; delta audit in `docs/chrome-delta-audit.md`). Its control grammar is normative: flat 600-weight text actions with accent-strong hover, transparent icon buttons with color-only hover, and a single filled Send as the only default filled control. Tabs use steel-cyan top-underline actives; sidebar and list rows use left-stripe actives; cards use 6px radius with shadow elevation; the composer is an elevated 12px-radius card; type scale is Inter/SF Mono at 13px base, 12px meta/mono, 11px uppercase labels. Rejected: boxed rounded-rect button chrome, filled pill actives, and border-heavy depth in place of shadows.
 
-Two contract caveats from the 2026-07-11 blind audit (`docs/blind-audit-chrome-roadmap-2026-07-11.md`): the demo's structured thinking/plan/approval cards are a **v2 promise** — v1's Run surface is terminal-backed inside the demo's card composition, and structured cards arrive only through real agent hooks (RUN-CARDS-ADAPTER), never terminal-text inference. And demo-match claims require **populated-state proof** (live PTY output, stacked activity, multi-project sidebar) plus Jason's recorded sign-off (CHROME-EYEBALL-SIGNOFF) — empty-state screenshots and token gates alone do not certify the contract; surfaces that legitimately need more control density than the static demo shows get documented exceptions in `docs/chrome-contract.md` rather than silent divergence.
+The 2026-07-13 product correction supersedes the blind audit's old terminal-backed v1 caveat: structured Codex chats are the v1 primary surface, while raw terminal remains an alternate exact-TUI view. Structured thinking/plan/approval cards still require real provider events and must never come from terminal-text inference. Demo-match claims require populated-state proof plus Jason's recorded sign-off; empty-state screenshots and token gates alone do not certify the contract.
 
 ## Editor and Terminal Parity
 
@@ -84,11 +86,11 @@ Agent panes need Codex-style activity visibility: compact current state in pane 
 
 ## Composer Harness
 
-Use a bottom composer like Codex as the lightweight control surface over real panes. v0.5 routes prompts to the selected pty. v1 adds harness controls plus a terminal-backed Run view: permission mode, goal, target pane, profile selector, attachment references, stop/send state, visible terminal output, and app-owned activity logging. Structured provider messages, tool events, resumable model state, or provider-authored thinking summaries require a direct adapter, ACP, hooks, or API integration; they are not inferred from terminal text. Real Claude/Codex/Gemini terminal panes remain first-class. Research and phased scope live in `docs/composer-harness-research.md`.
+Use a bottom composer like Codex as the control surface for the selected chat. Normal prompts start or resume that chat through a structured provider adapter; app commands remain explicit. Permission mode, goal, model/provider, context attachments, stop/send state, drafts, and history are scoped per chat. Raw Claude/Codex/Gemini terminal panes remain an explicit fallback/alternate view and never feed inferred messages into the chat. Research and phased scope live in `docs/composer-harness-research.md`; Hashmark-derived behaviors and safety exclusions live in `docs/reuse-audit.md`.
 
 ## Harness Contract
 
-The composer talks to app-owned agent session handles, not directly to UI components. A handle owns pane identity, project/session context, cwd, agent profile, process state, approval mode, send, interrupt, readTail, close, and activity metadata. App-owned actions such as focus pane, open diff, attach screenshot reference, interrupt process, create pane, or open file must pass through a minimal action gate before Codex-style permission controls are shown. Glossary, event shape, and Vanta-derived boundaries live in `docs/harness-contract.md`.
+The composer talks to an app-owned chat run handle, not directly to UI components or terminal panes. A chat run owns chat/project identity, provider thread id, cwd, process state, approval mode, start/resume/stop, and structured events. Optional raw-terminal panes keep their separate pane handles. App-owned actions and provider tool requests must pass through visible, attributable approval gates. Glossary, event shape, and Vanta-derived boundaries live in `docs/harness-contract.md`.
 
 ## User
 
@@ -116,7 +118,7 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Recent projects and last workspace make reopening cheap.
 - [x] Common file/editor/terminal actions are reachable through VS Code-style shortcuts, menu bar entries, and right-click/Control-click context menus.
 - [x] Core chrome surfaces use a coherent token/icon system with hover, active, disabled, focus, loading, empty, and error states.
-- [x] Composer can target the selected terminal pane, send multiline prompts safely, stop/interrupt the pane, and show target/project/session context.
+- [x] Raw-terminal composer actions can target and interrupt the selected pane without affecting another pane.
 
 ## v1 done criteria
 
@@ -129,11 +131,11 @@ Jason. Solo dev, senior, 15yr, ND (dyslexia/ADHD/aphantasia). Needs concrete and
 - [x] Each project can run multiple named agent/shell panes, and different projects can run different agents concurrently.
 - [x] Pane lifecycle controls and icon badges cover thinking, running, waiting, errored, exited, restart, terminate, and attention-needed states.
 - [x] Agent activity rows show observable app-owned prompts, file saves, commands, pane lifecycle, approvals, errors, and completion per pane/session.
-- [ ] Provider-native structured messages, tool events, and user-safe planning summaries are supplied by an explicit adapter/hook/API path, never terminal-text heuristics.
+- [ ] Provider-native structured messages, tool events, approvals, and user-safe planning summaries are supplied by explicit adapters, persist durably, and never use terminal-text heuristics.
 - [x] Each pane/session exposes an app-owned agent session handle with send, interrupt, readTail, close, state, cwd, profile, approval mode, and activity metadata.
 - [x] App-owned actions use a minimal action gate with risk class, approval decision, audit event, and undo/rollback hint where possible.
-- [x] Composer harness supports permission mode, goal state, model/profile selector, attachments, and approval logging for app-owned actions.
-- [x] The workbench hierarchy is agent-first: terminal-backed Run output plus composer owns the main surface, raw terminal is switchable, and editor/browser preview sit in left/right/bottom/hideable trays with draggable splitters.
+- [ ] Composer harness supports per-chat drafts/history, permission mode, goal state, model/provider selector, inspectable context chips, attachments, and approval logging for app-owned and provider actions.
+- [x] The workbench hierarchy is agent-first: structured chat plus composer owns the main surface, raw terminal is switchable, and editor/browser preview sit in left/right/bottom/hideable trays with draggable splitters.
 - [x] The app shell has Keelhouse-specific chrome: top status/action bar, persistent side drawer, main agent surface, and bottom status strip.
 - [x] The side drawer can switch between real Projects/Sessions and Files content without adding decorative navigation chrome.
 - [x] Drawer controls switch real side-drawer content, with persisted resizable/collapsible drawers for projects, files, search, source control, browser/tools, and settings.
@@ -171,7 +173,7 @@ The file rail and editor are not optional product garnish; they are the reason t
 
 - Not a general-purpose terminal emulator (it hosts agents; it's not iTerm).
 - Not a general-purpose browser replacement: browser/web preview exists for development workflow, local previews, docs, and auth, not full daily browsing.
-- Not reimplementing the agent UI — panes run the *real* `claude`/`codex` TUI in a real pty. The app may have a compact command/composer box, but it routes to real panes/app actions and does not become a custom chat-UI replacement.
+- Not reimplementing provider intelligence or a universal LLM tool loop. Keelhouse wraps real authenticated CLIs behind narrow structured adapters and keeps their exact TUIs available in Raw terminal.
 - Not a from-scratch VT parser — that's what libghostty-vt is for.
 - Not multi-platform, multi-user, or plugin-capable before there's a real daily-use track record.
 - Not a full VS Code clone: no extension marketplace, plugin system, debugger, LSP-first IDE layer, remote SSH, or full git client before the lean workflow is daily-drivable. Color themes and focused settings are allowed; plugins are not.

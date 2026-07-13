@@ -1,6 +1,6 @@
 # Project Sessions
 
-PROJECT-SESSIONS translates Codex chat rows into task-scoped workbench sessions under each open project. They are not editor tabs and not custom chat threads.
+PROJECT-SESSIONS originally translated Codex chat rows into task-scoped workbench sessions. That model was superseded on 2026-07-13: the rows are real chats with independent structured messages and provider thread identity. The existing `ProjectSession` type and `projectSessions` storage key remain compatibility names for chat metadata and task-scoped workbench state; they are not the product noun.
 
 ## Implemented
 

@@ -454,8 +454,8 @@
       "track": "core",
       "size": "M",
       "launch": "v0_5",
-      "summary": "Keep terminal panes as the trusted source-of-truth agent interface, but add a bottom Codex-style composer for sending prompts/instructions to the selected real agent pane or triggering app-owned actions.",
-      "done": "Composer can target the selected Claude/Codex/shell pane, send multiline text safely through the real pty, show target project/session/pane context, stop/interrupt the pane, retain draft/history, handle Enter/Shift+Enter/Escape predictably, and run app actions via command palette routing; it never replaces the underlying terminal transcript.",
+      "summary": "Historical terminal-composer slice. Superseded 2026-07-13: the interaction and app-action mechanics remain useful, but the product composer targets a structured chat rather than treating a terminal pane as the conversation.",
+      "done": "Verified 2026-07-08 for safe multiline PTY send, interrupt, draft/history keys, target context, and app-command routing. Those mechanics remain available in Raw terminal; DIRECT-AGENT-HARNESS owns the default structured-chat composer.",
       "buildOrder": 28
     },
     {
@@ -553,8 +553,8 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Translate Codex chat rows into named task/workbench sessions under each project. These are not editor tabs and not custom chat threads; they are saved work contexts for agent work.",
-      "done": "Verified 2026-07-09: projectSessions and activeSessionByProject persist in workspace.json; the rail shows nested session rows with active/running/exited/attention states; New session, switch, rename, copy name, delete with last-session protection, and Show more/Show fewer are implemented; selecting sessions snapshots/restores editor tabs, active file, buffers, and view state for current in-memory sessions. Browser URLs and live pane state are implemented; pane labels, transcript references, layout restore, and cross-relaunch snapshot restore remain with their dedicated later cards.",
+      "summary": "Historical workspace-context slice. Superseded 2026-07-13: project rows now represent real chats with independent messages/provider identity while retaining the saved editor/browser/raw-terminal context implemented here.",
+      "done": "Verified 2026-07-09 as workbench-session metadata: projectSessions and activeSessionByProject persist in workspace.json; the rail supports create, switch, rename, delete protection, and collapse; selection restores editor/browser context. Product semantics were corrected 2026-07-13 by DIRECT-AGENT-HARNESS; ProjectSession remains an internal compatibility name, not evidence that chats are terminal sessions.",
       "buildOrder": 36
     },
     {
@@ -676,8 +676,8 @@
       "track": "ui",
       "size": "M",
       "launch": "v1",
-      "summary": "Correct the cockpit hierarchy: readable terminal-backed Run output and the composer own the main screen, while raw terminal, editor, and browser are explicit switchable/resizable surfaces.",
-      "done": "Verified 2026-07-10: Run presents the visible active terminal viewport without inventing provider chat or hidden reasoning; app-owned activity remains separate provenance below it. Raw terminal switches to the real canvas. First open hides editor/browser tools; one compact Tools menu opens Editor, Browser, or Split and docks them left/right/bottom. Verified in the actual React shell at 1440/1024/900 and native Tauri with live PTY output.",
+      "summary": "Historical tray-hierarchy slice. Superseded 2026-07-13: structured chat and composer own the main screen; raw terminal, editor, files, Git, and browser remain the switchable/resizable surfaces proven here.",
+      "done": "Verified 2026-07-10 for movable tool/tray behavior and raw-terminal fidelity. The terminal-backed Run assumption was rejected in native QA and replaced by DIRECT-AGENT-HARNESS; only the tray/docking work remains current product guidance.",
       "buildOrder": 46
     },
     {
@@ -806,15 +806,15 @@
     },
     {
       "id": "AGENT-THREAD-SURFACE",
-      "title": "Terminal-backed agent run surface",
+      "title": "Historical terminal-backed run surface",
       "column": "done",
       "tier": "rock",
       "track": "ui",
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Readable live agent output is the working surface; raw terminal is available for direct TUI interaction and activity remains separate provenance.",
-      "done": "Verified 2026-07-10: Run is the default surface and renders the visible active terminal viewport without inventing provider-native chat or hidden reasoning. Observable app-owned activity is filtered separately below it, the composer stays pinned at the bottom, and Raw terminal switches to the real canvas for direct TUI interaction. Structured provider messages remain DIRECT-AGENT-HARNESS or explicit hook/adapter work.",
+      "summary": "Historical implementation slice. Superseded 2026-07-13: the exact raw-terminal renderer remains useful, but structured chat rather than a terminal viewport is the default working surface.",
+      "done": "Verified 2026-07-10 for readable PTY output and exact raw-terminal switching. The default terminal-backed Run plus separate Activity model was rejected in native QA and replaced by DIRECT-AGENT-HARNESS. This card no longer defines the center surface.",
       "buildOrder": 57
     },
     {
@@ -827,7 +827,7 @@
       "launch": "v1",
       "blocker": true,
       "summary": "Port the accepted demo into the real Tauri app shell without losing current v1 functionality.",
-      "done": "Verified 2026-07-10: the real Tauri shell opens at 1440x900 with a direct project/session drawer, terminal-backed Run output, observable activity, compact composer, and hidden first-open tool tray. Existing project, editor, browser, Git, pane, composer, lifecycle, command-palette, and search code paths remain covered by the full frontend/Rust suites and deterministic state fixtures. Actual-shell screenshots cover 1440/1024/900 and docs/qa/app-shell/native-run.png proves live PTY output in Tauri.",
+      "done": "Verified 2026-07-10 for native shell integration and existing file/editor/browser/Git/terminal paths. Its terminal-backed center was superseded 2026-07-13 by the continuous structured chat shell; the implementation and screenshots remain historical evidence, not the current visual contract.",
       "buildOrder": 58
     },
     {
@@ -998,6 +998,7 @@
       "launch": "v2",
       "summary": "Users need to hook up real AI tooling: Claude/Codex CLI auth, provider API keys, model defaults, MCP servers, environment variables, permission defaults, and health checks.",
       "done": "Settings can configure Claude/Codex command profiles, provider/API credentials via OS-safe storage, MCP server entries, env vars, default models, permission policy, and validation checks that explain missing auth or broken connections.",
+      "progress": "Hashmark reuse source identified 2026-07-13: app/src-tauri/src/mcp.rs and mcp_oauth.rs cover stdio/HTTP transport, discovery, bearer auth, and OAuth metadata/token flow. Adapt the protocol/state-machine concepts only; replace blocking reads and keep secrets in OS-safe storage.",
       "buildOrder": 91.1
     },
     {
@@ -1010,6 +1011,7 @@
       "launch": "v2",
       "summary": "Give Claude/Codex-style agents a first-class way to cooperate with the app without making a plugin platform: inspect projects/panes/open files, request focus/split/new-pane actions, open diffs, and report task status through app-owned commands.",
       "done": "A local permissioned MCP/API endpoint exposes documented app-owned commands; actions that mutate files, git state, panes, or project layout require visible approval/undo where appropriate; every agent action is attributed in the UI/log.",
+      "progress": "Hashmark reuse source identified 2026-07-13: app/src-tauri/src/harness.rs demonstrates tool discovery/dispatch, pending approvals, limited always-allow state, and spawned-agent attribution. Keelhouse keeps its provider adapters and appActions gate rather than copying Hashmark's second LLM tool loop.",
       "buildOrder": 91.3
     },
     {
@@ -1112,6 +1114,105 @@
       "buildOrder": 90.2
     },
     {
+      "id": "CHAT-DURABLE-STORE",
+      "title": "Durable SQLite chat store",
+      "column": "next",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Adapt Hashmark's SQLite WAL session/message model so real chat history is not capped inside workspace.json. Keep lightweight layout preferences in Tauri Store; persist chats, provider thread ids, message blocks, run status, usage, and schema migrations in SQLite.",
+      "done": "Existing workspace.json chats migrate once without loss; messages and structured tool/error/status blocks commit transactionally per chat; provider thread ids and usage restore after relaunch; stale running state recovers explicitly; malformed rows cannot crash startup; tests cover migration, cascade delete, concurrent chats, and interrupted writes.",
+      "buildOrder": 90.21
+    },
+    {
+      "id": "CHAT-RICH-MESSAGES",
+      "title": "Codex-grade message rendering",
+      "column": "next",
+      "tier": "rock",
+      "track": "ui",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Reimplement the useful ChatPane patterns from Hashmark in React: safe Markdown/GFM, syntax-highlighted code with copy, progressive response updates, compact tool rows, retry/error recovery, elapsed state, scroll anchoring, and Jump to latest. Do not copy Hashmark's raw-HTML renderer or chat avatars.",
+      "done": "Assistant Markdown, lists, tables, links, and code render safely while streaming; code blocks expose language and Copy; tool rows collapse after completion and preserve output/error; scrolling up stops auto-follow and exposes Jump to latest; Retry preserves the failed/partial turn; no hidden reasoning or terminal text is fabricated as chat content; keyboard and screen-reader states are tested.",
+      "buildOrder": 90.22
+    },
+    {
+      "id": "CHAT-PROVIDER-APPROVALS",
+      "title": "Real provider tool approvals",
+      "column": "next",
+      "tier": "rock",
+      "track": "core",
+      "size": "M",
+      "launch": "v1",
+      "blocker": true,
+      "summary": "Adapt Hashmark's pending-approval registry and inline Allow/Deny pattern at the provider boundary. The existing sandbox selector is not enough: consequential Codex tool requests must pause with exact command/path/diff context and resume only the selected chat run.",
+      "done": "A real Codex tool request can pause one chat, show exact action/risk/target, Allow once, Deny with feedback, or grant a narrowly scoped session permission; another chat keeps running; timeout/close resolves denied; decisions are persisted and attributed; Full access remains an explicit mode rather than the default; native QA executes allow and deny paths.",
+      "buildOrder": 90.23
+    },
+    {
+      "id": "CHAT-COMPOSER-CONTEXT",
+      "title": "Per-chat drafts and context",
+      "column": "next",
+      "tier": "pebble",
+      "track": "ui",
+      "size": "M",
+      "launch": "v1",
+      "summary": "Adapt Hashmark's useful Compose behaviors without its provider sprawl: per-chat draft/history, Up/Down recall, @file search, removable file/editor/browser context chips, paste/drop images, visible model/permission state, and accurate context payloads.",
+      "done": "Switching chats preserves independent drafts and sent history; @file attaches bounded readable content with visible removable chips; images can paste/drop with preview and removal; Enter/Shift+Enter/Escape/Up/Down remain predictable; the exact context sent to Codex is inspectable; oversized/binary/sensitive attachments fail before transmission with a clear reason.",
+      "buildOrder": 90.24
+    },
+    {
+      "id": "CHAT-HISTORY-DISCOVERY",
+      "title": "Chat search, pin, and bookmarks",
+      "column": "next",
+      "tier": "pebble",
+      "track": "workspace",
+      "size": "M",
+      "launch": "v1",
+      "summary": "Carry over Hashmark's practical history controls after SQLite lands: search chat titles and message text, pin recurring chats, bookmark important assistant turns, and keep archive behavior compatible with provider thread identity.",
+      "done": "Global search returns matching chats and message snippets across projects; selecting a result opens and scrolls to the message; pinned chats sort predictably without losing project grouping; bookmarks are visible and removable; archive/search/pin survive relaunch; query latency stays interactive on a representative history database.",
+      "buildOrder": 90.25
+    },
+    {
+      "id": "CHAT-FORK-CHECKPOINT",
+      "title": "Chat forks and safe checkpoints",
+      "column": "later",
+      "tier": "rock",
+      "track": "core",
+      "size": "L",
+      "launch": "v2",
+      "summary": "Adapt Hashmark's session lineage and restore UX, but replace its index-mutating checkpoint implementation. Fork a chat from a message and optionally restore workspace state through a previewed, non-index-mutating snapshot path.",
+      "done": "Fork from a user or assistant message creates a clearly linked chat with copied history only through that point and an independent provider thread; checkpoints never change the user's index when captured; restore previews affected files, protects dirty editor buffers, requires explicit approval, has a recovery path, and never runs unpreviewed reset --hard or clean -fd.",
+      "buildOrder": 91.35
+    },
+    {
+      "id": "CLAUDE-STRUCTURED-ADAPTER",
+      "title": "Structured Claude CLI adapter",
+      "column": "later",
+      "tier": "pebble",
+      "track": "core",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Adapt Hashmark web's Claude stream-json parser behind the same provider-neutral chat event contract as Codex: resume ids, partial text, tool use/results, usage, compaction, plan updates, questions, and cancellation. Preserve Claude OAuth and never copy --dangerously-skip-permissions or prompt-in-argv behavior.",
+      "done": "An authenticated Claude CLI chat starts/resumes/stops through structured events; prompts avoid argv when the installed CLI supports stdin; tool approvals use CHAT-PROVIDER-APPROVALS; usage/compaction/plan/question events render through shared chat components; adapter fixtures cover malformed/partial JSON and CLI-version capability checks.",
+      "buildOrder": 91.36
+    },
+    {
+      "id": "AGENT-ORCHESTRATION",
+      "title": "Parallel chat orchestration",
+      "column": "later",
+      "tier": "rock",
+      "track": "core",
+      "size": "L",
+      "launch": "v2",
+      "summary": "Adapt Hashmark's spawn-agent and parallel-dispatch concepts after independent chats are durable. A parent chat can delegate bounded tasks into linked child chats, optionally isolated by worktree, without hiding ownership or multiplying agents accidentally.",
+      "done": "A user can preview and launch 2-8 linked child chats with explicit task, project/worktree, provider, model, permission, and budget; lineage and status are visible in the rail; cancel affects only selected children; results can return to the parent as attributed summaries; concurrency/resource limits, duplicate-file conflict warnings, and failure recovery are tested.",
+      "buildOrder": 91.37
+    },
+    {
       "id": "REUSE-AUDIT",
       "title": "Mine old projects for reusable pieces",
       "column": "done",
@@ -1120,7 +1221,7 @@
       "size": "S",
       "launch": "v3",
       "summary": "Re-check Hallmark/hashmark/brutal/indx for reusable Tauri shell, persistence, editor, or design patterns without adopting their product shape.",
-      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected. Executed 2026-07-12: docs/reuse-audit.md surveys spike-ghostty-vt (shipped as the terminal foundation), spike editor test (decision input), rockmap (live roadmap tooling), both demos (chrome + mono-ghost), and ghostty config as pulled-in; zellij trial, superconductor reference, and rockmap schema as parked. No dead reuse debt; one licensing watch-item (superconductor super.icns must not ship — flagged for PACKAGING).",
+      "done": "Reusable components/patterns are listed with exact source paths and either imported, adapted, or explicitly rejected. Amended 2026-07-13 after the original repo-only audit missed Hashmark: docs/reuse-audit.md now maps Hashmark's SQLite sessions/messages, provider event streams, approvals, composer context, session forks/checkpoints, MCP/OAuth, and orchestration into dependency-ordered Keelhouse cards; it rejects Hashmark's editor/orchestrator chrome and records unsafe implementation details that must not be copied.",
       "buildOrder": 82
     },
     {

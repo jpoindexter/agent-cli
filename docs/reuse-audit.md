@@ -1,6 +1,6 @@
-# Reuse Audit (REUSE-AUDIT, 2026-07-12)
+# Reuse Audit (REUSE-AUDIT, amended 2026-07-13)
 
-What the repo's own spikes and reference material contributed to the shipped app, and what remains parked. Scope: this repo's `spike*/`, `rockmap/`, `zellij/`, `ghostty/`, `resources/`, `demo/`. No other `_active` project is pulled in.
+What existing projects and references can contribute to Keelhouse without changing its chat-first product shape. The 2026-07-12 pass covered only this repository and incorrectly concluded that nothing remained to extract. The 2026-07-13 amendment audits `/Users/jasonpoindexter/Documents/GitHub/apps/hashmark`, which is directly relevant prior art.
 
 ## Pulled in (reused, shipped)
 
@@ -21,8 +21,33 @@ What the repo's own spikes and reference material contributed to the shipped app
 | `resources/superconductor-reference/` (Info.plist, super.icns, NOTES.md) | Reference-only competitor material. `super.icns` is another product's icon — must NOT ship. NOTES.md is UX-pattern reference. | App-icon and packaging work (PACKAGING card) may mine NOTES.md for patterns, never the icon. |
 | `rockmap/examples`, `roadmap.schema.json` | Schema/examples for the vendored generator; only `build-roadmap.mjs` + `roadmap.json` are load-bearing. | Only if the roadmap board gains features. |
 
+## Hashmark extraction map
+
+Hashmark already solves much of the agent-chat layer Keelhouse had omitted. Reuse the contracts and tested behaviors; port code only where the framework and safety boundary match.
+
+Hashmark is licensed under Business Source License 1.1 with personal, non-commercial production use allowed and a 2029-01-01 MIT change date. Jason owns both repositories, but direct source copying into a differently licensed or commercial Keelhouse release still needs an explicit relicensing decision. Until then, treat Hashmark as source-grounded behavioral prior art and reimplement narrowly.
+
+| Hashmark source | Decision | Keelhouse use |
+| --- | --- | --- |
+| `app/src-tauri/src/db.rs`, `sessions.rs` | Adapt | SQLite WAL migrations; durable chats/messages; provider/model/thread metadata; pin, fork lineage, token counts, and checkpoint references. Keep layout preferences in Tauri Store. |
+| `web/server/harness-cli.ts`, `web/client/src/hooks/useChatStream.ts` | Adapt | Provider-event normalization, per-chat streaming state, cancellation, reconnect/poll recovery, usage, compaction, plans, questions, tool results, and spawned-session events. Add a provider-neutral Rust contract rather than copying the Node server. |
+| `app/src/components/ChatPane.svelte`, `Compose.svelte` | Reimplement in React | Markdown/code rendering, copy/retry, jump-to-latest, inline tool approvals/results, per-chat drafts/history, `@file` context chips, pasted images, model selection, and visible elapsed state. |
+| `app/src-tauri/src/mcp.rs`, `mcp_oauth.rs` | Adapt after hardening | Stdio and HTTP MCP lifecycle, tool discovery/calls, server health, bearer/OAuth configuration. Replace blocking reads and plaintext token-bearing config with async I/O and OS-safe secrets. |
+| `app/src-tauri/src/checkpoint.rs`, `sessions.rs::fork_session` | Concept only | Fork/restore UX and message lineage. Do not copy checkpoint creation: `git add -A` mutates the user's index, and restore uses destructive `reset --hard` plus `clean -fd`. Design a non-index-mutating snapshot and previewed restore gate first. |
+| `app/src-tauri/src/harness.rs` | Pattern only | Pending-approval registry, allow-once/deny/limited-always decisions, tool danger analysis, MCP dispatch, and sub-agent lineage. Keelhouse should keep provider execution in adapters instead of owning a second LLM tool loop. |
+| Hashmark shell/sidebar screenshots and activity rail | Reject | They are editor/orchestrator-first and reintroduce the activity rail, dense dashboard, and VS Code-copy direction already rejected for Keelhouse. |
+
+### Unsafe details not to copy
+
+- `web/server/harness-cli.ts` passes the prompt in argv and uses `--dangerously-skip-permissions`; Keelhouse must keep prompts off argv and preserve visible approval policy.
+- `ChatPane.svelte` renders `marked` output through raw HTML without an explicit sanitizer; use a safe React Markdown pipeline.
+- The desktop Compose stop button changes frontend state but does not prove process cancellation; Keelhouse's stop path must terminate only the selected chat run.
+- Hashmark's global streaming state is not sufficient for simultaneous independent chats; Keelhouse keeps run state keyed by chat id.
+- Hashmark's BSL 1.1 does not automatically become Keelhouse's license. Record an explicit same-owner relicensing decision before copying implementation code into a commercial or differently licensed release.
+
 ## Findings
 
-- **No dead reuse debt.** Every spike either shipped (ghostty-vt, rockmap, demos) or served its decision purpose and is correctly parked (spike editor test, zellij trial).
+- **The prior audit missed the highest-value prior art.** Hashmark should have been inspected before Keelhouse implemented its chat harness.
+- **Reuse backend behavior, not product chrome.** Hashmark validates the multi-chat, approvals, persistence, MCP, checkpoint, and orchestration requirements while Keelhouse retains its approved Codex/Zed-derived shell.
+- **Port in dependency order.** Finish the current Codex multi-chat native proof, then durable storage, rich messages, real approvals, composer context, history/forking, provider adapters, MCP, and orchestration.
 - **One licensing watch-item:** `resources/superconductor-reference/super.icns` is a third-party app icon. The PACKAGING card must source Keelhouse's own icon; this file is reference only and must not be bundled.
-- **Nothing to newly extract.** The audit's own recommendation (a completeness pass over parked material) finds no reusable code left unmined — the parked items are references and historical config, not unshipped functionality.

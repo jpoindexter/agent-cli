@@ -316,3 +316,15 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **Supersedes:** The 2026-07-12 terminal-backed-conversation choice above and any wording that defines a project row as a non-chat workbench session. Terminal pane isolation remains useful for raw-terminal state, but it no longer defines chat identity or chat history.
 
 **Verification boundary:** Build/tests prove the bridge and reducer only. This decision is not complete until the packaged app creates two same-project chats, receives structured Codex output in both, switches without mixed messages, resumes each provider thread, stops a run, and restores histories after relaunch.
+
+## 2026-07-13 — Reuse Hashmark's chat contracts, not its product shell
+
+**Choice:** Treat `/Users/jasonpoindexter/Documents/GitHub/apps/hashmark` as the primary behavioral reference for the missing agent-chat layer: SQLite sessions/messages, per-chat provider streams, tool approvals, composer context, history discovery, MCP/OAuth, chat lineage, and bounded orchestration. Reimplement these capabilities behind Keelhouse's React/Rust contracts while retaining the approved Keelhouse chrome.
+
+**Reject:** Do not copy Hashmark's editor/orchestrator-first shell, raw unsanitized Markdown HTML, frontend-only stop state, global stream ownership, prompt-in-argv, `--dangerously-skip-permissions`, blocking MCP transport, plaintext token-bearing configuration, or index-mutating/destructive checkpoint implementation.
+
+**Why:** The earlier repo-only reuse audit missed the most relevant prior work and led Keelhouse to rebuild a thinner chat model. Hashmark proves the required workflows, but its visual hierarchy and several implementation shortcuts conflict with the corrected Codex-style product and Keelhouse's safety boundary.
+
+**License boundary:** Hashmark is BSL 1.1 with a 2029-01-01 MIT change date. Jason owns both repositories, but direct code copying into a commercial or differently licensed Keelhouse release requires an explicit same-owner relicensing decision. Behavioral adaptation and narrow reimplementation are the default until then.
+
+**Reversible?** Yes. Each extraction is a separate roadmap card and can be replaced independently; the provider-neutral event and storage contracts are the stable boundary.
