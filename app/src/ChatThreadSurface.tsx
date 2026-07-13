@@ -127,6 +127,18 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
   }, [events.length, messageUpdateToken]);
 
   useLayoutEffect(() => {
+    const thread = threadRef.current;
+    if (!thread || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (!autoFollowRef.current) return;
+      thread.scrollTop = thread.scrollHeight;
+      setShowJumpToLatest(false);
+    });
+    observer.observe(thread);
+    return () => observer.disconnect();
+  }, []);
+
+  useLayoutEffect(() => {
     if (!focusMessageId) return;
     const target = Array.from(threadRef.current?.querySelectorAll<HTMLElement>("[data-message-id]") ?? [])
       .find((element) => element.dataset.messageId === focusMessageId);

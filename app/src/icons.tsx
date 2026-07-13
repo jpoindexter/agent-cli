@@ -20,12 +20,12 @@ import {
   FolderPlus,
   GitBranch,
   Globe2,
-  HardDrive,
   List,
   LoaderCircle,
   MoreHorizontal,
   ExternalLink,
   PanelBottom,
+  PanelsTopLeft,
   Plus,
   Pin,
   RotateCw,
@@ -63,6 +63,7 @@ export type AppIconName =
   | "forward"
   | "git"
   | "idle"
+  | "layout"
   | "loading"
   | "logs"
   | "menu"
@@ -104,6 +105,7 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   forward: ArrowRight,
   git: GitBranch,
   idle: Circle,
+  layout: PanelsTopLeft,
   loading: LoaderCircle,
   logs: List,
   menu: List,
@@ -122,7 +124,7 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   thinking: Brain,
   terminal: PanelBottom,
   waiting: Clock3,
-  workspace: HardDrive,
+  workspace: Folder,
 };
 
 export function AppIcon({ name, label, className = "" }: { name: AppIconName; label?: string; className?: string }) {

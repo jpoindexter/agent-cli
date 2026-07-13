@@ -11,5 +11,7 @@ describe("responsive shell CSS contract", () => {
     expect(convergence).toMatch(/\.workbench\.workbench--drawer-bottom\s*\{[^}]*grid-template-rows:[^}]*var\(--utility-tray-height, 42px\);[^}]*"utilitysplit"[^}]*"utility";/s);
     expect(convergence).toMatch(/\.workbench\.workbench--drawer-hidden\s*\{[^}]*grid-template-rows:\s*minmax\(0,\s*1fr\) 6px var\(--utility-tray-height, 42px\);[^}]*"utilitysplit"[^}]*"utility";/s);
     expect(convergence).toMatch(/\.agent-surface--terminal \.agent-chat-surface\s*\{[^}]*display:\s*flex;/s);
+    expect(convergence).toMatch(/\.agent-chat-surface\s*\{[^}]*height:\s*100%;/s);
+    expect(convergence).toMatch(/\.chat-thread\s*\{[^}]*flex:\s*1 1 auto;[^}]*min-height:\s*0;/s);
   });
 });

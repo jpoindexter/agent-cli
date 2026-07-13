@@ -1,12 +1,32 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ChatThreadSurface, chatElapsedLabel, isNearChatBottom } from "./ChatThreadSurface";
 import type { ChatConversation } from "./chatConversation";
 
-afterEach(cleanup);
+const resizeCallbacks: ResizeObserverCallback[] = [];
+
+class TestResizeObserver {
+  constructor(callback: ResizeObserverCallback) {
+    resizeCallbacks.push(callback);
+  }
+
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
+beforeEach(() => {
+  resizeCallbacks.length = 0;
+  vi.stubGlobal("ResizeObserver", TestResizeObserver);
+});
+
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+});
 
 const conversation = (text: string, overrides: Partial<ChatConversation> = {}): ChatConversation => ({
   provider: "codex",
@@ -61,6 +81,42 @@ describe("ChatThreadSurface behavior", () => {
     fireEvent.click(screen.getByRole("button", { name: "Jump to latest" }));
     expect(screen.queryByRole("button", { name: "Jump to latest" })).toBeNull();
     expect(log.scrollTop).toBe(1000);
+  });
+
+  it("keeps the latest message visible when the chat viewport resizes", () => {
+    render(
+      <ChatThreadSurface conversation={conversation("Latest response")} events={[]} onRetry={() => {}} onSuggestion={() => {}} />,
+    );
+    const log = screen.getByRole("log", { name: "Chat messages" });
+    Object.defineProperties(log, {
+      scrollHeight: { configurable: true, value: 1000 },
+      clientHeight: { configurable: true, value: 200 },
+      scrollTop: { configurable: true, writable: true, value: 500 },
+    });
+
+    resizeCallbacks.forEach((callback) => callback([], {} as ResizeObserver));
+
+    expect(log.scrollTop).toBe(1000);
+    expect(screen.queryByRole("button", { name: "Jump to latest" })).toBeNull();
+  });
+
+  it("does not yank a manually scrolled transcript on resize", () => {
+    render(
+      <ChatThreadSurface conversation={conversation("Latest response")} events={[]} onRetry={() => {}} onSuggestion={() => {}} />,
+    );
+    const log = screen.getByRole("log", { name: "Chat messages" });
+    Object.defineProperties(log, {
+      scrollHeight: { configurable: true, value: 1000 },
+      clientHeight: { configurable: true, value: 200 },
+      scrollTop: { configurable: true, writable: true, value: 200 },
+    });
+    fireEvent.wheel(log, { deltaY: -100 });
+    fireEvent.scroll(log);
+
+    resizeCallbacks.forEach((callback) => callback([], {} as ResizeObserver));
+
+    expect(log.scrollTop).toBe(200);
+    expect(screen.getByRole("button", { name: "Jump to latest" })).not.toBeNull();
   });
 
   it("keeps failed output and retries the prompt that owns the turn", () => {

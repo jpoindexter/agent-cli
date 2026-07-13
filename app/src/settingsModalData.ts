@@ -15,7 +15,7 @@ export type SettingsCategory = {
    is read-only); theme variants arrive with THEME. */
 export const SETTINGS_CATEGORIES: SettingsCategory[] = [
   { id: "general", label: "General", icon: "agent" },
-  { id: "layout", label: "Layout", icon: "workspace" },
+  { id: "layout", label: "Layout", icon: "layout" },
   { id: "app", label: "App configuration", icon: "settings" },
   { id: "browser", label: "Browser preview", icon: "browser" },
   { id: "git", label: "Git", icon: "git" },
