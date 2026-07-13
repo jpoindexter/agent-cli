@@ -185,7 +185,7 @@ const upsertItemMessage = (
 
 const commandText = (item: Record<string, unknown>) => {
   const command = textValue(item.command) || "Command";
-  const output = textValue(item.aggregated_output).trim();
+  const output = textValue(item.aggregatedOutput ?? item.aggregated_output).trim();
   return output ? `${command}\n\n${output}` : command;
 };
 
@@ -199,7 +199,7 @@ const itemMessage = (
   const providerItemId = textValue(item.id);
   const itemId = providerItemId ? `${runId}:${providerItemId}` : undefined;
   const running = eventType === "item.started";
-  if (type === "agent_message") {
+  if (type === "agent_message" || type === "agentMessage") {
     const text = textValue(item.text).trim();
     return text ? {
       id: messageId("assistant", now, itemId),
@@ -210,7 +210,7 @@ const itemMessage = (
       timestamp: now,
     } : null;
   }
-  if (type === "command_execution") {
+  if (type === "command_execution" || type === "commandExecution") {
     const status = textValue(item.status);
     return {
       id: messageId("tool", now, itemId),
@@ -222,7 +222,7 @@ const itemMessage = (
       timestamp: now,
     };
   }
-  if (type === "file_change") {
+  if (type === "file_change" || type === "fileChange") {
     const changes = Array.isArray(item.changes)
       ? item.changes.flatMap((change) => isRecord(change) ? [textValue(change.path)].filter(Boolean) : [])
       : [];
@@ -236,7 +236,11 @@ const itemMessage = (
       timestamp: now,
     };
   }
-  if (type === "mcp_tool_call" || type === "web_search") {
+  if (
+    type === "mcp_tool_call" || type === "mcpToolCall"
+    || type === "dynamicToolCall" || type === "collabAgentToolCall"
+    || type === "web_search" || type === "webSearch"
+  ) {
     const name = textValue(item.tool) || textValue(item.query) || type.replace(/_/g, " ");
     return {
       id: messageId("tool", now, itemId),
@@ -262,6 +266,40 @@ const itemMessage = (
   return null;
 };
 
+const appendItemDelta = (
+  conversation: ChatConversation,
+  runId: string,
+  providerItemId: string,
+  delta: string,
+  kind: "assistant" | "tool",
+  now: number,
+): ChatConversation => {
+  if (!providerItemId || !delta) return conversation;
+  const itemId = `${runId}:${providerItemId}`;
+  const index = conversation.messages.findIndex((message) => message.itemId === itemId);
+  if (index < 0) {
+    return pushMessage(conversation, {
+      id: messageId(kind, now, itemId),
+      role: kind,
+      title: kind === "tool" ? "Running command" : undefined,
+      text: delta,
+      itemId,
+      status: "running",
+      timestamp: now,
+    });
+  }
+  const messages = [...conversation.messages];
+  const current = messages[index];
+  const separator = kind === "tool" && current.text && !current.text.includes("\n\n") ? "\n\n" : "";
+  messages[index] = {
+    ...current,
+    text: `${current.text}${separator}${delta}`,
+    status: "running",
+    timestamp: now,
+  };
+  return { ...conversation, messages, updatedAt: now };
+};
+
 const completeRunningStatus = (conversation: ChatConversation, now: number): ChatConversation => ({
   ...conversation,
   activeRunId: undefined,
@@ -281,6 +319,7 @@ export const applyChatRunEnvelope = (
 ): ChatConversation => {
   if (envelope.stream === "lifecycle") {
     if (!isRecord(envelope.event) || textValue(envelope.event.type) !== "run.completed") return conversation;
+    if (conversation.activeRunId !== envelope.runId) return conversation;
     const exitCode = typeof envelope.event.exitCode === "number" ? envelope.event.exitCode : 1;
     const completed = completeRunningStatus(conversation, now);
     return exitCode === 0 ? completed : pushMessage({ ...completed, runStatus: "error" }, {
@@ -292,15 +331,48 @@ export const applyChatRunEnvelope = (
     });
   }
   if (envelope.stream !== "stdout" || !isRecord(envelope.event)) return conversation;
-  const eventType = textValue(envelope.event.type);
+  const method = textValue(envelope.event.method);
+  const params = isRecord(envelope.event.params) ? envelope.event.params : envelope.event;
+  const eventType = textValue(envelope.event.type) || method;
   if (eventType === "thread.started") {
     const providerThreadId = textValue(envelope.event.thread_id);
+    return providerThreadId ? { ...conversation, providerThreadId, updatedAt: now } : conversation;
+  }
+  if (eventType === "thread/started") {
+    const thread = isRecord(params.thread) ? params.thread : null;
+    const providerThreadId = thread ? textValue(thread.id) : "";
     return providerThreadId ? { ...conversation, providerThreadId, updatedAt: now } : conversation;
   }
   if (eventType === "item.started" || eventType === "item.completed") {
     const item = isRecord(envelope.event.item) ? envelope.event.item : null;
     const message = item ? itemMessage(item, eventType, now, envelope.runId) : null;
     return message ? upsertItemMessage(conversation, message) : conversation;
+  }
+  if (eventType === "item/started" || eventType === "item/completed") {
+    const item = isRecord(params.item) ? params.item : null;
+    const normalizedType = eventType === "item/started" ? "item.started" : "item.completed";
+    const message = item ? itemMessage(item, normalizedType, now, envelope.runId) : null;
+    return message ? upsertItemMessage(conversation, message) : conversation;
+  }
+  if (eventType === "item/agentMessage/delta") {
+    return appendItemDelta(
+      conversation,
+      envelope.runId,
+      textValue(params.itemId),
+      textValue(params.delta),
+      "assistant",
+      now,
+    );
+  }
+  if (eventType === "item/commandExecution/outputDelta" || eventType === "item/fileChange/outputDelta") {
+    return appendItemDelta(
+      conversation,
+      envelope.runId,
+      textValue(params.itemId),
+      textValue(params.delta),
+      "tool",
+      now,
+    );
   }
   if (eventType === "turn.failed") {
     const error = isRecord(envelope.event.error) ? textValue(envelope.event.error.message) : "Codex could not complete this turn.";
@@ -317,6 +389,38 @@ export const applyChatRunEnvelope = (
       ...completeRunningStatus(conversation, now),
       usage: normalizeUsage(envelope.event.usage) ?? conversation.usage,
     };
+  }
+  if (eventType === "thread/tokenUsage/updated") {
+    const tokenUsage = isRecord(params.tokenUsage) ? params.tokenUsage : null;
+    const total = tokenUsage && isRecord(tokenUsage.total) ? tokenUsage.total : null;
+    return total ? { ...conversation, usage: normalizeUsage(total) ?? conversation.usage } : conversation;
+  }
+  if (eventType === "turn/completed") {
+    const turn = isRecord(params.turn) ? params.turn : null;
+    const status = turn ? textValue(turn.status) : "completed";
+    const completed = completeRunningStatus(conversation, now);
+    if (status === "interrupted") {
+      return {
+        ...completed,
+        runStatus: "interrupted",
+        messages: completed.messages.map((message) =>
+          message.role === "status" && message.text === "Completed"
+            ? { ...message, text: "Stopped" }
+            : message
+        ),
+      };
+    }
+    if (status === "failed") {
+      const error = turn && isRecord(turn.error) ? textValue(turn.error.message) : "Codex could not complete this turn.";
+      return pushMessage({ ...completed, runStatus: "error" }, {
+        id: messageId("error", now, envelope.runId),
+        role: "error",
+        text: error,
+        status: "error",
+        timestamp: now,
+      });
+    }
+    return completed;
   }
   return conversation;
 };

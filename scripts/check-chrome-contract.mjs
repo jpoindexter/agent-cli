@@ -98,8 +98,9 @@ assert(chatThreadSurface.includes("agent-thread-event"), "Chat surface must rend
 assert(!chatThreadSurface.includes("agent-activity-log__title\">Activity"), "Agent events must stay inline instead of becoming a separate Activity dashboard");
 assert(chatConversation.includes("providerThreadId"), "Each chat must persist its own provider thread identity");
 assert(chatConversation.includes("activeRunId"), "Each chat must own its active run independently");
-assert(chatHarness.includes("codex exec --json"), "Structured Codex chat must use JSON events instead of terminal transcript scraping");
-assert(chatHarness.includes("codex exec resume --json"), "Structured Codex chat must resume the selected chat's provider thread");
+assert(chatHarness.includes("codex app-server --stdio"), "Structured Codex chat must use the provider-native app-server event stream");
+assert(chatHarness.includes('(\"thread/resume\", 2)'), "Structured Codex chat must resume the selected chat's provider thread");
+assert(chatConversation.includes('eventType === "item/agentMessage/delta"'), "Structured Codex chat must render provider-native response deltas");
 assert(appTsx.includes('route.kind === "chat"'), "Normal composer prompts must route to structured chat, not a pty paste path");
 assert(appTsx.includes('invoke<ResolveWorkspaceResponse>("resolve_workspace"'), "Opening a chat must resolve its project without spawning a hidden terminal");
 assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a no-pty project open path for chat mode");
@@ -111,7 +112,7 @@ assert(appTsx.includes('aria-label="Composer goal"'), "Composer must expose its 
 assert(appTsx.includes('aria-label="Codex model override"'), "Composer must expose a real Codex model override");
 assert(appTsx.includes("COMPOSER_REASONING_OPTIONS.map"), "Composer must expose reasoning effort choices");
 assert(appTsx.includes('reasoningEffort: activeComposerHarness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
-assert(chatHarness.includes('model_reasoning_effort=\\\"{effort}\\\"'), "Native chat runs must apply the selected Codex reasoning effort");
+assert(chatHarness.includes('params["effort"] = json!(effort);'), "Native chat runs must apply the selected Codex reasoning effort");
 assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
 assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
 assert(appTsx.includes("Project chats"), "Projects drawer must present independent chats under each project");

@@ -1135,7 +1135,8 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Reimplement the useful ChatPane patterns from Hashmark in React: safe Markdown/GFM, syntax-highlighted code with copy, progressive response updates, compact tool rows, retry/error recovery, elapsed state, scroll anchoring, and Jump to latest. Do not copy Hashmark's raw-HTML renderer or chat avatars.",
+  "summary": "Reimplement the useful ChatPane patterns from Hashmark in React: safe Markdown/GFM, syntax-highlighted code with copy, progressive response updates, compact tool rows, retry/error recovery, elapsed state, scroll anchoring, and Jump to latest. Do not copy Hashmark's raw-HTML renderer or chat avatars.",
+  "progress": "Safe Markdown/GFM, highlighted code copy, compact tool rows, retry, elapsed state, scroll anchoring, Jump to latest, and accessible live status are implemented. The transport now uses codex app-server provider deltas; 55 Rust and 193 frontend tests, production build, package build, and chrome contract pass. Final unlocked native visual/stop confirmation remains before Done.",
       "done": "Assistant Markdown, lists, tables, links, and code render safely while streaming; code blocks expose language and Copy; tool rows collapse after completion and preserve output/error; scrolling up stops auto-follow and exposes Jump to latest; Retry preserves the failed/partial turn; no hidden reasoning or terminal text is fabricated as chat content; keyboard and screen-reader states are tested.",
       "buildOrder": 90.22
     },
@@ -1148,7 +1149,8 @@
       "size": "M",
       "launch": "v1",
       "blocker": true,
-      "summary": "Adapt Hashmark's pending-approval registry and inline Allow/Deny pattern at the provider boundary. The existing sandbox selector is not enough: consequential Codex tool requests must pause with exact command/path/diff context and resume only the selected chat run.",
+  "summary": "Adapt Hashmark's pending-approval registry and inline Allow/Deny pattern at the provider boundary. The existing sandbox selector is not enough: consequential Codex tool requests must pause with exact command/path/diff context and resume only the selected chat run.",
+  "progress": "The Codex transport now runs on app-server, which exposes command, file-change, and permission approval requests for the exact thread/turn. The pending-request registry, inline decision surface, persistence, and native allow/deny QA remain.",
       "done": "A real Codex tool request can pause one chat, show exact action/risk/target, Allow once, Deny with feedback, or grant a narrowly scoped session permission; another chat keeps running; timeout/close resolves denied; decisions are persisted and attributed; Full access remains an explicit mode rather than the default; native QA executes allow and deny paths.",
       "buildOrder": 90.23
     },

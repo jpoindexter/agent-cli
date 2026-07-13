@@ -2177,9 +2177,10 @@ function App() {
     return false;
   };
 
-  const submitComposerDraft = async () => {
+  const submitComposerDraft = async (draftOverride?: string) => {
     if (composerSending || activeChatConversation.activeRunId) return;
-    const route = routeComposerDraft(composerDraft);
+    const submittedDraft = draftOverride ?? composerDraft;
+    const route = routeComposerDraft(submittedDraft);
     if (route.kind === "empty") return;
     if (route.kind === "unknown-app") {
       setComposerError(`Unknown app command ${route.input}. Try >help for the list.`);
@@ -2247,7 +2248,7 @@ function App() {
           status: "complete",
         });
       }
-      setComposerHistory((history) => composerHistoryAfterSubmit(history, composerDraft));
+      setComposerHistory((history) => composerHistoryAfterSubmit(history, submittedDraft));
       setComposerHistoryIndex(null);
       setComposerDraft("");
     } catch (err) {
@@ -5607,6 +5608,7 @@ function App() {
               events={selectedAgentActivityLog}
               hidden={agentSurfaceMode !== "chat"}
               onSuggestion={setComposerDraft}
+              onRetry={(prompt) => void submitComposerDraft(prompt)}
             />
           </div>
           <div className="agent-composer" aria-label="Agent composer" hidden={agentSurfaceMode !== "chat"} onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>

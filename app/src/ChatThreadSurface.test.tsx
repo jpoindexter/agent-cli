@@ -23,6 +23,7 @@ describe("ChatThreadSurface", () => {
           ],
         }}
         events={[]}
+        onRetry={() => {}}
         onSuggestion={() => {}}
       />,
     );
@@ -56,6 +57,7 @@ describe("ChatThreadSurface", () => {
           ],
         }}
         events={[]}
+        onRetry={() => {}}
         onSuggestion={() => {}}
       />,
     );
@@ -79,6 +81,7 @@ describe("ChatThreadSurface", () => {
           updatedAt: 1,
         }}
         events={[]}
+        onRetry={() => {}}
         onSuggestion={() => {}}
       />,
     );
@@ -90,6 +93,7 @@ describe("ChatThreadSurface", () => {
       <ChatThreadSurface
         conversation={{ provider: "codex", messages: [], updatedAt: 0, revision: 0, runStatus: "idle" }}
         events={[]}
+        onRetry={() => {}}
         onSuggestion={() => {}}
       />,
     );

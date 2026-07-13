@@ -56,6 +56,96 @@ describe("chat conversations", () => {
     ]);
   });
 
+  it("renders provider-native deltas progressively and completes the same message", () => {
+    const running = startChatRun(emptyChatConversation(1), "run-1", 2);
+    const first = applyChatRunEnvelope(running, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/agentMessage/delta",
+        params: { itemId: "message-1", delta: "Hello" },
+      },
+    }, 3);
+    const second = applyChatRunEnvelope(first, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/agentMessage/delta",
+        params: { itemId: "message-1", delta: " world" },
+      },
+    }, 4);
+    const completed = applyChatRunEnvelope(second, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/completed",
+        params: { item: { id: "message-1", type: "agentMessage", text: "Hello world" } },
+      },
+    }, 5);
+    expect(first.messages[first.messages.length - 1]).toMatchObject({ text: "Hello", status: "running" });
+    expect(second.messages[second.messages.length - 1]).toMatchObject({ text: "Hello world", status: "running" });
+    expect(completed.messages[completed.messages.length - 1]).toMatchObject({ text: "Hello world", status: "complete" });
+    expect(completed.messages.filter((message) => message.role === "assistant")).toHaveLength(1);
+  });
+
+  it("normalizes app-server tools, usage, and completed turns", () => {
+    const running = startChatRun(emptyChatConversation(1), "run-1", 2);
+    const tool = applyChatRunEnvelope(running, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/completed",
+        params: {
+          item: {
+            id: "command-1",
+            type: "commandExecution",
+            command: "npm test",
+            aggregatedOutput: "passed",
+            status: "completed",
+          },
+        },
+      },
+    }, 3);
+    const used = applyChatRunEnvelope(tool, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "thread/tokenUsage/updated",
+        params: {
+          tokenUsage: { total: { inputTokens: 12, cachedInputTokens: 4, outputTokens: 6 } },
+        },
+      },
+    }, 4);
+    const completed = applyChatRunEnvelope(used, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "turn/completed",
+        params: { turn: { status: "completed" } },
+      },
+    }, 5);
+    expect(completed.messages[1]).toMatchObject({
+      role: "tool",
+      text: "npm test\n\npassed",
+      status: "complete",
+    });
+    expect(completed.usage).toEqual({ inputTokens: 12, cachedInputTokens: 4, outputTokens: 6 });
+    expect(completed.runStatus).toBe("complete");
+    expect(completed.activeRunId).toBeUndefined();
+  });
+
   it("normalizes stored chats and never restores a stale running state", () => {
     expect(normalizeChatConversationRecords({
       "/repo\nsession-1": {

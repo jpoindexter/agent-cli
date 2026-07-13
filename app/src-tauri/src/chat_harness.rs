@@ -5,17 +5,26 @@ use std::io::{BufRead, BufReader, Write};
 #[cfg(unix)]
 use std::os::unix::process::CommandExt;
 use std::path::Path;
-use std::process::{Child, Command, Stdio};
-use std::sync::mpsc::{channel, Sender, TryRecvError};
+use std::process::{Child, ChildStdin, Command, Stdio};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::mpsc::{channel, RecvTimeoutError, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, State};
 
 const CHAT_RUN_EVENT: &str = "chat-run-event";
 
+struct ChatRunControl {
+    stdin: Arc<Mutex<ChildStdin>>,
+    stop: Sender<()>,
+    thread_id: Arc<Mutex<Option<String>>>,
+    turn_id: Arc<Mutex<Option<String>>>,
+    next_request_id: AtomicU64,
+}
+
 #[derive(Default)]
 pub(crate) struct ChatRunState {
-    runs: Arc<Mutex<BTreeMap<String, Sender<()>>>>,
+    runs: Arc<Mutex<BTreeMap<String, Arc<ChatRunControl>>>>,
 }
 
 #[derive(Deserialize)]
@@ -51,10 +60,6 @@ struct ChatRunEnvelope {
     line: Option<String>,
 }
 
-fn shell_quote(value: &str) -> String {
-    format!("'{}'", value.replace('\'', "'\\''"))
-}
-
 fn validate_thread_id(value: &str) -> Result<&str, String> {
     if !value.is_empty()
         && value.len() <= 128
@@ -81,16 +86,7 @@ fn validate_run_id(value: &str) -> Result<&str, String> {
     }
 }
 
-fn sandbox_for_approval_mode(mode: &str) -> &'static str {
-    match mode {
-        "fullAccess" => "danger-full-access",
-        "approveSafe" => "workspace-write",
-        _ => "read-only",
-    }
-}
-
-fn codex_runtime_options(request: &ChatRunRequest) -> Result<String, String> {
-    let mut options = Vec::new();
+fn validate_runtime_overrides(request: &ChatRunRequest) -> Result<(), String> {
     if let Some(model) = request
         .model
         .as_deref()
@@ -100,22 +96,75 @@ fn codex_runtime_options(request: &ChatRunRequest) -> Result<String, String> {
         if model.len() > 128 || model.chars().any(char::is_control) {
             return Err("The Codex model override is invalid.".into());
         }
-        options.push(format!("-m {}", shell_quote(model)));
     }
     if let Some(effort) = request.reasoning_effort.as_deref() {
         if !matches!(effort, "low" | "medium" | "high" | "xhigh") {
             return Err("The Codex reasoning effort is invalid.".into());
         }
-        options.push(format!(
-            "-c {}",
-            shell_quote(&format!("model_reasoning_effort=\"{effort}\""))
-        ));
     }
-    Ok(if options.is_empty() {
-        String::new()
+    Ok(())
+}
+
+fn approval_policy_for_mode(mode: &str) -> &'static str {
+    match mode {
+        "fullAccess" => "never",
+        "approveSafe" => "on-request",
+        _ => "untrusted",
+    }
+}
+
+fn sandbox_for_approval_mode(mode: &str) -> &'static str {
+    match mode {
+        "fullAccess" => "danger-full-access",
+        "approveSafe" => "workspace-write",
+        _ => "read-only",
+    }
+}
+
+fn thread_open_request(request: &ChatRunRequest) -> Result<Value, String> {
+    validate_runtime_overrides(request)?;
+    let mut params = json!({
+        "cwd": request.project_path,
+        "approvalPolicy": approval_policy_for_mode(&request.approval_mode),
+        "sandbox": sandbox_for_approval_mode(&request.approval_mode),
+        "serviceName": "Keelhouse",
+    });
+    if let Some(model) = request
+        .model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        params["model"] = json!(model);
+    }
+    let (method, id) = if let Some(thread_id) = request.provider_thread_id.as_deref() {
+        params["threadId"] = json!(validate_thread_id(thread_id)?);
+        ("thread/resume", 2)
     } else {
-        format!(" {}", options.join(" "))
-    })
+        ("thread/start", 2)
+    };
+    Ok(json!({ "jsonrpc": "2.0", "id": id, "method": method, "params": params }))
+}
+
+fn turn_start_request(request: &ChatRunRequest, thread_id: &str) -> Value {
+    let mut params = json!({
+        "threadId": thread_id,
+        "input": [{ "type": "text", "text": request.prompt.trim() }],
+        "approvalPolicy": approval_policy_for_mode(&request.approval_mode),
+        "cwd": request.project_path,
+    });
+    if let Some(model) = request
+        .model
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        params["model"] = json!(model);
+    }
+    if let Some(effort) = request.reasoning_effort.as_deref() {
+        params["effort"] = json!(effort);
+    }
+    json!({ "jsonrpc": "2.0", "id": 3, "method": "turn/start", "params": params })
 }
 
 fn isolate_chat_process(command: &mut Command) {
@@ -134,48 +183,46 @@ fn terminate_chat_process(child: &mut Child, process_group_id: u32) {
     let _ = child.kill();
 }
 
-fn codex_command_line(request: &ChatRunRequest) -> Result<String, String> {
-    if request.provider != "codex" {
-        return Err(format!(
-            "Structured chat is not available for {} yet. Open the raw terminal for that provider.",
-            request.provider
-        ));
-    }
-    let runtime_options = codex_runtime_options(request)?;
-    let line = if let Some(thread_id) = request.provider_thread_id.as_deref() {
-        let thread_id = validate_thread_id(thread_id)?;
-        format!(
-            "exec codex exec resume --json{} {} -",
-            runtime_options,
-            shell_quote(thread_id)
-        )
-    } else {
-        format!(
-            "exec codex exec --json --color never{} -s {} -C {} -",
-            runtime_options,
-            shell_quote(sandbox_for_approval_mode(&request.approval_mode)),
-            shell_quote(&request.project_path),
-        )
-    };
-    Ok(line)
+fn write_rpc(stdin: &Arc<Mutex<ChildStdin>>, message: &Value) -> Result<(), String> {
+    let mut writer = stdin
+        .lock()
+        .map_err(|_| "Could not access the Codex app-server input.".to_string())?;
+    serde_json::to_writer(&mut *writer, message)
+        .and_then(|_| writer.write_all(b"\n").map_err(serde_json::Error::io))
+        .and_then(|_| writer.flush().map_err(serde_json::Error::io))
+        .map_err(|error| format!("Could not send a request to Codex app-server: {error}"))
 }
 
-fn emit_line(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, line: String) {
-    let parsed = if stream == "stdout" {
-        serde_json::from_str::<Value>(&line).ok()
-    } else {
-        None
-    };
-    let raw_line = if parsed.is_some() { None } else { Some(line) };
+fn emit_event(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, event: Value) {
     let _ = app.emit(
         CHAT_RUN_EVENT,
         ChatRunEnvelope {
             stream: stream.into(),
-            event: parsed,
-            line: raw_line,
+            event: Some(event),
+            line: None,
             ..base.clone()
         },
     );
+}
+
+fn emit_raw_line(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, line: String) {
+    let _ = app.emit(
+        CHAT_RUN_EVENT,
+        ChatRunEnvelope {
+            stream: stream.into(),
+            event: None,
+            line: Some(line),
+            ..base.clone()
+        },
+    );
+}
+
+fn response_error(value: &Value) -> Option<String> {
+    value
+        .get("error")
+        .and_then(|error| error.get("message").or(Some(error)))
+        .and_then(Value::as_str)
+        .map(str::to_string)
 }
 
 #[tauri::command]
@@ -184,6 +231,12 @@ pub(crate) fn start_chat_run(
     state: State<ChatRunState>,
     request: ChatRunRequest,
 ) -> Result<ChatRunStarted, String> {
+    if request.provider != "codex" {
+        return Err(format!(
+            "Structured chat is not available for {} yet. Open the raw terminal for that provider.",
+            request.provider
+        ));
+    }
     let project = Path::new(request.project_path.trim());
     if !project.is_dir() {
         return Err(format!(
@@ -191,18 +244,17 @@ pub(crate) fn start_chat_run(
             request.project_path
         ));
     }
-    let prompt = request.prompt.trim().to_string();
-    if prompt.is_empty() {
+    if request.prompt.trim().is_empty() {
         return Err("Chat prompt is empty.".into());
     }
-    let command_line = codex_command_line(&request)?;
+    let thread_request = thread_open_request(&request)?;
     let run_id = validate_run_id(request.run_id.trim())?.to_string();
     let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
     let mut command = Command::new(&shell);
     command
         .arg("-l")
         .arg("-c")
-        .arg(command_line)
+        .arg("exec codex app-server --stdio")
         .current_dir(project)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -210,76 +262,201 @@ pub(crate) fn start_chat_run(
     isolate_chat_process(&mut command);
     let mut child = command
         .spawn()
-        .map_err(|error| format!("Could not launch structured Codex chat: {error}"))?;
+        .map_err(|error| format!("Could not launch Codex app-server: {error}"))?;
     let process_group_id = child.id();
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin
-            .write_all(prompt.as_bytes())
-            .and_then(|_| stdin.flush())
-            .map_err(|error| format!("Could not send the chat prompt to Codex: {error}"))?;
-    }
+    let stdin =
+        Arc::new(Mutex::new(child.stdin.take().ok_or_else(|| {
+            "Could not write to Codex app-server.".to_string()
+        })?));
     let stdout = child
         .stdout
         .take()
-        .ok_or_else(|| "Could not read structured Codex output.".to_string())?;
+        .ok_or_else(|| "Could not read Codex app-server output.".to_string())?;
     let stderr = child
         .stderr
         .take()
         .ok_or_else(|| "Could not read Codex diagnostics.".to_string())?;
     let base = ChatRunEnvelope {
         run_id: run_id.clone(),
-        chat_id: request.chat_id,
-        provider: request.provider,
+        chat_id: request.chat_id.clone(),
+        provider: request.provider.clone(),
         stream: "lifecycle".into(),
         event: None,
         line: None,
     };
     let (stop_tx, stop_rx) = channel::<()>();
+    let thread_id = Arc::new(Mutex::new(None));
+    let turn_id = Arc::new(Mutex::new(None));
+    let control = Arc::new(ChatRunControl {
+        stdin: stdin.clone(),
+        stop: stop_tx,
+        thread_id: thread_id.clone(),
+        turn_id: turn_id.clone(),
+        next_request_id: AtomicU64::new(100),
+    });
     state
         .runs
         .lock()
         .map_err(|_| "Could not register the chat run.".to_string())?
-        .insert(run_id.clone(), stop_tx);
+        .insert(run_id.clone(), control);
 
-    let stdout_app = app.clone();
-    let stdout_base = base.clone();
+    if let Err(error) = write_rpc(
+        &stdin,
+        &json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "clientInfo": {
+                    "name": "keelhouse",
+                    "title": "Keelhouse",
+                    "version": env!("CARGO_PKG_VERSION"),
+                },
+                "capabilities": { "experimentalApi": true },
+            },
+        }),
+    ) {
+        if let Ok(mut active) = state.runs.lock() {
+            active.remove(&run_id);
+        }
+        terminate_chat_process(&mut child, process_group_id);
+        let _ = child.wait();
+        return Err(error);
+    }
+
+    let (stdout_tx, stdout_rx) = channel::<String>();
     let stdout_thread = std::thread::spawn(move || {
         for line in BufReader::new(stdout).lines().map_while(Result::ok) {
-            emit_line(&stdout_app, &stdout_base, "stdout", line);
+            if stdout_tx.send(line).is_err() {
+                break;
+            }
         }
     });
     let stderr_app = app.clone();
     let stderr_base = base.clone();
     let stderr_thread = std::thread::spawn(move || {
         for line in BufReader::new(stderr).lines().map_while(Result::ok) {
-            emit_line(&stderr_app, &stderr_base, "stderr", line);
+            emit_raw_line(&stderr_app, &stderr_base, "stderr", line);
         }
     });
     let runs = state.runs.clone();
     std::thread::spawn(move || {
         let mut stopped = false;
-        let exit_code = loop {
+        let mut turn_finished = false;
+        let mut exit_code = 0;
+        while !turn_finished {
             match stop_rx.try_recv() {
                 Ok(()) => {
                     stopped = true;
                     terminate_chat_process(&mut child, process_group_id);
+                    break;
                 }
-                Err(TryRecvError::Disconnected) => {}
-                Err(TryRecvError::Empty) => {}
+                Err(TryRecvError::Disconnected | TryRecvError::Empty) => {}
             }
-            match child.try_wait() {
-                Ok(Some(status)) => break status.code().unwrap_or(if stopped { 130 } else { 1 }),
-                Ok(None) => std::thread::sleep(Duration::from_millis(50)),
-                Err(_) => {
-                    let _ = child.kill();
-                    break child
+            match stdout_rx.recv_timeout(Duration::from_millis(50)) {
+                Ok(line) => {
+                    let value = match serde_json::from_str::<Value>(&line) {
+                        Ok(value) => value,
+                        Err(_) => {
+                            emit_raw_line(&app, &base, "stdout", line);
+                            continue;
+                        }
+                    };
+                    if let Some(message) = response_error(&value) {
+                        emit_event(
+                            &app,
+                            &base,
+                            "stdout",
+                            json!({ "type": "turn.failed", "error": { "message": message } }),
+                        );
+                        exit_code = 1;
+                        turn_finished = true;
+                        continue;
+                    }
+                    match value.get("id").and_then(Value::as_u64) {
+                        Some(1) => {
+                            if write_rpc(
+                                &stdin,
+                                &json!({ "jsonrpc": "2.0", "method": "initialized" }),
+                            )
+                            .and_then(|_| write_rpc(&stdin, &thread_request))
+                            .is_err()
+                            {
+                                exit_code = 1;
+                                turn_finished = true;
+                            }
+                        }
+                        Some(2) => {
+                            let provider_thread_id = value
+                                .pointer("/result/thread/id")
+                                .and_then(Value::as_str)
+                                .map(str::to_string);
+                            if let Some(provider_thread_id) = provider_thread_id {
+                                if let Ok(mut active_thread) = thread_id.lock() {
+                                    *active_thread = Some(provider_thread_id.clone());
+                                }
+                                emit_event(
+                                    &app,
+                                    &base,
+                                    "stdout",
+                                    json!({ "type": "thread.started", "thread_id": provider_thread_id }),
+                                );
+                                if write_rpc(
+                                    &stdin,
+                                    &turn_start_request(&request, &provider_thread_id),
+                                )
+                                .is_err()
+                                {
+                                    exit_code = 1;
+                                    turn_finished = true;
+                                }
+                            } else {
+                                exit_code = 1;
+                                turn_finished = true;
+                            }
+                        }
+                        Some(3) => {
+                            if let Some(provider_turn_id) = value
+                                .pointer("/result/turn/id")
+                                .and_then(Value::as_str)
+                                .map(str::to_string)
+                            {
+                                if let Ok(mut active_turn) = turn_id.lock() {
+                                    *active_turn = Some(provider_turn_id);
+                                }
+                            }
+                        }
+                        _ => {
+                            let method = value.get("method").and_then(Value::as_str);
+                            if method.is_some() {
+                                emit_event(&app, &base, "stdout", value.clone());
+                            }
+                            if method == Some("turn/completed") {
+                                turn_finished = true;
+                            }
+                        }
+                    }
+                }
+                Err(RecvTimeoutError::Timeout) => {
+                    if let Ok(Some(status)) = child.try_wait() {
+                        exit_code = status.code().unwrap_or(1);
+                        break;
+                    }
+                }
+                Err(RecvTimeoutError::Disconnected) => {
+                    exit_code = child
                         .wait()
                         .ok()
                         .and_then(|status| status.code())
-                        .unwrap_or(if stopped { 130 } else { 1 });
+                        .unwrap_or(1);
+                    break;
                 }
             }
-        };
+        }
+        if child.try_wait().ok().flatten().is_none() {
+            terminate_chat_process(&mut child, process_group_id);
+        }
+        let _ = child.wait();
         let _ = stdout_thread.join();
         let _ = stderr_thread.join();
         if let Ok(mut active) = runs.lock() {
@@ -291,8 +468,8 @@ pub(crate) fn start_chat_run(
                 stream: "lifecycle".into(),
                 event: Some(json!({
                     "type": "run.completed",
-                    "exitCode": exit_code,
-                    "message": if stopped { "Codex run stopped." } else { "Codex chat process exited." },
+                    "exitCode": if stopped { 130 } else { exit_code },
+                    "message": if stopped { "Codex run stopped." } else { "Codex app-server turn exited." },
                 })),
                 ..base
             },
@@ -304,15 +481,42 @@ pub(crate) fn start_chat_run(
 
 #[tauri::command]
 pub(crate) fn stop_chat_run(state: State<ChatRunState>, run_id: String) -> Result<(), String> {
-    let runs = state
+    let control = state
         .runs
         .lock()
-        .map_err(|_| "Could not access active chat runs.".to_string())?;
-    let stop = runs
+        .map_err(|_| "Could not access active chat runs.".to_string())?
         .get(&run_id)
+        .cloned()
         .ok_or_else(|| format!("Chat run {run_id} is no longer active."))?;
-    stop.send(())
-        .map_err(|_| format!("Could not stop chat run {run_id}."))
+    let thread_id = control
+        .thread_id
+        .lock()
+        .ok()
+        .and_then(|value| value.clone());
+    let turn_id = control.turn_id.lock().ok().and_then(|value| value.clone());
+    if let (Some(thread_id), Some(turn_id)) = (thread_id, turn_id) {
+        let request_id = control.next_request_id.fetch_add(1, Ordering::Relaxed);
+        write_rpc(
+            &control.stdin,
+            &json!({
+                "jsonrpc": "2.0",
+                "id": request_id,
+                "method": "turn/interrupt",
+                "params": { "threadId": thread_id, "turnId": turn_id },
+            }),
+        )?;
+        let fallback = control.stop.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_secs(2));
+            let _ = fallback.send(());
+        });
+        Ok(())
+    } else {
+        control
+            .stop
+            .send(())
+            .map_err(|_| format!("Could not stop chat run {run_id}."))
+    }
 }
 
 #[cfg(test)]
@@ -346,84 +550,63 @@ mod tests {
         isolate_chat_process(&mut command);
         let mut child = command.spawn().expect("spawn isolated chat process");
         let process_group_id = child.id();
-
         std::thread::sleep(Duration::from_millis(50));
         terminate_chat_process(&mut child, process_group_id);
-
         let deadline = std::time::Instant::now() + Duration::from_secs(2);
         while std::time::Instant::now() < deadline {
-            if child
-                .try_wait()
-                .expect("poll stopped chat process")
-                .is_some()
-            {
+            if child.try_wait().expect("poll stopped process").is_some() {
                 break;
             }
             std::thread::sleep(Duration::from_millis(20));
         }
-        assert!(
-            child
-                .try_wait()
-                .expect("poll terminated chat process")
-                .is_some(),
-            "chat process did not exit after cancellation"
-        );
-        assert_ne!(
-            unsafe { libc::kill(-(process_group_id as i32), 0) },
-            0,
-            "a descendant remained alive in the chat process group"
-        );
+        assert!(child.try_wait().expect("poll terminated process").is_some());
+        assert_ne!(unsafe { libc::kill(-(process_group_id as i32), 0) }, 0);
     }
 
     #[test]
-    fn starts_new_codex_chats_with_json_and_scoped_sandbox() {
-        let line = codex_command_line(&request(None, "approveSafe")).unwrap();
-        assert_eq!(
-            line,
-            "exec codex exec --json --color never -s 'workspace-write' -C '/tmp/repo with spaces' -"
-        );
+    fn opens_new_codex_threads_with_scoped_permissions() {
+        let value = thread_open_request(&request(None, "approveSafe")).unwrap();
+        assert_eq!(value["method"], "thread/start");
+        assert_eq!(value["params"]["cwd"], "/tmp/repo with spaces");
+        assert_eq!(value["params"]["approvalPolicy"], "on-request");
+        assert_eq!(value["params"]["sandbox"], "workspace-write");
     }
 
     #[test]
     fn resumes_only_valid_provider_thread_ids() {
+        let value = thread_open_request(&request(
+            Some("019f5a64-56ac-7e73-b554-138e0e8352b4"),
+            "ask",
+        ))
+        .unwrap();
+        assert_eq!(value["method"], "thread/resume");
         assert_eq!(
-            codex_command_line(&request(
-                Some("019f5a64-56ac-7e73-b554-138e0e8352b4"),
-                "ask"
-            ))
-            .unwrap(),
-            "exec codex exec resume --json '019f5a64-56ac-7e73-b554-138e0e8352b4' -"
+            value["params"]["threadId"],
+            "019f5a64-56ac-7e73-b554-138e0e8352b4"
         );
-        assert!(codex_command_line(&request(Some("bad; rm -rf"), "ask")).is_err());
+        assert!(thread_open_request(&request(Some("bad; rm -rf"), "ask")).is_err());
     }
 
     #[test]
-    fn applies_model_and_reasoning_to_new_and_resumed_chats() {
-        let mut new_request = request(None, "ask");
-        new_request.model = Some("gpt-5.5".into());
-        new_request.reasoning_effort = Some("high".into());
-        assert_eq!(
-            codex_command_line(&new_request).unwrap(),
-            "exec codex exec --json --color never -m 'gpt-5.5' -c 'model_reasoning_effort=\"high\"' -s 'read-only' -C '/tmp/repo with spaces' -"
-        );
-
-        let mut resumed = request(Some("thread-1"), "fullAccess");
-        resumed.model = Some("o3".into());
-        resumed.reasoning_effort = Some("medium".into());
-        assert_eq!(
-            codex_command_line(&resumed).unwrap(),
-            "exec codex exec resume --json -m 'o3' -c 'model_reasoning_effort=\"medium\"' 'thread-1' -"
-        );
+    fn applies_model_and_effort_to_turns() {
+        let mut configured = request(None, "fullAccess");
+        configured.model = Some("gpt-5.5".into());
+        configured.reasoning_effort = Some("high".into());
+        let thread = thread_open_request(&configured).unwrap();
+        let turn = turn_start_request(&configured, "thread-1");
+        assert_eq!(thread["params"]["model"], "gpt-5.5");
+        assert_eq!(turn["params"]["model"], "gpt-5.5");
+        assert_eq!(turn["params"]["effort"], "high");
+        assert_eq!(turn["params"]["input"][0]["text"], "hello");
     }
 
     #[test]
     fn rejects_invalid_runtime_overrides() {
         let mut invalid_model = request(None, "ask");
         invalid_model.model = Some("bad\nmodel".into());
-        assert!(codex_command_line(&invalid_model).is_err());
-
+        assert!(thread_open_request(&invalid_model).is_err());
         let mut invalid_effort = request(None, "ask");
         invalid_effort.reasoning_effort = Some("maximum".into());
-        assert!(codex_command_line(&invalid_effort).is_err());
+        assert!(thread_open_request(&invalid_effort).is_err());
     }
 }
