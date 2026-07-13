@@ -56,7 +56,7 @@ describe("Settings workspace interactions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Agents" }));
     expect((search as HTMLInputElement).value).toBe("");
-    expect(screen.getByText("Default agent")).toBeTruthy();
+    expect(screen.getByText("Default chat provider")).toBeTruthy();
   });
 
   it("returns to the workbench from Back or Escape", () => {
@@ -81,7 +81,7 @@ describe("Settings workspace interactions", () => {
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Agents" }));
-    fireEvent.change(screen.getByLabelText("Default agent scope"), { target: { value: "project" } });
+    fireEvent.change(screen.getByLabelText("Default chat provider scope"), { target: { value: "project" } });
     expect(screen.getByText("Project override")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Default agent profile"), { target: { value: "codex" } });
     expect(onProfileChange).toHaveBeenCalledWith("project", "codex");

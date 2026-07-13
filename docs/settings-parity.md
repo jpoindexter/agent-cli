@@ -74,5 +74,8 @@ The first modal was a useful functional slice but is not the final settings arch
 - The native package exercised Project inheritance, creating a Codex project override over a Shell global value, resetting it, and returning to the preserved workbench. The first attempt also caught and fixed a released-event crash in the scope selector.
 - Compact settings navigation now activates at 920px, inside the native window's reachable 900px minimum instead of the unreachable former 560px breakpoint.
 - The packaged 904x643 window rendered the Category selector with intact content and controls; evidence is `docs/qa/settings-workspace/native-compact-navigation.png`.
+- Provider connections now report installed CLI version and sign-in state without returning auth output or credential values. Capability labels distinguish Codex structured chat from Gemini/Claude raw-terminal access.
+- The packaged app refreshed Codex/Gemini/Claude health, repaired a legacy Shell chat default back to Codex, added a custom raw-terminal command profile, exposed it in the terminal selector, and preserved Shell as the blank-terminal default.
+- Custom raw-terminal profiles persist as structured label/command records. They never appear as structured chat adapters.
 
-Still open on `SETTINGS-PARITY`: provider profile management, command-palette source controls, and worktree/hook policy.
+Still open on `SETTINGS-PARITY`: command-palette source controls and worktree/hook policy.

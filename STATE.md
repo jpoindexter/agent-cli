@@ -161,7 +161,7 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 2. **CHROME-CONTRACT-V2:** formally lock the prepared control grammar, populated/native screenshots, overlays, fixture parity, and crumb overflow behavior after sign-off.
 3. **CHAT-COMPOSER-CONTEXT:** execute one packaged file-context send and one image send after explicit transmission approval.
 4. **DAILY-DRIVER-LIVE / PERF-BUDGET:** one-project edit + Codex + editor + local server + embedded browser now passes; complete three-project relaunch timing, successful Gemini auth smoke, packaged one-pane render capture, and controlled equivalent VS Code comparison.
-5. **SETTINGS-PARITY:** finish provider profile management, command-palette sources, and worktree/hook policy; Global -> Project -> Chat inheritance and native compact navigation are complete.
+5. **SETTINGS-PARITY:** finish command-palette sources and worktree/hook policy; scoped inheritance, provider health/custom raw-terminal profiles, and native compact navigation are complete.
 6. **AI-CONNECTIONS / AGENT-HOOKS:** harden provider auth, MCP/OAuth, app actions, health checks, profiles, and lifecycle hooks inside the shared settings scope model.
 7. **SOURCE-CONTROL-CONNECTIONS / TERMINAL-INTL-INPUT / OUTSIDE-REVIEW:** finish remaining integration, terminal, and external-review gates.
 8. **CHAT-FORK-CHECKPOINT / CLAUDE-STRUCTURED-ADAPTER / AGENT-ORCHESTRATION / RUN-CARDS-ADAPTER:** extend the provider-neutral contract after v1 durability and approvals.

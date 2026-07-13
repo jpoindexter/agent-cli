@@ -101,3 +101,22 @@ export const launchProfileSummary = (profile: LaunchProfile) => {
   const normalized = withKnownLabel(profile);
   return `${normalized.label}: ${launchProfileCommandLine(normalized)} (${launchProfileMode(normalized)})`;
 };
+
+export const createCustomLaunchProfile = (id: string, label: string, command: string): LaunchProfile => ({
+  id: `custom:${id}`,
+  label: label.trim(),
+  command: command.trim(),
+  args: [],
+  useLoginShell: true,
+});
+
+export const normalizeCustomLaunchProfiles = (value: unknown): LaunchProfile[] => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  return value.flatMap((entry) => {
+    const profile = normalizeLaunchProfile(entry);
+    if (!profile.id.startsWith("custom:") || !profile.label.trim() || !profile.command.trim() || seen.has(profile.id)) return [];
+    seen.add(profile.id);
+    return [profile];
+  }).slice(0, 20);
+};

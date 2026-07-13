@@ -84,12 +84,14 @@ import {
 import type { EditorBufferSnapshot } from "./editorTabs";
 import {
   LAUNCH_PROFILES,
+  createCustomLaunchProfile,
   defaultLaunchProfile,
   defaultTerminalLaunchProfile,
   launchProfileById,
   launchProfileCommandLine,
   launchProfileMode,
   normalizeLaunchProfile,
+  normalizeCustomLaunchProfiles,
   normalizeTerminalLaunchProfile,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
@@ -189,6 +191,11 @@ import {
   type WorktreeRecord,
 } from "./worktrees";
 import { normalizeSourceControlStatus, type SourceControlStatus } from "./sourceControl";
+import {
+  normalizeAgentConnectionsStatus,
+  structuredChatProviderId,
+  type AgentConnectionsStatus,
+} from "./agentConnections";
 import { parseRemoteUrl, type RepoLocation } from "./sourceControlLinks";
 import { imeCaretStyle } from "./terminalIme";
 import { buildSnapshot, createRenderPerfState, recordFrameTime, recordIpcPayloadBytes } from "./renderPerf";
@@ -488,6 +495,7 @@ function App() {
   const detectedLocalDevServerRef = useRef<DetectedLocalDevServer | null>(null);
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const terminalLaunchProfileRef = useRef<LaunchProfile>(defaultTerminalLaunchProfile());
+  const customLaunchProfilesRef = useRef<LaunchProfile[]>([]);
   const intentionallyTerminatedPaneIdsRef = useRef<Set<number>>(new Set());
   const terminalPanesRef = useRef<ManagedTerminalPane[]>([]);
   const fileNodeContextMenuItemsRef = useRef<(node: FileTreeNode) => ContextMenuItem[]>(() => []);
@@ -522,7 +530,11 @@ function App() {
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [launchProfile, setLaunchProfile] = useState<LaunchProfile>(defaultLaunchProfile);
   const [terminalLaunchProfile, setTerminalLaunchProfile] = useState<LaunchProfile>(defaultTerminalLaunchProfile);
+  const [customLaunchProfiles, setCustomLaunchProfiles] = useState<LaunchProfile[]>([]);
   const [launchProfileChanging, setLaunchProfileChanging] = useState(false);
+  const allLaunchProfiles = useMemo(() => [...LAUNCH_PROFILES, ...customLaunchProfiles], [customLaunchProfiles]);
+  const resolveLaunchProfile = (id: string) =>
+    customLaunchProfilesRef.current.find((profile) => profile.id === id) ?? launchProfileById(id);
   const [terminalPanes, setTerminalPanes] = useState<ManagedTerminalPane[]>([]);
   const [activeTerminalPaneId, setActiveTerminalPaneId] = useState<number | null>(null);
   const [paneLabelsBySession, setPaneLabelsBySession] = useState<PaneLabelsBySession>({});
@@ -580,6 +592,8 @@ function App() {
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sourceControlStatus, setSourceControlStatus] = useState<SourceControlStatus | null>(null);
+  const [agentConnectionsStatus, setAgentConnectionsStatus] = useState<AgentConnectionsStatus | null>(null);
+  const [agentConnectionsRefreshing, setAgentConnectionsRefreshing] = useState(false);
   const [repoLocation, setRepoLocation] = useState<RepoLocation | null>(null);
   const [crashNotice, setCrashNotice] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -623,6 +637,18 @@ function App() {
     return () => {
       cancelled = true;
     };
+  }, [settingsOpen]);
+
+  const refreshAgentConnections = () => {
+    setAgentConnectionsRefreshing(true);
+    invoke<unknown>("agent_connections_status")
+      .then((result) => setAgentConnectionsStatus(normalizeAgentConnectionsStatus(result)))
+      .catch(() => setAgentConnectionsStatus(null))
+      .finally(() => setAgentConnectionsRefreshing(false));
+  };
+
+  useEffect(() => {
+    if (settingsOpen) refreshAgentConnections();
   }, [settingsOpen]);
 
   useEffect(() => {
@@ -1832,7 +1858,7 @@ function App() {
         await invoke("focus_pane", { paneId: nextActivePaneId });
       } else if (agentSurfaceMode === "terminal") {
         const firstLayout = initialLayout[0] ?? fallbackLayout[0];
-        const firstProfile = launchProfileById(firstLayout.profileId);
+        const firstProfile = resolveLaunchProfile(firstLayout.profileId);
         const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile: firstProfile });
         root = result.root;
         const layout = requestedSessionId
@@ -1852,7 +1878,7 @@ function App() {
         nextProjectPanes = [pane];
         nextActivePaneId = result.paneId;
         for (const record of restRecords) {
-          const paneProfile = launchProfileById(record.profileId);
+          const paneProfile = resolveLaunchProfile(record.profileId);
           const nextPane = await invoke<OpenPaneResponse>("create_pane", { path: root, profile: paneProfile });
           nextProjectPanes = [
             ...nextProjectPanes,
@@ -2479,6 +2505,12 @@ function App() {
           setComposerError("Create or select a chat before sending.");
           return;
         }
+        const provider = structuredChatProviderId(activeComposerHarness.selectedProfileId);
+        if (!provider) {
+          const profile = resolveLaunchProfile(activeComposerHarness.selectedProfileId);
+          setComposerError(`${profile.label} structured chat is not available yet. Open Raw terminal and select ${profile.label} to use its native CLI.`);
+          return;
+        }
         const preparedContext = await prepareChatContext(route.text, activeComposerHarness, {
           readFile: (attachment) => invoke<TextFileResponse>("read_chat_context_file", {
             root: workspacePathRef.current,
@@ -2509,7 +2541,7 @@ function App() {
             runId,
             chatId,
             projectPath: workspacePathRef.current,
-            provider: "codex",
+            provider,
             providerThreadId: previousConversation.providerThreadId ?? null,
             prompt: preparedContext.prompt,
             images: preparedContext.images,
@@ -2627,6 +2659,28 @@ function App() {
     setTerminalLaunchProfile(profile);
     await storeRef.current?.set("terminalLaunchProfile", profile);
     await storeRef.current?.save();
+  };
+
+  const addCustomTerminalProfile = async (label: string, command: string) => {
+    const profile = createCustomLaunchProfile(crypto.randomUUID(), label, command);
+    const next = [...customLaunchProfilesRef.current, profile];
+    customLaunchProfilesRef.current = next;
+    setCustomLaunchProfiles(next);
+    await storeRef.current?.set("customLaunchProfiles", next);
+    await storeRef.current?.save();
+  };
+
+  const removeCustomTerminalProfile = async (profileId: string) => {
+    const next = customLaunchProfilesRef.current.filter((profile) => profile.id !== profileId);
+    if (next.length === customLaunchProfilesRef.current.length) return;
+    customLaunchProfilesRef.current = next;
+    setCustomLaunchProfiles(next);
+    await storeRef.current?.set("customLaunchProfiles", next);
+    if (terminalLaunchProfileRef.current.id === profileId) {
+      await switchTerminalLaunchProfile(defaultTerminalLaunchProfile());
+    } else {
+      await storeRef.current?.save();
+    }
   };
 
   const setComposerApprovalMode = async (approvalMode: AgentApprovalMode) => {
@@ -4590,6 +4644,9 @@ function App() {
       const savedBrowserProjects = normalizeBrowserPreviewRecords(await store.get<unknown>("browserPreviewByProject"));
       const savedBrowserSessions = normalizeBrowserPreviewRecords(await store.get<unknown>("browserPreviewBySession"));
       const savedProfile = normalizeLaunchProfile(await store.get<unknown>("launchProfile"));
+      const savedCustomProfiles = normalizeCustomLaunchProfiles(await store.get<unknown>("customLaunchProfiles"));
+      customLaunchProfilesRef.current = savedCustomProfiles;
+      setCustomLaunchProfiles(savedCustomProfiles);
       const savedTerminalProfile = normalizeTerminalLaunchProfile(await store.get<unknown>("terminalLaunchProfile"));
       const savedComposerHarness = normalizeComposerHarnessRecords(await store.get<unknown>("composerHarnessBySession"), savedProfile.id);
       const storedScopedSettings = await store.get<unknown>("scopedSettings");
@@ -4602,8 +4659,8 @@ function App() {
             composerChats: savedComposerHarness,
           })
         : normalizeScopedSettings(storedScopedSettings, defaultScopedSettings(savedProfile.id, DEFAULT_BROWSER_PREVIEW_URL));
-      const savedGlobalProfile = launchProfileById(savedScopedSettings.global.agentProfileId);
-      if (storedScopedSettings == null) {
+      const savedGlobalProfile = resolveLaunchProfile(savedScopedSettings.global.agentProfileId);
+      if (storedScopedSettings == null || JSON.stringify(storedScopedSettings) !== JSON.stringify(savedScopedSettings)) {
         await store.set("scopedSettings", savedScopedSettings);
         await store.save();
       }
@@ -5396,9 +5453,9 @@ function App() {
               <select
                 value={terminalLaunchProfile.id}
                 disabled={launchProfileChanging}
-                onChange={(event) => void switchTerminalLaunchProfile(launchProfileById(event.currentTarget.value))}
+                onChange={(event) => void switchTerminalLaunchProfile(resolveLaunchProfile(event.currentTarget.value))}
               >
-                {LAUNCH_PROFILES.map((profile) => (
+                {allLaunchProfiles.map((profile) => (
                   <option key={profile.id} value={profile.id}>
                     {profile.label}
                   </option>
@@ -6323,8 +6380,8 @@ function App() {
               </div>
               <span className="utility-tray__spacer" />
               <label className="terminal-profile-picker" title="New terminal profile">
-                <select aria-label="New pane profile" value={terminalLaunchProfile.id} disabled={launchProfileChanging} onChange={(event) => void switchTerminalLaunchProfile(launchProfileById(event.currentTarget.value))}>
-                  {LAUNCH_PROFILES.map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
+                <select aria-label="New pane profile" value={terminalLaunchProfile.id} disabled={launchProfileChanging} onChange={(event) => void switchTerminalLaunchProfile(resolveLaunchProfile(event.currentTarget.value))}>
+                  {allLaunchProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
                 </select>
               </label>
               <button className="terminal-new-pane" type="button" title={`New ${terminalLaunchProfile.label} pane`} aria-label={`New ${terminalLaunchProfile.label} pane`} disabled={!workspacePath || launchProfileChanging} onClick={() => void createTerminalPane(terminalLaunchProfile)}>
@@ -6419,7 +6476,10 @@ function App() {
       {settingsOpen ? (
         <SettingsModal
           approvalSetting={activeApprovalSetting}
+          agentConnectionsStatus={agentConnectionsStatus}
+          agentConnectionsRefreshing={agentConnectionsRefreshing}
           browserSetting={activeBrowserSetting}
+          customTerminalProfiles={customLaunchProfiles}
           gitBranch={gitStatus?.branch ?? null}
           gitChangeCount={gitStatus ? gitStatus.files.length : null}
           sourceControlStatus={sourceControlStatus}
@@ -6427,7 +6487,13 @@ function App() {
           onOpenSourceControlLink={(url) => void openUrl(url).catch(() => {})}
           layout={renderedWorkbenchLayout}
           profileSetting={activeAgentProfileSetting}
-          profiles={LAUNCH_PROFILES.map((profile) => ({ id: profile.id, label: profile.label }))}
+          profiles={LAUNCH_PROFILES.map((profile) => ({
+            id: profile.id,
+            label: profile.id === "codex"
+              ? profile.label
+              : `${profile.label} · ${profile.id === "shell" ? "not a chat provider" : "raw terminal only"}`,
+            disabled: profile.id !== "codex",
+          }))}
           sessionTitle={activeSessionTitle}
           trayMode={toolTrayMode}
           workspaceName={activeWorkspaceName}
@@ -6435,6 +6501,7 @@ function App() {
             if (scope === "chat") void setComposerApprovalMode(mode);
             else void updateScopedSetting(scope, "approvalMode", mode);
           }}
+          onRefreshAgentConnections={refreshAgentConnections}
           onBrowserUrlCommit={(scope, url) => {
             const normalized = normalizeBrowserPreviewUrl(url);
             if (!normalized) return;
@@ -6449,6 +6516,7 @@ function App() {
               setBrowserLocation(effective);
             })();
           }}
+          onAddCustomTerminalProfile={(label, command) => void addCustomTerminalProfile(label, command)}
           keybindingOverrides={keybindingOverrides}
           onResetLocalData={() => {
             if (!window.confirm("Reset all local data? This clears saved projects, chats, transcripts, layout, and local state files. This cannot be undone.")) return;
@@ -6470,6 +6538,7 @@ function App() {
             void storeRef.current?.save();
             if (enabled) void requestPermission().catch(() => {});
           }}
+          onRemoveCustomTerminalProfile={(profileId) => void removeCustomTerminalProfile(profileId)}
           theme={appTheme}
           onThemeChange={(theme) => {
             setAppTheme(theme);
@@ -6488,7 +6557,7 @@ function App() {
           onClose={() => setSettingsOpen(false)}
           onLayoutChange={setWorkbenchLayout}
           onProfileChange={(scope, profileId) => {
-            const profile = LAUNCH_PROFILES.find((entry) => entry.id === profileId);
+            const profile = resolveLaunchProfile(profileId);
             if (!profile) return;
             if (scope === "global") void switchLaunchProfile(profile);
             else void updateScopedSetting(scope, "agentProfileId", profile.id);

@@ -31,6 +31,7 @@ describe("settings modal data", () => {
     expect(byKeyword.map((row) => row.id)).toEqual(["browser.url"]);
     const byLabel = filterSettingsRows(SETTINGS_ROWS, "permission");
     expect(byLabel.map((row) => row.id)).toEqual(["agents.permission"]);
+    expect(filterSettingsRows(SETTINGS_ROWS, "oauth").map((row) => row.id)).toEqual(["agents.connections"]);
     expect(filterSettingsRows(SETTINGS_ROWS, "zzz-none")).toEqual([]);
   });
 });

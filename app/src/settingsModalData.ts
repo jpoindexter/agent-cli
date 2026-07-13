@@ -54,8 +54,8 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
   {
     id: "agents.profile",
     categoryId: "agents",
-    label: "Default agent",
-    hint: "Launch profile used when a pane starts in the current workspace.",
+    label: "Default chat provider",
+    hint: "Structured provider used when a chat starts. Providers without an adapter remain available in Raw terminal.",
     keywords: ["codex", "claude", "gemini", "shell", "profile", "agent"],
     scope: "global",
   },
@@ -66,6 +66,22 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     hint: "How composer-driven app actions are approved for the active chat.",
     keywords: ["ask", "approve", "full access", "approval", "gate"],
     scope: "chat",
+  },
+  {
+    id: "agents.connections",
+    categoryId: "agents",
+    label: "Provider connections",
+    hint: "Local CLI, sign-in, version, and structured-chat capability. No credential values are read or stored.",
+    keywords: ["codex", "claude", "gemini", "provider", "connection", "auth", "oauth", "login", "health", "version"],
+    scope: "global",
+  },
+  {
+    id: "agents.terminal-profiles",
+    categoryId: "agents",
+    label: "Raw terminal profiles",
+    hint: "Add local CLI commands that can be selected when creating a raw terminal pane.",
+    keywords: ["custom", "command", "cli", "terminal", "profile", "local", "path"],
+    scope: "global",
   },
   {
     id: "layout.dock",

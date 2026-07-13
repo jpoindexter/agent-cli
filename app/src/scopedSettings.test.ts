@@ -60,9 +60,20 @@ describe("scoped settings", () => {
     expect(migrated.projects["/repo"]).toEqual({ browserUrl: "http://localhost:5173" });
     expect(migrated.chats["/repo\nchat-a"]).toEqual({
       browserUrl: "http://localhost:4173",
-      agentProfileId: "gemini",
       approvalMode: "approveSafe",
     });
+  });
+
+  it("repairs legacy raw-terminal profiles that were stored as chat providers", () => {
+    const normalized = normalizeScopedSettings({
+      global: { agentProfileId: "shell", approvalMode: "ask", browserUrl: "http://localhost:3000" },
+      projects: { "/repo": { agentProfileId: "gemini" } },
+      chats: { "/repo\nchat-a": { agentProfileId: "claude" } },
+    });
+
+    expect(normalized.global.agentProfileId).toBe("codex");
+    expect(normalized.projects).toEqual({});
+    expect(normalized.chats).toEqual({});
   });
 
   it("normalizes invalid persisted values without dropping valid overrides", () => {

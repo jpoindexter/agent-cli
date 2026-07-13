@@ -2098,6 +2098,23 @@ struct SourceControlStatusResponse {
     glab: CliToolStatus,
 }
 
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AgentConnectionStatus {
+    id: String,
+    label: String,
+    installed: bool,
+    version: Option<String>,
+    authenticated: Option<bool>,
+    structured_chat: bool,
+}
+
+#[derive(Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+struct AgentConnectionsStatusResponse {
+    providers: Vec<AgentConnectionStatus>,
+}
+
 /// Best-effort account-name extraction from a CLI auth-status line. Only ever
 /// reads a bare username token; never touches a "Token:" line, so a masked or
 /// unmasked credential can never end up in the returned string.
@@ -2186,6 +2203,78 @@ fn source_control_status() -> SourceControlStatusResponse {
         git: cli_tool_status("git", None),
         gh: cli_tool_status("gh", Some(&["auth", "status"])),
         glab: cli_tool_status("glab", Some(&["auth", "status"])),
+    }
+}
+
+fn login_shell_output(binary: &str, args: &[&str]) -> Option<std::process::Output> {
+    let shell = std::env::var("SHELL").unwrap_or_else(|_| "/bin/zsh".into());
+    let mut line = shell_quote(binary);
+    for arg in args {
+        line.push(' ');
+        line.push_str(&shell_quote(arg));
+    }
+    Command::new(shell)
+        .arg("-l")
+        .arg("-c")
+        .arg(line)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .output()
+        .ok()
+}
+
+fn concise_command_output(output: &std::process::Output) -> Option<String> {
+    let combined = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    combined
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .map(|line| line.chars().take(120).collect())
+}
+
+fn agent_connection_status(
+    id: &str,
+    label: &str,
+    auth_args: Option<&[&str]>,
+    structured_chat: bool,
+) -> AgentConnectionStatus {
+    let version_output = login_shell_output(id, &["--version"]);
+    let installed = version_output
+        .as_ref()
+        .map(|output| output.status.success())
+        .unwrap_or(false);
+    let version = version_output.as_ref().and_then(concise_command_output);
+    let authenticated = if installed {
+        auth_args
+            .and_then(|args| login_shell_output(id, args).map(|output| output.status.success()))
+    } else {
+        None
+    };
+    AgentConnectionStatus {
+        id: id.into(),
+        label: label.into(),
+        installed,
+        version,
+        authenticated,
+        structured_chat,
+    }
+}
+
+/// Read-only local CLI and sign-in health. Provider command output is reduced to
+/// the version line; auth output and credential material never cross IPC.
+#[tauri::command]
+fn agent_connections_status() -> AgentConnectionsStatusResponse {
+    AgentConnectionsStatusResponse {
+        providers: vec![
+            agent_connection_status("codex", "Codex", Some(&["login", "status"]), true),
+            agent_connection_status("gemini", "Gemini", None, false),
+            agent_connection_status("claude", "Claude", Some(&["auth", "status"]), false),
+        ],
     }
 }
 
@@ -2854,6 +2943,7 @@ pub fn run() {
             create_project_worktree,
             remove_project_worktree,
             source_control_status,
+            agent_connections_status,
             start_chat_run,
             stop_chat_run,
             respond_chat_approval,
@@ -3233,6 +3323,18 @@ mod tests {
     #[test]
     fn shell_quote_escapes_single_quotes() {
         assert_eq!(shell_quote("that's fine"), "'that'\\''s fine'");
+    }
+
+    #[test]
+    fn concise_command_output_returns_only_the_first_non_empty_line() {
+        let output = Command::new("/bin/sh")
+            .args(["-c", "printf '\\n  provider 1.2.3  \\nignored\\n'"])
+            .output()
+            .expect("run deterministic output fixture");
+        assert_eq!(
+            concise_command_output(&output).as_deref(),
+            Some("provider 1.2.3")
+        );
     }
 
     #[test]

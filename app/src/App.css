@@ -4477,6 +4477,107 @@ body,
   text-align: right;
 }
 
+.settings-workspace__provider-list {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 520px);
+}
+
+.settings-workspace__provider {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(150px, auto) minmax(120px, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-workspace__provider > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.settings-workspace__provider small,
+.settings-workspace__provider > span {
+  color: var(--color-text-muted);
+}
+
+.settings-workspace__provider small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-workspace__terminal-profiles,
+.settings-workspace__profile-list {
+  display: grid;
+  gap: 8px;
+  min-width: min(100%, 520px);
+}
+
+.settings-workspace__profile-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding: 7px 0;
+}
+
+.settings-workspace__profile-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.settings-workspace__profile-row small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-workspace__profile-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.75fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.settings-workspace__profile-form label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.settings-workspace__profile-form .settings-modal__input {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .settings-workspace__provider {
+    grid-template-columns: minmax(120px, 1fr) minmax(140px, auto);
+  }
+
+  .settings-workspace__provider > span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .settings-workspace__profile-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .settings-workspace__profile-form .settings-modal__action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
 .settings-workspace__scope-editor {
   display: flex;
   min-width: 0;

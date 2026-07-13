@@ -29,6 +29,8 @@ export type ScopedSettingView<T> = {
   chat: ScopedSettingResolution<T> | null;
 };
 
+const normalizeStructuredProfileId = (_value: unknown) => "codex";
+
 export const scopedChatKey = (projectPath: string, sessionId: string) => `${projectPath}\n${sessionId}`;
 
 export const defaultScopedSettings = (
@@ -37,7 +39,7 @@ export const defaultScopedSettings = (
 ): ScopedSettingsState => ({
   version: 1,
   global: {
-    agentProfileId,
+    agentProfileId: normalizeStructuredProfileId(agentProfileId),
     approvalMode: "ask",
     browserUrl,
   },
@@ -54,14 +56,11 @@ const normalizeApprovalMode = (value: unknown, fallback: AgentApprovalMode): Age
 const normalizeUrl = (value: unknown, fallback: string) =>
   typeof value === "string" && value.trim() ? value.trim() : fallback;
 
-const normalizeProfileId = (value: unknown, fallback: string) =>
-  typeof value === "string" && value.trim() ? value.trim() : fallback;
-
 const normalizePartialValues = (value: unknown): Partial<ScopedSettingsValues> => {
   if (!isRecord(value)) return {};
   const normalized: Partial<ScopedSettingsValues> = {};
-  if (typeof value.agentProfileId === "string" && value.agentProfileId.trim()) {
-    normalized.agentProfileId = value.agentProfileId.trim();
+  if (value.agentProfileId === "codex") {
+    normalized.agentProfileId = "codex";
   }
   if (value.approvalMode === "ask" || value.approvalMode === "approveSafe" || value.approvalMode === "fullAccess") {
     normalized.approvalMode = value.approvalMode;
@@ -91,7 +90,7 @@ export const normalizeScopedSettings = (
   return {
     version: 1,
     global: {
-      agentProfileId: normalizeProfileId(global.agentProfileId, fallback.global.agentProfileId),
+      agentProfileId: normalizeStructuredProfileId(global.agentProfileId ?? fallback.global.agentProfileId),
       approvalMode: normalizeApprovalMode(global.approvalMode, fallback.global.approvalMode),
       browserUrl: normalizeUrl(global.browserUrl, fallback.global.browserUrl),
     },
@@ -216,8 +215,7 @@ export const migrateLegacyScopedSettings = (input: {
     const override: Partial<ScopedSettingsValues> = {};
     if (browserUrl?.trim()) override.browserUrl = browserUrl.trim();
     if (composer) {
-      const profile = normalizeProfileId(composer.selectedProfileId, "");
-      if (profile) override.agentProfileId = profile;
+      if (composer.selectedProfileId === "codex") override.agentProfileId = "codex";
       if (composer.approvalMode === "ask" || composer.approvalMode === "approveSafe" || composer.approvalMode === "fullAccess") {
         override.approvalMode = composer.approvalMode;
       }

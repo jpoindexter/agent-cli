@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   LAUNCH_PROFILES,
   defaultTerminalLaunchProfile,
+  createCustomLaunchProfile,
   launchProfileById,
   launchProfileCommandLine,
   launchProfileSummary,
   normalizeLaunchProfile,
   normalizeTerminalLaunchProfile,
+  normalizeCustomLaunchProfiles,
 } from "./launchProfiles";
 
 describe("launch profiles", () => {
@@ -55,6 +57,18 @@ describe("launch profiles", () => {
       args: ["--fast"],
       useLoginShell: false,
     });
+  });
+
+  it("normalizes unique managed custom terminal profiles", () => {
+    const custom = createCustomLaunchProfile("one", " Local Agent ", " local-agent ");
+    expect(custom).toEqual({
+      id: "custom:one",
+      label: "Local Agent",
+      command: "local-agent",
+      args: [],
+      useLoginShell: true,
+    });
+    expect(normalizeCustomLaunchProfiles([custom, custom, { id: "codex" }, { id: "custom:bad", command: "" }])).toEqual([custom]);
   });
 
   it("formats visible command details", () => {

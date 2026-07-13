@@ -2,10 +2,16 @@ import { useEffect, useRef, useState } from "react";
 
 import { AppIcon } from "./icons";
 import type { AgentApprovalMode } from "./agentSessionHandle";
+import {
+  formatAgentConnectionCapability,
+  formatAgentConnectionHealth,
+  type AgentConnectionsStatus,
+} from "./agentConnections";
 import { formatCliToolStatus, type SourceControlStatus } from "./sourceControl";
 import { buildIssuesUrl, buildPipelinesUrl, buildPullRequestsUrl, buildRepoUrl, type RepoLocation } from "./sourceControlLinks";
 import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 import type { ScopedSettingView, SettingsScope } from "./scopedSettings";
+import type { LaunchProfile } from "./launchProfiles";
 import {
   filterSettingsRows,
   IGNORED_FOLDERS,
@@ -24,11 +30,14 @@ import {
   type KeybindingOverrides,
 } from "./shortcuts";
 
-type SettingsProfileOption = { id: string; label: string };
+type SettingsProfileOption = { id: string; label: string; disabled?: boolean };
 
 type SettingsModalProps = {
   approvalSetting: ScopedSettingView<AgentApprovalMode>;
+  agentConnectionsStatus?: AgentConnectionsStatus | null;
+  agentConnectionsRefreshing?: boolean;
   browserSetting: ScopedSettingView<string>;
+  customTerminalProfiles?: LaunchProfile[];
   gitBranch: string | null;
   gitChangeCount: number | null;
   initialCategory?: SettingsCategoryId;
@@ -46,10 +55,13 @@ type SettingsModalProps = {
   sessionTitle?: string;
   workspaceName?: string;
   onApprovalModeChange: (scope: SettingsScope, mode: AgentApprovalMode) => void;
+  onRefreshAgentConnections?: () => void;
   onBrowserUrlCommit: (scope: SettingsScope, url: string) => void;
+  onAddCustomTerminalProfile?: (label: string, command: string) => void;
   onClose: () => void;
   onKeybindingOverrideChange?: (id: string, keys: string[] | null) => void;
   onNotificationsChange?: (enabled: boolean) => void;
+  onRemoveCustomTerminalProfile?: (profileId: string) => void;
   onResetLocalData?: () => void;
   onThemeChange?: (theme: "graphite" | "mono-ghost") => void;
   onLayoutChange: (layout: WorkbenchLayoutMode) => void;
@@ -61,7 +73,10 @@ type SettingsModalProps = {
 
 export function SettingsModal({
   approvalSetting,
+  agentConnectionsStatus = null,
+  agentConnectionsRefreshing = false,
   browserSetting,
+  customTerminalProfiles = [],
   gitBranch,
   gitChangeCount,
   initialCategory = "general",
@@ -79,11 +94,14 @@ export function SettingsModal({
   sessionTitle = "Current chat",
   workspaceName = "Current project",
   onApprovalModeChange,
+  onRefreshAgentConnections,
   onBrowserUrlCommit,
+  onAddCustomTerminalProfile,
   onClose,
   onKeybindingOverrideChange,
   onLayoutChange,
   onNotificationsChange,
+  onRemoveCustomTerminalProfile,
   onResetLocalData,
   onThemeChange,
   onProfileChange,
@@ -96,6 +114,8 @@ export function SettingsModal({
   const [scopeByRow, setScopeByRow] = useState<Partial<Record<string, SettingsScope>>>({});
   const [browserDraft, setBrowserDraft] = useState(browserSetting.chat?.value ?? browserSetting.project?.value ?? browserSetting.global.value);
   const [capturingId, setCapturingId] = useState<string | null>(null);
+  const [customProfileLabel, setCustomProfileLabel] = useState("");
+  const [customProfileCommand, setCustomProfileCommand] = useState("");
   const searchRef = useRef<HTMLInputElement | null>(null);
   const conflicts = findKeybindingConflicts();
 
@@ -133,7 +153,7 @@ export function SettingsModal({
           onChange={(event) => onProfileChange(scope, event.currentTarget.value)}
         >
           {profiles.map((profile) => (
-            <option key={profile.id} value={profile.id}>{profile.label}</option>
+            <option key={profile.id} value={profile.id} disabled={profile.disabled}>{profile.label}</option>
           ))}
         </select>
       );
@@ -152,6 +172,69 @@ export function SettingsModal({
           <option value="approveSafe">Approve safe</option>
           <option value="fullAccess">Full access</option>
         </select>
+      );
+    }
+    if (row.id === "agents.connections") {
+      return (
+        <div className="settings-workspace__provider-list" aria-label="Provider connection health">
+          {agentConnectionsStatus?.providers.map((provider) => (
+            <div className="settings-workspace__provider" key={provider.id}>
+              <div>
+                <strong>{provider.label}</strong>
+                <small>{provider.version ?? "Version unavailable"}</small>
+              </div>
+              <span>{formatAgentConnectionHealth(provider)}</span>
+              <span>{formatAgentConnectionCapability(provider)}</span>
+            </div>
+          )) ?? <span className="settings-modal__value">{agentConnectionsRefreshing ? "Checking providers…" : "Provider health unavailable"}</span>}
+          <button
+            className="settings-modal__action"
+            type="button"
+            disabled={agentConnectionsRefreshing}
+            onClick={onRefreshAgentConnections}
+          >
+            {agentConnectionsRefreshing ? "Checking…" : "Refresh"}
+          </button>
+        </div>
+      );
+    }
+    if (row.id === "agents.terminal-profiles") {
+      const canAdd = customProfileLabel.trim().length > 0 && customProfileCommand.trim().length > 0;
+      return (
+        <div className="settings-workspace__terminal-profiles">
+          {customTerminalProfiles.length > 0 ? (
+            <div className="settings-workspace__profile-list" aria-label="Custom raw terminal profiles">
+              {customTerminalProfiles.map((profile) => (
+                <div className="settings-workspace__profile-row" key={profile.id}>
+                  <span><strong>{profile.label}</strong><small>{profile.command}</small></span>
+                  <button className="settings-modal__action settings-modal__action--danger" type="button" onClick={() => onRemoveCustomTerminalProfile?.(profile.id)}>
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : <span className="settings-modal__value">No custom profiles</span>}
+          <form
+            className="settings-workspace__profile-form"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!canAdd) return;
+              onAddCustomTerminalProfile?.(customProfileLabel.trim(), customProfileCommand.trim());
+              setCustomProfileLabel("");
+              setCustomProfileCommand("");
+            }}
+          >
+            <label>
+              <span>Name</span>
+              <input className="settings-modal__input" aria-label="Custom terminal profile name" value={customProfileLabel} onChange={(event) => setCustomProfileLabel(event.currentTarget.value)} placeholder="Local agent" />
+            </label>
+            <label>
+              <span>Command</span>
+              <input className="settings-modal__input" aria-label="Custom terminal profile command" value={customProfileCommand} onChange={(event) => setCustomProfileCommand(event.currentTarget.value)} placeholder="agent-cli" />
+            </label>
+            <button className="settings-modal__action" type="submit" disabled={!canAdd}>Add profile</button>
+          </form>
+        </div>
       );
     }
     if (row.id === "layout.dock") {
