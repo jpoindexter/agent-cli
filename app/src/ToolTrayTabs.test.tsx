@@ -30,6 +30,8 @@ describe("ToolTrayTabs", () => {
   it("exposes accessible names for the icon-only controls", () => {
     const html = renderToStaticMarkup(<ToolTrayTabs mode="browser" onModeChange={noop} onClose={noop} />);
 
+    expect(html).toContain('title="Show Files panel"');
+    expect(html).toContain('title="Hide Browser panel"');
     expect(html).toContain('aria-label="Hide tool tray"');
   });
 });

@@ -4795,7 +4795,7 @@ function App() {
   const drawerActiveTitle = sideDrawerMode === "projects" ? "Project chats" : activeDrawerMode.label;
 
   return (
-    <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""}`} style={appShellStyle}>
+    <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
       <header className="app-titlebar" aria-label="Application chrome" data-tauri-drag-region>
         <div className="titlebar-identity">
           <button className="titlebar-search" type="button" onClick={() => openChatSearch()} title="Search chats across projects">
@@ -6329,7 +6329,9 @@ function App() {
           layout={renderedWorkbenchLayout}
           profileId={launchProfile.id}
           profiles={LAUNCH_PROFILES.map((profile) => ({ id: profile.id, label: profile.label }))}
+          sessionTitle={activeSessionTitle}
           trayMode={toolTrayMode}
+          workspaceName={activeWorkspaceName}
           onApprovalModeChange={(mode) => void setComposerApprovalMode(mode)}
           onBrowserUrlCommit={(url) => {
             const normalized = normalizeBrowserPreviewUrl(url);

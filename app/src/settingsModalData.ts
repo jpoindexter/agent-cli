@@ -1,10 +1,19 @@
 import type { AppIconName } from "./icons";
 
-export type SettingsCategoryId = "general" | "layout" | "app" | "browser" | "git" | "shortcuts";
+export type SettingsCategoryId = "general" | "appearance" | "layout" | "agents" | "app" | "browser" | "git" | "shortcuts";
+
+export type SettingsCategoryGroupId = "personal" | "workbench" | "integrations";
+
+export type SettingsCategoryGroup = {
+  id: SettingsCategoryGroupId;
+  label: string;
+};
 
 export type SettingsCategory = {
   id: SettingsCategoryId;
   label: string;
+  description: string;
+  groupId: SettingsCategoryGroupId;
   icon: AppIconName;
 };
 
@@ -13,14 +22,24 @@ export type SettingsCategory = {
    arrive with their roadmap cards (AI-CONNECTIONS, AGENT-HOOKS, WORKTREE);
    shortcut OVERRIDES arrive with KEYBINDINGS-CONFIG (the reference here
    is read-only); theme variants arrive with THEME. */
-export const SETTINGS_CATEGORIES: SettingsCategory[] = [
-  { id: "general", label: "General", icon: "agent" },
-  { id: "layout", label: "Layout", icon: "layout" },
-  { id: "app", label: "App configuration", icon: "settings" },
-  { id: "browser", label: "Browser preview", icon: "browser" },
-  { id: "git", label: "Git", icon: "git" },
-  { id: "shortcuts", label: "Keyboard shortcuts", icon: "file" },
+export const SETTINGS_CATEGORY_GROUPS: SettingsCategoryGroup[] = [
+  { id: "personal", label: "Personal" },
+  { id: "workbench", label: "Workbench" },
+  { id: "integrations", label: "Integrations" },
 ];
+
+export const SETTINGS_CATEGORIES: SettingsCategory[] = [
+  { id: "general", label: "General", description: "Startup, notifications, and local application behavior.", groupId: "personal", icon: "settings" },
+  { id: "appearance", label: "Appearance", description: "Theme and visual presentation.", groupId: "personal", icon: "layout" },
+  { id: "shortcuts", label: "Keyboard shortcuts", description: "Search and customize supported workbench shortcuts.", groupId: "personal", icon: "file" },
+  { id: "layout", label: "Layout", description: "Tool placement and interface restoration.", groupId: "workbench", icon: "layout" },
+  { id: "agents", label: "Agents", description: "Default provider and approval behavior for chats.", groupId: "workbench", icon: "agent" },
+  { id: "browser", label: "Browser preview", description: "Project and chat preview behavior.", groupId: "workbench", icon: "browser" },
+  { id: "git", label: "Git", description: "Repository health and source-host links.", groupId: "integrations", icon: "git" },
+  { id: "app", label: "App configuration", description: "Local storage, ignored folders, and reset controls.", groupId: "integrations", icon: "settings" },
+];
+
+export type SettingsValueScope = "global" | "project" | "chat";
 
 export type SettingsRowDef = {
   id: string;
@@ -28,22 +47,25 @@ export type SettingsRowDef = {
   label: string;
   hint: string;
   keywords: string[];
+  scope: SettingsValueScope;
 };
 
 export const SETTINGS_ROWS: SettingsRowDef[] = [
   {
-    id: "general.profile",
-    categoryId: "general",
+    id: "agents.profile",
+    categoryId: "agents",
     label: "Default agent",
     hint: "Launch profile used when a pane starts in the current workspace.",
     keywords: ["codex", "claude", "gemini", "shell", "profile", "agent"],
+    scope: "global",
   },
   {
-    id: "general.permission",
-    categoryId: "general",
+    id: "agents.permission",
+    categoryId: "agents",
     label: "Permission mode",
     hint: "How composer-driven app actions are approved for the active chat.",
     keywords: ["ask", "approve", "full access", "approval", "gate"],
+    scope: "chat",
   },
   {
     id: "layout.dock",
@@ -51,6 +73,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Tool tray position",
     hint: "Where the editor/browser tray docks in the workbench.",
     keywords: ["dock", "left", "right", "bottom", "hidden", "tray"],
+    scope: "global",
   },
   {
     id: "layout.tray",
@@ -58,6 +81,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Tray surfaces",
     hint: "Which tool surfaces the tray shows.",
     keywords: ["editor", "browser", "split", "tools"],
+    scope: "global",
   },
   {
     id: "layout.reset",
@@ -65,6 +89,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Reset layout",
     hint: "Return to the demo default: tray docked right on Editor.",
     keywords: ["demo", "default", "first open", "reset"],
+    scope: "global",
   },
   {
     id: "browser.url",
@@ -72,6 +97,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Preview URL",
     hint: "Remembered per project and chat; Enter applies.",
     keywords: ["localhost", "preview", "address", "url"],
+    scope: "chat",
   },
   {
     id: "git.health",
@@ -79,6 +105,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Repository",
     hint: "Detected from the active workspace via git status.",
     keywords: ["branch", "repo", "status", "changes", "health"],
+    scope: "project",
   },
   {
     id: "git.source-control",
@@ -86,6 +113,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Hosting CLI",
     hint: "Detected git/gh/glab presence and login state. PR/MR links and self-hosted GitLab arrive with the full SOURCE-CONTROL-CONNECTIONS card.",
     keywords: ["github", "gitlab", "gh", "glab", "auth", "login", "cli", "hosting"],
+    scope: "project",
   },
   {
     id: "git.remote-links",
@@ -93,6 +121,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Remote",
     hint: "Opens the active repo's remote host in your default browser. Detected from the origin remote; works for GitHub, GitLab, and self-hosted hosts.",
     keywords: ["github", "gitlab", "pull request", "merge request", "issues", "pipeline", "ci", "remote", "open"],
+    scope: "project",
   },
   {
     id: "app.ignored",
@@ -100,20 +129,23 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Ignored folders",
     hint: "Filtered from the file tree and watcher in addition to .gitignore. Fixed for now.",
     keywords: ["node_modules", "gitignore", "tree", "watcher", "exclude"],
+    scope: "global",
   },
   {
     id: "app.theme",
-    categoryId: "app",
+    categoryId: "appearance",
     label: "Theme and font",
     hint: "Graphite with steel-cyan accent; Inter is bundled. More themes arrive with the THEME card.",
     keywords: ["color", "dark", "font", "inter", "appearance"],
+    scope: "global",
   },
   {
     id: "app.notifications",
-    categoryId: "app",
+    categoryId: "general",
     label: "Background notifications",
     hint: "Send a macOS notification when an agent exits in a project you are not viewing. Off by default.",
     keywords: ["notification", "badge", "background", "macos", "alert"],
+    scope: "global",
   },
   {
     id: "app.reset",
@@ -121,6 +153,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Reset all local data",
     hint: "Clear saved projects, chats, transcripts, layout, and local state files. Cannot be undone.",
     keywords: ["reset", "clear", "uninstall", "wipe", "delete", "local data"],
+    scope: "global",
   },
   {
     id: "shortcuts.reference",
@@ -128,6 +161,7 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     label: "Active shortcuts",
     hint: "Read-only reference. Overrides and conflict detection arrive with KEYBINDINGS-CONFIG.",
     keywords: ["keys", "keyboard", "bindings", "cmd", "reference"],
+    scope: "global",
   },
 ];
 

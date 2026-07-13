@@ -9,6 +9,7 @@ import {
   filterSettingsRows,
   IGNORED_FOLDERS,
   SETTINGS_CATEGORIES,
+  SETTINGS_CATEGORY_GROUPS,
   SETTINGS_ROWS,
   settingsRowsForCategory,
   type SettingsCategoryId,
@@ -41,6 +42,8 @@ type SettingsModalProps = {
   profileId: string;
   profiles: SettingsProfileOption[];
   trayMode: ToolTrayMode;
+  sessionTitle?: string;
+  workspaceName?: string;
   onApprovalModeChange: (mode: AgentApprovalMode) => void;
   onBrowserUrlCommit: (url: string) => void;
   onClose: () => void;
@@ -71,6 +74,8 @@ export function SettingsModal({
   profileId,
   profiles,
   trayMode,
+  sessionTitle = "Current chat",
+  workspaceName = "Current project",
   onApprovalModeChange,
   onBrowserUrlCommit,
   onClose,
@@ -105,7 +110,7 @@ export function SettingsModal({
   };
 
   const control = (row: SettingsRowDef) => {
-    if (row.id === "general.profile") {
+    if (row.id === "agents.profile") {
       return (
         <select
           className="settings-modal__select"
@@ -119,7 +124,7 @@ export function SettingsModal({
         </select>
       );
     }
-    if (row.id === "general.permission") {
+    if (row.id === "agents.permission") {
       return (
         <select
           className="settings-modal__select"
@@ -304,6 +309,7 @@ export function SettingsModal({
                       onKeyDown={(event) => {
                         event.preventDefault();
                         if (event.key === "Escape") {
+                          event.stopPropagation();
                           setCapturingId(null);
                           return;
                         }
@@ -348,13 +354,17 @@ export function SettingsModal({
     </>
   );
 
+  const activeCategory = SETTINGS_CATEGORIES.find((entry) => entry.id === category) ?? SETTINGS_CATEGORIES[0];
+  const scopeLabel = (scope: SettingsRowDef["scope"]) => {
+    if (scope === "project") return `Project · ${workspaceName}`;
+    if (scope === "chat") return `Chat · ${sessionTitle}`;
+    return "Global";
+  };
+
   return (
-    <div
-      className="command-palette-backdrop"
-      role="presentation"
-      onPointerDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <section
+      className="settings-workspace"
+      aria-label="Settings"
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -362,40 +372,82 @@ export function SettingsModal({
         }
       }}
     >
-      <div className="settings-modal" role="dialog" aria-modal="true" aria-label="Settings">
-        <header className="settings-modal__head">
-          <strong>Settings</strong>
+      <header className="settings-workspace__header" data-tauri-drag-region>
+        <button className="settings-workspace__back" type="button" onClick={onClose}>
+          <AppIcon name="back" />
+          <span>Back to app</span>
+        </button>
+        <strong className="settings-workspace__title">Settings</strong>
+        <div className="settings-workspace__search-wrap">
+          <AppIcon name="search" />
           <input
             ref={searchRef}
-            className="settings-modal__search"
+            className="settings-workspace__search"
             aria-label="Search settings"
-            placeholder="Search settings"
+            placeholder="Search settings…"
             value={query}
             onChange={(event) => setQuery(event.currentTarget.value)}
           />
-          <button className="settings-modal__close" type="button" aria-label="Close settings" onClick={onClose}>
-            <AppIcon name="close" />
-          </button>
-        </header>
-        <div className="settings-modal__grid">
-          <nav className="settings-modal__nav" aria-label="Settings categories">
-            {SETTINGS_CATEGORIES.map((entry) => (
-              <button
-                key={entry.id}
-                className={`settings-modal__nav-row ${!searching && entry.id === category ? "settings-modal__nav-row--active" : ""}`}
-                type="button"
-                aria-current={!searching && entry.id === category ? "true" : undefined}
-                onClick={() => {
-                  setQuery("");
-                  setCategory(entry.id);
-                }}
-              >
-                <AppIcon name={entry.icon} />
-                <span>{entry.label}</span>
-              </button>
+        </div>
+      </header>
+      <div className="settings-workspace__body">
+        <aside className="settings-workspace__sidebar">
+          <label className="settings-workspace__mobile-label" htmlFor="settings-category">Category</label>
+          <select
+            id="settings-category"
+            className="settings-workspace__category-select"
+            value={category}
+            onChange={(event) => {
+              setQuery("");
+              setCategory(event.currentTarget.value as SettingsCategoryId);
+            }}
+          >
+            {SETTINGS_CATEGORIES.map((entry) => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
+          </select>
+          <nav className="settings-workspace__nav" aria-label="Settings categories">
+            {SETTINGS_CATEGORY_GROUPS.map((group) => (
+              <div className="settings-workspace__nav-group" key={group.id}>
+                <div className="settings-workspace__nav-heading">{group.label}</div>
+                {SETTINGS_CATEGORIES.filter((entry) => entry.groupId === group.id).map((entry) => (
+                  <button
+                    key={entry.id}
+                    className={`settings-workspace__nav-row ${!searching && entry.id === category ? "settings-workspace__nav-row--active" : ""}`}
+                    type="button"
+                    aria-current={!searching && entry.id === category ? "page" : undefined}
+                    onClick={() => {
+                      setQuery("");
+                      setCategory(entry.id);
+                    }}
+                  >
+                    <AppIcon name={entry.icon} />
+                    <span>{entry.label}</span>
+                  </button>
+                ))}
+              </div>
             ))}
           </nav>
-          <div className="settings-modal__content">
+        </aside>
+        <main className="settings-workspace__content">
+          <header className="settings-workspace__content-header">
+            {searching ? (
+              <>
+                <AppIcon name="search" />
+                <div>
+                  <h1>Search results</h1>
+                  <p>{visibleRows.length} setting{visibleRows.length === 1 ? "" : "s"} match “{query.trim()}”.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <AppIcon name={activeCategory.icon} />
+                <div>
+                  <h1>{activeCategory.label}</h1>
+                  <p>{activeCategory.description}</p>
+                </div>
+              </>
+            )}
+          </header>
+          <div className="settings-workspace__rows">
             {visibleRows.length === 0 ? (
               <div className="settings-modal__empty">No settings match “{query.trim()}”.</div>
             ) : (
@@ -405,6 +457,7 @@ export function SettingsModal({
                     <div className="settings-modal__copy">
                       <strong>{row.label}</strong>
                       <span>{row.hint}</span>
+                      <small className="settings-workspace__scope">{scopeLabel(row.scope)}</small>
                     </div>
                     {shortcutTable}
                   </div>
@@ -414,14 +467,17 @@ export function SettingsModal({
                       <strong>{row.label}</strong>
                       <span>{row.hint}</span>
                     </div>
-                    {control(row)}
+                    <div className="settings-workspace__row-control">
+                      {control(row)}
+                      <small className="settings-workspace__scope">{scopeLabel(row.scope)}</small>
+                    </div>
                   </div>
                 ),
               )
             )}
           </div>
-        </div>
+        </main>
       </div>
-    </div>
+    </section>
   );
 }

@@ -21,7 +21,7 @@ This app should borrow the Codex settings shape where it supports the lean VS Co
 
 ## Scope Model
 
-Settings that can vary by project use explicit `Global`, `Workspace`, and `Project` scopes. The UI shows the inherited source and offers a deliberate override/reset action. This applies to agent profiles, model/routing defaults, permission policy, commands, environment variables, hooks, worktree policy, and project lifecycle scripts. Appearance and app-update behavior remain global unless a real workflow proves otherwise.
+Keelhouse currently has three real ownership levels: `Global`, `Project`, and `Chat`. The settings workspace labels every implemented value with its actual owner. A future override model will resolve Global -> Project -> Chat and show the inherited source plus a deliberate override/reset action. Keelhouse must not expose a synthetic Workspace level unless a distinct workspace-group object is implemented. Appearance and app-update behavior remain global unless a real workflow proves otherwise.
 
 ## Drop
 
@@ -45,7 +45,7 @@ Settings that can vary by project use explicit `Global`, `Workspace`, and `Proje
 - Settings has a searchable left-nav layout with grouped sections and icons.
 - Settings is a dedicated full-height workspace with Back to app, not a small modal over active work.
 - Every setting maps to a real app behavior or external connection check.
-- Scoped settings show whether the effective value is global, workspace, project, or inherited.
+- Scoped settings show whether the effective value is global, project, chat, or inherited.
 - Keyboard shortcuts can be searched and rebound; command-palette sources can be enabled or disabled.
 - Dropped categories do not appear in the UI.
 - Parked categories remain documented but invisible unless promoted.
@@ -58,6 +58,17 @@ The first modal was a useful functional slice but is not the final settings arch
 - A stable 230px searchable left navigation with grouped section labels and a flat `Back to app` command.
 - Active navigation uses background-only selection. No decorative side stripe, capsule, or boxed icon button.
 - Content uses a readable maximum width, section headings, hairline grouping, and 48px minimum setting rows.
-- Global/workspace/project tabs appear only on categories that support scoping.
+- Global/project/chat override controls appear only after that inheritance path is real; labels may describe current ownership without implying an editable override.
 - Controls keep the existing 28px field grammar. Destructive actions remain explicit and confirmed; one filled primary action per surface at most.
 - At narrow widths, navigation collapses into a category menu without clipping labels or controls.
+
+## Implemented 2026-07-13
+
+- `Cmd+,` and the titlebar Settings action open a dedicated full-window destination while the workbench remains mounted.
+- Personal, Workbench, and Integrations groups expose only settings backed by current behavior.
+- Search, category navigation, Back to app, Escape, real layout callbacks, and responsive category fallback have interaction coverage.
+- Implemented rows show truthful Global, Project, or Chat ownership labels.
+- The packaged app passed live navigation, cross-category search, and return-to-chat checks. Evidence is in `docs/qa/settings-workspace/`.
+- Narrow right-dock tabs now collapse labels at 420px instead of overlapping; icon buttons retain native tooltips and accessible names.
+
+Still open on `SETTINGS-PARITY`: inherited project/chat overrides, provider profile management, command-palette source controls, worktree/hook policy, and native proof of the category-select breakpoint.

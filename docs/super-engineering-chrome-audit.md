@@ -8,7 +8,7 @@ Audited 2026-07-13 from `/Applications/super.engineering.app` using package insp
 | --- | --- | --- | --- |
 | Persistent chrome | Four quiet top-left controls and a content-first canvas | Titlebar, Threads, dock tabs, tray tabs, status, and composer compete at once | Reduce permanent titlebar information; keep project/chat navigation and trays because they are core |
 | Settings | Full searchable workspace with stable navigation | Small 900x560 modal with six broad categories | Adopt a dedicated settings workspace |
-| Scope | Global, workspace, and project tabs for agents, commands, and profiles | Mostly active-workspace settings | Adopt explicit scope and inheritance |
+| Scope | Global, workspace, and project tabs for agents, commands, and profiles | Keelhouse owns global, project, and chat state but has no separate workspace-group object | Adopt explicit ownership now; add inheritance only across real objects |
 | Agent setup | Chat UI vs terminal default, provider routing, profiles, launch behavior | Provider controls are split between composer and basic settings | Consolidate under Agents and Profiles; keep Chat as the default |
 | Shortcuts | Searchable, rebindable list with conflict/source state | Reference plus partial override support | Match the discoverability, not every command |
 | Command palette | Configurable sources: files, worktrees, tabs, commands, breadcrumbs | One palette with fixed source behavior | Add source filters and shared command registry metadata |

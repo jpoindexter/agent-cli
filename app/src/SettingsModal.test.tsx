@@ -28,18 +28,21 @@ const render = (overrides: Partial<Parameters<typeof SettingsModal>[0]> = {}) =>
   );
 
 describe("SettingsModal", () => {
-  it("renders only the real categories with the active nav stripe", () => {
+  it("renders grouped real categories as a dedicated settings workspace", () => {
     const html = render();
 
-    for (const label of ["General", "Layout", "Browser preview", "Git"]) {
+    for (const label of ["Personal", "Workbench", "Integrations", "General", "Appearance", "Agents", "Layout", "Browser preview", "Git"]) {
       expect(html).toContain(label);
     }
     for (const dropped of ["Pets", "Usage", "Profile</span>", "MCP servers", "Worktrees"]) {
       expect(html).not.toContain(dropped);
     }
-    expect(html.match(/settings-modal__nav-row--active/g)).toHaveLength(1);
-    expect(html).toContain("Default agent");
-    expect(html).toContain("Permission mode");
+    expect(html.match(/settings-workspace__nav-row--active/g)).toHaveLength(1);
+    expect(html).toContain("settings-workspace");
+    expect(html).toContain("Back to app");
+    expect(html).toContain("Background notifications");
+    expect(html).toContain("settings-workspace__category-select");
+    expect(html).not.toContain('aria-modal="true"');
   });
 
   it("shows real git health and search filters rows across categories", () => {
@@ -52,5 +55,16 @@ describe("SettingsModal", () => {
 
     const noRepo = render({ initialCategory: "git", gitBranch: null, gitChangeCount: null });
     expect(noRepo).toContain("No repository detected");
+  });
+
+  it("labels the real persistence scope and keeps agent controls together", () => {
+    const agentHtml = render({ initialCategory: "agents", workspaceName: "agent cli", sessionTitle: "Settings pass" });
+    expect(agentHtml).toContain("Default agent");
+    expect(agentHtml).toContain("Permission mode");
+    expect(agentHtml).toContain("Global");
+    expect(agentHtml).toContain("Chat · Settings pass");
+
+    const projectHtml = render({ initialCategory: "git", workspaceName: "agent cli" });
+    expect(projectHtml).toContain("Project · agent cli");
   });
 });
