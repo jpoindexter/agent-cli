@@ -2501,8 +2501,12 @@ function App() {
     message: ChatMessage,
     decision: "accept" | "acceptForSession" | "decline",
   ) => {
-    const runId = activeChatConversation.activeRunId;
+    const runId = message.approvalRunId ?? activeChatConversation.activeRunId;
     if (!runId || message.approvalRequestId == null) return;
+    if (activeChatConversation.activeRunId !== runId) {
+      setComposerError("That approval belongs to a run that is no longer active.");
+      return;
+    }
     try {
       await invoke("respond_chat_approval", {
         runId,

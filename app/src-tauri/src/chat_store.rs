@@ -22,6 +22,18 @@ pub(crate) struct StoredChatMessage {
     pub status: Option<String>,
     #[serde(default)]
     pub bookmarked: bool,
+    #[serde(default)]
+    pub approval_request_id: Option<i64>,
+    #[serde(default)]
+    pub approval_method: Option<String>,
+    #[serde(default)]
+    pub approval_decision: Option<String>,
+    #[serde(default)]
+    pub approval_resolution: Option<String>,
+    #[serde(default)]
+    pub approval_run_id: Option<String>,
+    #[serde(default)]
+    pub approval_resolved_at: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -317,6 +329,12 @@ fn migrate_schema(connection: &Connection) -> Result<(), String> {
                 title TEXT,
                 status TEXT CHECK(status IS NULL OR status IN ('running','complete','error')),
                 bookmarked INTEGER NOT NULL DEFAULT 0 CHECK(bookmarked IN (0, 1)),
+                approval_request_id INTEGER,
+                approval_method TEXT,
+                approval_decision TEXT,
+                approval_resolution TEXT,
+                approval_run_id TEXT,
+                approval_resolved_at INTEGER,
                 PRIMARY KEY(chat_id, message_id),
                 UNIQUE(chat_id, ordinal)
              );
@@ -346,6 +364,38 @@ fn migrate_schema(connection: &Connection) -> Result<(), String> {
             [],
         )
         .map_err(db_error("Could not record chat discovery migration"))?;
+    for (name, definition) in [
+        ("approval_request_id", "approval_request_id INTEGER"),
+        ("approval_method", "approval_method TEXT"),
+        ("approval_decision", "approval_decision TEXT"),
+        ("approval_resolution", "approval_resolution TEXT"),
+        ("approval_run_id", "approval_run_id TEXT"),
+        ("approval_resolved_at", "approval_resolved_at INTEGER"),
+    ] {
+        let exists = connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM pragma_table_info('chat_messages') WHERE name = ?1)",
+                [name],
+                |row| row.get::<_, i64>(0),
+            )
+            .map_err(db_error("Could not inspect approval attribution migration"))?
+            != 0;
+        if !exists {
+            connection
+                .execute(
+                    &format!("ALTER TABLE chat_messages ADD COLUMN {definition}"),
+                    [],
+                )
+                .map_err(db_error("Could not add approval attribution"))?;
+        }
+    }
+    connection
+        .execute(
+            "INSERT OR IGNORE INTO chat_schema_migrations(version, description, applied_at)
+             VALUES (3, 'durable provider approval attribution', unixepoch() * 1000)",
+            [],
+        )
+        .map_err(db_error("Could not record approval attribution migration"))?;
     Ok(())
 }
 
@@ -494,8 +544,10 @@ fn save_in_transaction(
         transaction
             .execute(
                 "INSERT INTO chat_messages (
-                    chat_id, message_id, ordinal, role, text, timestamp, item_id, title, status, bookmarked
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
+                    chat_id, message_id, ordinal, role, text, timestamp, item_id, title, status, bookmarked,
+                    approval_request_id, approval_method, approval_decision, approval_resolution,
+                    approval_run_id, approval_resolved_at
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
                 params![
                     chat_id,
                     message.id,
@@ -507,6 +559,12 @@ fn save_in_transaction(
                     message.title,
                     message.status,
                     i64::from(message.bookmarked),
+                    message.approval_request_id,
+                    message.approval_method,
+                    message.approval_decision,
+                    message.approval_resolution,
+                    message.approval_run_id,
+                    message.approval_resolved_at,
                 ],
             )
             .map_err(db_error("Could not save chat message"))?;
@@ -605,7 +663,9 @@ fn load_all_from(
     for (chat_id, mut conversation) in rows {
         let mut messages = transaction
             .prepare(
-                "SELECT message_id, role, text, timestamp, item_id, title, status, bookmarked
+                "SELECT message_id, role, text, timestamp, item_id, title, status, bookmarked,
+                        approval_request_id, approval_method, approval_decision, approval_resolution,
+                        approval_run_id, approval_resolved_at
                  FROM chat_messages WHERE chat_id = ?1 ORDER BY ordinal ASC",
             )
             .map_err(db_error("Could not prepare chat message load"))?;
@@ -620,6 +680,12 @@ fn load_all_from(
                     title: row.get(5)?,
                     status: row.get(6)?,
                     bookmarked: row.get::<_, i64>(7)? != 0,
+                    approval_request_id: row.get(8)?,
+                    approval_method: row.get(9)?,
+                    approval_decision: row.get(10)?,
+                    approval_resolution: row.get(11)?,
+                    approval_run_id: row.get(12)?,
+                    approval_resolved_at: row.get(13)?,
                 })
             })
             .map_err(db_error("Could not load chat messages"))?
@@ -708,6 +774,12 @@ mod tests {
                 title: None,
                 status: Some("complete".into()),
                 bookmarked: false,
+                approval_request_id: None,
+                approval_method: None,
+                approval_decision: None,
+                approval_resolution: None,
+                approval_run_id: None,
+                approval_resolved_at: None,
             }],
             updated_at: 100 + revision,
             revision,
@@ -868,6 +940,25 @@ mod tests {
     }
 
     #[test]
+    fn persists_provider_approval_attribution() {
+        let store = store();
+        let mut item = conversation("git push\n\nDecision: Deny · user", 1);
+        item.messages[0].role = "tool".into();
+        item.messages[0].title = Some("Denied".into());
+        item.messages[0].status = Some("error".into());
+        item.messages[0].approval_request_id = Some(41);
+        item.messages[0].approval_method = Some("item/commandExecution/requestApproval".into());
+        item.messages[0].approval_decision = Some("decline".into());
+        item.messages[0].approval_resolution = Some("user".into());
+        item.messages[0].approval_run_id = Some("run-1".into());
+        item.messages[0].approval_resolved_at = Some(1234);
+        store.save("/repo\nchat-1", &item).unwrap();
+
+        let loaded = store.load_all().unwrap();
+        assert_eq!(loaded["/repo\nchat-1"].messages[0], item.messages[0]);
+    }
+
+    #[test]
     fn upgrades_existing_message_schema_without_losing_history() {
         let connection = Connection::open_in_memory().unwrap();
         connection
@@ -914,12 +1005,12 @@ mod tests {
         let connection = store.connection.lock().unwrap();
         let migration: i64 = connection
             .query_row(
-                "SELECT COUNT(*) FROM chat_schema_migrations WHERE version = 2",
+                "SELECT COUNT(*) FROM chat_schema_migrations WHERE version IN (2, 3)",
                 [],
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(migration, 1);
+        assert_eq!(migration, 2);
     }
 
     #[test]
@@ -937,6 +1028,12 @@ mod tests {
                     title: None,
                     status: Some("complete".into()),
                     bookmarked: message == 7,
+                    approval_request_id: None,
+                    approval_method: None,
+                    approval_decision: None,
+                    approval_resolution: None,
+                    approval_run_id: None,
+                    approval_resolved_at: None,
                 })
                 .collect();
             store

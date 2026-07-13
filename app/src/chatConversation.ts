@@ -12,6 +12,10 @@ export type ChatMessage = {
   status?: "running" | "complete" | "error";
   approvalRequestId?: number;
   approvalMethod?: string;
+  approvalDecision?: "accept" | "acceptForSession" | "decline" | "cancel";
+  approvalResolution?: "user" | "timeout" | "runClosed";
+  approvalRunId?: string;
+  approvalResolvedAt?: number;
   bookmarked?: boolean;
 };
 
@@ -89,6 +93,14 @@ const normalizeMessage = (value: unknown): ChatMessage | null => {
   const timestamp = typeof value.timestamp === "number" && Number.isFinite(value.timestamp) ? value.timestamp : 0;
   if (!id || !text || !timestamp) return null;
   const status = value.status;
+  const approvalDecision = value.approvalDecision;
+  const approvalResolution = value.approvalResolution;
+  const approvalRequestId = typeof value.approvalRequestId === "number" && Number.isFinite(value.approvalRequestId)
+    ? Math.max(0, Math.floor(value.approvalRequestId))
+    : undefined;
+  const approvalResolvedAt = typeof value.approvalResolvedAt === "number" && Number.isFinite(value.approvalResolvedAt)
+    ? Math.max(0, Math.floor(value.approvalResolvedAt))
+    : undefined;
   return {
     id,
     role: role as ChatMessageRole,
@@ -97,6 +109,16 @@ const normalizeMessage = (value: unknown): ChatMessage | null => {
     itemId: textValue(value.itemId) || undefined,
     title: textValue(value.title) || undefined,
     status: status === "running" || status === "complete" || status === "error" ? status : undefined,
+    approvalRequestId,
+    approvalMethod: textValue(value.approvalMethod) || undefined,
+    approvalDecision: approvalDecision === "accept" || approvalDecision === "acceptForSession" || approvalDecision === "decline" || approvalDecision === "cancel"
+      ? approvalDecision
+      : undefined,
+    approvalResolution: approvalResolution === "user" || approvalResolution === "timeout" || approvalResolution === "runClosed"
+      ? approvalResolution
+      : undefined,
+    approvalRunId: textValue(value.approvalRunId) || undefined,
+    approvalResolvedAt,
     bookmarked: value.bookmarked === true ? true : undefined,
   };
 };
@@ -405,21 +427,38 @@ export const applyChatRunEnvelope = (
       timestamp: now,
       approvalRequestId: requestId,
       approvalMethod: eventType,
+      approvalRunId: envelope.runId,
     });
   }
   if (eventType === "approval.resolved") {
     const requestId = typeof envelope.event.requestId === "number" ? envelope.event.requestId : -1;
     const decision = textValue(envelope.event.decision);
-    const index = conversation.messages.findIndex((message) => message.approvalRequestId === requestId);
+    const resolution = textValue(envelope.event.resolution);
+    const index = conversation.messages.findIndex((message) =>
+      message.approvalRequestId === requestId
+      && (!message.approvalRunId || message.approvalRunId === envelope.runId)
+    );
     if (index < 0) return conversation;
     const messages = [...conversation.messages];
     const approved = decision === "accept" || decision === "acceptForSession";
+    const decisionLabel = decision === "acceptForSession"
+      ? "Allow for session"
+      : decision === "accept" ? "Allow once" : decision === "cancel" ? "Canceled" : "Deny";
+    const resolutionLabel = resolution === "timeout"
+      ? "timeout"
+      : resolution === "runClosed" ? "run closed" : "user";
     messages[index] = {
       ...messages[index],
       title: approved ? "Approved" : "Denied",
-      text: `${messages[index].text}\n\nDecision: ${decision}`,
+      text: `${messages[index].text}\n\nDecision: ${decisionLabel} · ${resolutionLabel}`,
       status: approved ? "complete" : "error",
       timestamp: now,
+      approvalDecision: decision === "accept" || decision === "acceptForSession" || decision === "decline" || decision === "cancel"
+        ? decision
+        : undefined,
+      approvalResolution: resolution === "timeout" || resolution === "runClosed" ? resolution : "user",
+      approvalRunId: envelope.runId,
+      approvalResolvedAt: now,
     };
     return { ...conversation, messages, updatedAt: now };
   }

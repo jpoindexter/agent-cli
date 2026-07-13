@@ -1143,14 +1143,14 @@
     {
       "id": "CHAT-PROVIDER-APPROVALS",
       "title": "Real provider tool approvals",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "core",
       "size": "M",
       "launch": "v1",
-      "blocker": true,
+      "blocker": false,
   "summary": "Adapt Hashmark's pending-approval registry and inline Allow/Deny pattern at the provider boundary. The existing sandbox selector is not enough: consequential Codex tool requests must pause with exact command/path/diff context and resume only the selected chat run.",
-  "progress": "Run-scoped app-server command/file/permission requests now render exact action/cwd/target/reason with Deny, Allow once, and Allow for session, then respond through the requesting process. Direct provider allow and cancel smokes passed. Denial feedback, close/timeout denial, stronger durable attribution, concurrent-chat native QA, and unlocked packaged allow/deny execution remain.",
+      "progress": "Completed 2026-07-13. Run-scoped app-server requests render exact action/cwd/target/reason and resolve through Deny, Allow once, or Allow for session. Decisions persist with run id, resolution source, and timestamp. Timeout and run close cancel pending requests. Packaged native QA executed allow, deny, stop, concurrent-chat completion, and relaunch restoration; direct provider allow/cancel smokes also passed. Evidence: docs/qa/chat-provider-approvals/README.md.",
       "done": "A real Codex tool request can pause one chat, show exact action/risk/target, Allow once, Deny with feedback, or grant a narrowly scoped session permission; another chat keeps running; timeout/close resolves denied; decisions are persisted and attributed; Full access remains an explicit mode rather than the default; native QA executes allow and deny paths.",
       "buildOrder": 90.23
     },

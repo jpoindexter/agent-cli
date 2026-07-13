@@ -1,0 +1,3 @@
+#!/bin/sh
+
+exec /usr/bin/env node "$(dirname "$0")/fake-codex-app-server.mjs"

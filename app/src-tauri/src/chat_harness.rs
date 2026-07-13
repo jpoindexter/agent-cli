@@ -9,10 +9,17 @@ use std::process::{Child, ChildStdin, Command, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::{channel, RecvTimeoutError, Sender, TryRecvError};
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, State};
 
 const CHAT_RUN_EVENT: &str = "chat-run-event";
+const APPROVAL_TIMEOUT_MS: u64 = 5 * 60 * 1000;
+
+#[derive(Clone, Debug, PartialEq)]
+struct PendingApproval {
+    method: String,
+    requested_at_ms: u64,
+}
 
 struct ChatRunControl {
     base: ChatRunEnvelope,
@@ -20,7 +27,7 @@ struct ChatRunControl {
     stop: Sender<()>,
     thread_id: Arc<Mutex<Option<String>>>,
     turn_id: Arc<Mutex<Option<String>>>,
-    pending_approvals: Arc<Mutex<BTreeMap<u64, String>>>,
+    pending_approvals: Arc<Mutex<BTreeMap<u64, PendingApproval>>>,
     next_request_id: AtomicU64,
 }
 
@@ -275,6 +282,89 @@ fn is_approval_method(method: &str) -> bool {
     )
 }
 
+fn current_time_millis() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+fn approval_response(request_id: u64, decision: &str) -> Value {
+    json!({ "jsonrpc": "2.0", "id": request_id, "result": { "decision": decision } })
+}
+
+fn expired_approval_ids(pending: &BTreeMap<u64, PendingApproval>, now_ms: u64) -> Vec<u64> {
+    pending
+        .iter()
+        .filter_map(|(request_id, approval)| {
+            (now_ms.saturating_sub(approval.requested_at_ms) >= APPROVAL_TIMEOUT_MS)
+                .then_some(*request_id)
+        })
+        .collect()
+}
+
+fn emit_approval_resolution(
+    app: &AppHandle,
+    base: &ChatRunEnvelope,
+    request_id: u64,
+    approval: &PendingApproval,
+    decision: &str,
+    resolution: &str,
+) {
+    emit_event(
+        app,
+        base,
+        "stdout",
+        json!({
+            "type": "approval.resolved",
+            "requestId": request_id,
+            "approvalMethod": approval.method,
+            "decision": decision,
+            "resolution": resolution,
+        }),
+    );
+}
+
+fn resolve_pending_approval(
+    app: &AppHandle,
+    base: &ChatRunEnvelope,
+    stdin: &Arc<Mutex<ChildStdin>>,
+    pending: &Arc<Mutex<BTreeMap<u64, PendingApproval>>>,
+    request_id: u64,
+    decision: &str,
+    resolution: &str,
+) -> Result<(), String> {
+    let approval = pending
+        .lock()
+        .map_err(|_| "Could not access pending chat approvals.".to_string())?
+        .get(&request_id)
+        .cloned()
+        .ok_or_else(|| format!("Approval request {request_id} is no longer pending."))?;
+    write_rpc(stdin, &approval_response(request_id, decision))?;
+    pending
+        .lock()
+        .map_err(|_| "Could not access pending chat approvals.".to_string())?
+        .remove(&request_id);
+    emit_approval_resolution(app, base, request_id, &approval, decision, resolution);
+    Ok(())
+}
+
+fn close_pending_approvals(
+    app: &AppHandle,
+    base: &ChatRunEnvelope,
+    stdin: &Arc<Mutex<ChildStdin>>,
+    pending: &Arc<Mutex<BTreeMap<u64, PendingApproval>>>,
+) {
+    let approvals = pending
+        .lock()
+        .map(|mut approvals| std::mem::take(&mut *approvals))
+        .unwrap_or_default();
+    for (request_id, approval) in approvals {
+        let _ = write_rpc(stdin, &approval_response(request_id, "cancel"));
+        emit_approval_resolution(app, base, request_id, &approval, "cancel", "runClosed");
+    }
+}
+
 #[tauri::command]
 pub(crate) fn start_chat_run(
     app: AppHandle,
@@ -401,11 +491,27 @@ pub(crate) fn start_chat_run(
         while !turn_finished {
             match stop_rx.try_recv() {
                 Ok(()) => {
+                    close_pending_approvals(&app, &base, &stdin, &pending_approvals);
                     stopped = true;
                     terminate_chat_process(&mut child, process_group_id);
                     break;
                 }
                 Err(TryRecvError::Disconnected | TryRecvError::Empty) => {}
+            }
+            let expired = pending_approvals
+                .lock()
+                .map(|pending| expired_approval_ids(&pending, current_time_millis()))
+                .unwrap_or_default();
+            for request_id in expired {
+                let _ = resolve_pending_approval(
+                    &app,
+                    &base,
+                    &stdin,
+                    &pending_approvals,
+                    request_id,
+                    "decline",
+                    "timeout",
+                );
             }
             match stdout_rx.recv_timeout(Duration::from_millis(50)) {
                 Ok(line) => {
@@ -432,7 +538,13 @@ pub(crate) fn start_chat_run(
                         if is_approval_method(method) {
                             if let Some(request_id) = value.get("id").and_then(Value::as_u64) {
                                 if let Ok(mut pending) = pending_approvals.lock() {
-                                    pending.insert(request_id, method.to_string());
+                                    pending.insert(
+                                        request_id,
+                                        PendingApproval {
+                                            method: method.to_string(),
+                                            requested_at_ms: current_time_millis(),
+                                        },
+                                    );
                                 }
                             }
                         }
@@ -514,6 +626,7 @@ pub(crate) fn start_chat_run(
                 }
             }
         }
+        close_pending_approvals(&app, &base, &stdin, &pending_approvals);
         if child.try_wait().ok().flatten().is_none() {
             terminate_chat_process(&mut child, process_group_id);
         }
@@ -561,32 +674,15 @@ pub(crate) fn respond_chat_approval(
         .get(&run_id)
         .cloned()
         .ok_or_else(|| format!("Chat run {run_id} is no longer active."))?;
-    let method = control
-        .pending_approvals
-        .lock()
-        .map_err(|_| "Could not access pending chat approvals.".to_string())?
-        .get(&request_id)
-        .cloned()
-        .ok_or_else(|| format!("Approval request {request_id} is no longer pending."))?;
-    write_rpc(
-        &control.stdin,
-        &json!({ "jsonrpc": "2.0", "id": request_id, "result": { "decision": decision } }),
-    )?;
-    if let Ok(mut pending) = control.pending_approvals.lock() {
-        pending.remove(&request_id);
-    }
-    emit_event(
+    resolve_pending_approval(
         &app,
         &control.base,
-        "stdout",
-        json!({
-            "type": "approval.resolved",
-            "requestId": request_id,
-            "approvalMethod": method,
-            "decision": decision,
-        }),
-    );
-    Ok(())
+        &control.stdin,
+        &control.pending_approvals,
+        request_id,
+        &decision,
+        "user",
+    )
 }
 
 #[tauri::command]
@@ -729,5 +825,33 @@ mod tests {
         assert!(is_approval_method("item/fileChange/requestApproval"));
         assert!(is_approval_method("item/permissions/requestApproval"));
         assert!(!is_approval_method("item/tool/requestUserInput"));
+    }
+
+    #[test]
+    fn expires_only_approval_requests_past_the_deadline() {
+        let pending = BTreeMap::from([
+            (
+                41,
+                PendingApproval {
+                    method: "item/commandExecution/requestApproval".into(),
+                    requested_at_ms: 1_000,
+                },
+            ),
+            (
+                42,
+                PendingApproval {
+                    method: "item/fileChange/requestApproval".into(),
+                    requested_at_ms: 1_000 + APPROVAL_TIMEOUT_MS,
+                },
+            ),
+        ]);
+        assert_eq!(
+            expired_approval_ids(&pending, 1_000 + APPROVAL_TIMEOUT_MS),
+            vec![41]
+        );
+        assert_eq!(
+            approval_response(41, "decline")["result"]["decision"],
+            "decline"
+        );
     }
 }

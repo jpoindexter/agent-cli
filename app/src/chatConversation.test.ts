@@ -165,17 +165,56 @@ describe("chat conversations", () => {
       text: "git push\nWorking directory: /repo\nPublish changes",
       status: "running",
       approvalRequestId: 41,
+      approvalRunId: "run-1",
     });
     const resolved = applyChatRunEnvelope(pending, {
       runId: "run-1",
       chatId: "chat",
       provider: "codex",
       stream: "stdout",
-      event: { type: "approval.resolved", requestId: 41, decision: "decline" },
+      event: { type: "approval.resolved", requestId: 41, decision: "decline", resolution: "user" },
     }, 4);
     expect(resolved.messages[resolved.messages.length - 1]).toMatchObject({
       title: "Denied",
       status: "error",
+      approvalDecision: "decline",
+      approvalResolution: "user",
+      approvalRunId: "run-1",
+      approvalResolvedAt: 4,
+    });
+  });
+
+  it("restores durable approval attribution after relaunch", () => {
+    const restored = normalizeChatConversationRecords({
+      "/repo\nsession-1": {
+        provider: "codex",
+        messages: [{
+          id: "approval-1",
+          role: "tool",
+          text: "git push\n\nDecision: decline",
+          title: "Denied",
+          status: "error",
+          timestamp: 20,
+          approvalRequestId: 41,
+          approvalMethod: "item/commandExecution/requestApproval",
+          approvalDecision: "decline",
+          approvalResolution: "timeout",
+          approvalRunId: "run-1",
+          approvalResolvedAt: 19,
+        }],
+        updatedAt: 20,
+        revision: 2,
+        runStatus: "error",
+      },
+    });
+
+    expect(restored["/repo\nsession-1"].messages[0]).toMatchObject({
+      approvalRequestId: 41,
+      approvalMethod: "item/commandExecution/requestApproval",
+      approvalDecision: "decline",
+      approvalResolution: "timeout",
+      approvalRunId: "run-1",
+      approvalResolvedAt: 19,
     });
   });
 

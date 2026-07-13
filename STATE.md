@@ -50,7 +50,9 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 ## In progress
 
-**Next active slice: finish packaged proof for CHAT-PROVIDER-APPROVALS, then CHAT-COMPOSER-CONTEXT.** CHAT-DURABLE-STORE, DIRECT-AGENT-HARNESS, CHAT-HISTORY-DISCOVERY, and CHAT-RICH-MESSAGES are complete. CHROME-EYEBALL-SIGNOFF remains open for Jason's explicit verdict. The 2026-07-13 native correction follows `demo/keelhouse-chrome-demo.html` structurally: project threads left, continuous structured chat plus anchored composer center, Files/Editor/Browser/Git right dock, and Terminal/Processes/Logs in a collapsible resizable bottom utility tray. Browser exists once in the right dock. Opening utilities never replaces chat. Reset interface restores the approved defaults.
+**Next active slice: finish packaged proof for CHAT-COMPOSER-CONTEXT.** CHAT-DURABLE-STORE, DIRECT-AGENT-HARNESS, CHAT-HISTORY-DISCOVERY, CHAT-RICH-MESSAGES, and CHAT-PROVIDER-APPROVALS are complete. CHROME-EYEBALL-SIGNOFF remains open for Jason's explicit verdict. The 2026-07-13 native correction follows `demo/keelhouse-chrome-demo.html` structurally: project threads left, continuous structured chat plus anchored composer center, Files/Editor/Browser/Git right dock, and Terminal/Processes/Logs in a collapsible resizable bottom utility tray. Browser exists once in the right dock. Opening utilities never replaces chat. Reset interface restores the approved defaults.
+
+**CHAT-PROVIDER-APPROVALS (PACKAGED VERIFIED 2026-07-13):** command/file/permission requests are registered against the requesting run and display exact command, cwd, target, and reason. Allow once, Allow for session, Deny, timeout, stop, and run-close decisions return through that run and persist in SQLite with decision, resolution source, run id, and timestamp. Packaged QA executed allow, deny, stop, concurrent-chat completion, and relaunch restoration; Rust tests execute timeout and run isolation. Evidence: `docs/qa/chat-provider-approvals/README.md`.
 
 **CODEX CHROME EXTRACTION + CHAT COHERENCE (CORRECTED AND PACKAGED 2026-07-13; JASON SIGN-OFF OPEN):** the installed `/Applications/ChatGPT.app` bundle was inspected for shell structure and composer controls. Keelhouse uses a shared centered `56rem` transcript/composer axis, broad `46rem` right-offset prompt surfaces, prompt-led turn grouping, inline provider/tool/error output, 44px primary/thread toolbars, and a subordinate 20px status strip. Jason rejected cyan side highlights and inert composer labels; app rows and prompts now use background-only contrast, and the footer exposes real attachment, approval, goal, Codex model, reasoning effort, stop, and send controls. Model/reasoning overrides reach both new and resumed Codex CLI runs. The rebuilt package was inspected at 1232px and 900px; native approval/runtime menus open without clipping. Evidence is in `docs/qa/chrome-v2/`. Do not call Jason sign-off complete.
 
@@ -154,13 +156,12 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 1. **CHROME-EYEBALL-SIGNOFF:** Jason reviews the corrected packaged shell at 1440/1024/900 and records approval or corrections. Engineering/native review is complete but does not substitute for this verdict.
 2. **CHROME-CONTRACT-V2:** formally lock the prepared control grammar, populated/native screenshots, overlays, fixture parity, and crumb overflow behavior after sign-off.
-3. **CHAT-PROVIDER-APPROVALS:** finish native allow/deny/timeout and concurrent-chat attribution proof.
-4. **CHAT-COMPOSER-CONTEXT:** execute one packaged file-context send and one image send after explicit transmission approval.
-5. **SESSION-PANE-ISOLATION:** key optional raw-terminal process sets by project + chat so chats cannot share terminal ownership accidentally.
-6. **DAILY-DRIVER-LIVE / PERF-BUDGET:** complete native workflows and controlled resource comparison after the primary chat model is durable.
-7. **AI-CONNECTIONS / AGENT-HOOKS:** harden provider auth, MCP/OAuth, app actions, and health checks using Hashmark patterns where safe.
-8. **SOURCE-CONTROL-CONNECTIONS / TERMINAL-INTL-INPUT / OUTSIDE-REVIEW:** finish remaining integration, terminal, and external-review gates.
-9. **CHAT-FORK-CHECKPOINT / CLAUDE-STRUCTURED-ADAPTER / AGENT-ORCHESTRATION / RUN-CARDS-ADAPTER:** extend the provider-neutral contract after v1 durability and approvals.
+3. **CHAT-COMPOSER-CONTEXT:** execute one packaged file-context send and one image send after explicit transmission approval.
+4. **SESSION-PANE-ISOLATION:** key optional raw-terminal process sets by project + chat so chats cannot share terminal ownership accidentally.
+5. **DAILY-DRIVER-LIVE / PERF-BUDGET:** complete native workflows and controlled resource comparison after the primary chat model is durable.
+6. **AI-CONNECTIONS / AGENT-HOOKS:** harden provider auth, MCP/OAuth, app actions, and health checks using Hashmark patterns where safe.
+7. **SOURCE-CONTROL-CONNECTIONS / TERMINAL-INTL-INPUT / OUTSIDE-REVIEW:** finish remaining integration, terminal, and external-review gates.
+8. **CHAT-FORK-CHECKPOINT / CLAUDE-STRUCTURED-ADAPTER / AGENT-ORCHESTRATION / RUN-CARDS-ADAPTER:** extend the provider-neutral contract after v1 durability and approvals.
 
 ## Gotchas
 
