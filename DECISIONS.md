@@ -337,4 +337,6 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 
 **Why:** Jason's populated-chat screenshot exposed detached provider labels, full-width user slabs, and a composer that did not share a visual axis with the transcript. The installed bundle independently confirmed the missing relationships (`48rem` thread cap, shared composer width, grouped message rhythm, sticky gradient footer).
 
-**Verification boundary:** Automated and first-open visual gates pass. Packaged populated-state recapture still requires the macOS Documents-folder permission dialog to be resolved, and Jason's explicit visual sign-off remains open.
+**Correction after populated review:** The measured `48rem` value was not a portable product rule. Jason rejected the first application as visually disjointed. Keelhouse now preserves Codex's shared-axis relationship with a `56rem` transcript/composer cap, broad `46rem` right-offset user prompts, prompt-led turn grouping, 44px primary/thread toolbars, and a subordinate 20px status strip. Duplicate titlebar actions were removed.
+
+**Verification boundary:** The rebuilt package was recaptured with restored multi-project chat history at 1232×768 and 919×653. The corrected turn grouping, wrapping, composer anchoring, and chrome hierarchy are executed evidence. Jason's explicit visual sign-off remains open.

@@ -12,11 +12,11 @@ Exactly three default control types, from the demo:
 - **Transparent icon button:** 16px glyph, no box, color-only hover (muted → ink). Hit area extended to ≥40px via padding.
 - **Filled Send:** the single default filled control — 24px, `--steel-cyan-500` background, white glyph, 4px radius. Modal-confirm primaries are the only other filled buttons.
 
-Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: elevated 8px-radius card with restrained `0 12px 32px rgba(0,0,0,.28)` depth. Type scale: Inter/SF Mono 13px base / 12px meta+mono / 11px uppercase labels.
+Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: integrated 8px-radius surface with restrained `0 10px 28px rgba(0,0,0,.24)` depth. Type scale: Inter/SF Mono 14px conversation / 13px controls / 12px meta+mono / 11px uppercase labels.
 
 ## First-Open Layout (v2)
 
-First open shows the demo layout: chats drawer, centered conversation+composer column (`min(48rem, 100% - 48px)`), right dock open on Files with its tab strip, and statusbar. Returning users keep persisted layouts. Trays remain movable/closable; raw terminal replaces the center conversation only while its titlebar icon is active. The `48rem` cap is source-grounded in the installed Codex shell; see `docs/codex-chrome-extraction-2026-07-13.md`.
+First open shows the demo layout: chats drawer, centered conversation+composer column (`min(56rem, 100% - 64px)`), right dock open on Files with its tab strip, and statusbar. Returning users keep persisted layouts. Trays remain movable/closable; raw terminal replaces the center conversation only while its titlebar icon is active. Codex's observed `48rem` variant was a useful reference, not a transferable requirement: populated native comparison required a wider Keelhouse center with broad `46rem` right-offset user prompts.
 
 ## Required Tokens
 
@@ -39,6 +39,7 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 ## Agent Run Surface
 
 - The structured agent chat is the default surface; raw terminal remains an alternate view for direct TUI interaction.
+- Each user prompt starts one visual turn; assistant, tool, status, and error events remain directly beneath that prompt until the next user prompt.
 - Observable prompt, approval, file, command, error, browser, git, and app events appear as inline provenance in the conversation.
 - Keelhouse does not infer structured chat, tool events, or thinking from terminal text. Codex JSON events provide the first explicit adapter; other providers route to raw terminal until their adapters land.
 - The composer stays pinned below output and activity.
@@ -59,7 +60,7 @@ First open shows the demo layout: chats drawer, centered conversation+composer c
 
 ## Native Engineering Review
 
-**Engineering verdict: no grammar exception found.** The packaged `Keelhouse.app` was reviewed through Computer Use after Reset interface at 1232×768 desktop and 915×652 minimum-window evidence. Desktop restores Chats + continuous chat/composer + Files-right; the narrow layout removes the dock rather than compressing or overlapping chat. The side drawer, active chat stripe, titlebar toggles, composer, status bar, and tool tabs remain readable and coherent. Reset interface recovered the approved Files-first layout from a stale Browser-right preference. Raw terminal remained a distinct titlebar toggle.
+**Engineering verdict: corrected composition holds in populated native states.** The rebuilt packaged `Keelhouse.app` was reviewed through Computer Use at 1232×768 and 919×653 with restored multi-project chat history. The center now groups turns, right-offsets broad user prompts, keeps provider/tool/error output inline, aligns the composer to the same axis, removes duplicate titlebar actions, and reduces status-bar weight. The narrow layout wraps long prompts without overlap and keeps the composer anchored. Raw terminal remains a distinct titlebar toggle.
 
 Native evidence:
 
@@ -68,7 +69,7 @@ Native evidence:
 
 The transient crash-recovery notice is dismissible status feedback, not persistent chrome; it was dismissed before sign-off captures. A restored Browser preference may show the target page's own white or error surface, but first-open/reset remains Files-first.
 
-This review is implementation evidence, not a substitute for Jason's explicit visual sign-off. `CHROME-EYEBALL-SIGNOFF` and the formal `CHROME-CONTRACT-V2` lock remain open until that verdict is recorded.
+This review is implementation evidence, not a substitute for Jason's explicit visual sign-off. The prior 48rem pass was rejected as visually disjointed; `CHROME-EYEBALL-SIGNOFF` and the formal `CHROME-CONTRACT-V2` lock remain open until Jason accepts the corrected populated state.
 
 ## Tool Tray Signals
 

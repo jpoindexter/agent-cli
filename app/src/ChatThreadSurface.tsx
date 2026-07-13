@@ -22,12 +22,26 @@ const messageLabel = (message: ChatMessage) => {
   return message.title ?? (message.role === "error" ? "Error" : "Activity");
 };
 
+const groupMessagesIntoTurns = (messages: ChatMessage[]) => {
+  const turns: { id: string; messages: ChatMessage[] }[] = [];
+
+  for (const message of messages) {
+    if (message.role === "user" || turns.length === 0) {
+      turns.push({ id: message.id, messages: [message] });
+    } else {
+      turns[turns.length - 1].messages.push(message);
+    }
+  }
+
+  return turns;
+};
+
 export function ChatThreadSurface({ conversation, events, hidden = false, onSuggestion }: ChatThreadSurfaceProps) {
   const visibleMessages = conversation.messages.filter((message) =>
     message.role !== "status" || (message.status === "running" && Boolean(conversation.activeRunId))
   );
+  const turns = groupMessagesIntoTurns(visibleMessages);
   const empty = visibleMessages.length === 0 && events.length === 0;
-  let lastConversationalRole: "user" | "assistant" | null = null;
 
   return (
     <div className="agent-chat-surface" aria-hidden={hidden}>
@@ -43,24 +57,31 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
               </div>
             </div>
           ) : null}
-          {visibleMessages.map((message) => {
-            const continuation = message.role === "assistant" && lastConversationalRole === "assistant";
-            if (message.role === "user" || message.role === "assistant") lastConversationalRole = message.role;
+          {turns.map((turn) => {
+            let lastConversationalRole: "user" | "assistant" | null = null;
             return (
-              <article className={`chat-message chat-message--${message.role}${continuation ? " chat-message--continuation" : ""}`} key={message.id}>
-                {message.role !== "tool" && !continuation ? (
-                  <header>
-                    <strong>{messageLabel(message)}</strong>
-                    {message.status === "running" ? <span className="chat-message__running">Working</span> : null}
-                  </header>
-                ) : null}
-                {message.role === "tool" ? (
-                  <details className="chat-tool" open={message.status === "running" || message.status === "error"}>
-                    <summary>{message.title ?? "Activity"}</summary>
-                    <pre>{message.text}</pre>
-                  </details>
-                ) : <div className="chat-message__text">{message.text}</div>}
-              </article>
+              <section className="chat-turn" data-turn-id={turn.id} key={turn.id}>
+                {turn.messages.map((message) => {
+                  const continuation = message.role === "assistant" && lastConversationalRole === "assistant";
+                  if (message.role === "user" || message.role === "assistant") lastConversationalRole = message.role;
+                  return (
+                    <article className={`chat-message chat-message--${message.role}${continuation ? " chat-message--continuation" : ""}`} key={message.id}>
+                      {message.role !== "tool" && !continuation ? (
+                        <header>
+                          <strong>{messageLabel(message)}</strong>
+                          {message.status === "running" ? <span className="chat-message__running">Working</span> : null}
+                        </header>
+                      ) : null}
+                      {message.role === "tool" ? (
+                        <details className="chat-tool" open={message.status === "running" || message.status === "error"}>
+                          <summary>{message.title ?? "Activity"}</summary>
+                          <pre>{message.text}</pre>
+                        </details>
+                      ) : <div className="chat-message__text">{message.text}</div>}
+                    </article>
+                  );
+                })}
+              </section>
             );
           })}
           {events.length > 0 ? <section className="agent-activity-log" aria-label="App activity timeline">

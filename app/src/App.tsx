@@ -4330,12 +4330,6 @@ function App() {
             <AppIcon name={paneStateIconName(primarySurfaceState)} />
             <span>{primarySurfaceLabel}</span>
           </span>
-          <button className="titlebar-action" type="button" onClick={openCommandPalette} title={shortcutTitle("chrome.command-palette", "Command palette")} aria-label="Command palette">
-            <AppIcon name="search" />
-          </button>
-          <button className="titlebar-action" type="button" onClick={pickWorkspace} title="Open folder" aria-label="Open folder">
-            <AppIcon name="folderOpen" />
-          </button>
         </div>
       </header>
       <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label={`${drawerActiveTitle} drawer`}>

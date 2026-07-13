@@ -76,10 +76,10 @@
   --surface-card-border: #30323d;
   --card-radius: 6px;
   --shadow-card: 0 12px 34px rgba(0, 0, 0, 0.18);
-  --shadow-composer: 0 12px 32px rgba(0, 0, 0, 0.28);
-  --run-column-pad: 48px;
+  --shadow-composer: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --run-column-pad: 64px;
   /* Chat and composer share one readable axis. Tool trays can use the rest. */
-  --run-column-width: min(48rem, calc(100% - var(--run-column-pad)));
+  --run-column-width: min(56rem, calc(100% - var(--run-column-pad)));
   --control-height-sm: 22px;
   --control-height-md: 28px;
   --menu-bg: #1b1c23;
@@ -118,7 +118,7 @@ body,
   position: relative;
   display: grid;
   grid-template-columns: minmax(52px, var(--side-drawer-width)) minmax(0, 1fr);
-  grid-template-rows: 36px minmax(0, 1fr) 24px;
+  grid-template-rows: 44px minmax(0, 1fr) 20px;
   grid-template-areas:
     "titlebar titlebar"
     "sidebar main"
@@ -4533,8 +4533,8 @@ body,
 .app-titlebar {
   grid-template-columns: var(--side-drawer-width) 6px minmax(420px, 1fr) 6px var(--dock-width, 430px);
   gap: 0;
-  height: 36px;
-  background: linear-gradient(#22232b, #1b1c23);
+  height: 44px;
+  background: #1d1e25;
   padding: 0;
 }
 
@@ -4542,7 +4542,7 @@ body,
   gap: 14px;
   padding-left: 76px;
   border-right: 0;
-  background: #202129;
+  background: #1b1c23;
 }
 
 .titlebar-search {
@@ -4596,9 +4596,9 @@ body,
 }
 
 .titlebar-actions {
-  gap: 12px;
-  padding: 0 10px;
-  background: #202129;
+  gap: 10px;
+  padding: 0 12px;
+  background: #1b1c23;
 }
 
 .titlebar-pill {
@@ -4636,11 +4636,11 @@ body,
 }
 
 .drawer-toolbar {
-  height: 42px;
-  flex: 0 0 42px;
+  height: 44px;
+  flex: 0 0 44px;
   gap: 8px;
   border-bottom: 1px solid #2b2d36;
-  background: #1f2028;
+  background: #1b1c23;
   color: #ececf4;
   font-size: 13px;
   font-weight: 600;
@@ -4810,11 +4810,11 @@ body,
 }
 
 .terminal-titlebar {
-  height: 38px;
-  min-height: 38px;
+  height: 44px;
+  min-height: 44px;
   border-bottom: 1px solid #2b2d36;
-  background: #1d1e25;
-  padding: 0 12px;
+  background: #191a21;
+  padding: 0 16px;
 }
 
 .terminal-titlebar .terminal-title {
@@ -4832,13 +4832,24 @@ body,
   width: 100%;
   min-height: 0;
   overflow: auto;
-  padding: 32px 24px 24px;
+  padding: 28px 32px 48px;
 }
 
 .chat-thread__content {
   width: var(--run-column-width);
   min-height: 100%;
   margin: 0 auto;
+}
+
+.chat-turn {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 30px;
+}
+
+.chat-turn:last-child {
+  margin-bottom: 0;
 }
 
 .chat-empty {
@@ -4880,9 +4891,9 @@ body,
 
 .chat-message {
   display: grid;
-  gap: 8px;
+  gap: 7px;
   width: 100%;
-  margin-bottom: 20px;
+  margin: 0;
   color: #ececf4;
 }
 
@@ -4891,7 +4902,7 @@ body,
   align-items: center;
   gap: 8px;
   color: #a6a8b6;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .chat-message > header strong {
@@ -4900,20 +4911,22 @@ body,
 }
 
 .chat-message--user {
-  width: fit-content;
-  max-width: min(100%, 68ch);
+  width: min(100%, 46rem);
+  max-width: 100%;
   margin-left: auto;
-  background: #1b1c23;
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-left: 2px solid #67c3d1;
+  background: #1a1b22;
+  border-radius: 0;
+  padding: 12px 14px 13px;
 }
 
 .chat-message--assistant {
   margin-right: auto;
+  padding-left: 0;
 }
 
 .chat-message--continuation {
-  margin-top: -12px;
+  margin-top: -6px;
 }
 
 .chat-message--continuation > header {
@@ -4922,7 +4935,7 @@ body,
 
 .chat-message--status {
   width: fit-content;
-  margin: -8px 0 16px;
+  margin: -4px 0 0;
   color: #a6a8b6;
   font-size: 12px;
 }
@@ -4934,11 +4947,12 @@ body,
 .chat-message--error {
   border-left: 2px solid var(--color-danger);
   color: #ffd6dd;
-  padding-left: 12px;
+  background: rgba(209, 109, 109, 0.045);
+  padding: 10px 12px;
 }
 
 .chat-message__text {
-  font: 13px/1.65 var(--font-ui);
+  font: 14px/1.6 var(--font-ui);
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -4948,15 +4962,15 @@ body,
 }
 
 .chat-tool {
-  border-top: 1px solid #30323d;
-  border-bottom: 1px solid #30323d;
+  border: 0;
   color: #a6a8b6;
+  padding-left: 2px;
 }
 
 .chat-tool summary {
   cursor: default;
   font: 12px/1.4 var(--font-ui);
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .chat-tool pre {
@@ -4965,7 +4979,8 @@ body,
   margin: 0;
   color: #d3d4df;
   font: 11px/1.55 "SF Mono", Menlo, Monaco, Consolas, monospace;
-  padding: 0 0 10px;
+  border-left: 1px solid #30323d;
+  padding: 4px 0 6px 12px;
   white-space: pre-wrap;
 }
 
@@ -4984,18 +4999,18 @@ body,
 }
 
 .agent-thread-event {
-  border: 1px solid #30323d;
-  border-radius: 6px;
-  background: #191a22;
-  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.18);
-  margin: 0 0 10px;
-  padding: 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  margin: 0 0 8px;
+  padding: 6px 0;
 }
 
 .agent-composer {
   border-top: 0;
-  padding: 0 24px 16px;
-  background: linear-gradient(rgba(11, 11, 12, 0), #14151b 34%);
+  padding: 12px 32px 16px;
+  background: linear-gradient(rgba(20, 21, 27, 0), #14151b 28%);
 }
 
 .agent-composer[hidden] {
@@ -5005,29 +5020,30 @@ body,
 .agent-composer__card {
   width: var(--run-column-width);
   margin: 0 auto;
-  border: 1px solid #343642;
+  border: 1px solid #30323d;
   border-radius: 8px;
-  background: #1b1c23;
+  background: #1c1d24;
   box-shadow: var(--shadow-composer);
 }
 
 .agent-composer__input {
-  min-height: 68px;
+  min-height: 52px;
   max-height: 160px;
   color: #ececf4;
-  padding: 13px 14px;
+  font-size: 14px;
+  padding: 12px 14px 8px;
 }
 
 .agent-composer__bar {
-  height: 34px;
-  gap: 12px;
-  border-top: 1px solid #232530;
+  height: 32px;
+  gap: 10px;
+  border-top: 0;
   color: #a6a8b6;
   padding: 0 10px;
 }
 
 .agent-composer__attachments {
-  gap: 12px;
+  gap: 10px;
 }
 
 .agent-composer__attachment-button {
@@ -5148,21 +5164,21 @@ body,
 }
 
 .status-bar {
-  height: 24px;
+  height: 20px;
   display: grid;
   grid-template-columns: var(--side-drawer-width) 1fr auto;
   gap: 0;
   border-top: 1px solid #2b2d36;
-  background: #1d1e25;
-  color: #a6a8b6;
-  font-size: 12px;
+  background: #171820;
+  color: #707383;
+  font-size: 11px;
   padding: 0;
 }
 
 .status-bar__group {
   display: flex;
   min-width: 0;
-  height: 24px;
+  height: 20px;
   align-items: center;
   gap: 14px;
   padding: 0 10px;

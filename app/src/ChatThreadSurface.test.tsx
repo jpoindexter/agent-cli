@@ -33,7 +33,32 @@ describe("ChatThreadSurface", () => {
     expect(html).not.toContain("Completed");
     expect(html).not.toContain("Working");
     expect(html.match(/>Codex</g)).toHaveLength(1);
+    expect(html.match(/class="chat-turn"/g)).toHaveLength(1);
     expect(html).not.toContain("Terminal-backed");
+  });
+
+  it("groups each user prompt with the output that follows it", () => {
+    const html = renderToStaticMarkup(
+      <ChatThreadSurface
+        conversation={{
+          provider: "codex",
+          updatedAt: 5,
+          messages: [
+            { id: "user-1", role: "user", text: "First prompt", timestamp: 1 },
+            { id: "assistant-1", role: "assistant", text: "First response", timestamp: 2 },
+            { id: "tool-1", role: "tool", title: "Edited a file", text: "App.tsx", status: "complete", timestamp: 3 },
+            { id: "user-2", role: "user", text: "Second prompt", timestamp: 4 },
+            { id: "assistant-2", role: "assistant", text: "Second response", timestamp: 5 },
+          ],
+        }}
+        events={[]}
+        onSuggestion={() => {}}
+      />,
+    );
+
+    expect(html.match(/class="chat-turn"/g)).toHaveLength(2);
+    expect(html).toContain('data-turn-id="user-1"');
+    expect(html).toContain('data-turn-id="user-2"');
   });
 
   it("shows working status only while the selected chat owns a live run", () => {

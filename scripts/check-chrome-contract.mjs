@@ -83,11 +83,14 @@ assert(/\.terminal-title\s*\{[^}]*display: none;/s.test(appCss), "Terminal toolb
 assert(appCss.includes("container-type: inline-size;"), "Browser preview must use container-aware chrome behavior");
 assert(/@container \(max-width: 280px\)\s*\{[\s\S]*?\.browser-button--go\s*\{[^}]*display: none;/s.test(appCss), "Narrow browser tray must hide the Open button to prevent toolbar overlap");
 assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-style agent event cards");
-assert(/\.agent-composer__card\s*\{[^}]*width:\s*var\(--run-column-width\);[^}]*border:\s*1px solid #343642;[^}]*border-radius:\s*8px;[^}]*background:\s*#1b1c23;/s.test(appCss), "Composer must preserve the approved restrained elevated-card grammar");
-assert(appCss.includes("--run-column-width: min(48rem, calc(100% - var(--run-column-pad)));"), "Run and composer surfaces must share the Codex-derived centered column width token");
+assert(/\.agent-composer__card\s*\{[^}]*width:\s*var\(--run-column-width\);[^}]*border:\s*1px solid #30323d;[^}]*border-radius:\s*8px;[^}]*background:\s*#1c1d24;/s.test(appCss), "Composer must preserve the restrained integrated-surface grammar");
+assert(appCss.includes("--run-column-width: min(56rem, calc(100% - var(--run-column-pad)));"), "Conversation and composer must share the populated-state reading axis");
 assert(appCss.includes(".chat-thread__content"), "Chat output must use the same centered reading axis as the composer");
+assert(/\.chat-message--user\s*\{[^}]*width:\s*min\(100%, 46rem\);[^}]*margin-left:\s*auto;[^}]*border-left:\s*2px solid #67c3d1;/s.test(appCss), "User prompts must be broad right-offset turn anchors, not tiny bubbles or full-width slabs");
+assert(appCss.includes("grid-template-rows: 44px minmax(0, 1fr) 20px;"), "Application chrome must preserve the calm 44px toolbar and low-weight 20px status strip");
 assert(/\.project-rail__heading\s*\{[^}]*font-size:\s*11px;[^}]*font-weight:\s*600;[^}]*text-transform:\s*uppercase;/s.test(appCss), "Project section labels must preserve the compact uppercase rhythm");
 assert(chatThreadSurface.includes('className="chat-thread"'), "Chat surface must render a persistent message timeline");
+assert(chatThreadSurface.includes('className="chat-turn"'), "Chat surface must group each prompt with the provider output that follows it");
 assert(chatThreadSurface.includes('message.role === "user"'), "Chat surface must distinguish user messages from Codex responses");
 assert(chatThreadSurface.includes("agent-thread-event"), "Chat surface must render provenance activity rows");
 assert(!chatThreadSurface.includes("agent-activity-log__title\">Activity"), "Agent events must stay inline instead of becoming a separate Activity dashboard");
