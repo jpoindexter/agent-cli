@@ -2,7 +2,7 @@
 
 Keelhouse uses `lucide-react` as the single SVG icon family for v0.5 chrome. Icons are outline-first, inherit `currentColor`, and sit on a 16px dense-workbench grid.
 
-The native app identity is separate from toolbar glyphs. `app/resources/branding/keelhouse-app-icon.png` is the 1024-class source; Tauri-generated PNG/ICNS/ICO assets live in `app/src-tauri/icons/`. The mark is one warm-white geometric `K` on a graphite macOS squircle. It has no internal panels, crest, character illustration, gradient orb, orange accent, cyan band, or generic AI sparkle motif.
+The native app identity is separate from toolbar glyphs. `app/resources/branding/keelhouse-app-icon.svg` is the editable source, and `keelhouse-app-icon.png` is the 1024-class Tauri input; generated PNG/ICNS/ICO assets live in `app/src-tauri/icons/`. The mark is three flat blades converging into one central keel on a graphite macOS squircle. It uses warm white with one restrained steel-cyan blade and has no letterform, internal panels, crest, character illustration, gradient, glow, bevel, orange accent, or generic AI sparkle motif.
 
 ## Implementation
 
@@ -21,7 +21,7 @@ The native app identity is separate from toolbar glyphs. `app/resources/branding
 - Keep the native mark legible at 16px: one silhouette, two colors, no fine internal detail, and no duplicate badge container inside the macOS icon mask.
 - New icons should be added to `app/src/icons.tsx` first, then consumed by components.
 - Git status and diff review now use the shared icon contract. Source-host and multi-pane-specific icons wait until those surfaces exist. Browser preview uses the shared icon contract for navigation, reload, URL, and external-open controls.
-- Regenerate native bundle assets with `cd app && npx tauri icon resources/branding/keelhouse-app-icon.png`; do not hand-edit derived sizes.
+- Render the source with `magick -background none resources/branding/keelhouse-app-icon.svg -resize 1024x1024 resources/branding/keelhouse-app-icon.png`, then regenerate native bundle assets with `npx tauri icon resources/branding/keelhouse-app-icon.png`; do not hand-edit derived sizes.
 
 ## QA
 

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">Keelhouse</title>
+  <desc id="desc">Three precise blades converge into a central keel.</desc>
+  <defs>
+    <clipPath id="tile">
+      <rect x="48" y="48" width="928" height="928" rx="214" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect x="48" y="48" width="928" height="928" fill="#111318" />
+    <path
+      d="M270 300C270 284 288 275 301 284L473 405C498 423 512 451 512 481V514L287 356C276 348 270 335 270 321V300Z"
+      fill="#F2F1EC"
+    />
+    <path
+      d="M754 300C754 284 736 275 723 284L551 405C526 423 512 451 512 481V514L737 356C748 348 754 335 754 321V300Z"
+      fill="#F2F1EC"
+    />
+    <path
+      d="M476 490H548V710C548 732 535 752 512 766C489 752 476 732 476 710V490Z"
+      fill="#78C7D8"
+    />
+  </g>
+</svg>
