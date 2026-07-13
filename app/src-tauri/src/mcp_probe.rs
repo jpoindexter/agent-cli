@@ -1,6 +1,7 @@
 use crate::connection_secrets::{
     read_connection_secret, resolve_connection_environment, ConnectionEnvironmentInput,
 };
+use crate::mcp_oauth::oauth_authorization_header;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io::{BufRead, BufReader, Read, Write};
@@ -285,9 +286,7 @@ fn bearer_header(request: &McpProbeRequest) -> Result<Option<String>, String> {
             .map(|token| format!("Bearer {token}"))
             .ok_or_else(|| "MCP bearer token is missing from macOS Keychain.".into())
             .map(Some),
-        "oauth" => {
-            Err("MCP OAuth authorization is required before this server can be checked.".into())
-        }
+        "oauth" => oauth_authorization_header(&request.id).map(Some),
         _ => Err("MCP authentication mode is invalid.".into()),
     }
 }

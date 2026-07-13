@@ -47,6 +47,24 @@ fn keychain_entry(key: &str) -> Result<keyring::Entry, String> {
         .map_err(|_| "macOS Keychain is unavailable.".to_string())
 }
 
+pub(crate) fn write_connection_secret(key: &str, value: &str) -> Result<(), String> {
+    let key = validate_secret_key(key)?;
+    if value.is_empty() || value.len() > 32_768 {
+        return Err("Secret value must contain 1 to 32768 characters.".into());
+    }
+    keychain_entry(key)?
+        .set_password(value)
+        .map_err(|_| "macOS Keychain rejected the secret.".to_string())
+}
+
+pub(crate) fn remove_connection_secret(key: &str) -> Result<(), String> {
+    let key = validate_secret_key(key)?;
+    match keychain_entry(key)?.delete_credential() {
+        Ok(()) | Err(keyring::Error::NoEntry) => Ok(()),
+        Err(_) => Err("macOS Keychain could not remove the secret.".into()),
+    }
+}
+
 pub(crate) fn read_connection_secret(key: &str) -> Result<Option<String>, String> {
     let key = validate_secret_key(key)?;
     match keychain_entry(key)?.get_password() {
@@ -133,22 +151,14 @@ pub(crate) fn resolve_connection_environment(
 #[tauri::command]
 pub fn set_connection_secret(key: String, value: String) -> Result<ConnectionSecretStatus, String> {
     let key = validate_secret_key(&key)?.to_string();
-    if value.is_empty() || value.len() > 32_768 {
-        return Err("Secret value must contain 1 to 32768 characters.".into());
-    }
-    keychain_entry(&key)?
-        .set_password(&value)
-        .map_err(|_| "macOS Keychain rejected the secret.".to_string())?;
+    write_connection_secret(&key, &value)?;
     Ok(ConnectionSecretStatus { key, present: true })
 }
 
 #[tauri::command]
 pub fn delete_connection_secret(key: String) -> Result<ConnectionSecretStatus, String> {
     let key = validate_secret_key(&key)?.to_string();
-    match keychain_entry(&key)?.delete_credential() {
-        Ok(()) | Err(keyring::Error::NoEntry) => {}
-        Err(_) => return Err("macOS Keychain could not remove the secret.".into()),
-    }
+    remove_connection_secret(&key)?;
     Ok(ConnectionSecretStatus {
         key,
         present: false,

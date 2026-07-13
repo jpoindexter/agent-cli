@@ -12,6 +12,8 @@ export type McpServerConfig = {
   args: string[];
   authMode: McpAuthMode;
   oauthIssuer: string;
+  oauthClientId: string;
+  oauthScopes: string[];
   enabled: boolean;
 };
 
@@ -42,6 +44,8 @@ export type ConnectionTargetStatus = {
   toolCount?: number;
   tools?: string[];
 };
+export type McpOAuthStart = { authorizationUrl: string; clientId: string; message: string };
+export type McpOAuthStatus = { serverId: string; state: "idle" | "pending" | "connected" | "error"; message: string };
 
 export const DEFAULT_AI_CONNECTION_SETTINGS: AiConnectionSettings = {
   providerModels: { codex: "", gemini: "", claude: "" },
@@ -73,6 +77,10 @@ const normalizeMcpServer = (value: unknown): McpServerConfig | null => {
       : [],
     authMode,
     oauthIssuer: cleanText(server.oauthIssuer, 1000),
+    oauthClientId: cleanText(server.oauthClientId, 1000),
+    oauthScopes: Array.isArray(server.oauthScopes)
+      ? server.oauthScopes.filter((scope): scope is string => typeof scope === "string").map((scope) => scope.trim().slice(0, 200)).filter(Boolean).slice(0, 40)
+      : [],
     enabled: server.enabled !== false,
   };
 };
@@ -119,6 +127,8 @@ export const normalizeAiConnectionSettings = (value: unknown): AiConnectionSetti
 
 export const providerSecretKey = (provider: ConnectionProviderId) => `provider:${provider}:api-key`;
 export const mcpSecretKey = (serverId: string) => `mcp:${serverId}:bearer`;
+export const mcpOauthTokenKey = (serverId: string) => `mcp:${serverId}:oauth-tokens`;
+export const mcpOauthClientSecretKey = (serverId: string) => `mcp:${serverId}:oauth-client-secret`;
 export const environmentSecretKey = (variableId: string) => `environment:${variableId}`;
 
 export const validateMcpServer = (server: McpServerConfig): string[] => {
@@ -128,7 +138,8 @@ export const validateMcpServer = (server: McpServerConfig): string[] => {
   if (server.transport === "http" && !/^https?:\/\/[^\s/]+/i.test(server.target)) errors.push("Endpoint must start with http:// or https:// and include a host.");
   if (server.transport === "stdio" && /\s/.test(server.target.trim())) errors.push("Executable must not include arguments; use the Arguments field.");
   if (server.authMode === "oauth" && server.transport !== "http") errors.push("OAuth requires an HTTP transport.");
-  if (server.authMode === "oauth" && !/^https?:\/\/[^\s/]+/i.test(server.oauthIssuer)) errors.push("OAuth issuer must be an http:// or https:// URL with a host.");
+  if (server.authMode === "oauth" && server.oauthIssuer && !/^https?:\/\/[^\s/]+/i.test(server.oauthIssuer)) errors.push("OAuth issuer override must be an http:// or https:// URL with a host.");
+  if (server.authMode === "oauth" && server.oauthScopes.some((scope) => !scope || /\s/.test(scope))) errors.push("OAuth scopes must be space-separated names without internal whitespace.");
   return errors;
 };
 

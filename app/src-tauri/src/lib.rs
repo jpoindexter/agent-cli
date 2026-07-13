@@ -12,6 +12,7 @@
 mod chat_harness;
 mod chat_store;
 mod connection_secrets;
+mod mcp_oauth;
 mod mcp_probe;
 
 use chat_harness::{respond_chat_approval, start_chat_run, stop_chat_run, ChatRunState};
@@ -31,6 +32,7 @@ use libghostty_vt::style::{RgbColor, StyleColor};
 use libghostty_vt::terminal::{
     Mode, Options, Point, PointCoordinate, PointSpace, ScrollViewport, Terminal,
 };
+use mcp_oauth::{begin_mcp_oauth, disconnect_mcp_oauth, mcp_oauth_status, McpOAuthState};
 use mcp_probe::probe_mcp_server;
 use notify_debouncer_mini::{
     new_debouncer,
@@ -2956,6 +2958,7 @@ pub fn run() {
                 next_pane_id: Mutex::new(0),
             });
             app.manage(ChatRunState::default());
+            app.manage(McpOAuthState::default());
             let app_data_dir = app
                 .path()
                 .app_data_dir()
@@ -2989,6 +2992,9 @@ pub fn run() {
             delete_connection_secret,
             validate_connection_target,
             probe_mcp_server,
+            begin_mcp_oauth,
+            mcp_oauth_status,
+            disconnect_mcp_oauth,
             start_chat_run,
             stop_chat_run,
             respond_chat_approval,

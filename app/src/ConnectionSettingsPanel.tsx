@@ -4,6 +4,7 @@ import {
   CONNECTION_PROVIDER_IDS,
   environmentSecretKey,
   environmentVariablesForProject,
+  mcpOauthTokenKey,
   mcpSecretKey,
   providerSecretKey,
   validateMcpServer,
@@ -11,6 +12,8 @@ import {
   type ConnectionProviderId,
   type ConnectionTargetStatus,
   type McpAuthMode,
+  type McpOAuthStart,
+  type McpOAuthStatus,
   type McpServerConfig,
   type McpTransport,
 } from "./connectionSettings";
@@ -40,6 +43,9 @@ type ConnectionSettingsPanelProps = {
   onDeleteSecret: (key: string) => Promise<void>;
   onSaveSecret: (key: string, value: string) => Promise<void>;
   onValidateTarget: (server: McpServerConfig) => Promise<ConnectionTargetStatus>;
+  onBeginOAuth: (server: McpServerConfig) => Promise<McpOAuthStart>;
+  onDisconnectOAuth: (server: McpServerConfig) => Promise<McpOAuthStatus>;
+  oauthStatuses: Record<string, McpOAuthStatus>;
 };
 
 export function ConnectionSettingsPanel({
@@ -50,6 +56,9 @@ export function ConnectionSettingsPanel({
   onDeleteSecret,
   onSaveSecret,
   onValidateTarget,
+  onBeginOAuth,
+  onDisconnectOAuth,
+  oauthStatuses,
 }: ConnectionSettingsPanelProps) {
   const [providerSecrets, setProviderSecrets] = useState<Partial<Record<ConnectionProviderId, string>>>({});
   const [environmentName, setEnvironmentName] = useState("");
@@ -61,6 +70,8 @@ export function ConnectionSettingsPanel({
   const [mcpArgs, setMcpArgs] = useState("");
   const [mcpAuthMode, setMcpAuthMode] = useState<McpAuthMode>("none");
   const [mcpOauthIssuer, setMcpOauthIssuer] = useState("");
+  const [mcpOauthClientId, setMcpOauthClientId] = useState("");
+  const [mcpOauthScopes, setMcpOauthScopes] = useState("");
   const [mcpBearer, setMcpBearer] = useState("");
   const [formError, setFormError] = useState("");
   const [targetStatus, setTargetStatus] = useState<Record<string, ConnectionTargetStatus>>({});
@@ -134,6 +145,8 @@ export function ConnectionSettingsPanel({
       args: mcpArgs.trim() ? mcpArgs.trim().split(/\s+/).slice(0, 40) : [],
       authMode: mcpAuthMode,
       oauthIssuer: mcpOauthIssuer.trim(),
+      oauthClientId: mcpOauthClientId.trim(),
+      oauthScopes: mcpOauthScopes.trim() ? mcpOauthScopes.trim().split(/\s+/).slice(0, 40) : [],
       enabled: true,
     };
     const errors = validateMcpServer(next);
@@ -154,6 +167,8 @@ export function ConnectionSettingsPanel({
     setMcpArgs("");
     setMcpAuthMode("none");
     setMcpOauthIssuer("");
+    setMcpOauthClientId("");
+    setMcpOauthScopes("");
     setMcpBearer("");
     setFormError("");
   };
@@ -161,11 +176,44 @@ export function ConnectionSettingsPanel({
   const removeMcpServer = async (server: McpServerConfig) => {
     try {
       if (server.authMode === "bearer") await onDeleteSecret(mcpSecretKey(server.id));
+      if (server.authMode === "oauth") await onDisconnectOAuth(server);
     } catch (error) {
       setFormError(errorText(error));
       return;
     }
     onChange({ ...settings, mcpServers: settings.mcpServers.filter((candidate) => candidate.id !== server.id) });
+  };
+
+  const beginOAuth = async (server: McpServerConfig) => {
+    setValidatingTarget(server.id);
+    try {
+      const start = await onBeginOAuth(server);
+      if (start.clientId !== server.oauthClientId) {
+        onChange({
+          ...settings,
+          mcpServers: settings.mcpServers.map((candidate) => candidate.id === server.id
+            ? { ...candidate, oauthClientId: start.clientId }
+            : candidate),
+        });
+      }
+      setTargetStatus((current) => ({ ...current, [server.id]: { ok: true, message: start.message } }));
+    } catch (error) {
+      setTargetStatus((current) => ({ ...current, [server.id]: { ok: false, message: errorText(error) } }));
+    } finally {
+      setValidatingTarget(null);
+    }
+  };
+
+  const disconnectOAuth = async (server: McpServerConfig) => {
+    setValidatingTarget(server.id);
+    try {
+      const status = await onDisconnectOAuth(server);
+      setTargetStatus((current) => ({ ...current, [server.id]: { ok: true, message: status.message } }));
+    } catch (error) {
+      setTargetStatus((current) => ({ ...current, [server.id]: { ok: false, message: errorText(error) } }));
+    } finally {
+      setValidatingTarget(null);
+    }
   };
 
   return (
@@ -230,8 +278,10 @@ export function ConnectionSettingsPanel({
         <div className="connection-settings__list">
           {settings.mcpServers.map((server) => (
             <div className="connection-settings__list-row" key={server.id}>
-              <span><strong>{server.name}</strong><small>{server.transport} · {server.target} · {server.authMode}{targetStatusText(targetStatus[server.id])}</small></span>
+              <span><strong>{server.name}</strong><small>{server.transport} · {server.target} · {server.authMode}{oauthStatuses[server.id] ? ` · ${oauthStatuses[server.id].message}` : ""}{targetStatusText(targetStatus[server.id])}</small></span>
               <label className="connection-settings__check"><input type="checkbox" checked={server.enabled} onChange={(event) => onChange({ ...settings, mcpServers: settings.mcpServers.map((candidate) => candidate.id === server.id ? { ...candidate, enabled: event.currentTarget.checked } : candidate) })} /> Enabled</label>
+              {server.authMode === "oauth" ? <button type="button" disabled={validatingTarget === server.id || oauthStatuses[server.id]?.state === "pending"} onClick={() => void beginOAuth(server)}>{secretPresence[mcpOauthTokenKey(server.id)] ? "Reauthorize" : "Authorize"}</button> : null}
+              {server.authMode === "oauth" && (secretPresence[mcpOauthTokenKey(server.id)] || oauthStatuses[server.id]?.state === "connected") ? <button type="button" disabled={validatingTarget === server.id} onClick={() => void disconnectOAuth(server)}>Disconnect</button> : null}
               <button type="button" disabled={validatingTarget === server.id} onClick={async () => {
                 setValidatingTarget(server.id);
                 try {
@@ -254,7 +304,11 @@ export function ConnectionSettingsPanel({
           {mcpTransport === "stdio" ? <input aria-label="MCP arguments" value={mcpArgs} onChange={(event) => setMcpArgs(event.currentTarget.value)} placeholder="Arguments" /> : null}
           <select aria-label="MCP authentication" value={mcpAuthMode} onChange={(event) => setMcpAuthMode(event.currentTarget.value as McpAuthMode)}><option value="none">No auth</option><option value="bearer">Bearer token</option><option value="oauth">OAuth</option></select>
           {mcpAuthMode === "bearer" ? <input aria-label="MCP bearer token" type="password" autoComplete="off" value={mcpBearer} onChange={(event) => setMcpBearer(event.currentTarget.value)} placeholder="Stored in Keychain" /> : null}
-          {mcpAuthMode === "oauth" ? <input aria-label="MCP OAuth issuer" value={mcpOauthIssuer} onChange={(event) => setMcpOauthIssuer(event.currentTarget.value)} placeholder="https://issuer" /> : null}
+          {mcpAuthMode === "oauth" ? <>
+            <input aria-label="MCP OAuth issuer" value={mcpOauthIssuer} onChange={(event) => setMcpOauthIssuer(event.currentTarget.value)} placeholder="Authorization server override (optional)" />
+            <input aria-label="MCP OAuth client ID" value={mcpOauthClientId} onChange={(event) => setMcpOauthClientId(event.currentTarget.value)} placeholder="Client ID (optional with DCR)" />
+            <input aria-label="MCP OAuth scopes" value={mcpOauthScopes} onChange={(event) => setMcpOauthScopes(event.currentTarget.value)} placeholder="Scopes (space separated)" />
+          </> : null}
           <button type="button" onClick={() => void addMcpServer()}>Add server</button>
         </div>
       </section>

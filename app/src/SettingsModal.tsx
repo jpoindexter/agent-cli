@@ -17,6 +17,8 @@ import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   type AiConnectionSettings,
   type ConnectionTargetStatus,
+  type McpOAuthStart,
+  type McpOAuthStatus,
   type McpServerConfig,
 } from "./connectionSettings";
 import {
@@ -52,6 +54,7 @@ type SettingsModalProps = {
   browserSetting: ScopedSettingView<string>;
   aiConnectionSettings?: AiConnectionSettings;
   connectionSecretPresence?: Record<string, boolean>;
+  mcpOAuthStatuses?: Record<string, McpOAuthStatus>;
   commandPaletteSources?: CommandPaletteSourceSettings;
   customTerminalProfiles?: LaunchProfile[];
   gitBranch: string | null;
@@ -78,6 +81,8 @@ type SettingsModalProps = {
   onDeleteConnectionSecret?: (key: string) => Promise<void>;
   onSaveConnectionSecret?: (key: string, value: string) => Promise<void>;
   onValidateConnectionTarget?: (server: McpServerConfig) => Promise<ConnectionTargetStatus>;
+  onBeginMcpOAuth?: (server: McpServerConfig) => Promise<McpOAuthStart>;
+  onDisconnectMcpOAuth?: (server: McpServerConfig) => Promise<McpOAuthStatus>;
   onCommandPaletteSourceChange?: (source: CommandPaletteSourceId, enabled: boolean) => void;
   onAddCustomTerminalProfile?: (label: string, command: string) => void;
   onClose: () => void;
@@ -100,6 +105,7 @@ export function SettingsModal({
   browserSetting,
   aiConnectionSettings = DEFAULT_AI_CONNECTION_SETTINGS,
   connectionSecretPresence = {},
+  mcpOAuthStatuses = {},
   commandPaletteSources = DEFAULT_COMMAND_PALETTE_SOURCES,
   customTerminalProfiles = [],
   gitBranch,
@@ -126,6 +132,8 @@ export function SettingsModal({
   onDeleteConnectionSecret,
   onSaveConnectionSecret,
   onValidateConnectionTarget,
+  onBeginMcpOAuth,
+  onDisconnectMcpOAuth,
   onCommandPaletteSourceChange,
   onAddCustomTerminalProfile,
   onClose,
@@ -305,6 +313,9 @@ export function SettingsModal({
           onDeleteSecret={onDeleteConnectionSecret ?? (async () => {})}
           onSaveSecret={onSaveConnectionSecret ?? (async () => {})}
           onValidateTarget={onValidateConnectionTarget ?? (async () => ({ ok: false, message: "Validation unavailable." }))}
+          onBeginOAuth={onBeginMcpOAuth ?? (async () => { throw new Error("OAuth authorization unavailable."); })}
+          onDisconnectOAuth={onDisconnectMcpOAuth ?? (async () => { throw new Error("OAuth disconnect unavailable."); })}
+          oauthStatuses={mcpOAuthStatuses}
         />
       );
     }

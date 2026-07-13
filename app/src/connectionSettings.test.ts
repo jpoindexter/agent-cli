@@ -18,6 +18,8 @@ const server = (overrides: Partial<McpServerConfig> = {}): McpServerConfig => ({
   args: ["--stdio"],
   authMode: "none",
   oauthIssuer: "",
+  oauthClientId: "",
+  oauthScopes: [],
   enabled: true,
   ...overrides,
 });

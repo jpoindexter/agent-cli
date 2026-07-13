@@ -25,6 +25,7 @@ const connectionSettings = read("app/src/connectionSettings.ts");
 const connectionSettingsPanel = read("app/src/ConnectionSettingsPanel.tsx");
 const connectionSecrets = read("app/src-tauri/src/connection_secrets.rs");
 const mcpProbe = read("app/src-tauri/src/mcp_probe.rs");
+const mcpOAuth = read("app/src-tauri/src/mcp_oauth.rs");
 const workbenchLayout = read("app/src/workbenchLayout.ts");
 const tauriBackend = read("app/src-tauri/src/lib.rs");
 const editorQaFixture = read("docs/qa/editor-parity.html");
@@ -166,7 +167,8 @@ assert(connectionSettingsPanel.includes('type="password"') && connectionSettings
 assert(connectionSettings.includes("connectionEnvironmentInputs") && appTsx.includes("environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current"), "All new chat and terminal runs must carry project environment references without renderer-side secret values");
 assert(connectionSecrets.includes("resolve_connection_environment") && connectionSecrets.includes('provider:codex:api-key') && connectionSecrets.includes('OPENAI_API_KEY'), "Rust must resolve project and provider credentials only at the process boundary");
 assert(mcpProbe.includes('"initialize"') && mcpProbe.includes('"tools/list"') && mcpProbe.includes("spawn_blocking") && mcpProbe.includes("read_connection_secret"), "MCP health must execute a bounded backend protocol probe with Keychain auth");
-assert(connectionSecrets.includes('KEYCHAIN_SERVICE') && connectionSecrets.includes('keyring::Entry::new') && connectionSecrets.includes('.set_password(&value)') && !connectionSecrets.includes('Command::new("/usr/bin/security")'), "Connection secrets must use the native Keychain API without putting values in process arguments");
+assert(connectionSecrets.includes('KEYCHAIN_SERVICE') && connectionSecrets.includes('keyring::Entry::new') && connectionSecrets.includes('.set_password(value)') && !connectionSecrets.includes('Command::new("/usr/bin/security")'), "Connection secrets must use the native Keychain API without putting values in process arguments");
+assert(mcpOAuth.includes('code_challenge_method", "S256"') && mcpOAuth.includes('("resource", prepared.resource.clone())') && mcpOAuth.includes('write_connection_secret(&token_key(server_id)') && mcpOAuth.includes('refresh_tokens_request') && mcpOAuth.includes('revoke_tokens'), "MCP OAuth must preserve PKCE, resource binding, Keychain token storage, refresh, and revocation");
 assert(appTsx.includes('storeRef.current?.set("aiConnectionSettings", next)') && !appTsx.includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");
 assert(appTsx.includes("aiConnectionSettings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");
 assert(appTsx.includes('invoke("delete_connection_secret", { key })'), "Full local reset must remove known Keychain connection secrets before clearing metadata");

@@ -206,6 +206,8 @@ import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
   environmentSecretKey,
+  mcpOauthClientSecretKey,
+  mcpOauthTokenKey,
   mcpSecretKey,
   normalizeAiConnectionSettings,
   providerSecretKey,
@@ -213,6 +215,8 @@ import {
   type ConnectionSecretStatus,
   type ConnectionTargetStatus,
   type McpServerConfig,
+  type McpOAuthStart,
+  type McpOAuthStatus,
 } from "./connectionSettings";
 import { parseRemoteUrl, type RepoLocation } from "./sourceControlLinks";
 import { imeCaretStyle } from "./terminalIme";
@@ -616,6 +620,7 @@ function App() {
   const [agentConnectionsRefreshing, setAgentConnectionsRefreshing] = useState(false);
   const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const [connectionSecretPresence, setConnectionSecretPresence] = useState<Record<string, boolean>>({});
+  const [mcpOAuthStatuses, setMcpOAuthStatuses] = useState<Record<string, McpOAuthStatus>>({});
   const [repoLocation, setRepoLocation] = useState<RepoLocation | null>(null);
   const [crashNotice, setCrashNotice] = useState<string | null>(null);
   const [actionNotice, setActionNotice] = useState<string | null>(null);
@@ -1217,6 +1222,27 @@ function App() {
     window.addEventListener("file-tree-context-menu", onContextMenu);
     return () => {
       window.removeEventListener("file-tree-context-menu", onContextMenu);
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let removeListener: (() => void) | null = null;
+    void listen<McpOAuthStatus>("mcp-oauth-result", (event) => {
+      setMcpOAuthStatuses((current) => ({ ...current, [event.payload.serverId]: event.payload }));
+      if (event.payload.state === "connected" || event.payload.state === "idle") {
+        setConnectionSecretPresence((current) => ({
+          ...current,
+          [mcpOauthTokenKey(event.payload.serverId)]: event.payload.state === "connected",
+        }));
+      }
+    }).then((remove) => {
+      if (disposed) remove();
+      else removeListener = remove;
+    });
+    return () => {
+      disposed = true;
+      removeListener?.();
     };
   }, []);
 
@@ -2696,6 +2722,7 @@ function App() {
   const connectionSecretKeys = (settings: AiConnectionSettings) => [
     ...CONNECTION_PROVIDER_IDS.map(providerSecretKey),
     ...settings.mcpServers.filter((server) => server.authMode === "bearer").map((server) => mcpSecretKey(server.id)),
+    ...settings.mcpServers.filter((server) => server.authMode === "oauth").flatMap((server) => [mcpOauthTokenKey(server.id), mcpOauthClientSecretKey(server.id)]),
     ...Object.values(settings.environmentByProject).flat().filter((variable) => variable.secret).map((variable) => environmentSecretKey(variable.id)),
   ];
 
@@ -6580,6 +6607,7 @@ function App() {
           browserSetting={activeBrowserSetting}
           aiConnectionSettings={aiConnectionSettings}
           connectionSecretPresence={connectionSecretPresence}
+          mcpOAuthStatuses={mcpOAuthStatuses}
           commandPaletteSources={commandPaletteSources}
           customTerminalProfiles={customLaunchProfiles}
           gitBranch={gitStatus?.branch ?? null}
@@ -6627,6 +6655,32 @@ function App() {
               ...server,
               environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, workspacePath ?? ""),
             },
+          })}
+          onBeginMcpOAuth={(server: McpServerConfig) => invoke<McpOAuthStart>("begin_mcp_oauth", {
+            request: {
+              id: server.id,
+              target: server.target,
+              oauthIssuer: server.oauthIssuer,
+              oauthClientId: server.oauthClientId,
+              oauthScopes: server.oauthScopes,
+            },
+          }).then((start) => {
+            setMcpOAuthStatuses((current) => ({
+              ...current,
+              [server.id]: { serverId: server.id, state: "pending", message: start.message },
+            }));
+            return start;
+          })}
+          onDisconnectMcpOAuth={(server: McpServerConfig) => invoke<McpOAuthStatus>("disconnect_mcp_oauth", {
+            serverId: server.id,
+          }).then((status) => {
+            setMcpOAuthStatuses((current) => ({ ...current, [server.id]: status }));
+            setConnectionSecretPresence((current) => ({
+              ...current,
+              [mcpOauthTokenKey(server.id)]: false,
+              [mcpOauthClientSecretKey(server.id)]: false,
+            }));
+            return status;
           })}
           onCommandPaletteSourceChange={(source: CommandPaletteSourceId, enabled) => {
             const next = { ...commandPaletteSources, [source]: enabled };
