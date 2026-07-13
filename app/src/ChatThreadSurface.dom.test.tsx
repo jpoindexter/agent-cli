@@ -128,6 +128,43 @@ describe("ChatThreadSurface behavior", () => {
     expect(screen.getByRole("log", { name: "Chat messages" }).getAttribute("aria-busy")).toBe("true");
     expect(screen.getByText("Codex is working.").getAttribute("aria-live")).toBe("polite");
   });
+
+  it("shows exact provider approval context and returns the selected decision", () => {
+    const onApprovalDecision = vi.fn();
+    const pending = conversation("", {
+      activeRunId: "run-1",
+      runStatus: "running",
+      messages: [
+        { id: "user-1", role: "user", text: "Push the branch", timestamp: 1000 },
+        {
+          id: "approval-1",
+          role: "tool",
+          title: "Command approval",
+          text: "git push origin main\nWorking directory: /repo",
+          timestamp: 2000,
+          status: "running",
+          approvalRequestId: 41,
+          approvalMethod: "item/commandExecution/requestApproval",
+        },
+      ],
+    });
+    render(
+      <ChatThreadSurface
+        conversation={pending}
+        events={[]}
+        onApprovalDecision={onApprovalDecision}
+        onRetry={() => {}}
+        onSuggestion={() => {}}
+      />,
+    );
+
+    expect(screen.getByText(/git push origin main/)).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Allow once" }));
+    expect(onApprovalDecision).toHaveBeenCalledWith(
+      expect.objectContaining({ approvalRequestId: 41 }),
+      "accept",
+    );
+  });
 });
 
 describe("chat thread helpers", () => {

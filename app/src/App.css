@@ -5219,10 +5219,31 @@ body,
   position: relative;
 }
 
-.chat-tool__body button {
+.chat-tool__body > button {
   position: absolute;
   top: 4px;
   right: 0;
+}
+
+.chat-approval__actions {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  border-left: 1px solid #30323d;
+  padding: 4px 4px 4px 12px;
+}
+
+.chat-approval__actions button {
+  position: static;
+  min-height: 28px;
+  color: #9bd9e3;
+  font-weight: 600;
+}
+
+.chat-approval__actions button:first-child {
+  color: #f0b5bf;
 }
 
 .chat-tool pre {

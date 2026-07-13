@@ -23,4 +23,10 @@ The React reducer consumes `item/agentMessage/delta` and command/file output del
 - `npm test`: 193 passing tests.
 - Production build, package build, and `qa:chrome-contract` pass.
 
-The corrected package still needs an unlocked native session for final visual confirmation of progressive Markdown, scroll anchoring, and stop behavior. Provider approvals are exposed by app-server but remain a separate roadmap card until the inline decision UI and allow/deny native QA exist.
+The corrected package still needs an unlocked native session for final visual confirmation of progressive Markdown, scroll anchoring, stop behavior, and the inline approval controls. Provider approvals remain a separate roadmap card until the remaining close/timeout, durable attribution, feedback, concurrency, and packaged QA criteria are executed.
+
+## Approval Progress
+
+Keelhouse now registers app-server command, file-change, and permission requests against the requesting run. The inline tool row shows the exact provider command, working directory, target, and reason, then offers Deny, Allow once, and Allow for session. Decisions return through the same process and are rendered into the durable timeline.
+
+Direct provider smokes executed both paths: allowing `touch /tmp/keelhouse-approval-smoke` created the file after an app-server pause; canceling the equivalent deny smoke interrupted the turn and did not create the file. The remaining card criteria are denial feedback, automatic deny on close/timeout, durable decision attribution beyond timeline text, concurrent-chat native QA, and unlocked packaged UI allow/deny execution.

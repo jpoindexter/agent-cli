@@ -10,6 +10,8 @@ export type ChatMessage = {
   itemId?: string;
   title?: string;
   status?: "running" | "complete" | "error";
+  approvalRequestId?: number;
+  approvalMethod?: string;
 };
 
 export type ChatUsage = {
@@ -373,6 +375,51 @@ export const applyChatRunEnvelope = (
       "tool",
       now,
     );
+  }
+  if (
+    eventType === "item/commandExecution/requestApproval"
+    || eventType === "item/fileChange/requestApproval"
+    || eventType === "item/permissions/requestApproval"
+  ) {
+    const requestId = typeof envelope.event.id === "number" ? envelope.event.id : -1;
+    if (requestId < 0) return conversation;
+    const command = textValue(params.command);
+    const cwd = textValue(params.cwd);
+    const target = textValue(params.grantRoot);
+    const reason = textValue(params.reason);
+    const details = [command, target && `Target: ${target}`, cwd && `Working directory: ${cwd}`, reason]
+      .filter(Boolean)
+      .join("\n");
+    const kind = eventType.includes("commandExecution")
+      ? "Command approval"
+      : eventType.includes("fileChange") ? "File change approval" : "Permission approval";
+    return upsertItemMessage(conversation, {
+      id: messageId("approval", now, `${envelope.runId}-${requestId}`),
+      role: "tool",
+      title: kind,
+      text: details || "Codex requested permission to continue.",
+      itemId: `${envelope.runId}:approval-${requestId}`,
+      status: "running",
+      timestamp: now,
+      approvalRequestId: requestId,
+      approvalMethod: eventType,
+    });
+  }
+  if (eventType === "approval.resolved") {
+    const requestId = typeof envelope.event.requestId === "number" ? envelope.event.requestId : -1;
+    const decision = textValue(envelope.event.decision);
+    const index = conversation.messages.findIndex((message) => message.approvalRequestId === requestId);
+    if (index < 0) return conversation;
+    const messages = [...conversation.messages];
+    const approved = decision === "accept" || decision === "acceptForSession";
+    messages[index] = {
+      ...messages[index],
+      title: approved ? "Approved" : "Denied",
+      text: `${messages[index].text}\n\nDecision: ${decision}`,
+      status: approved ? "complete" : "error",
+      timestamp: now,
+    };
+    return { ...conversation, messages, updatedAt: now };
   }
   if (eventType === "turn.failed") {
     const error = isRecord(envelope.event.error) ? textValue(envelope.event.error.message) : "Codex could not complete this turn.";

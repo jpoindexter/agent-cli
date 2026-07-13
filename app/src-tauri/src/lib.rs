@@ -12,7 +12,7 @@
 mod chat_harness;
 mod chat_store;
 
-use chat_harness::{start_chat_run, stop_chat_run, ChatRunState};
+use chat_harness::{respond_chat_approval, start_chat_run, stop_chat_run, ChatRunState};
 use chat_store::{
     delete_chat_conversation, delete_project_chat_conversations, load_chat_conversations,
     migrate_chat_conversations, reset_chat_store, save_chat_conversation, ChatStore,
@@ -2662,6 +2662,7 @@ pub fn run() {
             source_control_status,
             start_chat_run,
             stop_chat_run,
+            respond_chat_approval,
             load_chat_conversations,
             save_chat_conversation,
             migrate_chat_conversations,

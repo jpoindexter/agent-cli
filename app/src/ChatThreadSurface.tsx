@@ -12,6 +12,7 @@ type ChatThreadSurfaceProps = {
   hidden?: boolean;
   onSuggestion: (prompt: string) => void;
   onRetry: (prompt: string) => void;
+  onApprovalDecision?: (message: ChatMessage, decision: "accept" | "acceptForSession" | "decline") => void;
 };
 
 const SUGGESTIONS = [
@@ -80,7 +81,7 @@ function useElapsedNow(active: boolean) {
   return now;
 }
 
-export function ChatThreadSurface({ conversation, events, hidden = false, onSuggestion, onRetry }: ChatThreadSurfaceProps) {
+export function ChatThreadSurface({ conversation, events, hidden = false, onSuggestion, onRetry, onApprovalDecision }: ChatThreadSurfaceProps) {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const autoFollowRef = useRef(true);
   const userScrollIntentRef = useRef(false);
@@ -222,6 +223,13 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
                               <AppIcon name={copiedMessageId === message.id ? "check" : "copy"} />
                             </button>
                             <pre>{message.text}</pre>
+                            {message.approvalRequestId != null && message.status === "running" ? (
+                              <div className="chat-approval__actions" aria-label="Approval actions">
+                                <button type="button" onClick={() => onApprovalDecision?.(message, "decline")}>Deny</button>
+                                <button type="button" onClick={() => onApprovalDecision?.(message, "accept")}>Allow once</button>
+                                <button type="button" onClick={() => onApprovalDecision?.(message, "acceptForSession")}>Allow for session</button>
+                              </div>
+                            ) : null}
                           </div>
                         </details>
                       ) : message.role === "assistant" ? (

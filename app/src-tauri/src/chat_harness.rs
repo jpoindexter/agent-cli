@@ -15,10 +15,12 @@ use tauri::{AppHandle, Emitter, State};
 const CHAT_RUN_EVENT: &str = "chat-run-event";
 
 struct ChatRunControl {
+    base: ChatRunEnvelope,
     stdin: Arc<Mutex<ChildStdin>>,
     stop: Sender<()>,
     thread_id: Arc<Mutex<Option<String>>>,
     turn_id: Arc<Mutex<Option<String>>>,
+    pending_approvals: Arc<Mutex<BTreeMap<u64, String>>>,
     next_request_id: AtomicU64,
 }
 
@@ -225,6 +227,15 @@ fn response_error(value: &Value) -> Option<String> {
         .map(str::to_string)
 }
 
+fn is_approval_method(method: &str) -> bool {
+    matches!(
+        method,
+        "item/commandExecution/requestApproval"
+            | "item/fileChange/requestApproval"
+            | "item/permissions/requestApproval"
+    )
+}
+
 #[tauri::command]
 pub(crate) fn start_chat_run(
     app: AppHandle,
@@ -288,12 +299,15 @@ pub(crate) fn start_chat_run(
     let thread_id = Arc::new(Mutex::new(None));
     let turn_id = Arc::new(Mutex::new(None));
     let control = Arc::new(ChatRunControl {
+        base: base.clone(),
         stdin: stdin.clone(),
         stop: stop_tx,
         thread_id: thread_id.clone(),
         turn_id: turn_id.clone(),
+        pending_approvals: Arc::new(Mutex::new(BTreeMap::new())),
         next_request_id: AtomicU64::new(100),
     });
+    let pending_approvals = control.pending_approvals.clone();
     state
         .runs
         .lock()
@@ -373,6 +387,21 @@ pub(crate) fn start_chat_run(
                         turn_finished = true;
                         continue;
                     }
+                    let method = value.get("method").and_then(Value::as_str);
+                    if let Some(method) = method {
+                        if is_approval_method(method) {
+                            if let Some(request_id) = value.get("id").and_then(Value::as_u64) {
+                                if let Ok(mut pending) = pending_approvals.lock() {
+                                    pending.insert(request_id, method.to_string());
+                                }
+                            }
+                        }
+                        emit_event(&app, &base, "stdout", value.clone());
+                        if method == "turn/completed" {
+                            turn_finished = true;
+                        }
+                        continue;
+                    }
                     match value.get("id").and_then(Value::as_u64) {
                         Some(1) => {
                             if write_rpc(
@@ -426,15 +455,7 @@ pub(crate) fn start_chat_run(
                                 }
                             }
                         }
-                        _ => {
-                            let method = value.get("method").and_then(Value::as_str);
-                            if method.is_some() {
-                                emit_event(&app, &base, "stdout", value.clone());
-                            }
-                            if method == Some("turn/completed") {
-                                turn_finished = true;
-                            }
-                        }
+                        _ => {}
                     }
                 }
                 Err(RecvTimeoutError::Timeout) => {
@@ -477,6 +498,55 @@ pub(crate) fn start_chat_run(
     });
 
     Ok(ChatRunStarted { run_id })
+}
+
+#[tauri::command]
+pub(crate) fn respond_chat_approval(
+    app: AppHandle,
+    state: State<ChatRunState>,
+    run_id: String,
+    request_id: u64,
+    decision: String,
+) -> Result<(), String> {
+    if !matches!(
+        decision.as_str(),
+        "accept" | "acceptForSession" | "decline" | "cancel"
+    ) {
+        return Err("The chat approval decision is invalid.".into());
+    }
+    let control = state
+        .runs
+        .lock()
+        .map_err(|_| "Could not access active chat runs.".to_string())?
+        .get(&run_id)
+        .cloned()
+        .ok_or_else(|| format!("Chat run {run_id} is no longer active."))?;
+    let method = control
+        .pending_approvals
+        .lock()
+        .map_err(|_| "Could not access pending chat approvals.".to_string())?
+        .get(&request_id)
+        .cloned()
+        .ok_or_else(|| format!("Approval request {request_id} is no longer pending."))?;
+    write_rpc(
+        &control.stdin,
+        &json!({ "jsonrpc": "2.0", "id": request_id, "result": { "decision": decision } }),
+    )?;
+    if let Ok(mut pending) = control.pending_approvals.lock() {
+        pending.remove(&request_id);
+    }
+    emit_event(
+        &app,
+        &control.base,
+        "stdout",
+        json!({
+            "type": "approval.resolved",
+            "requestId": request_id,
+            "approvalMethod": method,
+            "decision": decision,
+        }),
+    );
+    Ok(())
 }
 
 #[tauri::command]
@@ -608,5 +678,13 @@ mod tests {
         let mut invalid_effort = request(None, "ask");
         invalid_effort.reasoning_effort = Some("maximum".into());
         assert!(thread_open_request(&invalid_effort).is_err());
+    }
+
+    #[test]
+    fn recognizes_only_provider_approval_requests() {
+        assert!(is_approval_method("item/commandExecution/requestApproval"));
+        assert!(is_approval_method("item/fileChange/requestApproval"));
+        assert!(is_approval_method("item/permissions/requestApproval"));
+        assert!(!is_approval_method("item/tool/requestUserInput"));
     }
 }

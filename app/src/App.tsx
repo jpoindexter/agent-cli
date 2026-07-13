@@ -205,7 +205,7 @@ import {
   normalizeChatConversationRecords,
   startChatRun,
 } from "./chatConversation";
-import type { ChatConversation, ChatConversationRecords, ChatRunEnvelope } from "./chatConversation";
+import type { ChatConversation, ChatConversationRecords, ChatMessage, ChatRunEnvelope } from "./chatConversation";
 import {
   deleteDurableChatConversation,
   deleteDurableProjectChats,
@@ -2273,6 +2273,23 @@ function App() {
     if (!runId) return;
     try {
       await invoke("stop_chat_run", { runId });
+    } catch (err) {
+      setComposerError(String(err));
+    }
+  };
+
+  const resolveChatApproval = async (
+    message: ChatMessage,
+    decision: "accept" | "acceptForSession" | "decline",
+  ) => {
+    const runId = activeChatConversation.activeRunId;
+    if (!runId || message.approvalRequestId == null) return;
+    try {
+      await invoke("respond_chat_approval", {
+        runId,
+        requestId: message.approvalRequestId,
+        decision,
+      });
     } catch (err) {
       setComposerError(String(err));
     }
@@ -5609,6 +5626,7 @@ function App() {
               hidden={agentSurfaceMode !== "chat"}
               onSuggestion={setComposerDraft}
               onRetry={(prompt) => void submitComposerDraft(prompt)}
+              onApprovalDecision={(message, decision) => void resolveChatApproval(message, decision)}
             />
           </div>
           <div className="agent-composer" aria-label="Agent composer" hidden={agentSurfaceMode !== "chat"} onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>

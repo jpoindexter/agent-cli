@@ -146,6 +146,39 @@ describe("chat conversations", () => {
     expect(completed.activeRunId).toBeUndefined();
   });
 
+  it("keeps provider approvals scoped to the requesting run", () => {
+    const running = startChatRun(emptyChatConversation(1), "run-1", 2);
+    const pending = applyChatRunEnvelope(running, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        jsonrpc: "2.0",
+        id: 41,
+        method: "item/commandExecution/requestApproval",
+        params: { command: "git push", cwd: "/repo", reason: "Publish changes" },
+      },
+    }, 3);
+    expect(pending.messages[pending.messages.length - 1]).toMatchObject({
+      title: "Command approval",
+      text: "git push\nWorking directory: /repo\nPublish changes",
+      status: "running",
+      approvalRequestId: 41,
+    });
+    const resolved = applyChatRunEnvelope(pending, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: { type: "approval.resolved", requestId: 41, decision: "decline" },
+    }, 4);
+    expect(resolved.messages[resolved.messages.length - 1]).toMatchObject({
+      title: "Denied",
+      status: "error",
+    });
+  });
+
   it("normalizes stored chats and never restores a stale running state", () => {
     expect(normalizeChatConversationRecords({
       "/repo\nsession-1": {
