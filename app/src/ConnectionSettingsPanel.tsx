@@ -23,6 +23,15 @@ const PROVIDER_LABELS: Record<ConnectionProviderId, string> = {
 
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
+const targetStatusText = (status: ConnectionTargetStatus | undefined) => {
+  if (!status) return "";
+  const details = [
+    status.protocolVersion ? `MCP ${status.protocolVersion}` : "",
+    status.tools?.length ? status.tools.slice(0, 4).join(", ") : "",
+  ].filter(Boolean);
+  return ` · ${status.message}${details.length > 0 ? ` · ${details.join(" · ")}` : ""}`;
+};
+
 type ConnectionSettingsPanelProps = {
   settings: AiConnectionSettings;
   workspacePath: string;
@@ -55,6 +64,7 @@ export function ConnectionSettingsPanel({
   const [mcpBearer, setMcpBearer] = useState("");
   const [formError, setFormError] = useState("");
   const [targetStatus, setTargetStatus] = useState<Record<string, ConnectionTargetStatus>>({});
+  const [validatingTarget, setValidatingTarget] = useState<string | null>(null);
   const environment = environmentVariablesForProject(settings, workspacePath);
 
   const updateModel = (provider: ConnectionProviderId, value: string) => {
@@ -220,12 +230,19 @@ export function ConnectionSettingsPanel({
         <div className="connection-settings__list">
           {settings.mcpServers.map((server) => (
             <div className="connection-settings__list-row" key={server.id}>
-              <span><strong>{server.name}</strong><small>{server.transport} · {server.target} · {server.authMode}{targetStatus[server.id] ? ` · ${targetStatus[server.id].message}` : ""}</small></span>
+              <span><strong>{server.name}</strong><small>{server.transport} · {server.target} · {server.authMode}{targetStatusText(targetStatus[server.id])}</small></span>
               <label className="connection-settings__check"><input type="checkbox" checked={server.enabled} onChange={(event) => onChange({ ...settings, mcpServers: settings.mcpServers.map((candidate) => candidate.id === server.id ? { ...candidate, enabled: event.currentTarget.checked } : candidate) })} /> Enabled</label>
-              <button type="button" onClick={async () => {
-                const status = await onValidateTarget(server);
-                setTargetStatus((current) => ({ ...current, [server.id]: status }));
-              }}>Validate</button>
+              <button type="button" disabled={validatingTarget === server.id} onClick={async () => {
+                setValidatingTarget(server.id);
+                try {
+                  const status = await onValidateTarget(server);
+                  setTargetStatus((current) => ({ ...current, [server.id]: status }));
+                } catch (error) {
+                  setTargetStatus((current) => ({ ...current, [server.id]: { ok: false, message: errorText(error) } }));
+                } finally {
+                  setValidatingTarget(null);
+                }
+              }}>{validatingTarget === server.id ? "Checking..." : "Check"}</button>
               <button type="button" onClick={() => void removeMcpServer(server)}>Remove</button>
             </div>
           ))}

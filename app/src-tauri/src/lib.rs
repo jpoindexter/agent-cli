@@ -12,6 +12,7 @@
 mod chat_harness;
 mod chat_store;
 mod connection_secrets;
+mod mcp_probe;
 
 use chat_harness::{respond_chat_approval, start_chat_run, stop_chat_run, ChatRunState};
 use chat_store::{
@@ -30,6 +31,7 @@ use libghostty_vt::style::{RgbColor, StyleColor};
 use libghostty_vt::terminal::{
     Mode, Options, Point, PointCoordinate, PointSpace, ScrollViewport, Terminal,
 };
+use mcp_probe::probe_mcp_server;
 use notify_debouncer_mini::{
     new_debouncer,
     notify::{RecommendedWatcher, RecursiveMode},
@@ -2986,6 +2988,7 @@ pub fn run() {
             set_connection_secret,
             delete_connection_secret,
             validate_connection_target,
+            probe_mcp_server,
             start_chat_run,
             stop_chat_run,
             respond_chat_approval,

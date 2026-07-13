@@ -47,7 +47,8 @@ fn keychain_entry(key: &str) -> Result<keyring::Entry, String> {
         .map_err(|_| "macOS Keychain is unavailable.".to_string())
 }
 
-fn read_keychain_secret(key: &str) -> Result<Option<String>, String> {
+pub(crate) fn read_connection_secret(key: &str) -> Result<Option<String>, String> {
+    let key = validate_secret_key(key)?;
     match keychain_entry(key)?.get_password() {
         Ok(value) => Ok(Some(value)),
         Err(keyring::Error::NoEntry) => Ok(None),
@@ -58,7 +59,7 @@ fn read_keychain_secret(key: &str) -> Result<Option<String>, String> {
 #[tauri::command]
 pub fn connection_secret_status(key: String) -> Result<ConnectionSecretStatus, String> {
     let key = validate_secret_key(&key)?.to_string();
-    let present = read_keychain_secret(&key)?.is_some();
+    let present = read_connection_secret(&key)?.is_some();
     Ok(ConnectionSecretStatus { key, present })
 }
 
@@ -126,7 +127,7 @@ pub(crate) fn resolve_connection_environment(
     entries: &[ConnectionEnvironmentInput],
     provider: Option<&str>,
 ) -> Result<Vec<(String, String)>, String> {
-    resolve_connection_environment_with(entries, provider, read_keychain_secret)
+    resolve_connection_environment_with(entries, provider, read_connection_secret)
 }
 
 #[tauri::command]

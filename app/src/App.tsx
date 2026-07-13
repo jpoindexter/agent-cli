@@ -6622,9 +6622,11 @@ function App() {
           onAiConnectionSettingsChange={(next) => void saveAiConnectionSettings(next)}
           onDeleteConnectionSecret={deleteConnectionSecret}
           onSaveConnectionSecret={saveConnectionSecret}
-          onValidateConnectionTarget={(server: McpServerConfig) => invoke<ConnectionTargetStatus>("validate_connection_target", {
-            kind: server.transport,
-            target: server.target,
+          onValidateConnectionTarget={(server: McpServerConfig) => invoke<ConnectionTargetStatus>("probe_mcp_server", {
+            request: {
+              ...server,
+              environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, workspacePath ?? ""),
+            },
           })}
           onCommandPaletteSourceChange={(source: CommandPaletteSourceId, enabled) => {
             const next = { ...commandPaletteSources, [source]: enabled };

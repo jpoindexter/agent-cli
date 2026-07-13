@@ -35,7 +35,13 @@ export type AiConnectionSettings = {
 };
 
 export type ConnectionSecretStatus = { key: string; present: boolean };
-export type ConnectionTargetStatus = { ok: boolean; message: string };
+export type ConnectionTargetStatus = {
+  ok: boolean;
+  message: string;
+  protocolVersion?: string | null;
+  toolCount?: number;
+  tools?: string[];
+};
 
 export const DEFAULT_AI_CONNECTION_SETTINGS: AiConnectionSettings = {
   providerModels: { codex: "", gemini: "", claude: "" },

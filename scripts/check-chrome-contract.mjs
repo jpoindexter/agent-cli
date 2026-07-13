@@ -24,6 +24,7 @@ const commandPaletteSources = read("app/src/commandPaletteSources.ts");
 const connectionSettings = read("app/src/connectionSettings.ts");
 const connectionSettingsPanel = read("app/src/ConnectionSettingsPanel.tsx");
 const connectionSecrets = read("app/src-tauri/src/connection_secrets.rs");
+const mcpProbe = read("app/src-tauri/src/mcp_probe.rs");
 const workbenchLayout = read("app/src/workbenchLayout.ts");
 const tauriBackend = read("app/src-tauri/src/lib.rs");
 const editorQaFixture = read("docs/qa/editor-parity.html");
@@ -164,6 +165,7 @@ assert(connectionSettings.includes("environmentByProject") && connectionSettings
 assert(connectionSettingsPanel.includes('type="password"') && connectionSettingsPanel.includes("onSaveSecret"), "Connection secret controls must use the Keychain callback boundary");
 assert(connectionSettings.includes("connectionEnvironmentInputs") && appTsx.includes("environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current"), "All new chat and terminal runs must carry project environment references without renderer-side secret values");
 assert(connectionSecrets.includes("resolve_connection_environment") && connectionSecrets.includes('provider:codex:api-key') && connectionSecrets.includes('OPENAI_API_KEY'), "Rust must resolve project and provider credentials only at the process boundary");
+assert(mcpProbe.includes('"initialize"') && mcpProbe.includes('"tools/list"') && mcpProbe.includes("spawn_blocking") && mcpProbe.includes("read_connection_secret"), "MCP health must execute a bounded backend protocol probe with Keychain auth");
 assert(connectionSecrets.includes('KEYCHAIN_SERVICE') && connectionSecrets.includes('keyring::Entry::new') && connectionSecrets.includes('.set_password(&value)') && !connectionSecrets.includes('Command::new("/usr/bin/security")'), "Connection secrets must use the native Keychain API without putting values in process arguments");
 assert(appTsx.includes('storeRef.current?.set("aiConnectionSettings", next)') && !appTsx.includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");
 assert(appTsx.includes("aiConnectionSettings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");

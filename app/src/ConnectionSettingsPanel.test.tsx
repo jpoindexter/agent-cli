@@ -4,7 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ConnectionSettingsPanel } from "./ConnectionSettingsPanel";
-import { DEFAULT_AI_CONNECTION_SETTINGS, providerSecretKey } from "./connectionSettings";
+import { DEFAULT_AI_CONNECTION_SETTINGS, providerSecretKey, type McpServerConfig } from "./connectionSettings";
 
 afterEach(cleanup);
 
@@ -49,5 +49,35 @@ describe("ConnectionSettingsPanel", () => {
     const next = onChange.mock.calls[0][0];
     expect(next.environmentByProject["/repo"][0]).toMatchObject({ name: "API_TOKEN", value: "", secret: true });
     expect(JSON.stringify(next)).not.toContain("qa-secret");
+  });
+
+  it("runs a real MCP health callback and renders discovered tool status", async () => {
+    const mcpServer: McpServerConfig = {
+      id: "docs",
+      name: "Docs",
+      transport: "stdio",
+      target: "docs-mcp",
+      args: [],
+      authMode: "none",
+      oauthIssuer: "",
+      enabled: true,
+    };
+    const onValidateTarget = vi.fn().mockResolvedValue({
+      ok: true,
+      message: "Connected; discovered 3 tools.",
+      protocolVersion: "2025-06-18",
+      toolCount: 3,
+      tools: ["search", "open", "read"],
+    });
+    renderPanel({
+      settings: { ...structuredClone(DEFAULT_AI_CONNECTION_SETTINGS), mcpServers: [mcpServer] },
+      onValidateTarget,
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+    await waitFor(() => expect(onValidateTarget).toHaveBeenCalledWith(mcpServer));
+    expect(await screen.findByText(/Connected; discovered 3 tools/)).toBeTruthy();
+    expect(screen.getByText(/MCP 2025-06-18/)).toBeTruthy();
+    expect(screen.getByText(/search, open, read/)).toBeTruthy();
   });
 });
