@@ -1,7 +1,14 @@
+import {
+  DEFAULT_COMMAND_PALETTE_SOURCES,
+  type CommandPaletteSourceId,
+  type CommandPaletteSourceSettings,
+} from "./commandPaletteSources";
+
 export type CommandPaletteCommand = {
   id: string;
   label: string;
   detail: string;
+  source?: CommandPaletteSourceId;
   shortcut?: string;
   disabled?: boolean;
   keywords?: string[];
@@ -14,14 +21,20 @@ export const commandPaletteSearchText = (command: CommandPaletteCommand) =>
     command.id,
     command.label,
     command.detail,
+    command.source ?? "commands",
     command.shortcut ?? "",
     ...(command.keywords ?? []),
   ].join(" "));
 
-export const filterCommandPaletteCommands = <T extends CommandPaletteCommand>(commands: T[], query: string): T[] => {
+export const filterCommandPaletteCommands = <T extends CommandPaletteCommand>(
+  commands: T[],
+  query: string,
+  sources: CommandPaletteSourceSettings = DEFAULT_COMMAND_PALETTE_SOURCES,
+): T[] => {
   const terms = normalize(query).split(/\s+/).filter(Boolean);
-  if (terms.length === 0) return commands;
   return commands.filter((command) => {
+    if (!sources[command.source ?? "commands"]) return false;
+    if (terms.length === 0) return true;
     const haystack = commandPaletteSearchText(command);
     return terms.every((term) => haystack.includes(term));
   });

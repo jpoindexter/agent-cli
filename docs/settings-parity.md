@@ -69,7 +69,7 @@ The first modal was a useful functional slice but is not the final settings arch
 - Search, category navigation, Back to app, Escape, real layout callbacks, and responsive category fallback have interaction coverage.
 - Implemented rows show truthful Global, Project, or Chat ownership labels.
 - The packaged app passed live navigation, cross-category search, and return-to-chat checks. Evidence is in `docs/qa/settings-workspace/`.
-- Narrow right-dock tabs now collapse labels at 420px instead of overlapping; icon buttons retain native tooltips and accessible names.
+- Narrow right-dock tabs collapse inactive labels at 560px and all labels at 360px instead of overlapping; icon buttons retain native tooltips and accessible names.
 - Agent profile, permission mode, and browser preview URL use persisted Global -> Project -> Chat inheritance with explicit override/reset controls and legacy-data migration.
 - The native package exercised Project inheritance, creating a Codex project override over a Shell global value, resetting it, and returning to the preserved workbench. The first attempt also caught and fixed a released-event crash in the scope selector.
 - Compact settings navigation now activates at 920px, inside the native window's reachable 900px minimum instead of the unreachable former 560px breakpoint.
@@ -77,5 +77,6 @@ The first modal was a useful functional slice but is not the final settings arch
 - Provider connections now report installed CLI version and sign-in state without returning auth output or credential values. Capability labels distinguish Codex structured chat from Gemini/Claude raw-terminal access.
 - The packaged app refreshed Codex/Gemini/Claude health, repaired a legacy Shell chat default back to Codex, added a custom raw-terminal command profile, exposed it in the terminal selector, and preserved Shell as the blank-terminal default.
 - Custom raw-terminal profiles persist as structured label/command records. They never appear as structured chat adapters.
-
-Still open on `SETTINGS-PARITY`: command-palette source controls and worktree/hook policy.
+- Keyboard shortcuts now exposes persisted Commands, Files, Open tabs, and Worktrees command-palette sources. Packaged QA disabled Files and observed `README` return no results, then re-enabled Files and opened the real workspace result.
+- Project-owned Worktree, lifecycle-hook, and environment policy rows state current locations, cleanup and approval boundaries, inherited login-shell behavior, unavailable overrides, and secret-display constraints without presenting unsupported controls.
+- `SETTINGS-PARITY` is complete. AI credentials, MCP/OAuth entries, environment overrides, and hook execution remain owned by `AI-CONNECTIONS` and `AGENT-HOOKS`.

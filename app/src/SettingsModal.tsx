@@ -13,6 +13,12 @@ import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 import type { ScopedSettingView, SettingsScope } from "./scopedSettings";
 import type { LaunchProfile } from "./launchProfiles";
 import {
+  COMMAND_PALETTE_SOURCE_OPTIONS,
+  DEFAULT_COMMAND_PALETTE_SOURCES,
+  type CommandPaletteSourceId,
+  type CommandPaletteSourceSettings,
+} from "./commandPaletteSources";
+import {
   filterSettingsRows,
   IGNORED_FOLDERS,
   SETTINGS_CATEGORIES,
@@ -37,6 +43,7 @@ type SettingsModalProps = {
   agentConnectionsStatus?: AgentConnectionsStatus | null;
   agentConnectionsRefreshing?: boolean;
   browserSetting: ScopedSettingView<string>;
+  commandPaletteSources?: CommandPaletteSourceSettings;
   customTerminalProfiles?: LaunchProfile[];
   gitBranch: string | null;
   gitChangeCount: number | null;
@@ -57,6 +64,7 @@ type SettingsModalProps = {
   onApprovalModeChange: (scope: SettingsScope, mode: AgentApprovalMode) => void;
   onRefreshAgentConnections?: () => void;
   onBrowserUrlCommit: (scope: SettingsScope, url: string) => void;
+  onCommandPaletteSourceChange?: (source: CommandPaletteSourceId, enabled: boolean) => void;
   onAddCustomTerminalProfile?: (label: string, command: string) => void;
   onClose: () => void;
   onKeybindingOverrideChange?: (id: string, keys: string[] | null) => void;
@@ -76,6 +84,7 @@ export function SettingsModal({
   agentConnectionsStatus = null,
   agentConnectionsRefreshing = false,
   browserSetting,
+  commandPaletteSources = DEFAULT_COMMAND_PALETTE_SOURCES,
   customTerminalProfiles = [],
   gitBranch,
   gitChangeCount,
@@ -96,6 +105,7 @@ export function SettingsModal({
   onApprovalModeChange,
   onRefreshAgentConnections,
   onBrowserUrlCommit,
+  onCommandPaletteSourceChange,
   onAddCustomTerminalProfile,
   onClose,
   onKeybindingOverrideChange,
@@ -234,6 +244,50 @@ export function SettingsModal({
             </label>
             <button className="settings-modal__action" type="submit" disabled={!canAdd}>Add profile</button>
           </form>
+        </div>
+      );
+    }
+    if (row.id === "agents.worktree-policy") {
+      return (
+        <div className="settings-workspace__policy" aria-label="Current worktree policy">
+          <span><strong>Location</strong><small>.worktrees/&lt;slug&gt;</small></span>
+          <span><strong>Branch</strong><small>worktree/&lt;slug&gt;</small></span>
+          <span><strong>Cleanup</strong><small>Force-remove worktree, then delete branch through the app action gate</small></span>
+        </div>
+      );
+    }
+    if (row.id === "agents.hook-policy") {
+      return (
+        <div className="settings-workspace__policy" aria-label="Lifecycle hook policy">
+          <span><strong>Status</strong><small>Execution unavailable until AGENT-HOOKS</small></span>
+          <span><strong>Lifecycle</strong><small>Setup · Run · Pre-cleanup · Teardown · Post-cleanup</small></span>
+          <span><strong>Safety</strong><small>Preview, explicit approval, attribution, and recovery required</small></span>
+        </div>
+      );
+    }
+    if (row.id === "agents.environment-policy") {
+      return (
+        <div className="settings-workspace__policy" aria-label="Environment policy">
+          <span><strong>Current source</strong><small>Login shell PATH and process environment inherited by the project</small></span>
+          <span><strong>Overrides</strong><small>Unavailable until AI-CONNECTIONS environment profiles</small></span>
+          <span><strong>Secrets</strong><small>Credential values are never displayed in settings or process health</small></span>
+        </div>
+      );
+    }
+    if (row.id === "shortcuts.palette-sources") {
+      return (
+        <div className="settings-workspace__source-list" role="group" aria-label="Command palette sources">
+          {COMMAND_PALETTE_SOURCE_OPTIONS.map((source) => (
+            <label className="settings-workspace__source-row" key={source.id}>
+              <input
+                type="checkbox"
+                aria-label={`Toggle ${source.label} command palette source`}
+                checked={commandPaletteSources[source.id]}
+                onChange={(event) => onCommandPaletteSourceChange?.(source.id, event.currentTarget.checked)}
+              />
+              <span><strong>{source.label}</strong><small>{source.description}</small></span>
+            </label>
+          ))}
         </div>
       );
     }

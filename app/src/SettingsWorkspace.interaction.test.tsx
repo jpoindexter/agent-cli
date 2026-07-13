@@ -88,4 +88,13 @@ describe("Settings workspace interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset override" }));
     expect(onScopedSettingReset).toHaveBeenCalledWith("agents.profile", "project");
   });
+
+  it("changes a real command palette source", () => {
+    const onCommandPaletteSourceChange = vi.fn();
+    renderWorkspace({ onCommandPaletteSourceChange });
+
+    fireEvent.click(screen.getByRole("button", { name: "Keyboard shortcuts" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Toggle Files command palette source" }));
+    expect(onCommandPaletteSourceChange).toHaveBeenCalledWith("files", false);
+  });
 });

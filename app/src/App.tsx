@@ -146,6 +146,11 @@ import {
   type KeybindingOverrides,
 } from "./shortcuts";
 import { filterCommandPaletteCommands, type CommandPaletteCommand as CommandPaletteCommandBase } from "./commandPalette";
+import {
+  DEFAULT_COMMAND_PALETTE_SOURCES,
+  normalizeCommandPaletteSources,
+  type CommandPaletteSourceId,
+} from "./commandPaletteSources";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import {
   MAX_AGENT_ACTIVITY_LOG_EVENTS,
@@ -582,6 +587,7 @@ function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [commandPaletteQuery, setCommandPaletteQuery] = useState("");
   const [commandPaletteActiveIndex, setCommandPaletteActiveIndex] = useState(0);
+  const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
   const [terminalFindOpen, setTerminalFindOpen] = useState(false);
   const [terminalFindQuery, setTerminalFindQuery] = useState("");
   const [terminalFindHits, setTerminalFindHits] = useState<TerminalFindHit[]>([]);
@@ -4294,8 +4300,45 @@ function App() {
       keywords: ["composer", "context", "browser"],
       run: () => void attachPreviewToComposer(),
     },
+    ...editorTabs.map((tab): CommandPaletteCommand => ({
+      id: `tab.${tab.path}`,
+      label: tab.name,
+      detail: `Open tab · ${tab.path}`,
+      source: "tabs",
+      icon: "file",
+      keywords: ["tab", "editor", tab.path],
+      run: () => void requestOpenEditorFile(tab, { focusEditor: true }),
+    })),
+    ...worktrees
+      .filter((worktree) => worktree.projectRoot === workspacePath)
+      .map((worktree): CommandPaletteCommand => {
+        const pane = terminalPanes.find((candidate) => String(candidate.id) === worktree.paneId);
+        return {
+          id: `worktree.${worktree.paneId}`,
+          label: worktree.label,
+          detail: `${worktree.branch} · ${worktree.path}`,
+          source: "worktrees",
+          icon: "terminal",
+          disabled: !pane,
+          keywords: ["worktree", "branch", "terminal", worktree.branch],
+          run: () => {
+            if (!pane) return;
+            setAgentSurfaceMode("terminal");
+            void focusTerminalPane(pane.id);
+          },
+        };
+      }),
+    ...searchableFiles.map((file): CommandPaletteCommand => ({
+      id: `file.${file.path}`,
+      label: file.name,
+      detail: file.path,
+      source: "files",
+      icon: "file",
+      keywords: ["file", "project", file.path],
+      run: () => void requestOpenEditorFile(file, { focusEditor: true }),
+    })),
   ];
-  const visibleCommandPaletteCommands = filterCommandPaletteCommands(commandPaletteCommands, commandPaletteQuery);
+  const visibleCommandPaletteCommands = filterCommandPaletteCommands(commandPaletteCommands, commandPaletteQuery, commandPaletteSources).slice(0, 120);
   const activeCommandPaletteCommand = visibleCommandPaletteCommands[commandPaletteActiveIndex] ?? visibleCommandPaletteCommands[0] ?? null;
 
   const runCommandPaletteCommand = (command: CommandPaletteCommand | null) => {
@@ -4683,6 +4726,7 @@ function App() {
       const savedKeybindings = normalizeKeybindingOverrides(await store.get<unknown>("keybindingOverrides"));
       setActiveKeybindingOverrides(savedKeybindings);
       setKeybindingOverrides(savedKeybindings);
+      setCommandPaletteSources(normalizeCommandPaletteSources(await store.get<unknown>("commandPaletteSources")));
       const savedTheme = await store.get<unknown>("appTheme");
       if (savedTheme === "mono-ghost") setAppTheme("mono-ghost");
       if ((await store.get<unknown>("notificationsEnabled")) === true) setNotificationsEnabled(true);
@@ -6479,6 +6523,7 @@ function App() {
           agentConnectionsStatus={agentConnectionsStatus}
           agentConnectionsRefreshing={agentConnectionsRefreshing}
           browserSetting={activeBrowserSetting}
+          commandPaletteSources={commandPaletteSources}
           customTerminalProfiles={customLaunchProfiles}
           gitBranch={gitStatus?.branch ?? null}
           gitChangeCount={gitStatus ? gitStatus.files.length : null}
@@ -6515,6 +6560,12 @@ function App() {
               ).value;
               setBrowserLocation(effective);
             })();
+          }}
+          onCommandPaletteSourceChange={(source: CommandPaletteSourceId, enabled) => {
+            const next = { ...commandPaletteSources, [source]: enabled };
+            setCommandPaletteSources(next);
+            void storeRef.current?.set("commandPaletteSources", next);
+            void storeRef.current?.save();
           }}
           onAddCustomTerminalProfile={(label, command) => void addCustomTerminalProfile(label, command)}
           keybindingOverrides={keybindingOverrides}

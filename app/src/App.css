@@ -4516,6 +4516,63 @@ body,
   min-width: min(100%, 520px);
 }
 
+.settings-workspace__source-list,
+.settings-workspace__policy {
+  display: grid;
+  min-width: min(100%, 520px);
+  gap: 0;
+}
+
+.settings-workspace__source-row,
+.settings-workspace__policy > span {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.settings-workspace__source-row:last-child,
+.settings-workspace__policy > span:last-child {
+  border-bottom: 0;
+}
+
+.settings-workspace__source-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+  color: var(--color-text);
+}
+
+.settings-workspace__source-row input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--steel-cyan-500);
+}
+
+.settings-workspace__source-row small,
+.settings-workspace__policy small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-workspace__policy > span {
+  grid-template-columns: minmax(92px, 0.35fr) minmax(0, 1fr);
+  color: var(--color-text);
+}
+
+.settings-workspace__policy small {
+  overflow: visible;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .settings-workspace__profile-row {
   display: flex;
   min-width: 0;

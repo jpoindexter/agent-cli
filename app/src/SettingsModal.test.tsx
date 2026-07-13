@@ -38,7 +38,7 @@ describe("SettingsModal", () => {
     for (const label of ["Personal", "Workbench", "Integrations", "General", "Appearance", "Agents", "Layout", "Browser preview", "Git"]) {
       expect(html).toContain(label);
     }
-    for (const dropped of ["Pets", "Usage", "Profile</span>", "MCP servers", "Worktrees"]) {
+    for (const dropped of ["Pets", "Usage", "Profile</span>", "MCP servers"]) {
       expect(html).not.toContain(dropped);
     }
     expect(html.match(/settings-workspace__nav-row--active/g)).toHaveLength(1);
@@ -65,10 +65,21 @@ describe("SettingsModal", () => {
     const agentHtml = render({ initialCategory: "agents", workspaceName: "agent cli", sessionTitle: "Settings pass" });
     expect(agentHtml).toContain("Default agent");
     expect(agentHtml).toContain("Permission mode");
+    expect(agentHtml).toContain("Worktree policy");
+    expect(agentHtml).toContain("Execution unavailable until AGENT-HOOKS");
+    expect(agentHtml).toContain("Environment policy");
+    expect(agentHtml).toContain("Unavailable until AI-CONNECTIONS environment profiles");
     expect(agentHtml).toContain("Global default");
     expect(agentHtml).toContain("Inherited from Global");
 
     const projectHtml = render({ initialCategory: "git", workspaceName: "agent cli" });
     expect(projectHtml).toContain("Project · agent cli");
+  });
+
+  it("shows configurable command palette sources", () => {
+    const html = render({ initialCategory: "shortcuts" });
+    expect(html).toContain("Command palette sources");
+    expect(html).toContain("Open tabs");
+    expect(html).toContain("Active isolated worktree panes");
   });
 });

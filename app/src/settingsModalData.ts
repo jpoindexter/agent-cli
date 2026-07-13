@@ -18,10 +18,9 @@ export type SettingsCategory = {
 };
 
 /* Only categories whose rows map to real app behavior today render.
-   MCP servers, Agent hooks, Connections, Environments, and Worktrees
-   arrive with their roadmap cards (AI-CONNECTIONS, AGENT-HOOKS, WORKTREE);
-   shortcut OVERRIDES arrive with KEYBINDINGS-CONFIG (the reference here
-   is read-only); theme variants arrive with THEME. */
+   Unsupported execution remains visibly unavailable instead of appearing as
+   a working control; MCP credentials and lifecycle hook execution arrive with
+   their dedicated roadmap cards. */
 export const SETTINGS_CATEGORY_GROUPS: SettingsCategoryGroup[] = [
   { id: "personal", label: "Personal" },
   { id: "workbench", label: "Workbench" },
@@ -82,6 +81,30 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     hint: "Add local CLI commands that can be selected when creating a raw terminal pane.",
     keywords: ["custom", "command", "cli", "terminal", "profile", "local", "path"],
     scope: "global",
+  },
+  {
+    id: "agents.worktree-policy",
+    categoryId: "agents",
+    label: "Worktree policy",
+    hint: "Current isolated-pane location, naming, and cleanup behavior.",
+    keywords: ["worktree", "branch", "location", "cleanup", "parallel", "isolation"],
+    scope: "project",
+  },
+  {
+    id: "agents.hook-policy",
+    categoryId: "agents",
+    label: "Lifecycle hook policy",
+    hint: "Safety boundary for project setup and cleanup automation.",
+    keywords: ["hook", "setup", "run", "cleanup", "teardown", "script", "approval"],
+    scope: "project",
+  },
+  {
+    id: "agents.environment-policy",
+    categoryId: "agents",
+    label: "Environment policy",
+    hint: "Current project shell inheritance and credential-display boundary.",
+    keywords: ["environment", "env", "path", "shell", "secret", "credential", "override"],
+    scope: "project",
   },
   {
     id: "layout.dock",
@@ -172,10 +195,18 @@ export const SETTINGS_ROWS: SettingsRowDef[] = [
     scope: "global",
   },
   {
+    id: "shortcuts.palette-sources",
+    categoryId: "shortcuts",
+    label: "Command palette sources",
+    hint: "Choose which live workbench objects appear in Shift+Cmd+P results.",
+    keywords: ["command palette", "source", "files", "tabs", "worktrees", "commands"],
+    scope: "global",
+  },
+  {
     id: "shortcuts.reference",
     categoryId: "shortcuts",
     label: "Active shortcuts",
-    hint: "Read-only reference. Overrides and conflict detection arrive with KEYBINDINGS-CONFIG.",
+    hint: "Searchable reference with supported overrides and conflict detection.",
     keywords: ["keys", "keyboard", "bindings", "cmd", "reference"],
     scope: "global",
   },

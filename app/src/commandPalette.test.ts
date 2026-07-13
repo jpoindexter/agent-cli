@@ -18,4 +18,16 @@ describe("command palette filtering", () => {
     expect(filterCommandPaletteCommands(commands, "source")[0]?.id).toBe("drawer.git");
     expect(filterCommandPaletteCommands(commands, "git source")[0]?.id).toBe("drawer.git");
   });
+
+  it("excludes disabled sources before text filtering", () => {
+    const mixed: CommandPaletteCommand[] = [
+      ...commands,
+      { id: "file.readme", label: "README.md", detail: "/repo/README.md", source: "files" },
+    ];
+    const sources = { commands: true, files: false, tabs: true, worktrees: true };
+
+    expect(filterCommandPaletteCommands(mixed, "readme", sources)).toEqual([]);
+    expect(filterCommandPaletteCommands(mixed, "folder", sources)[0]?.id).toBe("workspace.open");
+    expect(filterCommandPaletteCommands(mixed, "files readme")[0]?.id).toBe("file.readme");
+  });
 });
