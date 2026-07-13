@@ -83,8 +83,9 @@ assert(/\.terminal-title\s*\{[^}]*display: none;/s.test(appCss), "Terminal toolb
 assert(appCss.includes("container-type: inline-size;"), "Browser preview must use container-aware chrome behavior");
 assert(/@container \(max-width: 280px\)\s*\{[\s\S]*?\.browser-button--go\s*\{[^}]*display: none;/s.test(appCss), "Narrow browser tray must hide the Open button to prevent toolbar overlap");
 assert(appCss.includes(".agent-thread-event"), "App CSS must include thread-style agent event cards");
-assert(/\.agent-composer__card\s*\{[^}]*border:\s*1px solid #343642;[^}]*border-radius:\s*12px;[^}]*background:\s*#1b1c23;/s.test(appCss), "Composer must preserve the approved elevated-card grammar");
-assert(appCss.includes("--run-column-width: calc(100% - var(--run-column-pad));"), "Run and composer surfaces must share the centered column width token");
+assert(/\.agent-composer__card\s*\{[^}]*width:\s*var\(--run-column-width\);[^}]*border:\s*1px solid #343642;[^}]*border-radius:\s*8px;[^}]*background:\s*#1b1c23;/s.test(appCss), "Composer must preserve the approved restrained elevated-card grammar");
+assert(appCss.includes("--run-column-width: min(48rem, calc(100% - var(--run-column-pad)));"), "Run and composer surfaces must share the Codex-derived centered column width token");
+assert(appCss.includes(".chat-thread__content"), "Chat output must use the same centered reading axis as the composer");
 assert(/\.project-rail__heading\s*\{[^}]*font-size:\s*11px;[^}]*font-weight:\s*600;[^}]*text-transform:\s*uppercase;/s.test(appCss), "Project section labels must preserve the compact uppercase rhythm");
 assert(chatThreadSurface.includes('className="chat-thread"'), "Chat surface must render a persistent message timeline");
 assert(chatThreadSurface.includes('message.role === "user"'), "Chat surface must distinguish user messages from Codex responses");

@@ -12,11 +12,11 @@ Exactly three default control types, from the demo:
 - **Transparent icon button:** 16px glyph, no box, color-only hover (muted → ink). Hit area extended to ≥40px via padding.
 - **Filled Send:** the single default filled control — 24px, `--steel-cyan-500` background, white glyph, 4px radius. Modal-confirm primaries are the only other filled buttons.
 
-Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: elevated 12px-radius card with `0 22px 60px rgba(0,0,0,.34)`. Type scale: Inter/SF Mono 13px base / 12px meta+mono / 11px uppercase labels.
+Actives: tabs use `inset 0 2px 0` (or `-2px`) steel-cyan underline + subtle tint; rows use `#252732` + `inset 3px 0 0` steel-cyan left stripe. Cards: 6px radius, `#191a22`, shadow elevation (`0 12px 34px rgba(0,0,0,.18)`). Composer: elevated 8px-radius card with restrained `0 12px 32px rgba(0,0,0,.28)` depth. Type scale: Inter/SF Mono 13px base / 12px meta+mono / 11px uppercase labels.
 
 ## First-Open Layout (v2)
 
-First open shows the demo layout: chats drawer, centered conversation+composer column (`min(860px, 100% - 56px)`), right dock open on Files with its tab strip, and statusbar. Returning users keep persisted layouts. Trays remain movable/closable; raw terminal replaces the center conversation only while its titlebar icon is active.
+First open shows the demo layout: chats drawer, centered conversation+composer column (`min(48rem, 100% - 48px)`), right dock open on Files with its tab strip, and statusbar. Returning users keep persisted layouts. Trays remain movable/closable; raw terminal replaces the center conversation only while its titlebar icon is active. The `48rem` cap is source-grounded in the installed Codex shell; see `docs/codex-chrome-extraction-2026-07-13.md`.
 
 ## Required Tokens
 

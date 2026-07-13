@@ -328,3 +328,13 @@ Append-only. Don't edit past entries — add a new one that supersedes.
 **License boundary:** Hashmark is BSL 1.1 with a 2029-01-01 MIT change date. Jason owns both repositories, but direct code copying into a commercial or differently licensed Keelhouse release requires an explicit same-owner relicensing decision. Behavioral adaptation and narrow reimplementation are the default until then.
 
 **Reversible?** Yes. Each extraction is a separate roadmap card and can be replaced independently; the provider-neutral event and storage contracts are the stable boundary.
+
+## 2026-07-13 — Use Codex's reading-axis grammar, not its product skin
+
+**Choice:** Extract layout and token relationships from the locally installed Codex Electron bundle, then reimplement only the useful grammar in Keelhouse: one centered `48rem` conversation axis, composer aligned to that axis, 4px-based spacing, grouped assistant output, compact user surfaces, and inline lifecycle/tool states. Retain Keelhouse graphite, steel-cyan, movable tool docks, status bar, and raw-terminal alternate.
+
+**Reject:** Do not copy Codex branding, icons, assets, proprietary source, global navigation, or VS Code compatibility layers. Do not keep the previous fluid full-width thread merely because it matched an earlier interpretation of desktop density; populated native evidence showed that it fragmented the conversation.
+
+**Why:** Jason's populated-chat screenshot exposed detached provider labels, full-width user slabs, and a composer that did not share a visual axis with the transcript. The installed bundle independently confirmed the missing relationships (`48rem` thread cap, shared composer width, grouped message rhythm, sticky gradient footer).
+
+**Verification boundary:** Automated and first-open visual gates pass. Packaged populated-state recapture still requires the macOS Documents-folder permission dialog to be resolved, and Jason's explicit visual sign-off remains open.

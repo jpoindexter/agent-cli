@@ -46,6 +46,7 @@ Keelhouse is the product name. The repo, package, binary, app identifier, and lo
 - `chrome-polish-system.md`: current token/state system and deferred chrome surfaces.
 - `reuse-audit.md`: 2026-07-12 audit of spike/reference reuse vs parked material.
 - `chrome-delta-audit.md`: 2026-07-11 audit of the drift from the accepted demo that drove the chrome re-convergence cards.
+- `codex-chrome-extraction-2026-07-13.md`: source-grounded extraction of the installed Codex shell and Keelhouse adopt/adapt/reject mapping.
 - `blind-audit-chrome-roadmap-2026-07-11.md`: 16-framework blind-spot audit of the re-convergence and roadmap coverage; source of cards 93-106 and the contract caveats.
 - `icon-system.md`: SVG icon family, status mapping, and QA fixture coverage.
 - `accessibility-basics.md`: v0.5 keyboard, focus, and accessible-name baseline.

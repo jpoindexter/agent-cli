@@ -76,11 +76,10 @@
   --surface-card-border: #30323d;
   --card-radius: 6px;
   --shadow-card: 0 12px 34px rgba(0, 0, 0, 0.18);
-  --shadow-composer: 0 22px 60px rgba(0, 0, 0, 0.34);
-  --run-column-pad: 56px;
-  /* Fluid, not the demo's capped 860px reading column — Jason wants the
-     thread/composer to use available width on a real desktop monitor. */
-  --run-column-width: calc(100% - var(--run-column-pad));
+  --shadow-composer: 0 12px 32px rgba(0, 0, 0, 0.28);
+  --run-column-pad: 48px;
+  /* Chat and composer share one readable axis. Tool trays can use the rest. */
+  --run-column-width: min(48rem, calc(100% - var(--run-column-pad)));
   --control-height-sm: 22px;
   --control-height-md: 28px;
   --menu-bg: #1b1c23;
@@ -4833,7 +4832,13 @@ body,
   width: 100%;
   min-height: 0;
   overflow: auto;
-  padding: 28px max(28px, calc((100% - var(--run-column-width)) / 2)) 24px;
+  padding: 32px 24px 24px;
+}
+
+.chat-thread__content {
+  width: var(--run-column-width);
+  min-height: 100%;
+  margin: 0 auto;
 }
 
 .chat-empty {
@@ -4875,9 +4880,9 @@ body,
 
 .chat-message {
   display: grid;
-  gap: 7px;
-  max-width: 75ch;
-  margin-bottom: 24px;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 20px;
   color: #ececf4;
 }
 
@@ -4895,18 +4900,29 @@ body,
 }
 
 .chat-message--user {
+  width: fit-content;
+  max-width: min(100%, 68ch);
   margin-left: auto;
-  border-left: 2px solid #67c3d1;
   background: #1b1c23;
-  padding: 12px 14px;
+  border-radius: 6px;
+  padding: 10px 12px;
 }
 
 .chat-message--assistant {
   margin-right: auto;
 }
 
+.chat-message--continuation {
+  margin-top: -12px;
+}
+
+.chat-message--continuation > header {
+  display: none;
+}
+
 .chat-message--status {
-  margin: -8px 0 18px;
+  width: fit-content;
+  margin: -8px 0 16px;
   color: #a6a8b6;
   font-size: 12px;
 }
@@ -4978,7 +4994,7 @@ body,
 
 .agent-composer {
   border-top: 0;
-  padding: 0 24px 18px;
+  padding: 0 24px 16px;
   background: linear-gradient(rgba(11, 11, 12, 0), #14151b 34%);
 }
 
@@ -4987,15 +5003,16 @@ body,
 }
 
 .agent-composer__card {
-  width: 100%;
+  width: var(--run-column-width);
+  margin: 0 auto;
   border: 1px solid #343642;
-  border-radius: 12px;
+  border-radius: 8px;
   background: #1b1c23;
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--shadow-composer);
 }
 
 .agent-composer__input {
-  min-height: 78px;
+  min-height: 68px;
   max-height: 160px;
   color: #ececf4;
   padding: 13px 14px;
@@ -5039,6 +5056,11 @@ body,
   margin-left: 0;
   border-radius: 4px;
   background: #67c3d1;
+}
+
+.chat-thread__content .agent-activity-log__list {
+  width: 100%;
+  margin: 0;
 }
 
 .tool-tray-tabs {
