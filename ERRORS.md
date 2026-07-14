@@ -87,3 +87,11 @@ Append-only failure log. Approaches that took >2 attempts, or that a 16-framewor
 **What worked:** Stopped guessing after the first silent failure and swallowed-catch retry; switched the catch to `setLaunchError` so the app itself reported the real Rust error string, which immediately named the exact wrong assumption. Fix: call `create_workspace_file(root, parent: "<absolute path>", name)` first (ignore its "already exists" error on repeat runs) to create the file, then `write_text_file` with the **absolute** path.
 
 **Next time:** When writing a new file via the backend command surface, check whether the target already exists in code/behavior — `write_text_file` is save-existing-file only. And check whether a command's path-like parameter is documented/used as root-relative or absolute by reading its Rust implementation, not by pattern-matching against a sibling call site's usage.
+
+## 2026-07-14 — Guarded actions failed only in the packaged app because confirm lacked ACL permission
+
+**What failed:** The live app-owned MCP endpoint authenticated correctly, served read-only workspace state, recorded status, and opened a file, but `create_shell` returned `Command plugin:dialog|confirm not allowed by ACL`. The same missing permission affected every `window.confirm(...)` path: medium-risk agent actions, project/chat close, dirty-buffer navigation, checkpoint restore, file delete, and local reset.
+
+**Root cause:** `tauri_plugin_dialog` intercepts the WebView confirmation path in the packaged app, while `app/src-tauri/capabilities/default.json` granted only `dialog:allow-open`. Browser/jsdom tests use the browser implementation and could not expose the native ACL boundary.
+
+**Fix:** Add `dialog:allow-confirm`, assert it in `tauriWindowConfig.test.ts`, rebuild the signed package, and verify the real approval path through the live MCP action. Future dialog-plugin additions need both plugin initialization and an explicit capability entry; frontend-only tests are insufficient.

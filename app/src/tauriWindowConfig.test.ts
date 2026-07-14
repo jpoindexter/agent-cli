@@ -22,4 +22,12 @@ describe("native first-open window", () => {
     expect(window.minHeight).toBeGreaterThanOrEqual(640);
     expect(window.center).toBe(true);
   });
+
+  it("allows the native confirmation dialog used by guarded actions", () => {
+    const capability = JSON.parse(readFileSync(new URL("../src-tauri/capabilities/default.json", import.meta.url), "utf8")) as {
+      permissions: string[];
+    };
+
+    expect(capability.permissions).toContain("dialog:allow-confirm");
+  });
 });
