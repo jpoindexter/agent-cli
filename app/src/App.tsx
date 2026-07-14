@@ -159,7 +159,8 @@ import {
   shortcutTitle,
   type KeybindingOverrides,
 } from "./shortcuts";
-import { filterCommandPaletteCommands, type CommandPaletteCommand as CommandPaletteCommandBase } from "./commandPalette";
+import { filterCommandPaletteCommands } from "./commandPalette";
+import { SearchCommandDialog, type SearchDialogCommand } from "./SearchCommandDialog";
 import {
   DEFAULT_COMMAND_PALETTE_SOURCES,
   normalizeCommandPaletteSources,
@@ -376,10 +377,7 @@ type PendingNavigation =
   | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
   | { kind: "workspace"; path: string }
   | { kind: "close-project"; projectPath: string };
-type CommandPaletteCommand = CommandPaletteCommandBase & {
-  icon: AppIconName;
-  run: () => void;
-};
+type CommandPaletteCommand = SearchDialogCommand;
 
 const FONT_SIZE = 15;
 // JetBrains Mono has no CJK glyphs; chain macOS's bundled CJK system fonts
@@ -4886,7 +4884,13 @@ function App() {
       run: () => void requestOpenEditorFile(file, { focusEditor: true }),
     })),
   ];
-  const visibleCommandPaletteCommands = filterCommandPaletteCommands(commandPaletteCommands, commandPaletteQuery, commandPaletteSources).slice(0, 120);
+  const filteredCommandPaletteCommands = filterCommandPaletteCommands(commandPaletteCommands, commandPaletteQuery, commandPaletteSources);
+  const visibleCommandPaletteCommands = commandPaletteQuery.trim()
+    ? filteredCommandPaletteCommands.slice(0, 120)
+    : [
+        ...filteredCommandPaletteCommands.filter((command) => command.source === "chats").slice(0, 6),
+        ...filteredCommandPaletteCommands.filter((command) => command.source !== "chats").slice(0, 6),
+      ];
   const activeCommandPaletteCommand = visibleCommandPaletteCommands[commandPaletteActiveIndex] ?? visibleCommandPaletteCommands[0] ?? null;
 
   const runCommandPaletteCommand = (command: CommandPaletteCommand | null) => {
@@ -5665,6 +5669,28 @@ function App() {
           >
             <AppIcon name="panelLeft" />
           </button>
+          <button
+            className="titlebar-action"
+            type="button"
+            title="New chat"
+            aria-label="New chat"
+            disabled={!workspacePath}
+            onClick={() => workspacePath && void createProjectSession(workspacePath)}
+          >
+            <AppIcon name="newChat" />
+          </button>
+          <button
+            className="titlebar-action"
+            type="button"
+            title="Search tasks or run a command"
+            aria-label="Search tasks or run a command"
+            onClick={openCommandPalette}
+          >
+            <AppIcon name="search" />
+          </button>
+          <button className="titlebar-action" type="button" title="Reset interface" aria-label="Reset interface" onClick={resetInterface}>
+            <AppIcon name="reload" />
+          </button>
         </div>
         <div className="titlebar-splitter" aria-hidden="true" />
         <div className="titlebar-agent-context" aria-label="Active chat" data-tauri-drag-region>
@@ -5725,30 +5751,6 @@ function App() {
       <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label={`${sideDrawerMode === "projects" ? "Project threads" : drawerActiveTitle} drawer`}>
         <div className="drawer-toolbar">
           <span>{sideDrawerMode === "projects" ? "Threads" : drawerActiveTitle}</span>
-          {sideDrawerMode === "projects" ? (
-            <button
-              className="drawer-collapse-button"
-              type="button"
-              title="New chat"
-              aria-label="New chat"
-              disabled={!workspacePath}
-              onClick={() => workspacePath && void createProjectSession(workspacePath)}
-            >
-              <AppIcon name="newChat" />
-            </button>
-          ) : null}
-          <button
-            className="drawer-collapse-button"
-            type="button"
-            title="Search tasks or run a command"
-            aria-label="Search tasks or run a command"
-            onClick={openCommandPalette}
-          >
-            <AppIcon name="search" />
-          </button>
-          <button className="drawer-collapse-button" type="button" title="Reset interface" aria-label="Reset interface" onClick={resetInterface}>
-            <AppIcon name="reload" />
-          </button>
         </div>
         <div className="drawer-mode-switcher" role="tablist" aria-label="Side drawer">
           {DRAWER_MODES.map((mode) => (
@@ -7344,60 +7346,23 @@ function App() {
         />
       ) : null}
       {commandPaletteOpen ? (
-        <div className="command-palette-backdrop" role="presentation" onPointerDown={closeCommandPalette}>
-          <section
-            className="command-palette"
-            aria-label="Search tasks or run a command"
-            role="dialog"
-            aria-modal="true"
-            onPointerDown={(event) => event.stopPropagation()}
-          >
-            <div className="command-palette__field">
-              <AppIcon name="search" />
-              <input
-                ref={commandPaletteInputRef}
-                value={commandPaletteQuery}
-                aria-label="Search tasks or run a command"
-                placeholder="Search tasks or run a command"
-                onChange={(event) => {
-                  setCommandPaletteQuery(event.currentTarget.value);
-                  setCommandPaletteActiveIndex(0);
-                }}
-                onKeyDown={handleCommandPaletteKeyDown}
-              />
-              <span>{shortcutKeys("chrome.command-palette")}</span>
-            </div>
-            <div className="command-palette__list" role="listbox" aria-label="Tasks and commands">
-              {visibleCommandPaletteCommands.length > 0 ? (
-                visibleCommandPaletteCommands.map((command, index) => (
-                  <button
-                    className={`command-palette__row ${index === commandPaletteActiveIndex ? "command-palette__row--active" : ""}`}
-                    type="button"
-                    role="option"
-                    aria-selected={index === commandPaletteActiveIndex}
-                    disabled={command.disabled}
-                    key={command.id}
-                    onPointerMove={() => setCommandPaletteActiveIndex(index)}
-                    onClick={() => runCommandPaletteCommand(command)}
-                  >
-                    <span className="command-palette__icon">
-                      <AppIcon name={command.icon} />
-                    </span>
-                    <span className="command-palette__copy">
-                      <strong>{command.label}</strong>
-                      <span>{command.detail}</span>
-                    </span>
-                    {command.shortcut ? <span className="command-palette__shortcut">{command.shortcut}</span> : null}
-                  </button>
-                ))
-              ) : (
-                <div className="command-palette__empty">
-                  {chatSearchLoading ? "Searching chats…" : chatSearchError ? "Chat search is unavailable" : "No tasks or commands match"}
-                </div>
-              )}
-            </div>
-          </section>
-        </div>
+        <SearchCommandDialog
+          commands={visibleCommandPaletteCommands}
+          activeIndex={commandPaletteActiveIndex}
+          query={commandPaletteQuery}
+          shortcut={shortcutKeys("chrome.command-palette")}
+          loading={chatSearchLoading}
+          error={chatSearchError}
+          inputRef={commandPaletteInputRef}
+          onClose={closeCommandPalette}
+          onQueryChange={(query) => {
+            setCommandPaletteQuery(query);
+            setCommandPaletteActiveIndex(0);
+          }}
+          onKeyDown={handleCommandPaletteKeyDown}
+          onActiveIndexChange={setCommandPaletteActiveIndex}
+          onRun={runCommandPaletteCommand}
+        />
       ) : null}
       {quickOpenOpen ? (
         <div className="command-palette-backdrop" role="presentation" onPointerDown={closeQuickOpen}>

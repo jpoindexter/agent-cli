@@ -10,8 +10,9 @@ const assert = (condition, message) => {
   if (!condition) fail.push(message);
 };
 
-const appCss = `${read("app/src/App.css")}\n${read("app/src/responsive-shell.css")}`;
+const appCss = `${read("app/src/App.css")}\n${read("app/src/responsive-shell.css")}\n${read("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
+const searchCommandDialog = read("app/src/SearchCommandDialog.tsx");
 const statusBar = read("app/src/StatusBar.tsx");
 const mainTsx = read("app/src/main.tsx");
 const browserQa = read("app/src/browserQa.ts");
@@ -149,6 +150,8 @@ assert(workbenchLayout.includes('DEFAULT_TOOL_TRAY_MODE: ToolTrayMode = "files"'
 assert(workbenchLayout.includes("DEFAULT_SIDE_DRAWER_WIDTH = 332"), "Approved desktop thread width must remain 332px");
 assert(workbenchLayout.includes("trayPercent: 39"), "Approved desktop dock must open at the 430px-equivalent size");
 assert(appCss.includes('grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(420px, 1fr) 1px var(--dock-width, 430px);'), "Desktop titlebar must align to one-pixel pane boundaries");
+assert(appCss.includes('.titlebar-leading-action') && appCss.includes('margin-left: auto;'), "Threads titlebar actions must align to the pane end after the traffic-light drag region");
+assert(appCss.includes('.side-drawer-resizer::before') && appCss.includes('inset: 0 4px;'), "Wide splitter hit targets must draw their visible rule on the pane boundary");
 assert(appCss.includes('grid-template-columns: minmax(420px, 1fr) 1px var(--dock-width, 430px);'), "Right tool tray must use a one-pixel visual divider");
 assert(appCss.includes('grid-template-columns: var(--dock-width, 430px) 1px minmax(420px, 1fr);'), "Left tool tray must use a one-pixel visual divider");
 assert(/\.titlebar-workspace\s*\{[^}]*overflow:\s*hidden;[^}]*min-width:\s*0;[^}]*flex:\s*1 1 0;/s.test(appCss), "Workspace crumb must truncate before colliding with branch context");
@@ -184,10 +187,14 @@ assert(toolDockMenu.includes("Hide tools"), "Tool dock menu must expose a direct
 assert(toolDockMenu.includes('aria-label="Tools and dock position"'), "Tool dock controls must use one compact, labelled menu");
 assert(appTsx.includes("commandPaletteOpen"), "App chrome must expose a command palette state");
 assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command palette must show its shortcut label");
+assert(appTsx.includes('<div className="titlebar-identity"') && appTsx.includes('title="New chat"') && appTsx.includes('title="Search tasks or run a command"') && appTsx.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
+assert(!appTsx.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
 assert(appTsx.includes("filterCommandPaletteCommands(commandPaletteCommands, commandPaletteQuery, commandPaletteSources)"), "Command palette source settings must filter live results");
 assert(appTsx.includes('source: "chats"') && appTsx.includes('source: "files"') && appTsx.includes('source: "tabs"') && appTsx.includes('source: "worktrees"'), "Command palette must include real chat, file, tab, and worktree sources");
 assert(commandPaletteSources.includes('COMMAND_PALETTE_SOURCE_IDS = ["chats", "commands", "files", "tabs", "worktrees"]'), "Command palette sources must use the persisted typed source contract");
-assert(appTsx.includes('placeholder="Search tasks or run a command"'), "Search must use the centered task and command palette");
+assert(searchCommandDialog.includes('placeholder="Search tasks or run a command"'), "Search must use the centered task and command palette");
+assert(searchCommandDialog.includes('label="Tasks"') && searchCommandDialog.includes('label="Actions"'), "Centered search must separate tasks from actions");
+assert(appTsx.includes('command.source === "chats").slice(0, 6)') && appTsx.includes('command.source !== "chats").slice(0, 6)'), "Centered search must keep both tasks and actions visible before a query");
 assert(!appTsx.includes('sideDrawerMode === "search"'), "Search must not render as a duplicate side drawer");
 assert(!appCss.includes(".search-scope-tabs"), "Removed search drawer tabs must not leave capsule styling behind");
 assert(settingsModal.includes("onCommandPaletteSourceChange") && settingsModal.includes("Toggle ${source.label} command palette source"), "Settings must expose functional command-palette source controls");

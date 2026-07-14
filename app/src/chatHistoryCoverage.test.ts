@@ -3,7 +3,8 @@ import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const thread = readFileSync(new URL("./ChatThreadSurface.tsx", import.meta.url), "utf8");
-const css = readFileSync(new URL("./App.css", import.meta.url), "utf8");
+const searchDialog = readFileSync(new URL("./SearchCommandDialog.tsx", import.meta.url), "utf8");
+const css = `${readFileSync(new URL("./App.css", import.meta.url), "utf8")}\n${readFileSync(new URL("./SearchCommandDialog.css", import.meta.url), "utf8")}`;
 
 describe("chat history discovery production wiring", () => {
   it("searches durable history and opens stable message targets", () => {
@@ -22,7 +23,9 @@ describe("chat history discovery production wiring", () => {
   });
 
   it("uses one centered discovery surface instead of a search drawer", () => {
-    expect(app).toContain('placeholder="Search tasks or run a command"');
+    expect(searchDialog).toContain('placeholder="Search tasks or run a command"');
+    expect(searchDialog).toContain('label="Tasks"');
+    expect(searchDialog).toContain('label="Actions"');
     expect(app).toContain('source: "chats"');
     expect(app).not.toContain('sideDrawerMode === "search"');
     expect(css).not.toContain(".search-scope-tabs");

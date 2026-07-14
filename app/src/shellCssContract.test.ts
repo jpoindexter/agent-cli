@@ -26,7 +26,9 @@ describe("responsive shell CSS contract", () => {
     const convergence = css.slice(css.indexOf("Chrome convergence:"));
     expect(convergence).toContain("grid-template-columns: minmax(420px, 1fr) 1px var(--dock-width, 430px);");
     expect(convergence).toContain("grid-template-columns: var(--dock-width, 430px) 1px minmax(420px, 1fr);");
-    expect(convergence).toMatch(/\.side-drawer-resizer\s*\{[^}]*width:\s*9px;[^}]*margin-left:\s*-4px;[^}]*border-left:\s*1px solid #2b2d36;/s);
-    expect(convergence).toMatch(/\.workbench--drawer-right \.workbench-resizer--tray\.workbench-resizer--right\s*\{[^}]*width:\s*9px;[^}]*margin-left:\s*-4px;[^}]*border-left:\s*1px solid #2b2d36;/s);
+    expect(convergence).toMatch(/\.side-drawer-resizer\s*\{[^}]*width:\s*9px;[^}]*margin-left:\s*-4px;[^}]*border:\s*0;/s);
+    expect(convergence).toMatch(/\.side-drawer-resizer::before\s*\{[^}]*inset:\s*0 4px;[^}]*background:\s*#2b2d36;/s);
+    expect(convergence).toMatch(/\.workbench--drawer-right \.workbench-resizer--tray\.workbench-resizer--right\s*\{[^}]*width:\s*9px;[^}]*margin-left:\s*-4px;[^}]*border:\s*0;/s);
+    expect(convergence).toMatch(/\.workbench--drawer-right \.workbench-resizer--tray\.workbench-resizer--right::before\s*\{[^}]*inset:\s*0 4px;[^}]*background:\s*#2b2d36;/s);
   });
 });

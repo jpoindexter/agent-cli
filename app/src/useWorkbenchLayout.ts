@@ -47,7 +47,7 @@ export const useWorkbenchLayout = () => {
   } as CSSProperties;
   const appShellStyle = {
     "--side-drawer-width": `${sideDrawerCollapsed ? 0 : sideDrawerWidth}px`,
-    "--titlebar-leading-width": `${sideDrawerCollapsed ? 112 : sideDrawerWidth}px`,
+    "--titlebar-leading-width": `${sideDrawerCollapsed ? 216 : sideDrawerWidth}px`,
     "--dock-width": `${workbenchSizing.trayPercent === DEFAULT_WORKBENCH_SIZING.trayPercent
       ? 430
       : Math.max(240, (viewportWidth - (sideDrawerCollapsed ? 0 : sideDrawerWidth) - 1) * (workbenchSizing.trayPercent / 100))}px`,

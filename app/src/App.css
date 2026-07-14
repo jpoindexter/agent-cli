@@ -393,24 +393,6 @@ body,
   white-space: nowrap;
 }
 
-.drawer-collapse-button {
-  display: inline-grid;
-  width: 22px;
-  height: 22px;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: var(--control-radius);
-  background: transparent;
-  color: var(--color-text-muted);
-}
-
-.drawer-collapse-button:hover,
-.drawer-collapse-button:focus-visible {
-  background: var(--toolbar-control-bg-hover);
-  color: var(--color-text);
-  outline: none;
-}
-
 .drawer-mode-switcher {
   display: none;
   flex: 0 0 auto;
@@ -643,7 +625,6 @@ body,
 
 .rail-open-button:focus-visible,
 .drawer-mode-switcher__button:focus-visible,
-.drawer-collapse-button:focus-visible,
 .project-row:focus-visible,
 .session-row:focus-visible,
 .rail-root__button:focus-visible,
@@ -663,7 +644,6 @@ body,
   outline-offset: -2px;
 }
 
-.drawer-collapse-button,
 .browser-button,
 .terminal-profile-picker select,
 .terminal-pane-button,
@@ -674,7 +654,6 @@ body,
   box-shadow: none;
 }
 
-.drawer-collapse-button:hover,
 .browser-button:hover:not(:disabled),
 .terminal-profile-picker select:hover:not(:disabled),
 .terminal-pane-button:hover:not(:disabled),
@@ -5714,19 +5693,6 @@ body,
   text-transform: none;
 }
 
-.drawer-collapse-button {
-  width: 18px;
-  height: 24px;
-  border: 0;
-  color: #a6a8b6;
-}
-
-.drawer-collapse-button:hover,
-.drawer-collapse-button:focus-visible {
-  background: transparent;
-  color: #ececf4;
-}
-
 .project-rail {
   padding: 12px 10px 16px;
 }
@@ -7122,12 +7088,15 @@ body,
 }
 
 .titlebar-identity {
+  gap: 2px;
   padding-left: 76px;
+  padding-right: 10px;
   background: transparent;
 }
 
 .titlebar-leading-action {
   flex: 0 0 28px;
+  margin-left: auto;
 }
 
 .titlebar-splitter {
@@ -7244,7 +7213,6 @@ body,
   padding-inline: 12px;
 }
 
-.drawer-collapse-button,
 .terminal-tab-action {
   width: 28px;
   height: 28px;
@@ -7746,26 +7714,24 @@ body,
   width: 9px;
   margin-left: -4px;
   border: 0;
-  border-left: 1px solid #2b2d36;
   background: transparent;
 }
 
 .side-drawer-resizer::before {
-  inset: 0;
-  background: transparent;
+  inset: 0 4px;
+  background: #2b2d36;
 }
 
 .workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right {
   width: 9px;
   margin-left: -4px;
   border: 0;
-  border-left: 1px solid #2b2d36;
   background: transparent;
 }
 
 .workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::before {
-  inset: 0;
-  background: transparent;
+  inset: 0 4px;
+  background: #2b2d36;
 }
 
 .workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::after {

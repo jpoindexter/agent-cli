@@ -1,0 +1,66 @@
+.command-palette-backdrop.search-command-dialog-backdrop {
+  padding-top: 11vh;
+}
+
+.command-palette.search-command-dialog {
+  width: min(760px, calc(100vw - 64px));
+  max-height: min(620px, calc(100vh - 128px));
+  border-radius: 8px;
+  background: #1b1c23;
+}
+
+.search-command-dialog .command-palette__field {
+  min-height: 54px;
+  padding-inline: 18px;
+  background: #202129;
+}
+
+.search-command-dialog .command-palette__field input {
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.search-command-dialog .command-palette__list {
+  padding: 6px 10px 12px;
+}
+
+.search-command-dialog__group + .search-command-dialog__group {
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.search-command-dialog__group-label {
+  height: 30px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 30px;
+  padding-inline: 12px;
+}
+
+.search-command-dialog .command-palette__row {
+  min-height: 46px;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  gap: 10px;
+  border-radius: 0;
+  padding: 5px 12px;
+}
+
+.search-command-dialog .command-palette__row:hover:not(:disabled),
+.search-command-dialog .command-palette__row--active:not(:disabled) {
+  background: #292a33;
+}
+
+.search-command-dialog .command-palette__copy {
+  gap: 3px;
+}
+
+.search-command-dialog .command-palette__copy strong {
+  font-size: 13px;
+}
+
+.search-command-dialog .command-palette__copy span,
+.search-command-dialog .command-palette__shortcut {
+  font-size: 12px;
+}
