@@ -1,0 +1,63 @@
+.app-titlebar,
+.workbench.workbench--drawer-right,
+.workbench.workbench--drawer-hidden {
+  transition: grid-template-columns 180ms ease;
+}
+
+.workbench.workbench--drawer-hidden {
+  grid-template-columns: minmax(420px, 1fr) 1px 0;
+  grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit files"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-editor.workbench--drawer-hidden {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit editor"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-browser.workbench--drawer-hidden {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit browser"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-git.workbench--drawer-hidden {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit git"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--drawer-hidden.workbench--tools-files .files-dock,
+.workbench.workbench--drawer-hidden.workbench--tools-editor .editor-area,
+.workbench.workbench--drawer-hidden.workbench--tools-browser .browser-preview,
+.workbench.workbench--drawer-hidden.workbench--tools-git .git-dock {
+  display: flex;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 1121px) {
+  .app-shell--tools-hidden .app-titlebar {
+    grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(420px, 1fr) 1px 176px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-titlebar,
+  .workbench.workbench--drawer-right,
+  .workbench.workbench--drawer-hidden {
+    transition: none;
+  }
+}

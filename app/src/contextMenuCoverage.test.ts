@@ -26,9 +26,18 @@ describe("production context-menu coverage", () => {
       "terminalPaneContextMenuItems(pane)",
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
+      "composerAddMenuItems()",
     ]) {
       expect(app).toContain(marker);
     }
+  });
+
+  it("opens a Keelhouse add menu from the composer plus control", () => {
+    expect(app).toContain('aria-label="Add context or action"');
+    expect(app).toContain("onClick={openComposerAddMenu}");
+    expect(app).toContain('querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")');
+    expect(app).toContain('menuItem("composer.add.files", "Files and folders"');
+    expect(app).toContain('menuItem("composer.add.parallel", "Parallel child chats"');
   });
 
   it("routes browser URLs and composer stop through the correct product actions", () => {

@@ -299,6 +299,7 @@ import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./Cont
 import { paneContextBelongsToProject, paneContextKey, paneContextParts, removeProjectPaneContexts } from "./paneOwnership";
 import "./App.css";
 import "./responsive-shell.css";
+import "./workbenchTransitions.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
 // and encode keydowns back into pty bytes. Ship-ugly on purpose.
@@ -4575,6 +4576,32 @@ function App() {
     }),
   ];
 
+  const composerAddMenuItems = (): ContextMenuItem[] => [
+    menuItem("composer.add.files", "Files and folders", () => attachLocalFileToComposer(), { icon: "filePlus" }),
+    menuItem("composer.add.current", "Current editor file", () => attachSelectedFileToComposer(), {
+      icon: "file",
+      disabled: !selectedFile,
+    }),
+    menuItem("composer.add.preview", "Browser preview", () => attachPreviewToComposer(), { icon: "browser" }),
+    menuItem("composer.add.parallel", "Parallel child chats", () => {
+      setOrchestrationError(null);
+      setOrchestrationOpen(true);
+    }, {
+      icon: "agent",
+      disabled: !workspacePath || !activeSessionId || Boolean(activeChatConversation.activeRunId),
+    }),
+  ];
+
+  const openComposerAddMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    event.currentTarget.closest(".agent-composer__bar")
+      ?.querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")
+      .forEach((menu) => menu.removeAttribute("open"));
+    const items = composerAddMenuItems();
+    const rect = event.currentTarget.getBoundingClientRect();
+    setContextMenu({ x: rect.left, y: rect.top - (items.length * 28 + 20), items });
+  };
+
   const activeTerminalPaneCommandIndex = activeTerminalPane ? terminalPanes.findIndex((pane) => pane.id === activeTerminalPane.id) : -1;
   const activeTerminalPaneLabelForCommands = activeTerminalPane
     ? terminalPaneLabel(activeTerminalPane, activeTerminalPaneCommandIndex >= 0 ? activeTerminalPaneCommandIndex : activeTerminalPane.slot)
@@ -5660,7 +5687,7 @@ function App() {
   const sourceRepoStatusTitle = sourceRepoStatusTitleFor(repoLocation, sourceHostToolStatus);
 
   return (
-    <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
+    <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${renderedWorkbenchLayout === "hidden" ? "app-shell--tools-hidden" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
       <header className="app-titlebar" aria-label="Application chrome" data-tauri-drag-region>
         <div className="titlebar-identity" data-tauri-drag-region>
           <button
@@ -6758,10 +6785,10 @@ function App() {
                   <button
                     className="agent-composer__attachment-button"
                     type="button"
-                    aria-label="Attach file"
-                    title="Attach file"
+                    aria-label="Add context or action"
+                    title="Add context or action"
                     disabled={!activeComposerHarnessKey}
-                    onClick={() => void attachLocalFileToComposer()}
+                    onClick={openComposerAddMenu}
                   >
                     <AppIcon name="plus" />
                   </button>
