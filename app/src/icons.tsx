@@ -22,6 +22,7 @@ import {
   Globe2,
   List,
   LoaderCircle,
+  MessageCircle,
   MoreHorizontal,
   ExternalLink,
   PanelBottom,
@@ -49,6 +50,7 @@ export type AppIconName =
   | "browser"
   | "bookmark"
   | "check"
+  | "chat"
   | "chevronDown"
   | "chevronRight"
   | "chevronUp"
@@ -92,6 +94,7 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   browser: Globe2,
   bookmark: Bookmark,
   check: CheckCircle2,
+  chat: MessageCircle,
   chevronDown: ChevronDown,
   chevronRight: ChevronRight,
   chevronUp: ChevronUp,

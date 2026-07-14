@@ -6694,10 +6694,13 @@ body,
 }
 
 .agent-composer__popover {
-  position: absolute;
-  bottom: calc(100% + 8px);
-  z-index: 30;
+  position: fixed;
+  top: var(--composer-popover-top, -10000px);
+  left: var(--composer-popover-left, -10000px);
+  z-index: 1000;
   width: min(360px, calc(100vw - 40px));
+  max-height: calc(100vh - 24px);
+  overflow: auto;
   border: 1px solid #3a3c48;
   border-radius: 6px;
   background: #23242d;
@@ -6708,11 +6711,19 @@ body,
 
 .agent-composer__popover--permission,
 .agent-composer__popover--goal {
-  left: 0;
+  left: var(--composer-popover-left, -10000px);
 }
 
 .agent-composer__popover--runtime {
-  right: 0;
+  right: auto;
+}
+
+.agent-composer__menu[open] .agent-composer__popover {
+  visibility: hidden;
+}
+
+.agent-composer__menu[data-popover-positioned="true"] .agent-composer__popover {
+  visibility: visible;
 }
 
 .agent-composer__popover-title {

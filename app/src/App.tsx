@@ -526,12 +526,46 @@ function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode
   );
 }
 
+const composerPopoverPosition = (menu: HTMLDetailsElement) => {
+  if (!menu.open) {
+    delete menu.dataset.popoverPositioned;
+    return;
+  }
+
+  const anchor = menu.querySelector<HTMLElement>("summary");
+  const popover = menu.querySelector<HTMLElement>(".agent-composer__popover");
+  if (!anchor || !popover) return;
+
+  const anchorRect = anchor.getBoundingClientRect();
+  const popoverRect = popover.getBoundingClientRect();
+  const gutter = 12;
+  const gap = 8;
+  const width = Math.min(popoverRect.width, window.innerWidth - gutter * 2);
+  const height = Math.min(popoverRect.height, window.innerHeight - gutter * 2);
+  const alignRight = menu.classList.contains("agent-composer__menu--runtime");
+  const left = Math.max(gutter, Math.min(
+    alignRight ? anchorRect.right - width : anchorRect.left,
+    window.innerWidth - width - gutter,
+  ));
+  const roomAbove = anchorRect.top - gutter;
+  const roomBelow = window.innerHeight - anchorRect.bottom - gutter;
+  const top = roomAbove >= height + gap || roomAbove >= roomBelow
+    ? Math.max(gutter, anchorRect.top - height - gap)
+    : Math.min(window.innerHeight - height - gutter, anchorRect.bottom + gap);
+
+  menu.style.setProperty("--composer-popover-left", `${left}px`);
+  menu.style.setProperty("--composer-popover-top", `${top}px`);
+  menu.dataset.popoverPositioned = "true";
+};
+
 const handleComposerMenuToggle = (event: FormEvent<HTMLDetailsElement>) => {
   const current = event.currentTarget;
   const menus = current
     .closest(".agent-composer__bar")
     ?.querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]");
   closeOtherOpenComposerMenus(current, menus ?? []);
+  if (current.open) requestAnimationFrame(() => composerPopoverPosition(current));
+  else delete current.dataset.popoverPositioned;
 };
 
 function App() {
@@ -658,6 +692,18 @@ function App() {
   const [terminalFindLastQuery, setTerminalFindLastQuery] = useState("");
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  useEffect(() => {
+    const repositionOpenComposerMenus = () => {
+      document.querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]").forEach(composerPopoverPosition);
+    };
+    window.addEventListener("resize", repositionOpenComposerMenus);
+    window.addEventListener("scroll", repositionOpenComposerMenus, true);
+    return () => {
+      window.removeEventListener("resize", repositionOpenComposerMenus);
+      window.removeEventListener("scroll", repositionOpenComposerMenus, true);
+    };
+  }, []);
   const [sourceControlStatus, setSourceControlStatus] = useState<SourceControlStatus | null>(null);
   const [agentConnectionsStatus, setAgentConnectionsStatus] = useState<AgentConnectionsStatus | null>(null);
   const [agentConnectionsRefreshing, setAgentConnectionsRefreshing] = useState(false);
@@ -7066,7 +7112,7 @@ function App() {
                 <div className="agent-composer__actions">
                   <details className="agent-composer__menu agent-composer__menu--runtime" onToggle={handleComposerMenuToggle}>
                     <summary className="agent-composer__control agent-composer__control--runtime">
-                      <AppIcon name="agent" />
+                      <AppIcon name="chat" />
                       <span>{activeComposerProviderLabel}</span>
                       {activeComposerHarness.model.trim() ? <span className="agent-composer__control-detail">{activeComposerHarness.model.trim()}</span> : null}
                       {activeComposerHarness.reasoningEffort !== "default" ? <span className="agent-composer__control-detail">{composerReasoningLabel(activeComposerHarness.reasoningEffort)}</span> : null}
