@@ -3413,6 +3413,14 @@ function App() {
     setAgentSurfaceMode("terminal");
   };
 
+  const openAgentConnection = async (providerId: "codex" | "gemini" | "claude") => {
+    setSettingsOpen(false);
+    const created = await createTerminalPane(resolveLaunchProfile(providerId));
+    if (!created) return;
+    setUtilityTrayMode("terminal");
+    setAgentSurfaceMode("terminal");
+  };
+
   const closeTerminalPane = async (paneId: number) => {
     const root = workspacePathRef.current;
     const sessionId = activeSessionForProject(root);
@@ -7293,6 +7301,7 @@ function App() {
             if (scope === "chat") void setComposerApprovalMode(mode);
             else void updateScopedSetting(scope, "approvalMode", mode);
           }}
+          onOpenAgentConnection={(providerId) => void openAgentConnection(providerId)}
           onRefreshAgentConnections={refreshAgentConnections}
           onBrowserUrlCommit={(scope, url) => {
             const normalized = normalizeBrowserPreviewUrl(url);

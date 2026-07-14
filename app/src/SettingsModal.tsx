@@ -5,6 +5,7 @@ import type { AgentApprovalMode } from "./agentSessionHandle";
 import {
   formatAgentConnectionCapability,
   formatAgentConnectionHealth,
+  type AgentConnectionStatus,
   type AgentConnectionsStatus,
 } from "./agentConnections";
 import { formatCliToolStatus, type SourceControlStatus } from "./sourceControl";
@@ -77,6 +78,7 @@ type SettingsModalProps = {
   workspaceName?: string;
   workspacePath?: string;
   onApprovalModeChange: (scope: SettingsScope, mode: AgentApprovalMode) => void;
+  onOpenAgentConnection?: (providerId: AgentConnectionStatus["id"]) => void;
   onRefreshAgentConnections?: () => void;
   onBrowserUrlCommit: (scope: SettingsScope, url: string) => void;
   onAiConnectionSettingsChange?: (settings: AiConnectionSettings) => void;
@@ -129,6 +131,7 @@ export function SettingsModal({
   workspaceName = "Current project",
   workspacePath = "",
   onApprovalModeChange,
+  onOpenAgentConnection,
   onRefreshAgentConnections,
   onBrowserUrlCommit,
   onAiConnectionSettingsChange,
@@ -225,8 +228,21 @@ export function SettingsModal({
                 <strong>{provider.label}</strong>
                 <small>{provider.version ?? "Version unavailable"}</small>
               </div>
-              <span>{formatAgentConnectionHealth(provider)}</span>
-              <span>{formatAgentConnectionCapability(provider)}</span>
+              <div className="settings-workspace__provider-status">
+                <span>{formatAgentConnectionHealth(provider)}</span>
+                <small>{formatAgentConnectionCapability(provider)}</small>
+              </div>
+              <button
+                className="settings-workspace__provider-action"
+                type="button"
+                disabled={!provider.installed || !workspacePath || !onOpenAgentConnection}
+                aria-label={`Open ${provider.label} CLI for setup`}
+                title={!provider.installed ? `${provider.label} is not installed` : !workspacePath ? "Open a project first" : `Open ${provider.label} CLI`}
+                onClick={() => onOpenAgentConnection?.(provider.id)}
+              >
+                <AppIcon name="terminal" />
+                <span>Open CLI</span>
+              </button>
             </div>
           )) ?? <span className="settings-modal__value">{agentConnectionsRefreshing ? "Checking providers…" : "Provider health unavailable"}</span>}
           <button

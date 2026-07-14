@@ -4781,7 +4781,7 @@ body,
 
 .settings-workspace__provider {
   display: grid;
-  grid-template-columns: minmax(110px, 1fr) minmax(150px, auto) minmax(120px, auto);
+  grid-template-columns: minmax(110px, 1fr) minmax(150px, auto) auto;
   align-items: center;
   gap: 16px;
   padding: 8px 0;
@@ -4795,8 +4795,42 @@ body,
 }
 
 .settings-workspace__provider small,
-.settings-workspace__provider > span {
+.settings-workspace__provider-status {
   color: var(--color-text-muted);
+}
+
+.settings-workspace__provider-status {
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+  text-align: right;
+}
+
+.settings-workspace__provider-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 11px var(--font-ui);
+}
+
+.settings-workspace__provider-action:hover:not(:disabled),
+.settings-workspace__provider-action:focus-visible {
+  background: var(--color-row-hover);
+  color: var(--color-text);
+}
+
+.settings-workspace__provider-action:disabled {
+  opacity: 0.45;
+}
+
+.settings-workspace__provider-action svg {
+  width: 14px;
+  height: 14px;
 }
 
 .settings-workspace__provider small {
@@ -5084,11 +5118,14 @@ body,
 
 @media (max-width: 1100px) {
   .settings-workspace__provider {
-    grid-template-columns: minmax(120px, 1fr) minmax(140px, auto);
+    grid-template-columns: minmax(120px, 1fr) auto;
   }
 
-  .settings-workspace__provider > span:last-child {
+  .settings-workspace__provider-status {
     grid-column: 1 / -1;
+    grid-row: 2;
+    justify-items: start;
+    text-align: left;
   }
 
   .settings-workspace__profile-form {
@@ -6922,7 +6959,7 @@ body,
   height: 38px;
 }
 
-@container tool-tabs (max-width: 560px) {
+@container tool-tabs (max-width: 720px) {
   .tool-tray-tabs__tab {
     gap: 0;
   }
@@ -6941,7 +6978,7 @@ body,
   }
 }
 
-@container tool-tabs (max-width: 360px) {
+@container tool-tabs (max-width: 480px) {
   .tool-tray-tabs__tab--active {
     gap: 0;
     padding-inline: 0;

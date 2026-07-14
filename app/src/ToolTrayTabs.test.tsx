@@ -13,7 +13,9 @@ describe("ToolTrayTabs", () => {
 
   it("collapses labels before controls can collide", () => {
     expect(toolTrayDensity(760)).toBe("full");
+    expect(toolTrayDensity(719)).toBe("compact");
     expect(toolTrayDensity(540)).toBe("compact");
+    expect(toolTrayDensity(479)).toBe("icons");
     expect(toolTrayDensity(360)).toBe("icons");
   });
 

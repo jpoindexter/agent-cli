@@ -18,8 +18,8 @@ const showsBrowser = (mode: ToolTrayMode) => mode === "browser" || mode === "spl
 export type ToolTrayDensity = "full" | "compact" | "icons";
 
 export const toolTrayDensity = (width: number): ToolTrayDensity => {
-  if (width < 420) return "icons";
-  if (width < 620) return "compact";
+  if (width < 480) return "icons";
+  if (width < 720) return "compact";
   return "full";
 };
 

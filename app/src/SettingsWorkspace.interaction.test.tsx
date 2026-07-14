@@ -97,4 +97,24 @@ describe("Settings workspace interactions", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Toggle Files command palette source" }));
     expect(onCommandPaletteSourceChange).toHaveBeenCalledWith("files", false);
   });
+
+  it("opens an installed provider CLI for authentication recovery", () => {
+    const onOpenAgentConnection = vi.fn();
+    renderWorkspace({
+      initialCategory: "agents",
+      workspacePath: "/repo",
+      onOpenAgentConnection,
+      agentConnectionsStatus: {
+        providers: [
+          { id: "codex", label: "Codex", installed: true, version: "codex-cli 0.141.0", authenticated: true, structuredChat: true },
+          { id: "gemini", label: "Gemini", installed: true, version: "0.47.0", authenticated: null, structuredChat: false },
+          { id: "claude", label: "Claude", installed: false, version: null, authenticated: null, structuredChat: true },
+        ],
+      },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Gemini CLI for setup" }));
+    expect(onOpenAgentConnection).toHaveBeenCalledWith("gemini");
+    expect((screen.getByRole("button", { name: "Open Claude CLI for setup" }) as HTMLButtonElement).disabled).toBe(true);
+  });
 });
