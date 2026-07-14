@@ -1338,7 +1338,7 @@
       "launch": "v2",
       "summary": "Keep the app repairable by limiting source files to 300 lines, React component files to 200 lines, and functions/components/hooks to 50 lines. Extract behavior along existing ownership boundaries without changing the approved chrome or runtime behavior.",
       "done": "npm run qa:module-size passes with an empty legacy baseline; App.tsx, App.css, settings, chat, context-menu, workbench-layout, and workspace-state owners all meet 300/200/50; focused tests and packaged smoke preserve chat, trays, terminal, editor, browser, menus, and session restore.",
-      "progress": "2026-07-14: added a TypeScript-AST-backed qa:module-size ratchet, documented the rule, and captured 13 legacy debt files. New violations and any growth in file length, long-function count, or longest function now fail. Newly added composerMenus source and tests comply. Remaining: extract the 13 baseline files to zero without changing behavior.",
+      "progress": "2026-07-14: added a TypeScript-AST-backed qa:module-size ratchet, documented the rule, and captured 13 legacy debt files. New violations and any growth in file length, long-function count, or longest function now fail. Extracted chat discovery, context menu, tool tray tabs, browser QA IPC, and orchestration dialog into bounded helpers/components; focused tests pass and the baseline is down to 8 files. Remaining: extract the final 8 without changing behavior.",
       "buildOrder": 90.15
     },
     {

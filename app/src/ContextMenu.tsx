@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useRef, type KeyboardEvent, type RefObject } from "react";
 import { AppIcon, type AppIconName } from "./icons";
 
 export type ContextMenuItem = {
@@ -36,13 +36,7 @@ export const contextMenuPosition = (
   };
 };
 
-export function ContextMenu({ state, onDismiss, onActionError }: ContextMenuProps) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const position = contextMenuPosition(state, {
-    width: typeof window === "undefined" ? 1440 : window.innerWidth,
-    height: typeof window === "undefined" ? 900 : window.innerHeight,
-  });
-
+const useContextMenuDismissal = (ref: RefObject<HTMLDivElement | null>, onDismiss: () => void, state: ContextMenuState) => {
   useEffect(() => {
     ref.current?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
     const dismiss = () => onDismiss();
@@ -56,33 +50,36 @@ export function ContextMenu({ state, onDismiss, onActionError }: ContextMenuProp
       window.removeEventListener("keydown", dismissOnEscape);
     };
   }, [onDismiss, state]);
+};
 
-  const moveFocus = (event: KeyboardEvent<HTMLDivElement>, direction: 1 | -1) => {
-    const buttons = Array.from(ref.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
-    if (buttons.length === 0) return;
+const enabledMenuButtons = (ref: RefObject<HTMLDivElement | null>) =>
+  Array.from(ref.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
+
+const handleMenuKeyDown = (
+  event: KeyboardEvent<HTMLDivElement>,
+  ref: RefObject<HTMLDivElement | null>,
+  onDismiss: () => void,
+) => {
+  const buttons = enabledMenuButtons(ref);
+  if (buttons.length === 0) return;
+  if (event.key === "ArrowDown" || event.key === "ArrowUp") {
     event.preventDefault();
-    const currentIndex = buttons.indexOf(document.activeElement as HTMLButtonElement);
-    const fallbackIndex = direction === 1 ? 0 : buttons.length - 1;
-    const nextIndex = currentIndex === -1 ? fallbackIndex : (currentIndex + direction + buttons.length) % buttons.length;
-    buttons[nextIndex]?.focus();
-  };
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    buttons[current === -1 ? (direction === 1 ? 0 : buttons.length - 1) : (current + direction + buttons.length) % buttons.length]?.focus();
+  } else {
     if (event.key === "Escape") {
       event.preventDefault();
       onDismiss();
-    } else if (event.key === "ArrowDown") {
-      moveFocus(event, 1);
-    } else if (event.key === "ArrowUp") {
-      moveFocus(event, -1);
     } else if (event.key === "Home" || event.key === "End") {
-      const buttons = Array.from(ref.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []);
       event.preventDefault();
       buttons[event.key === "Home" ? 0 : buttons.length - 1]?.focus();
     }
-  };
+  }
+};
 
-  const run = async (item: ContextMenuItem) => {
+const ContextMenuItemButton = ({ item, onDismiss, onActionError }: Pick<ContextMenuProps, "onDismiss" | "onActionError"> & { item: ContextMenuItem }) => {
+  const run = async () => {
     if (item.disabled) return;
     onDismiss();
     try {
@@ -91,6 +88,21 @@ export function ContextMenu({ state, onDismiss, onActionError }: ContextMenuProp
       onActionError(item, error);
     }
   };
+  return (
+    <button className={item.danger ? "context-menu__item context-menu__item--danger" : "context-menu__item"} type="button" role="menuitem" disabled={item.disabled} data-menu-action-id={item.id} onClick={() => void run()}>
+      <span className="context-menu__label">{item.icon ? <AppIcon name={item.icon} /> : null}<span>{item.label}</span></span>
+      {item.shortcut ? <span className="context-menu__shortcut">{item.shortcut}</span> : null}
+    </button>
+  );
+};
+
+export function ContextMenu({ state, onDismiss, onActionError }: ContextMenuProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useContextMenuDismissal(ref, onDismiss, state);
+  const position = contextMenuPosition(state, {
+    width: typeof window === "undefined" ? 1440 : window.innerWidth,
+    height: typeof window === "undefined" ? 900 : window.innerHeight,
+  });
 
   return (
     <div
@@ -100,25 +112,9 @@ export function ContextMenu({ state, onDismiss, onActionError }: ContextMenuProp
       aria-label="Context menu"
       role="menu"
       onPointerDown={(event) => event.stopPropagation()}
-      onKeyDown={handleKeyDown}
+      onKeyDown={(event) => handleMenuKeyDown(event, ref, onDismiss)}
     >
-      {state.items.map((item) => (
-        <button
-          className={item.danger ? "context-menu__item context-menu__item--danger" : "context-menu__item"}
-          type="button"
-          role="menuitem"
-          disabled={item.disabled}
-          data-menu-action-id={item.id}
-          key={item.id}
-          onClick={() => void run(item)}
-        >
-          <span className="context-menu__label">
-            {item.icon ? <AppIcon name={item.icon} /> : null}
-            <span>{item.label}</span>
-          </span>
-          {item.shortcut ? <span className="context-menu__shortcut">{item.shortcut}</span> : null}
-        </button>
-      ))}
+      {state.items.map((item) => <ContextMenuItemButton item={item} key={item.id} onDismiss={onDismiss} onActionError={onActionError} />)}
     </div>
   );
 }

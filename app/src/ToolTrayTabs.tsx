@@ -23,26 +23,43 @@ export const toolTrayDensity = (width: number): ToolTrayDensity => {
   return "full";
 };
 
-export function ToolTrayTabs({ mode, onModeChange, onClose }: ToolTrayTabsProps) {
+const useToolTrayDensity = () => {
   const trayRef = useRef<HTMLElement | null>(null);
   const [density, setDensity] = useState<ToolTrayDensity>("compact");
-
   useLayoutEffect(() => {
     const tray = trayRef.current;
     if (!tray) return;
-
-    const updateDensity = (width: number) => {
-      setDensity((current) => {
-        const next = toolTrayDensity(width);
-        return current === next ? current : next;
-      });
-    };
-    updateDensity(tray.getBoundingClientRect().width);
-
-    const observer = new ResizeObserver(([entry]) => updateDensity(entry.contentRect.width));
+    const update = (width: number) => setDensity((current) => {
+      const next = toolTrayDensity(width);
+      return current === next ? current : next;
+    });
+    update(tray.getBoundingClientRect().width);
+    const observer = new ResizeObserver(([entry]) => update(entry.contentRect.width));
     observer.observe(tray);
     return () => observer.disconnect();
   }, []);
+  return { density, trayRef };
+};
+
+const toolTabs = [
+  { mode: "files", label: "Files", icon: "folder", selected: (mode: ToolTrayMode) => mode === "files" },
+  { mode: "editor", label: "Editor", icon: "file", selected: showsEditor },
+  { mode: "browser", label: "Browser", icon: "browser", selected: showsBrowser },
+  { mode: "git", label: "Git", icon: "git", selected: (mode: ToolTrayMode) => mode === "git" },
+] as const;
+
+const ToolTrayTab = ({ current, tab, onChoose }: { current: ToolTrayMode; tab: typeof toolTabs[number]; onChoose: (mode: ToolTrayMode) => void }) => {
+  const selected = tab.selected(current);
+  return (
+    <button className={`tool-tray-tabs__tab ${selected ? "tool-tray-tabs__tab--active" : ""}`} type="button" aria-pressed={selected} title={`${selected && current === tab.mode ? "Hide" : "Show"} ${tab.label} panel`} onClick={() => onChoose(tab.mode)}>
+      <AppIcon name={tab.icon} />
+      <span>{tab.label}</span>
+    </button>
+  );
+};
+
+export function ToolTrayTabs({ mode, onModeChange, onClose }: ToolTrayTabsProps) {
+  const { density, trayRef } = useToolTrayDensity();
 
   const choose = (next: ToolTrayMode) => {
     const selection = toolTraySelection(mode, next);
@@ -52,46 +69,7 @@ export function ToolTrayTabs({ mode, onModeChange, onClose }: ToolTrayTabsProps)
 
   return (
     <nav ref={trayRef} className={`tool-tray-tabs tool-tray-tabs--${density}`} aria-label="Tool tray surfaces" data-density={density}>
-      <button
-        className={`tool-tray-tabs__tab ${mode === "files" ? "tool-tray-tabs__tab--active" : ""}`}
-        type="button"
-        aria-pressed={mode === "files"}
-        title={mode === "files" ? "Hide Files panel" : "Show Files panel"}
-        onClick={() => choose("files")}
-      >
-        <AppIcon name="folder" />
-        <span>Files</span>
-      </button>
-      <button
-        className={`tool-tray-tabs__tab ${showsEditor(mode) ? "tool-tray-tabs__tab--active" : ""}`}
-        type="button"
-        aria-pressed={showsEditor(mode)}
-        title={mode === "editor" ? "Hide Editor panel" : "Show Editor panel"}
-        onClick={() => choose("editor")}
-      >
-        <AppIcon name="file" />
-        <span>Editor</span>
-      </button>
-      <button
-        className={`tool-tray-tabs__tab ${showsBrowser(mode) ? "tool-tray-tabs__tab--active" : ""}`}
-        type="button"
-        aria-pressed={showsBrowser(mode)}
-        title={mode === "browser" ? "Hide Browser panel" : "Show Browser panel"}
-        onClick={() => choose("browser")}
-      >
-        <AppIcon name="browser" />
-        <span>Browser</span>
-      </button>
-      <button
-        className={`tool-tray-tabs__tab ${mode === "git" ? "tool-tray-tabs__tab--active" : ""}`}
-        type="button"
-        aria-pressed={mode === "git"}
-        title={mode === "git" ? "Hide Git panel" : "Show Git panel"}
-        onClick={() => choose("git")}
-      >
-        <AppIcon name="git" />
-        <span>Git</span>
-      </button>
+      {toolTabs.map((tab) => <ToolTrayTab current={mode} key={tab.mode} tab={tab} onChoose={choose} />)}
       <span className="tool-tray-tabs__spacer" />
       <button
         className="tool-tray-tabs__icon"

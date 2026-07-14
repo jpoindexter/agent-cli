@@ -62,30 +62,37 @@ export const browserQaFixture = {
 const payloadValue = <T>(payload: InvokeArgs | undefined, key: string): T | undefined =>
   payload && typeof payload === "object" ? (payload as Record<string, unknown>)[key] as T | undefined : undefined;
 
-export const createBrowserQaIpcHandler = () => async (command: string, payload?: InvokeArgs): Promise<unknown> => {
+const handleQaStoreCommand = (command: string, payload?: InvokeArgs): { matched: boolean; value: unknown } => {
   switch (command) {
     case "plugin:store|load":
-      return 1;
+      return { matched: true, value: 1 };
     case "plugin:store|entries":
-      return Array.from(qaStore.entries());
+      return { matched: true, value: Array.from(qaStore.entries()) };
     case "plugin:store|get": {
       const key = payloadValue<string>(payload, "key") ?? "";
-      return [qaStore.get(key), qaStore.has(key)];
+      return { matched: true, value: [qaStore.get(key), qaStore.has(key)] };
     }
     case "plugin:store|set": {
       const key = payloadValue<string>(payload, "key");
       if (key) qaStore.set(key, payloadValue(payload, "value"));
-      return null;
+      return { matched: true, value: null };
     }
     case "plugin:store|delete": {
       const key = payloadValue<string>(payload, "key");
-      return key ? qaStore.delete(key) : false;
+      return { matched: true, value: key ? qaStore.delete(key) : false };
     }
     case "plugin:store|save":
     case "plugin:store|reload":
     case "plugin:store|clear":
     case "plugin:store|reset":
-      return null;
+      return { matched: true, value: null };
+    default:
+      return { matched: false, value: null };
+  }
+};
+
+const handleQaAppCommand = (command: string, payload?: InvokeArgs): unknown => {
+  switch (command) {
     case "resolve_workspace":
       return { root: payloadValue<string>(payload, "path") ?? QA_ROOT };
     case "list_workspace_tree":
@@ -123,6 +130,11 @@ export const createBrowserQaIpcHandler = () => async (command: string, payload?:
     default:
       return null;
   }
+};
+
+export const createBrowserQaIpcHandler = () => async (command: string, payload?: InvokeArgs): Promise<unknown> => {
+  const storeResult = handleQaStoreCommand(command, payload);
+  return storeResult.matched ? storeResult.value : handleQaAppCommand(command, payload);
 };
 
 export const setupBrowserQa = () => {
