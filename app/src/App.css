@@ -5730,6 +5730,7 @@ body,
   min-width: 0;
   height: 100%;
   flex: 1 1 0;
+  cursor: default;
   color: #ececf4;
   font-size: 13px;
   font-weight: 600;
@@ -6569,12 +6570,13 @@ body,
   width: var(--run-column-width);
   margin: 0 auto;
   grid-template-rows: minmax(0, 1fr) minmax(36px, auto);
+  /* Fixed composer menus must be relative to the viewport, not this card. */
+  container-type: normal;
   overflow: visible;
   border: 1px solid #30323d;
   border-radius: 8px;
   background: #1c1d24;
   box-shadow: var(--shadow-composer);
-  container-type: inline-size;
 }
 
 .agent-composer__input {
@@ -6915,7 +6917,7 @@ body,
   background: #ffffff;
 }
 
-@container (max-width: 460px) {
+@media (max-width: 620px) {
   .agent-composer__control-detail,
   .agent-composer__menu--goal .agent-composer__control span {
     display: none;

@@ -2,6 +2,7 @@ import { type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboard
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -566,6 +567,16 @@ const handleComposerMenuToggle = (event: FormEvent<HTMLDetailsElement>) => {
   closeOtherOpenComposerMenus(current, menus ?? []);
   if (current.open) requestAnimationFrame(() => composerPopoverPosition(current));
   else delete current.dataset.popoverPositioned;
+};
+
+const toggleNativeWindowMaximize = async () => {
+  try {
+    const appWindow = getCurrentWindow();
+    if (await appWindow.isMaximized()) await appWindow.unmaximize();
+    else await appWindow.maximize();
+  } catch {
+    // The browser-based development preview has no native window to control.
+  }
 };
 
 function App() {
@@ -5804,11 +5815,19 @@ function App() {
           </button>
         </div>
         <div className="titlebar-splitter" aria-hidden="true" />
-        <div className="titlebar-agent-context" aria-label="Workspace context">
-          <button className="titlebar-workspace" type="button" onClick={pickWorkspace} title="Open or switch project folder">
+        <div className="titlebar-agent-context" aria-label="Workspace context" data-tauri-drag-region>
+          <div
+            className="titlebar-workspace"
+            data-tauri-drag-region
+            onDoubleClick={(event) => {
+              event.preventDefault();
+              void toggleNativeWindowMaximize();
+            }}
+            title="Current project. Double-click to maximize or restore the window."
+          >
             <AppIcon name="workspace" />
             <span>{activeWorkspaceName}</span>
-          </button>
+          </div>
           {gitStatus?.branch ? <span className="titlebar-branch">{`⎇ ${gitStatus.branch}`}</span> : null}
         </div>
         <div className="titlebar-splitter" aria-hidden="true" />
