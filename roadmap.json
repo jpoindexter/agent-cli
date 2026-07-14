@@ -1066,14 +1066,14 @@
     {
       "id": "SOURCE-CONTROL-CONNECTIONS",
       "title": "GitHub and GitLab connections",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "files",
       "size": "M",
       "launch": "v2",
       "summary": "Local Git is not enough once agent work needs to move through PR/MR review. Add first-class source-hosting connections without becoming a full forge client.",
       "done": "Settings detects `git`, `gh`, and `glab` auth health; supports GitHub, GitLab.com, and self-hosted GitLab remotes; opens repo/PR/MR/issue/pipeline links in browser preview or external browser; shows source-host status for the active repo; credentials are stored only through OS-safe storage.",
-      "progress": "Implementation checkpoint 2026-07-14: Rust source_control_status detects git/gh/glab install and auth health without token access; git_remote_url reads origin; Settings links Repo/PR-or-MR/Issues/Actions-or-Pipelines; detection now follows the active workspace and a flat status-bar control shows host plus owner/repo with auth health in its accessible label. GitHub.com uses PR/Actions routes; GitLab.com and arbitrary self-hosted non-GitHub remotes use MR/Pipeline routes. Keelhouse stores no forge credentials and delegates OS-safe auth to gh/glab. Tests cover all remote/link shapes and a real temporary-repo origin lookup. Remaining before Done: visually confirm the active-repo status in the packaged app after macOS is unlocked. See docs/source-control-connections.md.",
+      "progress": "Completed 2026-07-14. Rust source_control_status detects git/gh/glab install and auth health without token access; git_remote_url reads origin; Settings links Repo/PR-or-MR/Issues/Actions-or-Pipelines; detection follows the active workspace. GitHub.com uses PR/Actions routes; GitLab.com and arbitrary self-hosted non-GitHub remotes use MR/Pipeline routes. Tests cover all remote/link shapes and a real temporary-repo origin lookup. The signed package exposed the active status as GitHub · jpoindexter/agent-cli with the accessible health label Authenticated as jpoindexter. Keelhouse stores no forge credentials and delegates OS-safe auth to gh/glab. See docs/source-control-connections.md.",
       "buildOrder": 91.2
     },
     {

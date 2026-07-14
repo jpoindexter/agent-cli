@@ -26,4 +26,6 @@ Keelhouse does not accept, persist, display, or relay GitHub/GitLab tokens. User
 
 ## Current Verification
 
-Tests cover GitHub, GitLab.com, and self-hosted SSH/HTTPS parsing and every generated link shape. Rust tests execute origin-remote lookup against a real temporary Git repository. On this machine, live detection reports Git and authenticated `gh` as available and `glab` as absent. A packaged visual check of the new status-bar indicator remains pending while macOS is locked.
+Tests cover GitHub, GitLab.com, and self-hosted SSH/HTTPS parsing and every generated link shape. Rust tests execute origin-remote lookup against a real temporary Git repository. On this machine, live detection reports Git and authenticated `gh` as available and `glab` as absent.
+
+The signed package was inspected through the native accessibility tree on 2026-07-14. With `agent cli` active, the normal status bar exposed `GitHub · jpoindexter/agent-cli` and its accessible label reported `Authenticated as jpoindexter`. This executes the remaining active-repository status criterion without exposing token material.
