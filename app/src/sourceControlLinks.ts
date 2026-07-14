@@ -32,12 +32,23 @@ export const parseRemoteUrl = (remoteUrl: string): RepoLocation | null => {
 
 const repoBaseUrl = (location: RepoLocation) => `https://${location.host}/${location.owner}/${location.repo}`;
 
+export const isGitLabLocation = (location: RepoLocation): boolean => location.kind !== "github";
+
 export const buildRepoUrl = (location: RepoLocation): string => repoBaseUrl(location);
 
 export const buildPullRequestsUrl = (location: RepoLocation): string =>
-  location.kind === "gitlab" ? `${repoBaseUrl(location)}/-/merge_requests` : `${repoBaseUrl(location)}/pulls`;
+  isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/merge_requests` : `${repoBaseUrl(location)}/pulls`;
 
 export const buildIssuesUrl = (location: RepoLocation): string => `${repoBaseUrl(location)}/issues`;
 
 export const buildPipelinesUrl = (location: RepoLocation): string =>
-  location.kind === "gitlab" ? `${repoBaseUrl(location)}/-/pipelines` : `${repoBaseUrl(location)}/actions`;
+  isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/pipelines` : `${repoBaseUrl(location)}/actions`;
+
+export const sourceHostLabel = (location: RepoLocation): string => {
+  if (location.kind === "github") return "GitHub";
+  if (location.kind === "gitlab") return "GitLab";
+  return location.host;
+};
+
+export const sourceRepoStatusLabel = (location: RepoLocation): string =>
+  `${sourceHostLabel(location)} · ${location.owner}/${location.repo}`;

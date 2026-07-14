@@ -5,7 +5,10 @@ import {
   buildPipelinesUrl,
   buildPullRequestsUrl,
   buildRepoUrl,
+  isGitLabLocation,
   parseRemoteUrl,
+  sourceHostLabel,
+  sourceRepoStatusLabel,
 } from "./sourceControlLinks";
 
 describe("parseRemoteUrl", () => {
@@ -66,5 +69,14 @@ describe("link builders", () => {
   it("falls back to a bare repo URL shape for unrecognized hosts", () => {
     expect(buildRepoUrl(selfHosted)).toBe("https://git.internal.corp/team/proj");
     expect(buildIssuesUrl(selfHosted)).toBe("https://git.internal.corp/team/proj/issues");
+    expect(buildPullRequestsUrl(selfHosted)).toBe("https://git.internal.corp/team/proj/-/merge_requests");
+    expect(buildPipelinesUrl(selfHosted)).toBe("https://git.internal.corp/team/proj/-/pipelines");
+    expect(isGitLabLocation(selfHosted)).toBe(true);
+  });
+
+  it("formats compact active-repository labels", () => {
+    expect(sourceRepoStatusLabel(github)).toBe("GitHub · jpoindexter/keelhouse");
+    expect(sourceRepoStatusLabel(gitlab)).toBe("GitLab · team/proj");
+    expect(sourceHostLabel(selfHosted)).toBe("git.internal.corp");
   });
 });

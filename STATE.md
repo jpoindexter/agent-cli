@@ -163,6 +163,8 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **AGENT-HOOKS (IMPLEMENTED 2026-07-14; PACKAGED ACTION PENDING):** `app/src-tauri/src/agent_hooks.rs` starts a random `127.0.0.1` MCP endpoint and writes a mode-0600 bearer configuration under app data. Read tools expose open projects and active workspace state; action tools focus a pane, open a workspace-relative file, create a blank shell, or report attributed status. The frontend snapshots state, drains pending requests, rejects stale requests, and routes pane/file creation through `appActions` with `requestedBy: agent`. Packaged `initialize`, `tools/list`, and state reads executed, and missing auth returned HTTP 401. The macOS session is locked, so the decisive packaged attributed UI action remains unexecuted and the roadmap card stays open. See `docs/agent-hooks.md`.
 
+**SOURCE-CONTROL-CONNECTIONS (IMPLEMENTED 2026-07-14; PACKAGED STATUS VISUAL PENDING):** Git/gh/glab health and origin discovery now refresh for the active workspace instead of only while Settings is open. The normal status bar shows host plus `owner/repo`, opens the repository, and includes CLI auth health in its accessible label. GitHub.com uses PR/Actions routes; GitLab.com and arbitrary self-hosted non-GitHub remotes use MR/Pipeline routes. Keelhouse stores no forge tokens and delegates credentials to `gh`/`glab`. Parser/link and real temporary-repo tests execute; the locked macOS session prevents visual confirmation of the packaged status item. See `docs/source-control-connections.md`.
+
 ## Next (ordered)
 
 1. **CHROME-EYEBALL-SIGNOFF:** Jason reviews the corrected packaged shell at 1440/1024/900 and records approval or corrections, including the Super-derived quiet-titlebar/toast direction.

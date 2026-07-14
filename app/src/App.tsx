@@ -208,7 +208,7 @@ import {
   worktreeForPaneId,
   type WorktreeRecord,
 } from "./worktrees";
-import { normalizeSourceControlStatus, type SourceControlStatus } from "./sourceControl";
+import { formatCliToolStatus, normalizeSourceControlStatus, type SourceControlStatus } from "./sourceControl";
 import {
   normalizeAgentConnectionsStatus,
   structuredChatProviderId,
@@ -231,7 +231,7 @@ import {
   type McpOAuthStart,
   type McpOAuthStatus,
 } from "./connectionSettings";
-import { parseRemoteUrl, type RepoLocation } from "./sourceControlLinks";
+import { buildRepoUrl, parseRemoteUrl, sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
 import { imeCaretStyle } from "./terminalIme";
 import { buildSnapshot, createRenderPerfState, recordFrameTime, recordIpcPayloadBytes } from "./renderPerf";
 import {
@@ -667,7 +667,6 @@ function App() {
   }, [actionNotice]);
 
   useEffect(() => {
-    if (!settingsOpen) return;
     let cancelled = false;
     invoke<unknown>("source_control_status")
       .then((result) => {
@@ -679,7 +678,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [settingsOpen]);
+  }, [settingsOpen, workspacePath]);
 
   const refreshAgentConnections = () => {
     setAgentConnectionsRefreshing(true);
@@ -694,7 +693,7 @@ function App() {
   }, [settingsOpen]);
 
   useEffect(() => {
-    if (!settingsOpen || !workspacePath) {
+    if (!workspacePath) {
       setRepoLocation(null);
       return;
     }
@@ -5220,6 +5219,10 @@ function App() {
     : "No chat";
   const activeDrawerMode = DRAWER_MODES.find((mode) => mode.id === sideDrawerMode) ?? DRAWER_MODES[0];
   const drawerActiveTitle = sideDrawerMode === "projects" ? "Project chats" : activeDrawerMode.label;
+  const sourceHostToolStatus = repoLocation?.kind === "github" ? sourceControlStatus?.gh : sourceControlStatus?.glab;
+  const sourceRepoStatusTitle = repoLocation
+    ? `${sourceRepoStatusLabel(repoLocation)} · ${sourceHostToolStatus ? formatCliToolStatus(sourceHostToolStatus) : "Checking authentication"}`
+    : "";
 
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
@@ -7129,6 +7132,18 @@ function App() {
             <span>{primarySurfaceLabel}</span>
             <span>{primarySurfaceStatusLabel}</span>
           </span>
+          {repoLocation ? (
+            <button
+              className="status-bar__item status-bar__item--button"
+              type="button"
+              title={`${sourceRepoStatusTitle} · Open repository`}
+              aria-label={`${sourceRepoStatusTitle}. Open repository`}
+              onClick={() => void openUrl(buildRepoUrl(repoLocation)).catch(() => {})}
+            >
+              <AppIcon name="git" />
+              <span>{sourceRepoStatusLabel(repoLocation)}</span>
+            </button>
+          ) : null}
         </div>
         <div className="status-bar__group status-bar__group--right">
           <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Chat" : utilityTrayStatusLabel}</span>

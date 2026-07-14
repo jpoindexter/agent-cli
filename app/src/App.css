@@ -320,6 +320,27 @@ body,
   text-overflow: ellipsis;
 }
 
+.status-bar__item--button {
+  max-width: min(34ch, 45vw);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: default;
+  font: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.status-bar__item--button:hover,
+.status-bar__item--button:focus-visible {
+  color: var(--color-text-strong);
+}
+
+.status-bar__item--button:focus-visible {
+  outline: 1px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
 .status-bar__spacer {
   flex: 1;
 }

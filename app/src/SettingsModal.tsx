@@ -8,7 +8,7 @@ import {
   type AgentConnectionsStatus,
 } from "./agentConnections";
 import { formatCliToolStatus, type SourceControlStatus } from "./sourceControl";
-import { buildIssuesUrl, buildPipelinesUrl, buildPullRequestsUrl, buildRepoUrl, type RepoLocation } from "./sourceControlLinks";
+import { buildIssuesUrl, buildPipelinesUrl, buildPullRequestsUrl, buildRepoUrl, isGitLabLocation, type RepoLocation } from "./sourceControlLinks";
 import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 import type { ScopedSettingView, SettingsScope } from "./scopedSettings";
 import type { LaunchProfile } from "./launchProfiles";
@@ -424,13 +424,13 @@ export function SettingsModal({
             Repo
           </button>
           <button type="button" className="settings-modal__action" onClick={() => openLink(buildPullRequestsUrl(repoLocation))}>
-            {repoLocation.kind === "gitlab" ? "Merge requests" : "Pull requests"}
+            {isGitLabLocation(repoLocation) ? "Merge requests" : "Pull requests"}
           </button>
           <button type="button" className="settings-modal__action" onClick={() => openLink(buildIssuesUrl(repoLocation))}>
             Issues
           </button>
           <button type="button" className="settings-modal__action" onClick={() => openLink(buildPipelinesUrl(repoLocation))}>
-            {repoLocation.kind === "gitlab" ? "Pipelines" : "Actions"}
+            {isGitLabLocation(repoLocation) ? "Pipelines" : "Actions"}
           </button>
         </span>
       );
