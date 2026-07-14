@@ -1,17 +1,17 @@
 # Performance Budget
 
-Generated: 2026-07-14T08:15:33.573Z
-Commit: 1f1fbca+dirty
+Generated: 2026-07-14T09:58:06.451Z
+Commit: 55789e4+dirty
 Status: missing-budget-evidence
 
 ## Hard Budgets
 
-- PASS Total built JS assets: 1551.1 KiB / 1709.0 KiB
-- PASS Total built CSS assets: 125.6 KiB / 141.6 KiB
+- PASS Total built JS assets: 1553.7 KiB / 1709.0 KiB
+- PASS Total built CSS assets: 126.0 KiB / 141.6 KiB
 
 ## Soft Budgets
 
-- WARN Largest JS chunk stays below Vite warning size: 1546.4 KiB / 488.3 KiB
+- WARN Largest JS chunk stays below Vite warning size: 1548.8 KiB / 488.3 KiB
   - Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning.
 
 ## Source Checks
@@ -26,8 +26,8 @@ Status: missing-budget-evidence
 
 ## Artifact Checks
 
-- PASS Actual app first-open screenshot - docs/qa/app-shell/first-open-1440.png (72.5 KiB)
-- PASS Actual app narrow screenshot - docs/qa/app-shell/first-open-900.png (55.9 KiB)
+- PASS Actual app first-open screenshot - docs/qa/app-shell/first-open-1440.png (72.9 KiB)
+- PASS Actual app narrow screenshot - docs/qa/app-shell/first-open-900.png (56.3 KiB)
 - PASS Native Tauri run screenshot - docs/qa/app-shell/native-run.png (315.8 KiB)
 - PASS Editor selected-state screenshot - docs/qa/editor-parity/selected.png (124.0 KiB)
 - PASS Daily-driver report - docs/qa/daily-driver/latest.md (2.5 KiB)

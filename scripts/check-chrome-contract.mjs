@@ -10,8 +10,9 @@ const assert = (condition, message) => {
   if (!condition) fail.push(message);
 };
 
-const appCss = read("app/src/App.css");
+const appCss = `${read("app/src/App.css")}\n${read("app/src/responsive-shell.css")}`;
 const appTsx = read("app/src/App.tsx");
+const statusBar = read("app/src/StatusBar.tsx");
 const mainTsx = read("app/src/main.tsx");
 const browserQa = read("app/src/browserQa.ts");
 const shellQaScript = read("scripts/capture-app-shell-qa.sh");
@@ -154,7 +155,7 @@ assert(appTsx.includes('aria-label="Reset interface"'), "Threads header must exp
 assert(appTsx.includes("window.setTimeout(() => setCrashNotice(null), 12_000)"), "Crash recovery feedback must clear without permanently covering the workbench");
 assert(appTsx.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
 assert(appTsx.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
-assert(toolTrayTabs.includes('title={mode === "files" ? "Hide Files panel" : "Show Files panel"}'), "Right dock must retain persistent tool panel toggles");
+assert(/title=\{`\$\{selected && current === tab\.mode \? "Hide" : "Show"\} \$\{tab\.label\} panel`\}/.test(toolTrayTabs), "Right dock must retain persistent tool panel toggles");
 assert(appCss.includes("grid-template-columns: repeat(4, minmax(32px, 1fr)) 32px;"), "Narrow tool dock must reserve four stable icon tabs and a fixed close control");
 assert(/@media \(max-width: 1120px\)[\s\S]*?\.tool-tray-tabs__tab span,[\s\S]*?\.titlebar-pill span\s*\{\s*display: none;/s.test(appCss), "Narrow chrome must hide dock and runtime labels before they collide");
 assert(tauriBackend.includes('app.get_webview_window("main")'), "Main window must have an explicit startup recovery path");
@@ -186,7 +187,7 @@ assert(mcpOAuth.includes('code_challenge_method", "S256"') && mcpOAuth.includes(
 assert(agentHooks.includes('TcpListener::bind("127.0.0.1:0")') && agentHooks.includes('format!("Bearer {token}")') && agentHooks.includes('fs::Permissions::from_mode(0o600)'), "Agent hooks must stay loopback-only with a private ephemeral bearer configuration");
 assert(agentHooks.includes('"list_projects"') && agentHooks.includes('"get_workspace_state"') && agentHooks.includes('"focus_pane"') && agentHooks.includes('"open_file"') && agentHooks.includes('"create_shell"') && agentHooks.includes('"report_status"'), "Agent-hook MCP must expose the documented minimal tool catalog");
 assert(appTsx.includes('invoke<AgentHookRequest[]>("take_agent_hook_requests")') && appTsx.includes('focusTerminalPane(paneId, "agent")') && appTsx.includes('createTerminalPane(defaultTerminalLaunchProfile(), "agent")') && appTsx.includes('"agent",\n          );'), "Agent-hook actions must enter the renderer through the attributed app-action path");
-assert(appTsx.includes('className="status-bar__item status-bar__item--button"') && appTsx.includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
+assert(statusBar.includes('className="status-bar__item status-bar__item--button"') && appTsx.includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
 assert(sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/merge_requests`') && sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/pipelines`'), "Self-hosted non-GitHub remotes must use GitLab merge-request and pipeline routes");
 assert(appTsx.includes('storeRef.current?.set("aiConnectionSettings", next)') && !appTsx.includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");
 assert(appTsx.includes("aiConnectionSettings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");

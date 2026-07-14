@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-14T08:15:33.573Z",
-  "commit": "1f1fbca+dirty",
+  "generatedAt": "2026-07-14T09:58:06.451Z",
+  "commit": "55789e4+dirty",
   "branch": "main",
   "status": "missing-budget-evidence",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
@@ -8,14 +8,14 @@
     {
       "id": "total-js-assets",
       "label": "Total built JS assets",
-      "actualBytes": 1588321,
+      "actualBytes": 1591036,
       "limitBytes": 1750000,
       "pass": true
     },
     {
       "id": "total-css-assets",
       "label": "Total built CSS assets",
-      "actualBytes": 128655,
+      "actualBytes": 129011,
       "limitBytes": 145000,
       "pass": true
     }
@@ -24,7 +24,7 @@
     {
       "id": "largest-js-vite-warning",
       "label": "Largest JS chunk stays below Vite warning size",
-      "actualBytes": 1583523,
+      "actualBytes": 1586010,
       "limitBytes": 500000,
       "pass": false,
       "note": "Warning only for now because CodeMirror language packages already exceed Vite's default chunk warning."
@@ -86,7 +86,7 @@
       "id": "chrome-first-open",
       "label": "Actual app first-open screenshot",
       "file": "docs/qa/app-shell/first-open-1440.png",
-      "bytes": 74258,
+      "bytes": 74631,
       "minBytes": 1024,
       "pass": true
     },
@@ -94,7 +94,7 @@
       "id": "chrome-narrow",
       "label": "Actual app narrow screenshot",
       "file": "docs/qa/app-shell/first-open-900.png",
-      "bytes": 57281,
+      "bytes": 57606,
       "minBytes": 1024,
       "pass": true
     },
@@ -201,18 +201,18 @@
   "metrics": {
     "assets": [
       {
-        "file": "app/dist/assets/browserQa-DukSwdUQ.js",
-        "bytes": 4798,
+        "file": "app/dist/assets/browserQa-BGJRkMX6.js",
+        "bytes": 5026,
         "ext": ".js"
       },
       {
-        "file": "app/dist/assets/index-CYk7Dmp9.css",
-        "bytes": 128655,
+        "file": "app/dist/assets/index-ClQ2vj9J.css",
+        "bytes": 129011,
         "ext": ".css"
       },
       {
-        "file": "app/dist/assets/index-DLIZ6_Pn.js",
-        "bytes": 1583523,
+        "file": "app/dist/assets/index-Dvq1Vm4o.js",
+        "bytes": 1586010,
         "ext": ".js"
       },
       {
@@ -267,9 +267,9 @@
       }
     ],
     "totals": {
-      "totalJsBytes": 1588321,
-      "totalCssBytes": 128655,
-      "largestJsBytes": 1583523
+      "totalJsBytes": 1591036,
+      "totalCssBytes": 129011,
+      "largestJsBytes": 1586010
     }
   },
   "nextLiveMeasurements": [

@@ -2,7 +2,6 @@ import { type CSSProperties, type FormEvent, type KeyboardEvent as ReactKeyboard
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
@@ -12,11 +11,11 @@ import CodeMirror from "@uiw/react-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { openSearchPanel } from "@codemirror/search";
 import { Tree } from "react-arborist";
-import type { NodeRendererProps, TreeApi } from "react-arborist";
+import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
-import { closeOtherOpenComposerMenus } from "./composerMenus";
+import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
 import {
   browserHistoryCanGoBack,
   browserHistoryCanGoForward,
@@ -189,7 +188,7 @@ import {
   absolutePathForGitFile,
   gitStatusLabel,
 } from "./fileGitStatus";
-import type { FileGitStatus, GitStatusFile } from "./fileGitStatus";
+import type { GitStatusFile } from "./fileGitStatus";
 import { parseUnifiedDiff } from "./diffView";
 import type { ParsedDiff } from "./diffView";
 import {
@@ -287,6 +286,10 @@ import {
 import { mergeChatDiscoveryResults, type ChatSearchResult, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolDockMenu } from "./ToolDockMenu";
 import { ToolTrayTabs } from "./ToolTrayTabs";
+import { FileTreeRow } from "./FileTreeRow";
+import type { FileTreeNode, FileTreeResponse } from "./fileTreeTypes";
+import { toggleNativeWindowMaximize } from "./windowControls";
+import { StatusBar } from "./StatusBar";
 import {
   buildOrchestrationPreview,
   childPrompt,
@@ -296,6 +299,7 @@ import {
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts, removeProjectPaneContexts } from "./paneOwnership";
 import "./App.css";
+import "./responsive-shell.css";
 
 // SPIKE-2 frontend: paint the grid snapshots from the Rust backend onto a canvas,
 // and encode keydowns back into pty bytes. Ship-ugly on purpose.
@@ -323,16 +327,6 @@ type TerminalPanesByContext = Record<string, ManagedTerminalPane[]>;
 type ActiveTerminalPaneByContext = Record<string, number>;
 type PaneLabelRecord = { slot: number; label: string; updatedAt: number };
 type PaneLabelsBySession = Record<string, PaneLabelRecord[]>;
-type FileTreeNode = {
-  id: string;
-  name: string;
-  path: string;
-  kind: "directory" | "file";
-  dirty?: boolean;
-  gitStatus?: FileGitStatus;
-  children?: FileTreeNode[];
-};
-type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolean };
 type WorkspaceTreeChanged = { root: string; count: number };
 type TextFileResponse = { path: string; content: string; bytes: number; modifiedMs: number | null };
 type ChatImageResponse = { path: string; bytes: number; mimeType: string };
@@ -460,6 +454,13 @@ const menuItem = (
   options: Pick<ContextMenuItem, "shortcut" | "icon" | "disabled" | "danger"> = {},
 ): ContextMenuItem => ({ id, label, onSelect, ...options });
 
+const sourceRepoStatusTitleFor = (repoLocation: RepoLocation | null, toolStatus: SourceControlStatus["gh"] | undefined) =>
+  repoLocation ? `${sourceRepoStatusLabel(repoLocation)} · ${toolStatus ? formatCliToolStatus(toolStatus) : "Checking authentication"}` : "";
+
+const drawerTitleFor = (mode: SideDrawerMode) => mode === "projects"
+  ? "Project chats"
+  : DRAWER_MODES.find((candidate) => candidate.id === mode)?.label ?? DRAWER_MODES[0].label;
+
 const markDirtyFile = (nodes: FileTreeNode[], dirtyPaths: Set<string>): FileTreeNode[] => {
   if (dirtyPaths.size === 0) return nodes;
   return nodes.map((node) => ({
@@ -474,110 +475,6 @@ const flattenFiles = (nodes: FileTreeNode[]): FileTreeNode[] =>
     ...(node.kind === "file" ? [node] : []),
     ...(node.children ? flattenFiles(node.children) : []),
   ]);
-
-function FileTreeRow({ node, style, dragHandle }: NodeRendererProps<FileTreeNode>) {
-  const isDirectory = node.data.kind === "directory";
-  const gitStatus = node.data.gitStatus;
-  const isDeleted = gitStatus?.code === "deleted";
-  const title = [node.data.path, node.data.dirty ? "Unsaved changes" : null, gitStatus ? `Git: ${gitStatus.label}` : null]
-    .filter(Boolean)
-    .join(" · ");
-  return (
-    <div
-      ref={dragHandle}
-      style={style}
-      className={`file-node ${node.isSelected ? "file-node--selected" : ""} ${gitStatus ? `file-node--git-${gitStatus.code}` : ""}`}
-      onPointerDown={(event) => {
-        if (event.button !== 0) return;
-        event.preventDefault();
-        if (isDirectory) {
-          node.toggle();
-        } else if (isDeleted) {
-          node.select();
-        } else {
-          node.select();
-          node.activate();
-        }
-      }}
-      onContextMenu={(event) => {
-        event.preventDefault();
-        window.dispatchEvent(
-          new CustomEvent("file-tree-context-menu", {
-            detail: { node: node.data, x: event.clientX, y: event.clientY },
-          }),
-        );
-      }}
-    >
-      <span className="file-node__twisty" aria-hidden="true">
-        {isDirectory ? <AppIcon name={node.isOpen ? "chevronDown" : "chevronRight"} /> : null}
-      </span>
-      <span className={`file-node__icon file-node__icon--${node.data.kind}`} aria-hidden="true">
-        <AppIcon name={isDirectory ? (node.isOpen ? "folderOpen" : "folder") : "file"} />
-      </span>
-      <span className="file-node__name" title={title}>
-        {node.data.name}
-      </span>
-      {gitStatus ? (
-        <span className={`file-node__git file-node__git--${gitStatus.code}`} aria-label={`Git status: ${gitStatus.label}`}>
-          {gitStatus.token}
-        </span>
-      ) : null}
-      {node.data.dirty ? <span className="file-node__dirty" aria-label="Unsaved changes" /> : null}
-    </div>
-  );
-}
-
-const composerPopoverPosition = (menu: HTMLDetailsElement) => {
-  if (!menu.open) {
-    delete menu.dataset.popoverPositioned;
-    return;
-  }
-
-  const anchor = menu.querySelector<HTMLElement>("summary");
-  const popover = menu.querySelector<HTMLElement>(".agent-composer__popover");
-  if (!anchor || !popover) return;
-
-  const anchorRect = anchor.getBoundingClientRect();
-  const popoverRect = popover.getBoundingClientRect();
-  const gutter = 12;
-  const gap = 8;
-  const width = Math.min(popoverRect.width, window.innerWidth - gutter * 2);
-  const height = Math.min(popoverRect.height, window.innerHeight - gutter * 2);
-  const alignRight = menu.classList.contains("agent-composer__menu--runtime");
-  const left = Math.max(gutter, Math.min(
-    alignRight ? anchorRect.right - width : anchorRect.left,
-    window.innerWidth - width - gutter,
-  ));
-  const roomAbove = anchorRect.top - gutter;
-  const roomBelow = window.innerHeight - anchorRect.bottom - gutter;
-  const top = roomAbove >= height + gap || roomAbove >= roomBelow
-    ? Math.max(gutter, anchorRect.top - height - gap)
-    : Math.min(window.innerHeight - height - gutter, anchorRect.bottom + gap);
-
-  menu.style.setProperty("--composer-popover-left", `${left}px`);
-  menu.style.setProperty("--composer-popover-top", `${top}px`);
-  menu.dataset.popoverPositioned = "true";
-};
-
-const handleComposerMenuToggle = (event: FormEvent<HTMLDetailsElement>) => {
-  const current = event.currentTarget;
-  const menus = current
-    .closest(".agent-composer__bar")
-    ?.querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]");
-  closeOtherOpenComposerMenus(current, menus ?? []);
-  if (current.open) requestAnimationFrame(() => composerPopoverPosition(current));
-  else delete current.dataset.popoverPositioned;
-};
-
-const toggleNativeWindowMaximize = async () => {
-  try {
-    const appWindow = getCurrentWindow();
-    if (await appWindow.isMaximized()) await appWindow.unmaximize();
-    else await appWindow.maximize();
-  } catch {
-    // The browser-based development preview has no native window to control.
-  }
-};
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -5798,12 +5695,9 @@ function App() {
   const activeSessionTitle = activeSessionId
     ? projectSessionsFor(workspacePath ?? "").find((session) => session.id === activeSessionId)?.title ?? "New chat"
     : "No chat";
-  const activeDrawerMode = DRAWER_MODES.find((mode) => mode.id === sideDrawerMode) ?? DRAWER_MODES[0];
-  const drawerActiveTitle = sideDrawerMode === "projects" ? "Project chats" : activeDrawerMode.label;
+  const drawerActiveTitle = drawerTitleFor(sideDrawerMode);
   const sourceHostToolStatus = repoLocation?.kind === "github" ? sourceControlStatus?.gh : sourceControlStatus?.glab;
-  const sourceRepoStatusTitle = repoLocation
-    ? `${sourceRepoStatusLabel(repoLocation)} · ${sourceHostToolStatus ? formatCliToolStatus(sourceHostToolStatus) : "Checking authentication"}`
-    : "";
+  const sourceRepoStatusTitle = sourceRepoStatusTitleFor(repoLocation, sourceHostToolStatus);
 
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
@@ -7760,36 +7654,19 @@ function App() {
           onSave={() => void saveDraftAndContinue()}
         />
       ) : null}
-      <footer className="status-bar" aria-label="Workspace status">
-        <div className="status-bar__group status-bar__group--left">
-          <span className="status-bar__item">
-            <AppIcon name="workspace" />
-            <span>{activeWorkspaceName}</span>
-          </span>
-        </div>
-        <div className="status-bar__group status-bar__group--center">
-          <span className="status-bar__item">
-            <AppIcon name={paneStateIconName(primarySurfaceState)} />
-            <span>{primarySurfaceLabel}</span>
-            <span>{primarySurfaceStatusLabel}</span>
-          </span>
-          {repoLocation ? (
-            <button
-              className="status-bar__item status-bar__item--button"
-              type="button"
-              title={`${sourceRepoStatusTitle} · Open repository`}
-              aria-label={`${sourceRepoStatusTitle}. Open repository`}
-              onClick={() => void openUrl(buildRepoUrl(repoLocation)).catch(() => {})}
-            >
-              <AppIcon name="git" />
-              <span>{sourceRepoStatusLabel(repoLocation)}</span>
-            </button>
-          ) : null}
-        </div>
-        <div className="status-bar__group status-bar__group--right">
-          <span className="status-bar__item">{agentSurfaceMode === "chat" ? "Chat" : utilityTrayStatusLabel}</span>
-        </div>
-      </footer>
+      <StatusBar
+        workspaceName={activeWorkspaceName}
+        primarySurfaceState={primarySurfaceState}
+        primarySurfaceLabel={primarySurfaceLabel}
+        primarySurfaceStatusLabel={primarySurfaceStatusLabel}
+        repoLabel={repoLocation ? sourceRepoStatusLabel(repoLocation) : null}
+        repoTitle={sourceRepoStatusTitle}
+        onOpenRepo={() => {
+          if (repoLocation) void openUrl(buildRepoUrl(repoLocation)).catch(() => {});
+        }}
+        surfaceMode={agentSurfaceMode}
+        utilityLabel={utilityTrayStatusLabel}
+      />
     </div>
   );
 }
