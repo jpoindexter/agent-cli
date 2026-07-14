@@ -7290,47 +7290,10 @@ body,
 .drawer-toolbar {
   height: 44px;
   flex-basis: 44px;
-  border-bottom: 0;
-  font-size: 15px;
-  font-weight: 700;
-  padding-inline: 14px 12px;
-}
-
-.drawer-primary-row {
-  display: flex;
-  height: 40px;
-  flex: 0 0 40px;
-  align-items: center;
-  gap: 2px;
   border-bottom: 1px solid #2b2d36;
-  padding-inline: 8px;
-}
-
-.drawer-primary-action {
-  display: inline-flex;
-  min-width: 0;
-  height: 30px;
-  flex: 1 1 auto;
-  align-items: center;
-  gap: 8px;
-  border: 0;
-  border-radius: 3px;
-  background: transparent;
-  color: #c4c6d2;
-  font: 500 13px var(--font-ui);
-  padding-inline: 6px;
-  text-align: left;
-}
-
-.drawer-primary-action:hover:not(:disabled),
-.drawer-primary-action:focus-visible {
-  background: #252732;
-  color: #ececf4;
-  outline: none;
-}
-
-.drawer-primary-action:disabled {
-  color: #707383;
+  font-size: 13px;
+  font-weight: 600;
+  padding-inline: 12px;
 }
 
 .titlebar-workspace .app-icon {
