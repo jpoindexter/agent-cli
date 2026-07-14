@@ -1109,6 +1109,19 @@ function App() {
 
   const openGitDiff = (file: GitStatusFile) => loadGitDiff(file, { gate: true });
 
+  const reviewRunCardFile = async (relativePath: string) => {
+    const normalized = relativePath.trim().replace(/^\.\//, "");
+    const changedFile = gitStatus?.files.find((file) => file.path === normalized);
+    if (changedFile) {
+      await openGitDiff(changedFile);
+      return;
+    }
+    const root = workspacePathRef.current;
+    if (root && normalized) {
+      await requestOpenEditorFile(fileNodeFromPath(`${root}/${normalized}`, "file"), { focusEditor: true });
+    }
+  };
+
   const gitActionLabel = (action: GitFileAction) => {
     if (action === "stage") return "Stage file";
     if (action === "unstage") return "Unstage file";
@@ -1954,6 +1967,8 @@ function App() {
         target: audit.target,
         undoHint: audit.undoHint,
         status: audit.decision === "approved" ? "complete" : "error",
+        provenance: "app-action",
+        runCardKind: "approval",
       });
     }
     return audit;
@@ -5086,12 +5101,22 @@ function App() {
         }
         const status = typeof request.arguments.status === "string" ? request.arguments.status.trim().slice(0, 160) : "";
         const detail = typeof request.arguments.detail === "string" ? request.arguments.detail.trim().slice(0, 1000) : "";
+        const runCardKind = request.arguments.kind === "thinking" || request.arguments.kind === "plan" || request.arguments.kind === "file" || request.arguments.kind === "approval" || request.arguments.kind === "command" || request.arguments.kind === "tool"
+          ? request.arguments.kind
+          : "tool";
+        const runCardStatus = request.arguments.state === "running" || request.arguments.state === "error" ? request.arguments.state : "complete";
+        const targets = Array.isArray(request.arguments.targets)
+          ? request.arguments.targets.filter((target): target is string => typeof target === "string" && Boolean(target.trim())).map((target) => target.trim()).slice(0, 24)
+          : [];
         if (!status) throw new Error("report_status requires a status label.");
         recordAgentActivity(activeAgentActivityHandle(), {
-          kind: "app",
+          kind: runCardKind === "file" ? "file" : runCardKind === "approval" ? "approval" : "tool",
           label: status,
           detail: detail || "Reported through the Keelhouse agent hook.",
-          status: "complete",
+          status: runCardStatus,
+          provenance: "agent-hook",
+          runCardKind,
+          targets,
         });
         await respond(true, "Status recorded in the active chat activity log.");
       } catch (error) {
@@ -6847,6 +6872,7 @@ function App() {
               onApprovalDecision={(message, decision) => void resolveChatApproval(message, decision)}
               onToggleBookmark={toggleChatMessageBookmark}
               onForkMessage={(message) => void forkChatFromMessage(message)}
+              onReviewFile={(path) => void reviewRunCardFile(path)}
               focusMessageId={focusedChatMessageId}
             />
           </div>

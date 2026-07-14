@@ -1,3 +1,5 @@
+import type { RunCardKind, RunCardProvenance } from "./runCards";
+
 export type ChatProvider = "codex" | "claude";
 
 export type ChatMessageRole = "user" | "assistant" | "tool" | "status" | "error";
@@ -17,6 +19,9 @@ export type ChatMessage = {
   approvalRunId?: string;
   approvalResolvedAt?: number;
   bookmarked?: boolean;
+  provenance?: RunCardProvenance;
+  runCardKind?: RunCardKind;
+  targets?: string[];
 };
 
 export type ChatUsage = {
@@ -141,6 +146,11 @@ const normalizeMessage = (value: unknown): ChatMessage | null => {
     approvalRunId: textValue(value.approvalRunId) || undefined,
     approvalResolvedAt,
     bookmarked: value.bookmarked === true ? true : undefined,
+    provenance: value.provenance === "provider" || value.provenance === "app-action" || value.provenance === "agent-hook" ? value.provenance : undefined,
+    runCardKind: value.runCardKind === "thinking" || value.runCardKind === "plan" || value.runCardKind === "file" || value.runCardKind === "approval" || value.runCardKind === "command" || value.runCardKind === "tool" ? value.runCardKind : undefined,
+    targets: Array.isArray(value.targets)
+      ? Array.from(new Set(value.targets.filter((target): target is string => typeof target === "string" && Boolean(target.trim())).map((target) => target.trim())))
+      : undefined,
   };
 };
 
@@ -309,6 +319,8 @@ const itemMessage = (
       itemId,
       status: running ? "running" : status === "failed" ? "error" : "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "command",
     };
   }
   if (type === "file_change" || type === "fileChange") {
@@ -323,6 +335,9 @@ const itemMessage = (
       itemId,
       status: running ? "running" : "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "file",
+      targets: changes,
     };
   }
   if (
@@ -347,6 +362,8 @@ const itemMessage = (
       itemId,
       status: running ? "running" : failed ? "error" : "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: name === "TodoWrite" || name === "update_plan" ? "plan" : "tool",
     };
   }
   if (type === "error") {
@@ -370,6 +387,7 @@ const appendItemDelta = (
   delta: string,
   kind: "assistant" | "tool",
   now: number,
+  runCardKind?: "command" | "file",
 ): ChatConversation => {
   if (!providerItemId || !delta) return conversation;
   const itemId = `${runId}:${providerItemId}`;
@@ -378,11 +396,12 @@ const appendItemDelta = (
     return pushMessage(conversation, {
       id: messageId(kind, now, itemId),
       role: kind,
-      title: kind === "tool" ? "Running command" : undefined,
+      title: runCardKind === "file" ? "Editing files" : kind === "tool" ? "Running command" : undefined,
       text: delta,
       itemId,
       status: "running",
       timestamp: now,
+      ...(kind === "tool" && runCardKind ? { provenance: "provider" as const, runCardKind } : {}),
     });
   }
   const messages = [...conversation.messages];
@@ -416,6 +435,8 @@ const appendProviderActivityDelta = (
       itemId,
       status: "running",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "thinking",
     });
   }
   const messages = [...conversation.messages];
@@ -487,6 +508,8 @@ export const applyChatRunEnvelope = (
       itemId: `${envelope.runId}:provider-compaction`,
       status: "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "tool",
     });
   }
   if (eventType === "provider.question") {
@@ -499,6 +522,8 @@ export const applyChatRunEnvelope = (
       itemId: `${envelope.runId}:${textValue(envelope.event.toolId) || "provider-question"}`,
       status: "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "tool",
     });
   }
   if (eventType === "provider.plan.updated") {
@@ -510,6 +535,8 @@ export const applyChatRunEnvelope = (
       itemId: `${envelope.runId}:${textValue(envelope.event.toolId) || "provider-plan"}`,
       status: "complete",
       timestamp: now,
+      provenance: "provider",
+      runCardKind: "plan",
     });
   }
   if (eventType === "item.started" || eventType === "item.completed") {
@@ -541,6 +568,7 @@ export const applyChatRunEnvelope = (
       textValue(params.delta),
       "tool",
       now,
+      eventType === "item/fileChange/outputDelta" ? "file" : "command",
     );
   }
   if (
@@ -571,6 +599,8 @@ export const applyChatRunEnvelope = (
       approvalRequestId: requestId,
       approvalMethod: eventType,
       approvalRunId: envelope.runId,
+      provenance: "provider",
+      runCardKind: "approval",
     });
   }
   if (eventType === "approval.resolved") {

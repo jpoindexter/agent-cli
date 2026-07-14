@@ -5,6 +5,7 @@ import type { AgentActivityEvent } from "./agentActivity";
 import { chatProviderLabel, type ChatConversation, type ChatMessage } from "./chatConversation";
 import { ChatMarkdown } from "./ChatMarkdown";
 import { agentActivityAccessibleLabel, agentActivityIconName, AppIcon } from "./icons";
+import { runCardFromActivityEvent, runCardFromChatMessage, type RunCardKind } from "./runCards";
 
 type ChatThreadSurfaceProps = {
   conversation: ChatConversation;
@@ -15,7 +16,17 @@ type ChatThreadSurfaceProps = {
   onApprovalDecision?: (message: ChatMessage, decision: "accept" | "acceptForSession" | "decline") => void;
   onToggleBookmark?: (message: ChatMessage) => void;
   onForkMessage?: (message: ChatMessage) => void;
+  onReviewFile?: (path: string) => void;
   focusMessageId?: string | null;
+};
+
+const runCardIcon = (kind: RunCardKind) => {
+  if (kind === "thinking") return "loading" as const;
+  if (kind === "plan") return "logs" as const;
+  if (kind === "file") return "file" as const;
+  if (kind === "approval") return "shield" as const;
+  if (kind === "command") return "terminal" as const;
+  return "agent" as const;
 };
 
 const SUGGESTIONS = [
@@ -84,7 +95,7 @@ function useElapsedNow(active: boolean) {
   return now;
 }
 
-export function ChatThreadSurface({ conversation, events, hidden = false, onSuggestion, onRetry, onApprovalDecision, onToggleBookmark, onForkMessage, focusMessageId = null }: ChatThreadSurfaceProps) {
+export function ChatThreadSurface({ conversation, events, hidden = false, onSuggestion, onRetry, onApprovalDecision, onToggleBookmark, onForkMessage, onReviewFile, focusMessageId = null }: ChatThreadSurfaceProps) {
   const threadRef = useRef<HTMLDivElement | null>(null);
   const autoFollowRef = useRef(true);
   const userScrollIntentRef = useRef(false);
@@ -224,6 +235,7 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
             return (
               <section className="chat-turn" data-turn-id={turn.id} key={turn.id}>
                 {turn.messages.map((message) => {
+                  const runCard = runCardFromChatMessage(message);
                   const continuation = message.role === "assistant" && lastConversationalRole === "assistant";
                   if (message.role === "user" || message.role === "assistant") lastConversationalRole = message.role;
                   return (
@@ -240,17 +252,30 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
                         </header>
                       ) : null}
                       {message.role === "tool" ? (
-                        <details className="chat-tool" open={message.status === "running" || message.status === "error"}>
+                        <details
+                          className={`chat-tool${runCard ? ` chat-tool--run-card chat-tool--${runCard.kind}` : ""}`}
+                          data-run-card-kind={runCard?.kind}
+                          data-run-card-provenance={runCard?.provenance}
+                          open={message.status === "running" || message.status === "error" || runCard?.kind === "plan" || runCard?.kind === "file" || runCard?.kind === "approval"}
+                        >
                           <summary>
-                            <AppIcon name={toolStatusIcon(message)} />
+                            <AppIcon name={runCard ? runCardIcon(runCard.kind) : toolStatusIcon(message)} />
                             <span className="chat-tool__title">{message.title ?? "Activity"}</span>
                             <span className="chat-tool__status">{toolStatusLabel(message)}</span>
                             <AppIcon className="chat-tool__chevron" name="chevronRight" />
                           </summary>
                           <div className="chat-tool__body">
-                            <button type="button" aria-label={`Copy ${message.title ?? "activity"} output`} onClick={() => void copyMessage(message)}>
-                              <AppIcon name={copiedMessageId === message.id ? "check" : "copy"} />
-                            </button>
+                            <div className="chat-tool__actions">
+                              {runCard?.kind === "file" && runCard.targets[0] ? (
+                                <button type="button" onClick={() => onReviewFile?.(runCard.targets[0])}>
+                                  <AppIcon name="git" />
+                                  <span>Review</span>
+                                </button>
+                              ) : null}
+                              <button type="button" aria-label={`Copy ${message.title ?? "activity"} output`} onClick={() => void copyMessage(message)}>
+                                <AppIcon name={copiedMessageId === message.id ? "check" : "copy"} />
+                              </button>
+                            </div>
                             <pre>{message.text}</pre>
                             {message.approvalRequestId != null && message.status === "running" ? (
                               <div className="chat-approval__actions" aria-label="Approval actions">
@@ -306,10 +331,16 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
           })}
           {events.length > 0 ? <section className="agent-activity-log" aria-label="App activity timeline">
             <div className="agent-activity-log__list">
-              {events.map((event) => (
-                <article className={`agent-thread-event agent-thread-event--${event.status}`} key={event.id}>
+              {events.map((event) => {
+                const runCard = runCardFromActivityEvent(event);
+                return <article
+                  className={`agent-thread-event agent-thread-event--${event.status}${runCard ? ` agent-thread-event--run-card agent-thread-event--${runCard.kind}` : ""}`}
+                  data-run-card-kind={runCard?.kind}
+                  data-run-card-provenance={runCard?.provenance}
+                  key={event.id}
+                >
                   <div className="agent-thread-event__icon">
-                    <AppIcon name={agentActivityIconName(event.status)} label={agentActivityAccessibleLabel(event.status, event.label)} />
+                    <AppIcon name={runCard ? runCardIcon(runCard.kind) : agentActivityIconName(event.status)} label={agentActivityAccessibleLabel(event.status, event.label)} />
                   </div>
                   <div className="agent-thread-event__body">
                     <div className="agent-thread-event__header">
@@ -319,9 +350,15 @@ export function ChatThreadSurface({ conversation, events, hidden = false, onSugg
                     </div>
                     {event.detail ? <div className="agent-thread-event__detail">{event.detail}</div> : null}
                     {agentActivityMetaLabel(event) ? <div className="agent-thread-event__meta">{agentActivityMetaLabel(event)}</div> : null}
+                    {runCard?.kind === "file" && runCard.targets[0] ? (
+                      <button className="agent-thread-event__review" type="button" onClick={() => onReviewFile?.(runCard.targets[0])}>
+                        <AppIcon name="git" />
+                        Review
+                      </button>
+                    ) : null}
                   </div>
                 </article>
-              ))}
+              })}
             </div>
           </section> : null}
         </div>

@@ -171,6 +171,8 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **AGENT-ORCHESTRATION (IMPLEMENTED 2026-07-14; PACKAGED MULTI-CHILD FLOW PENDING):** Parallel work now creates 2-8 normal durable child chats through a previewed composer/command-palette flow. Child metadata owns lineage, provider/model/permission, hard wall-clock budget, target files, and shared or isolated worktree state. Rail context menus stop one child, return an attributed result, and clean up a stopped worktree. Rust terminates only the over-budget process group; conflict and capacity validation plus setup/launch recovery are covered locally. The locked macOS session prevents real packaged multi-child execution and relaunch proof. See `docs/agent-orchestration.md`.
 
+**RUN-CARDS-ADAPTER (IMPLEMENTED 2026-07-14; PACKAGED HOOK FLOW PENDING):** Structured thinking, plan, file, approval, command, and tool cards now require explicit `provider`, `app-action`, or `agent-hook` provenance. Provider and hook adapters assign card kinds mechanically; file cards retain Review targets; SQLite migration v5 preserves the fields across relaunch. Tests reject terminal-text inference and cover provider/hook mapping plus persistence. The locked macOS session prevents the final packaged hook-connected visual and Review execution. See `docs/run-cards-adapter.md`.
+
 ## Next (ordered)
 
 1. **CHROME-EYEBALL-SIGNOFF:** Jason reviews the corrected packaged shell at 1440/1024/900 and records approval or corrections, including the Super-derived quiet-titlebar/toast direction.
@@ -179,7 +181,7 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 4. **DAILY-DRIVER-LIVE / PERF-BUDGET:** one-project edit + Codex + editor + local server + embedded browser now passes; complete three-project relaunch timing, successful Gemini auth smoke, packaged one-pane render capture, and controlled equivalent VS Code comparison.
 5. **AI-CONNECTIONS / AGENT-HOOKS:** harden provider auth, MCP/OAuth, app actions, health checks, profiles, environment overrides, and lifecycle hooks inside the completed shared settings scope model.
 6. **SOURCE-CONTROL-CONNECTIONS / TERMINAL-INTL-INPUT / OUTSIDE-REVIEW:** finish remaining integration, terminal, and external-review gates.
-7. **CHAT-FORK-CHECKPOINT / CLAUDE-STRUCTURED-ADAPTER / AGENT-ORCHESTRATION / RUN-CARDS-ADAPTER:** execute the packaged fork/checkpoint, Claude lifecycle, and multi-child orchestration workflows, then add mechanically attributed run cards.
+7. **CHAT-FORK-CHECKPOINT / CLAUDE-STRUCTURED-ADAPTER / AGENT-ORCHESTRATION / RUN-CARDS-ADAPTER:** execute the packaged fork/checkpoint, Claude lifecycle, multi-child orchestration, and hook-connected run-card workflows.
 
 ## Gotchas
 

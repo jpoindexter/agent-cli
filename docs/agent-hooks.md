@@ -21,7 +21,7 @@ The file contains the current endpoint and bearer header, is written with mode `
 | `focus_pane` | Focuses an existing pane in the active chat. | Low-risk app-action gate |
 | `open_file` | Opens a workspace-relative path in the editor tray. Absolute paths and `..` are rejected. | Low-risk app-action gate |
 | `create_shell` | Creates a blank shell pane in the active project/chat. | Medium-risk app-action gate; asks unless policy allows it |
-| `report_status` | Adds an attributed status row to the active chat activity log. | Logged app event |
+| `report_status` | Adds an attributed status or typed run card to the active chat. Optional `kind`, `state`, and file `targets` are validated by the app. | Logged app event |
 
 Mutating requests are queued for the renderer and are discarded if their caller has already timed out. The renderer responds with the final approved, denied, or failed result. Agent-originated actions use `requestedBy: agent`, so existing permission modes and approval audit rows remain authoritative.
 
@@ -31,6 +31,7 @@ Mutating requests are queued for the renderer and are discarded if their caller 
 - The endpoint never returns its token through renderer status IPC; Settings shows only the endpoint and protected configuration path.
 - UI actions require the webview to be active. A locked macOS session can continue serving read-only state, but UI action calls time out rather than executing invisibly.
 - Adding file writes, Git mutations, layout changes, or lifecycle scripts requires a new named tool, explicit risk classification, approval/undo behavior, attribution, and real packaged-app verification.
+- `report_status` cards are always marked `agent-hook`; terminal text is never parsed into structured activity.
 
 ## Verification
 

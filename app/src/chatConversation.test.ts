@@ -105,6 +105,10 @@ describe("chat conversations", () => {
       "Reading files",
       "complete",
     ]);
+    expect(completed.messages.find((message) => message.title === "Thinking")).toMatchObject({
+      provenance: "provider",
+      runCardKind: "thinking",
+    });
     expect(completed.usage).toEqual({ inputTokens: 8, cachedInputTokens: 0, outputTokens: 3 });
   });
 
@@ -224,6 +228,8 @@ describe("chat conversations", () => {
       role: "tool",
       text: "npm test\n\npassed",
       status: "complete",
+      provenance: "provider",
+      runCardKind: "command",
     });
     expect(completed.usage).toEqual({ inputTokens: 12, cachedInputTokens: 4, outputTokens: 6 });
     expect(completed.runStatus).toBe("complete");
@@ -250,6 +256,8 @@ describe("chat conversations", () => {
       status: "running",
       approvalRequestId: 41,
       approvalRunId: "run-1",
+      provenance: "provider",
+      runCardKind: "approval",
     });
     const resolved = applyChatRunEnvelope(pending, {
       runId: "run-1",
@@ -265,6 +273,47 @@ describe("chat conversations", () => {
       approvalResolution: "user",
       approvalRunId: "run-1",
       approvalResolvedAt: 4,
+    });
+  });
+
+  it("attributes provider file and plan cards without parsing terminal text", () => {
+    const running = startChatRun(emptyChatConversation(1), "run-1", 2);
+    const fileDelta = applyChatRunEnvelope(running, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/fileChange/outputDelta",
+        params: { itemId: "file-1", delta: "src/App.tsx" },
+      },
+    }, 3);
+    const fileComplete = applyChatRunEnvelope(fileDelta, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: {
+        method: "item/completed",
+        params: { item: { id: "file-1", type: "fileChange", changes: [{ path: "src/App.tsx" }] } },
+      },
+    }, 4);
+    const planned = applyChatRunEnvelope(fileComplete, {
+      runId: "run-1",
+      chatId: "chat",
+      provider: "codex",
+      stream: "stdout",
+      event: { type: "provider.plan.updated", plan: { step: "Run tests" } },
+    }, 5);
+
+    expect(planned.messages.find((message) => message.itemId === "run-1:file-1")).toMatchObject({
+      provenance: "provider",
+      runCardKind: "file",
+      targets: ["src/App.tsx"],
+    });
+    expect(planned.messages.find((message) => message.runCardKind === "plan")).toMatchObject({
+      provenance: "provider",
+      title: "Updated plan",
     });
   });
 

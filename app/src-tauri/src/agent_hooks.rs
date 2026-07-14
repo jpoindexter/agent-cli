@@ -181,7 +181,7 @@ fn tool_list() -> Value {
         { "name": "focus_pane", "description": "Request focus for an existing terminal pane.", "inputSchema": { "type": "object", "properties": { "paneId": { "type": "integer", "minimum": 0 } }, "required": ["paneId"], "additionalProperties": false } },
         { "name": "open_file", "description": "Request that a workspace-relative file open in the editor tray.", "inputSchema": { "type": "object", "properties": { "path": { "type": "string" } }, "required": ["path"], "additionalProperties": false } },
         { "name": "create_shell", "description": "Request a new blank shell pane in the active project.", "inputSchema": { "type": "object", "properties": {}, "additionalProperties": false } },
-        { "name": "report_status", "description": "Publish an attributed agent status in the active chat activity log.", "inputSchema": { "type": "object", "properties": { "status": { "type": "string" }, "detail": { "type": "string" } }, "required": ["status"], "additionalProperties": false } }
+        { "name": "report_status", "description": "Publish an attributed agent status or typed run card in the active chat activity log.", "inputSchema": { "type": "object", "properties": { "status": { "type": "string" }, "detail": { "type": "string" }, "kind": { "type": "string", "enum": ["thinking", "plan", "file", "approval", "command", "tool"] }, "state": { "type": "string", "enum": ["running", "complete", "error"] }, "targets": { "type": "array", "items": { "type": "string" }, "maxItems": 24 } }, "required": ["status"], "additionalProperties": false } }
     ] })
 }
 

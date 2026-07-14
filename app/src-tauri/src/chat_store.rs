@@ -34,6 +34,12 @@ pub(crate) struct StoredChatMessage {
     pub approval_run_id: Option<String>,
     #[serde(default)]
     pub approval_resolved_at: Option<i64>,
+    #[serde(default)]
+    pub provenance: Option<String>,
+    #[serde(default)]
+    pub run_card_kind: Option<String>,
+    #[serde(default)]
+    pub targets: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -348,6 +354,9 @@ fn migrate_schema(connection: &Connection) -> Result<(), String> {
                 approval_resolution TEXT,
                 approval_run_id TEXT,
                 approval_resolved_at INTEGER,
+                provenance TEXT,
+                run_card_kind TEXT,
+                targets_json TEXT,
                 PRIMARY KEY(chat_id, message_id),
                 UNIQUE(chat_id, ordinal)
              );
@@ -409,6 +418,35 @@ fn migrate_schema(connection: &Connection) -> Result<(), String> {
             [],
         )
         .map_err(db_error("Could not record approval attribution migration"))?;
+    for (name, definition) in [
+        ("provenance", "provenance TEXT"),
+        ("run_card_kind", "run_card_kind TEXT"),
+        ("targets_json", "targets_json TEXT"),
+    ] {
+        let exists = connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM pragma_table_info('chat_messages') WHERE name = ?1)",
+                [name],
+                |row| row.get::<_, i64>(0),
+            )
+            .map_err(db_error("Could not inspect run-card provenance migration"))?
+            != 0;
+        if !exists {
+            connection
+                .execute(
+                    &format!("ALTER TABLE chat_messages ADD COLUMN {definition}"),
+                    [],
+                )
+                .map_err(db_error("Could not add run-card provenance"))?;
+        }
+    }
+    connection
+        .execute(
+            "INSERT OR IGNORE INTO chat_schema_migrations(version, description, applied_at)
+             VALUES (5, 'typed run-card provenance', unixepoch() * 1000)",
+            [],
+        )
+        .map_err(db_error("Could not record run-card provenance migration"))?;
     for (name, definition) in [
         ("fork_parent_chat_id", "fork_parent_chat_id TEXT"),
         ("fork_parent_message_id", "fork_parent_message_id TEXT"),
@@ -598,8 +636,8 @@ fn save_in_transaction(
                 "INSERT INTO chat_messages (
                     chat_id, message_id, ordinal, role, text, timestamp, item_id, title, status, bookmarked,
                     approval_request_id, approval_method, approval_decision, approval_resolution,
-                    approval_run_id, approval_resolved_at
-                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+                    approval_run_id, approval_resolved_at, provenance, run_card_kind, targets_json
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)",
                 params![
                     chat_id,
                     message.id,
@@ -617,6 +655,9 @@ fn save_in_transaction(
                     message.approval_resolution,
                     message.approval_run_id,
                     message.approval_resolved_at,
+                    message.provenance,
+                    message.run_card_kind,
+                    serde_json::to_string(&message.targets).unwrap_or_else(|_| "[]".into()),
                 ],
             )
             .map_err(db_error("Could not save chat message"))?;
@@ -732,7 +773,7 @@ fn load_all_from(
             .prepare(
                 "SELECT message_id, role, text, timestamp, item_id, title, status, bookmarked,
                         approval_request_id, approval_method, approval_decision, approval_resolution,
-                        approval_run_id, approval_resolved_at
+                        approval_run_id, approval_resolved_at, provenance, run_card_kind, targets_json
                  FROM chat_messages WHERE chat_id = ?1 ORDER BY ordinal ASC",
             )
             .map_err(db_error("Could not prepare chat message load"))?;
@@ -753,6 +794,12 @@ fn load_all_from(
                     approval_resolution: row.get(11)?,
                     approval_run_id: row.get(12)?,
                     approval_resolved_at: row.get(13)?,
+                    provenance: row.get(14)?,
+                    run_card_kind: row.get(15)?,
+                    targets: row
+                        .get::<_, Option<String>>(16)?
+                        .and_then(|value| serde_json::from_str(&value).ok())
+                        .unwrap_or_default(),
                 })
             })
             .map_err(db_error("Could not load chat messages"))?
@@ -847,6 +894,9 @@ mod tests {
                 approval_resolution: None,
                 approval_run_id: None,
                 approval_resolved_at: None,
+                provenance: None,
+                run_card_kind: None,
+                targets: Vec::new(),
             }],
             updated_at: 100 + revision,
             revision,
@@ -1040,6 +1090,9 @@ mod tests {
         item.messages[0].approval_resolution = Some("user".into());
         item.messages[0].approval_run_id = Some("run-1".into());
         item.messages[0].approval_resolved_at = Some(1234);
+        item.messages[0].provenance = Some("provider".into());
+        item.messages[0].run_card_kind = Some("approval".into());
+        item.messages[0].targets = vec!["src/main.rs".into()];
         store.save("/repo\nchat-1", &item).unwrap();
 
         let loaded = store.load_all().unwrap();
@@ -1093,12 +1146,12 @@ mod tests {
         let connection = store.connection.lock().unwrap();
         let migration: i64 = connection
             .query_row(
-                "SELECT COUNT(*) FROM chat_schema_migrations WHERE version IN (2, 3, 4)",
+                "SELECT MAX(version) FROM chat_schema_migrations",
                 [],
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(migration, 3);
+        assert_eq!(migration, 5);
     }
 
     #[test]
@@ -1122,6 +1175,9 @@ mod tests {
                     approval_resolution: None,
                     approval_run_id: None,
                     approval_resolved_at: None,
+                    provenance: None,
+                    run_card_kind: None,
+                    targets: Vec::new(),
                 })
                 .collect();
             store

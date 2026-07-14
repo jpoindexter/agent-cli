@@ -1,5 +1,6 @@
 import type { AgentActivityStatus } from "./icons";
 import type { AgentSessionHandleDescriptor, AgentSessionProcessState } from "./agentSessionHandle";
+import type { RunCardKind, RunCardProvenance } from "./runCards";
 
 export type AgentActivityKind = "prompt" | "process" | "command" | "file" | "tool" | "git" | "approval" | "browser" | "app" | "error" | "complete";
 
@@ -17,6 +18,9 @@ export type AgentActivityEvent = {
   undoHint?: string;
   status: AgentActivityStatus;
   timestamp: number;
+  provenance?: RunCardProvenance;
+  runCardKind?: RunCardKind;
+  targets?: string[];
 };
 
 export const MAX_AGENT_ACTIVITY_EVENTS = 6;
@@ -49,7 +53,7 @@ export const agentCurrentActivity = (handle: AgentSessionHandleDescriptor | null
 
 export const createAgentActivityEvent = (
   handle: AgentSessionHandleDescriptor,
-  event: Pick<AgentActivityEvent, "kind" | "label" | "status"> & Partial<Pick<AgentActivityEvent, "detail" | "target" | "exitCode" | "outputRef" | "undoHint" | "timestamp">>,
+  event: Pick<AgentActivityEvent, "kind" | "label" | "status"> & Partial<Pick<AgentActivityEvent, "detail" | "target" | "exitCode" | "outputRef" | "undoHint" | "timestamp" | "provenance" | "runCardKind" | "targets">>,
 ): AgentActivityEvent => ({
   id: `${handle.id}:${event.kind}:${event.timestamp ?? Date.now()}`,
   projectId: handle.projectId,
@@ -64,6 +68,9 @@ export const createAgentActivityEvent = (
   undoHint: event.undoHint,
   status: event.status,
   timestamp: event.timestamp ?? Date.now(),
+  provenance: event.provenance,
+  runCardKind: event.runCardKind,
+  targets: event.targets,
 });
 
 export const pushAgentActivityEvent = (
@@ -96,6 +103,9 @@ export const normalizeAgentActivityEvents = (value: unknown): AgentActivityEvent
       undoHint: typeof data.undoHint === "string" ? data.undoHint : undefined,
       status: data.status as AgentActivityStatus,
       timestamp: data.timestamp,
+      provenance: data.provenance === "provider" || data.provenance === "app-action" || data.provenance === "agent-hook" ? data.provenance : undefined,
+      runCardKind: data.runCardKind === "thinking" || data.runCardKind === "plan" || data.runCardKind === "file" || data.runCardKind === "approval" || data.runCardKind === "command" || data.runCardKind === "tool" ? data.runCardKind : undefined,
+      targets: Array.isArray(data.targets) ? data.targets.filter((target): target is string => typeof target === "string" && Boolean(target.trim())).map((target) => target.trim()) : undefined,
     }];
   }).slice(0, MAX_AGENT_ACTIVITY_LOG_EVENTS);
 };

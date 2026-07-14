@@ -6352,10 +6352,76 @@ body,
   position: relative;
 }
 
-.chat-tool__body > button {
+.chat-tool__actions {
   position: absolute;
   top: 4px;
-  right: 0;
+  right: 6px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chat-tool__actions button,
+.agent-thread-event__review {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: var(--steel-cyan-400);
+  font: 11px/1 var(--font-ui);
+  font-weight: 650;
+  padding: 0 5px;
+}
+
+.chat-tool--run-card {
+  overflow: hidden;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 4px;
+  background: var(--surface-card);
+  padding-left: 0;
+}
+
+.chat-tool--run-card summary {
+  min-height: 36px;
+  padding: 5px 8px;
+}
+
+.chat-tool--run-card[open] summary {
+  border-bottom-color: var(--surface-card-border);
+}
+
+.chat-tool--run-card pre {
+  border-left: 0;
+  padding: 9px 82px 10px 12px;
+}
+
+.chat-tool--thinking summary > .app-icon:first-child {
+  color: var(--color-warning);
+}
+
+.chat-tool--file summary > .app-icon:first-child,
+.chat-tool--plan summary > .app-icon:first-child {
+  color: var(--steel-cyan-400);
+}
+
+.chat-tool--approval summary > .app-icon:first-child {
+  color: var(--color-warning);
+}
+
+.agent-thread-event--run-card {
+  margin: 6px 0;
+  border: 1px solid var(--surface-card-border);
+  border-radius: 4px;
+  background: var(--surface-card);
+  padding: 9px 10px;
+}
+
+.agent-thread-event__review {
+  width: fit-content;
+  padding-left: 0;
 }
 
 .chat-approval__actions {
