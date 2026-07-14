@@ -5703,9 +5703,10 @@ function App() {
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
       <header className="app-titlebar" aria-label="Application chrome" data-tauri-drag-region>
         <div className="titlebar-identity">
-          <button className="titlebar-search" type="button" onClick={() => openChatSearch()} title="Search chats across projects">
+          <span className="titlebar-product">Keelhouse</span>
+          <button className="titlebar-search" type="button" onClick={() => openChatSearch()} title="Search chats across projects" aria-label="Search chats across projects">
             <AppIcon name="search" />
-            <span>Search threads…</span>
+            <span>Search</span>
           </button>
         </div>
         <div className="titlebar-splitter" aria-hidden="true" />

@@ -7208,6 +7208,7 @@ body,
 /* Chrome convergence: one continuous native titlebar, with pane boundaries used
    only for orientation. The dock keeps its own compact tab strip below it. */
 .app-titlebar {
+  grid-template-columns: var(--side-drawer-width) 1px minmax(420px, 1fr) 1px var(--dock-width, 430px);
   height: 40px;
   align-items: stretch;
   border-bottom-color: #2b2d36;
@@ -7215,13 +7216,36 @@ body,
 }
 
 .titlebar-identity {
-  gap: 0;
+  gap: 8px;
   padding-left: 76px;
   background: transparent;
 }
 
+.titlebar-product {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: #ececf4;
+  font-size: 13px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .titlebar-search {
-  padding-inline: 12px;
+  width: 28px;
+  flex: 0 0 28px;
+  justify-content: center;
+  border-radius: 3px;
+  padding: 0;
+}
+
+.titlebar-search:hover {
+  background: #252732;
+}
+
+.titlebar-search span {
+  display: none;
 }
 
 .titlebar-splitter {
@@ -7273,6 +7297,26 @@ body,
   font-size: 13px;
   font-weight: 600;
   padding-inline: 3px;
+}
+
+@media (max-width: 1120px) and (min-width: 721px) {
+  .app-titlebar {
+    grid-template-columns: var(--side-drawer-width) 1px minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-titlebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .titlebar-product {
+    display: none;
+  }
+
+  .titlebar-identity {
+    padding-left: 76px;
+  }
 }
 
 .titlebar-workspace .app-icon {
