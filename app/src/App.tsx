@@ -3330,6 +3330,10 @@ function App() {
     setAgentSurfaceMode("terminal");
   };
 
+  const toggleUtilityTrayVisibility = () => {
+    setAgentSurfaceMode((current) => current === "terminal" ? "chat" : "terminal");
+  };
+
   const openAgentConnection = async (providerId: "codex" | "gemini" | "claude") => {
     setSettingsOpen(false);
     const created = await createTerminalPane(resolveLaunchProfile(providerId));
@@ -6963,7 +6967,7 @@ function App() {
               title={agentSurfaceMode === "terminal" ? "Collapse tray" : "Expand tray"}
               aria-label={agentSurfaceMode === "terminal" ? "Collapse utility tray" : "Expand utility tray"}
               aria-expanded={agentSurfaceMode === "terminal"}
-              onClick={() => void openUtilityTray(utilityTrayMode)}
+              onClick={toggleUtilityTrayVisibility}
             >
               <AppIcon name={agentSurfaceMode === "terminal" ? "chevronDown" : "chevronUp"} />
             </button>
