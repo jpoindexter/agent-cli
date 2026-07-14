@@ -680,6 +680,12 @@ function App() {
   }, [appTheme]);
 
   useEffect(() => {
+    if (!crashNotice) return;
+    const timeout = window.setTimeout(() => setCrashNotice(null), 12_000);
+    return () => window.clearTimeout(timeout);
+  }, [crashNotice]);
+
+  useEffect(() => {
     if (!actionNotice) return;
     const timeout = window.setTimeout(() => setActionNotice(null), 2600);
     return () => window.clearTimeout(timeout);

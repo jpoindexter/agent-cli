@@ -148,6 +148,7 @@ assert(/\.titlebar-branch\s*\{[^}]*overflow:\s*hidden;[^}]*max-width:\s*30ch;[^}
 assert(tauriBackend.includes('format!("@ {sha}")'), "Detached HEAD must show a useful short SHA in the titlebar");
 assert(appCss.includes("grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);"), "Workbench must reserve the approved resizable bottom utility tray");
 assert(appTsx.includes('aria-label="Reset interface"'), "Threads header must expose an always-visible interface reset");
+assert(appTsx.includes("window.setTimeout(() => setCrashNotice(null), 12_000)"), "Crash recovery feedback must clear without permanently covering the workbench");
 assert(appTsx.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
 assert(toolTrayTabs.includes('title={mode === "files" ? "Hide Files panel" : "Show Files panel"}'), "Right dock must retain persistent tool panel toggles");
 assert(appCss.includes("grid-template-columns: repeat(4, minmax(32px, 1fr)) 32px;"), "Narrow tool dock must reserve four stable icon tabs and a fixed close control");
