@@ -1158,13 +1158,13 @@
     {
       "id": "CHAT-COMPOSER-CONTEXT",
       "title": "Per-chat drafts and context",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "ui",
       "size": "M",
       "launch": "v1",
   "summary": "Adapt Hashmark's useful Compose behaviors without its provider sprawl: per-chat draft/history, Up/Down recall, @file search, removable file/editor/browser context chips, paste/drop images, visible model/permission state, and accurate context payloads.",
-  "progress": "Implemented 2026-07-13: per-chat draft/history isolation, @file search, bounded readable file payloads, removable file/image chips, image paste/drop and picker cache, exact sent-context review, provider-native image inputs, and preflight rejection for outside, sensitive, binary, oversized, or unsupported attachments. Native packaged switching proved one draft does not leak and restores when returning. 197 frontend and 59 Rust tests pass. Remaining before Done: execute a packaged file-context send and image send through Codex and confirm the provider receives each exact payload.",
+  "progress": "Completed 2026-07-14. The signed packaged app sent a bounded text attachment through Codex and received its exact unguessable token in 11 seconds. It then sent the 900px app-shell PNG through the provider-native image path and received the exact screenshot-only sentence in 7 seconds. Visible removable chips and context review remained available for both sends. Evidence: docs/qa/daily-driver/chat-composer-context.md.",
       "done": "Switching chats preserves independent drafts and sent history; @file attaches bounded readable content with visible removable chips; images can paste/drop with preview and removal; Enter/Shift+Enter/Escape/Up/Down remain predictable; the exact context sent to Codex is inspectable; oversized/binary/sensitive attachments fail before transmission with a clear reason.",
       "buildOrder": 90.24
     },

@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-13T18:40:09.365Z",
-  "commit": "28a17fc+dirty",
+  "generatedAt": "2026-07-14T07:32:38.055Z",
+  "commit": "3381487+dirty",
   "branch": "main",
   "northStar": "daily-driver workflow runs completed without opening VS Code",
   "status": "implementation-ready-for-live-runs",
@@ -38,13 +38,13 @@
           "label": "actual app shell at 1440x900",
           "file": "docs/qa/app-shell/first-open-1440.png",
           "pass": true,
-          "bytes": 60263
+          "bytes": 74258
         },
         {
           "label": "actual app shell at 900x640",
           "file": "docs/qa/app-shell/first-open-900.png",
           "pass": true,
-          "bytes": 46199
+          "bytes": 57281
         },
         {
           "label": "native Tauri run with live pty output",
@@ -159,12 +159,16 @@
   "metrics": {
     "assetSizes": [
       {
-        "file": "app/dist/assets/index-DvGyewJl.js",
-        "bytes": 1515818
+        "file": "app/dist/assets/browserQa-DukSwdUQ.js",
+        "bytes": 4798
       },
       {
-        "file": "app/dist/assets/index-wiCPm4BG.css",
-        "bytes": 108000
+        "file": "app/dist/assets/index-CYk7Dmp9.css",
+        "bytes": 128655
+      },
+      {
+        "file": "app/dist/assets/index-DLIZ6_Pn.js",
+        "bytes": 1583523
       },
       {
         "file": "app/dist/assets/inter-latin-400-normal-C38fXH4l.woff2",
@@ -210,15 +214,15 @@
     "screenshotSizes": [
       {
         "file": "docs/qa/app-shell/first-open-1440.png",
-        "bytes": 60263
+        "bytes": 74258
       },
       {
         "file": "docs/qa/app-shell/first-open-1024.png",
-        "bytes": 48135
+        "bytes": 57080
       },
       {
         "file": "docs/qa/app-shell/first-open-900.png",
-        "bytes": 46199
+        "bytes": 57281
       },
       {
         "file": "docs/qa/app-shell/native-run.png",

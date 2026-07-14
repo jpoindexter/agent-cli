@@ -1,0 +1,3 @@
+Keelhouse packaged context smoke fixture.
+
+Verification token: KEELHOUSE-CONTEXT-AX7-20260714
