@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { activityIconNames, agentActivityAccessibleLabel, agentActivityIconName, paneStateAccessibleLabel, paneStateIconName } from "./icons";
+import { Activity, Bot, PanelLeft, PanelLeftClose, PanelRight, SquarePen, SquareTerminal } from "lucide-react";
+import { ICONS, activityIconNames, agentActivityAccessibleLabel, agentActivityIconName, paneStateAccessibleLabel, paneStateIconName } from "./icons";
 
 describe("icon system", () => {
+  it("uses standard panel and compose glyphs for shell navigation", () => {
+    expect(ICONS.panelLeft).toBe(PanelLeft);
+    expect(ICONS.panelLeftClose).toBe(PanelLeftClose);
+    expect(ICONS.panelRight).toBe(PanelRight);
+    expect(ICONS.layout).toBe(PanelRight);
+    expect(ICONS.newChat).toBe(SquarePen);
+    expect(ICONS.agent).toBe(Bot);
+    expect(ICONS.terminal).toBe(SquareTerminal);
+    expect(ICONS.processes).toBe(Activity);
+  });
+
   it("maps terminal pane states to status icons", () => {
     expect(paneStateIconName("running")).toBe("loading");
     expect(paneStateIconName("starting")).toBe("waiting");

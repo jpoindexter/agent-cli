@@ -44,6 +44,18 @@ describe("workbench layout contract", () => {
     ).toBeGreaterThanOrEqual(600);
   });
 
+  it("returns the drawer width to the agent surface when Threads is hidden", () => {
+    expect(
+      usableAgentWidth({
+        viewportWidth: 900,
+        drawerWidth: 332,
+        drawerCollapsed: true,
+        layout: "hidden",
+        trayPercent: DEFAULT_WORKBENCH_SIZING.trayPercent,
+      }),
+    ).toBe(900);
+  });
+
   it("keeps the centered run column at or above the 600px legibility floor at 900px", () => {
     const agentWidth = usableAgentWidth({
       viewportWidth: 900,

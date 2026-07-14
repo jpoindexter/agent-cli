@@ -41,7 +41,7 @@ export const usableAgentWidth = ({
   layout: WorkbenchLayoutMode;
   trayPercent: number;
 }) => {
-  const mainWidth = viewportWidth - (drawerCollapsed ? 52 : drawerWidth);
+  const mainWidth = viewportWidth - (drawerCollapsed ? 0 : drawerWidth);
   return layout === "left" || layout === "right" ? mainWidth * (1 - trayPercent / 100) : mainWidth;
 };
 

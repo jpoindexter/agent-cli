@@ -5679,7 +5679,7 @@ body,
   --titlebar-top: #22232b;
   --toolbar-control-active-bg: #171820;
 
-  grid-template-columns: minmax(52px, var(--side-drawer-width)) 6px minmax(0, 1fr);
+  grid-template-columns: minmax(52px, var(--side-drawer-width)) 1px minmax(0, 1fr);
   grid-template-rows: 36px minmax(0, 1fr) 24px;
   grid-template-areas:
     "titlebar titlebar titlebar"
@@ -7208,7 +7208,7 @@ body,
 /* Chrome convergence: one continuous native titlebar, with pane boundaries used
    only for orientation. The dock keeps its own compact tab strip below it. */
 .app-titlebar {
-  grid-template-columns: var(--side-drawer-width) 1px minmax(420px, 1fr) 1px var(--dock-width, 430px);
+  grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(420px, 1fr) 1px var(--dock-width, 430px);
   height: 40px;
   align-items: stretch;
   border-bottom-color: #2b2d36;
@@ -7220,6 +7220,10 @@ body,
   background: transparent;
 }
 
+.titlebar-leading-action {
+  flex: 0 0 28px;
+}
+
 .titlebar-splitter {
   border-right: 1px solid #2b2d36;
   border-left: 0;
@@ -7228,12 +7232,33 @@ body,
 
 .titlebar-agent-context {
   gap: 9px;
+  overflow: visible;
   padding-inline: 14px;
   background: transparent;
 }
 
 .titlebar-workspace {
   font-weight: 600;
+}
+
+.titlebar-chat-actions {
+  display: flex;
+  min-width: max-content;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.titlebar-chat-actions .tool-dock-menu summary {
+  width: 28px;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+}
+
+.titlebar-chat-actions .tool-dock-menu__popover {
+  right: 0;
+  left: auto;
 }
 
 .titlebar-actions {
@@ -7273,7 +7298,7 @@ body,
 
 @media (max-width: 1120px) and (min-width: 721px) {
   .app-titlebar {
-    grid-template-columns: var(--side-drawer-width) 1px minmax(0, 1fr) auto;
+    grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(0, 1fr) auto;
   }
 }
 
@@ -7321,7 +7346,7 @@ body,
 }
 
 .workbench.workbench--drawer-right {
-  grid-template-columns: minmax(420px, 1fr) 6px var(--dock-width, 430px);
+  grid-template-columns: minmax(420px, 1fr) 1px var(--dock-width, 430px);
   grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);
   grid-template-areas:
     "terminal rightsplit traytabs"
@@ -7370,7 +7395,7 @@ body,
 }
 
 .workbench.workbench--drawer-left {
-  grid-template-columns: var(--dock-width, 430px) 6px minmax(420px, 1fr);
+  grid-template-columns: var(--dock-width, 430px) 1px minmax(420px, 1fr);
   grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);
   grid-template-areas:
     "traytabs rightsplit terminal"
@@ -7497,10 +7522,11 @@ body,
 }
 
 .workbench--drawer-left .workbench-resizer--tray.workbench-resizer--left {
-  width: 6px;
+  width: 9px;
   height: 100%;
-  border-right: 1px solid #232530;
+  margin-left: -4px;
   border-left: 1px solid #2b2d36;
+  background: transparent;
 }
 
 .workbench--drawer-bottom .workbench-resizer--tray.workbench-resizer--bottom {
@@ -7517,13 +7543,7 @@ body,
 }
 
 .workbench--drawer-left .workbench-resizer--tray.workbench-resizer--left::after {
-  top: calc(50% - 23px);
-  left: 2px;
-  width: 2px;
-  height: 46px;
-  border-radius: 0;
-  background: #626574;
-  opacity: 0.5;
+  display: none;
 }
 
 .workbench--drawer-bottom .workbench-resizer--tray.workbench-resizer--bottom::after {
@@ -7808,4 +7828,52 @@ body,
 .utility-tray__empty {
   color: #707383;
   padding: 12px 4px;
+}
+
+/* A collapsed thread drawer is absent, not a clipped miniature toolbar. The
+   titlebar keeps a macOS-safe leading lane with the standard restore control. */
+.app-shell.app-shell--side-drawer-collapsed {
+  grid-template-columns: 0 0 minmax(0, 1fr);
+}
+
+.side-drawer-resizer {
+  width: 9px;
+  margin-left: -4px;
+  border: 0;
+  border-left: 1px solid #2b2d36;
+  background: transparent;
+}
+
+.side-drawer-resizer::before {
+  inset: 0;
+  background: transparent;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right {
+  width: 9px;
+  margin-left: -4px;
+  border: 0;
+  border-left: 1px solid #2b2d36;
+  background: transparent;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::before {
+  inset: 0;
+  background: transparent;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::after {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .file-rail {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .status-bar__group--left {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .status-bar {
+  grid-template-columns: 0 minmax(0, 1fr) auto;
 }

@@ -1,8 +1,10 @@
 import type { ComponentType, SVGProps } from "react";
 import {
+  Activity,
   AlertCircle,
   ArrowLeft,
   ArrowRight,
+  Bot,
   Bookmark,
   Brain,
   CheckCircle2,
@@ -12,7 +14,6 @@ import {
   Circle,
   Clock3,
   Copy,
-  Cpu,
   FilePlus2,
   FileText,
   Folder,
@@ -25,8 +26,9 @@ import {
   MessageCircle,
   MoreHorizontal,
   ExternalLink,
-  PanelBottom,
-  PanelsTopLeft,
+  PanelLeft,
+  PanelLeftClose,
+  PanelRight,
   Plus,
   Pin,
   Plug,
@@ -36,8 +38,10 @@ import {
   Send,
   SlidersHorizontal,
   Square,
+  SquareTerminal,
   Target,
   ShieldCheck,
+  SquarePen,
   X,
 } from "lucide-react";
 import type { TerminalPaneState } from "./terminalPane";
@@ -70,10 +74,14 @@ export type AppIconName =
   | "layout"
   | "loading"
   | "logs"
-  | "menu"
   | "more"
+  | "newChat"
   | "openExternal"
+  | "panelLeft"
+  | "panelLeftClose"
+  | "panelRight"
   | "plus"
+  | "processes"
   | "pin"
   | "reload"
   | "save"
@@ -89,7 +97,7 @@ export type AppIconName =
   | "workspace";
 
 export const ICONS: Record<AppIconName, IconComponent> = {
-  agent: Cpu,
+  agent: Bot,
   back: ArrowLeft,
   browser: Globe2,
   bookmark: Bookmark,
@@ -111,13 +119,17 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   forward: ArrowRight,
   git: GitBranch,
   idle: Circle,
-  layout: PanelsTopLeft,
+  layout: PanelRight,
   loading: LoaderCircle,
   logs: List,
-  menu: List,
   more: MoreHorizontal,
+  newChat: SquarePen,
   openExternal: ExternalLink,
+  panelLeft: PanelLeft,
+  panelLeftClose: PanelLeftClose,
+  panelRight: PanelRight,
   plus: Plus,
+  processes: Activity,
   pin: Pin,
   reload: RotateCw,
   save: Save,
@@ -128,7 +140,7 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   stop: Square,
   target: Target,
   thinking: Brain,
-  terminal: PanelBottom,
+  terminal: SquareTerminal,
   waiting: Clock3,
   workspace: Folder,
 };

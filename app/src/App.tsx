@@ -91,7 +91,6 @@ import {
   defaultTerminalLaunchProfile,
   launchProfileById,
   launchProfileCommandLine,
-  launchProfileMode,
   normalizeLaunchProfile,
   normalizeCustomLaunchProfiles,
   normalizeTerminalLaunchProfile,
@@ -137,7 +136,7 @@ import {
   readTailFromSnapshot,
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
-import { AppIcon, paneStateAccessibleLabel, paneStateIconName } from "./icons";
+import { AppIcon, paneStateIconName } from "./icons";
 import type { AppIconName } from "./icons";
 
 type AgentHookRequest = {
@@ -177,7 +176,6 @@ import {
 import type { AgentActivityEvent, AgentActivityLogFilter } from "./agentActivity";
 import {
   normalizeTerminalPaneLabel,
-  terminalPaneCwdLabel,
   terminalPaneLabelForDisplay,
   terminalPaneProjectStatus as projectStatusFromTerminalPanes,
   terminalPaneStateLabel,
@@ -917,9 +915,6 @@ function App() {
     );
   }, [activeAgentSessionDescriptor, activeSessionId, agentActivityEvents, agentActivityFilter, workspacePath]);
   const activeTerminalProfile = activeTerminalPane?.profile ?? terminalLaunchProfile;
-  const terminalPaneState = activeTerminalPane?.state ?? "idle";
-  const terminalExitCode = activeTerminalPane?.exitCode ?? null;
-  const terminalStatusLabel = terminalPaneStateLabel(terminalPaneState, terminalExitCode);
   const primarySurfaceState: TerminalPaneState = activeChatConversation.activeRunId ? "starting" : "idle";
   const primarySurfaceLabel = "Codex";
   const primarySurfaceStatusLabel = activeChatConversation.activeRunId ? "Working" : "Ready";
@@ -5702,7 +5697,18 @@ function App() {
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
       <header className="app-titlebar" aria-label="Application chrome" data-tauri-drag-region>
-        <div className="titlebar-identity" aria-hidden="true" />
+        <div className="titlebar-identity" data-tauri-drag-region>
+          <button
+            className={`titlebar-action titlebar-leading-action ${!sideDrawerCollapsed ? "titlebar-action--active" : ""}`}
+            type="button"
+            title="Toggle Threads"
+            aria-label="Toggle Threads"
+            aria-pressed={!sideDrawerCollapsed}
+            onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
+          >
+            <AppIcon name="panelLeft" />
+          </button>
+        </div>
         <div className="titlebar-splitter" aria-hidden="true" />
         <div className="titlebar-agent-context" aria-label="Active chat" data-tauri-drag-region>
           <div
@@ -5717,13 +5723,24 @@ function App() {
             <AppIcon name="file" />
             <span>{activeSessionTitle}</span>
           </div>
+          <div className="titlebar-chat-actions" aria-label="Chat actions">
+            <button className="titlebar-action" type="button" title="Open workspace externally" aria-label="Open workspace externally" disabled={!workspacePath} onClick={() => workspacePath && void openPath(workspacePath)}>
+              <AppIcon name="openExternal" />
+            </button>
+            <button className="titlebar-action" type="button" title="Thread settings" aria-label="Thread settings" onClick={() => setSettingsOpen(true)}>
+              <AppIcon name="settings" />
+            </button>
+            <ToolDockMenu
+              layout={renderedWorkbenchLayout}
+              toolMode={toolTrayMode}
+              onLayoutChange={setWorkbenchLayout}
+              onToolModeChange={setToolTrayMode}
+            />
+          </div>
         </div>
         <div className="titlebar-splitter" aria-hidden="true" />
         <div className="titlebar-actions">
           <div className="titlebar-panel-toggles" aria-label="Toggle panels">
-            <button className={`titlebar-action ${!sideDrawerCollapsed ? "titlebar-action--active" : ""}`} type="button" title="Toggle Threads" aria-label="Toggle Threads" aria-pressed={!sideDrawerCollapsed} onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}>
-              <AppIcon name="menu" />
-            </button>
             <button
               className={`titlebar-action ${renderedWorkbenchLayout !== "hidden" ? "titlebar-action--active" : ""}`}
               type="button"
@@ -5736,7 +5753,7 @@ function App() {
                   : "hidden",
               )}
             >
-              <AppIcon name="layout" />
+              <AppIcon name="panelRight" />
             </button>
           </div>
           <span className={`titlebar-pill titlebar-pill--${primarySurfaceState}`} title={`${primarySurfaceLabel} · ${primarySurfaceStatusLabel}`}>
@@ -5760,7 +5777,7 @@ function App() {
               disabled={!workspacePath}
               onClick={() => workspacePath && void createProjectSession(workspacePath)}
             >
-              <AppIcon name="filePlus" />
+              <AppIcon name="newChat" />
             </button>
           ) : null}
           <button
@@ -5778,12 +5795,11 @@ function App() {
           <button
             className="drawer-collapse-button"
             type="button"
-            title={sideDrawerCollapsed ? "Expand side drawer" : "Collapse side drawer"}
-            aria-label={sideDrawerCollapsed ? "Expand side drawer" : "Collapse side drawer"}
-            aria-pressed={sideDrawerCollapsed}
+            title="Hide Threads"
+            aria-label="Hide Threads"
             onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
           >
-            <AppIcon name={sideDrawerCollapsed ? "chevronRight" : "chevronDown"} />
+            <AppIcon name="panelLeftClose" />
           </button>
         </div>
         <div className="drawer-mode-switcher" role="tablist" aria-label="Side drawer">
@@ -6827,44 +6843,6 @@ function App() {
         </section>
 
         <section className={`terminal-panel terminal-panel--${agentSurfaceMode}`} aria-label="Agent conversation">
-          <div className="terminal-titlebar">
-            <div className="terminal-profile">
-              <span className="terminal-kicker">Thread</span>
-              <span className="terminal-title">
-                <AppIcon name="agent" />
-                <span>{activeSessionTitle}</span>
-              </span>
-              <span className="terminal-command" title={launchProfileCommandLine(activeTerminalProfile)}>
-                {launchProfileCommandLine(activeTerminalProfile)}
-              </span>
-              <span className="terminal-mode">{launchProfileMode(activeTerminalProfile)}</span>
-              <span
-                className={`terminal-state terminal-state--${terminalPaneState}`}
-                aria-label={paneStateAccessibleLabel(terminalPaneState, terminalStatusLabel)}
-                title={paneStateAccessibleLabel(terminalPaneState, terminalStatusLabel)}
-              >
-                <AppIcon name={paneStateIconName(terminalPaneState)} />
-                <span>{terminalStatusLabel}</span>
-              </span>
-              <span className="terminal-cwd" title={workspacePath ?? ""}>
-                {terminalPaneCwdLabel(workspacePath)}
-              </span>
-            </div>
-            <div className="terminal-actions">
-              <button className="terminal-tab-action" type="button" title="Open workspace externally" aria-label="Open workspace externally" disabled={!workspacePath} onClick={() => workspacePath && void openPath(workspacePath)}>
-                <AppIcon name="openExternal" />
-              </button>
-              <button className="terminal-tab-action" type="button" title="Thread settings" aria-label="Thread settings" onClick={() => setSettingsOpen(true)}>
-                <AppIcon name="settings" />
-              </button>
-              <ToolDockMenu
-                layout={renderedWorkbenchLayout}
-                toolMode={toolTrayMode}
-                onLayoutChange={setWorkbenchLayout}
-                onToolModeChange={setToolTrayMode}
-              />
-            </div>
-          </div>
           <div className={`agent-surface agent-surface--${agentSurfaceMode}`}>
             <ChatThreadSurface
               conversation={activeChatConversation}
@@ -7124,7 +7102,7 @@ function App() {
           <nav className="utility-tray__tabs" aria-label="Utility tray surfaces">
             {([
               ["terminal", "terminal", "Terminal"],
-              ["processes", "waiting", "Processes"],
+              ["processes", "processes", "Processes"],
               ["logs", "logs", "Logs"],
             ] as const).map(([mode, icon, label]) => (
               <button

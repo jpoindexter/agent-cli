@@ -46,10 +46,11 @@ export const useWorkbenchLayout = () => {
     "--tool-primary-size": `${workbenchSizing.toolSplitPercent}%`,
   } as CSSProperties;
   const appShellStyle = {
-    "--side-drawer-width": `${sideDrawerCollapsed ? 52 : sideDrawerWidth}px`,
+    "--side-drawer-width": `${sideDrawerCollapsed ? 0 : sideDrawerWidth}px`,
+    "--titlebar-leading-width": `${sideDrawerCollapsed ? 112 : sideDrawerWidth}px`,
     "--dock-width": `${workbenchSizing.trayPercent === DEFAULT_WORKBENCH_SIZING.trayPercent
       ? 430
-      : Math.max(240, (viewportWidth - (sideDrawerCollapsed ? 52 : sideDrawerWidth) - 6) * (workbenchSizing.trayPercent / 100))}px`,
+      : Math.max(240, (viewportWidth - (sideDrawerCollapsed ? 0 : sideDrawerWidth) - 1) * (workbenchSizing.trayPercent / 100))}px`,
   } as CSSProperties;
 
   const beginSideDrawerResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
