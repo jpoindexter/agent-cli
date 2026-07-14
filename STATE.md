@@ -173,6 +173,8 @@ Build **Keelhouse** — a native macOS Tauri 2 app that replaces Jason's VS Code
 
 **RUN-CARDS-ADAPTER (IMPLEMENTED 2026-07-14; PACKAGED HOOK FLOW PENDING):** Structured thinking, plan, file, approval, command, and tool cards now require explicit `provider`, `app-action`, or `agent-hook` provenance. Provider and hook adapters assign card kinds mechanically; file cards retain Review targets; SQLite migration v5 preserves the fields across relaunch. Tests reject terminal-text inference and cover provider/hook mapping plus persistence. The locked macOS session prevents the final packaged hook-connected visual and Review execution. See `docs/run-cards-adapter.md`.
 
+**TERMINAL-INTL-INPUT (IMPLEMENTED 2026-07-14; NATIVE COMPOSITION PENDING):** The cursor-positioned IME textarea and CJK fallback chain remain intact. A follow-up audit fixed the initial `Dead`/`Process` event being prevented before WebKit entered composition; unit tests cover that boundary and preserve ASCII/navigation routing. The locked session prevents the remaining Option-dead-key, CJK round-trip, and fallback-glyph visual checks. See `docs/terminal-robustness.md`.
+
 ## Next (ordered)
 
 1. **CHROME-EYEBALL-SIGNOFF:** Jason reviews the corrected packaged shell at 1440/1024/900 and records approval or corrections, including the Super-derived quiet-titlebar/toast direction.

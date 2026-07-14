@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { imeCaretStyle } from "./terminalIme";
+import { imeCaretStyle, shouldDeferTerminalKeyToIme } from "./terminalIme";
 
 describe("imeCaretStyle", () => {
   it("scales the cursor cell to a pixel transform and cell-sized box", () => {
@@ -14,5 +14,14 @@ describe("imeCaretStyle", () => {
       width: "8.4px",
       height: "17px",
     });
+  });
+
+  it("lets WebKit handle dead and IME process keys before PTY encoding", () => {
+    expect(shouldDeferTerminalKeyToIme({ key: "Dead", keyCode: 69, isComposing: false })).toBe(true);
+    expect(shouldDeferTerminalKeyToIme({ key: "Process", keyCode: 0, isComposing: false })).toBe(true);
+    expect(shouldDeferTerminalKeyToIme({ key: "a", keyCode: 229, isComposing: false })).toBe(true);
+    expect(shouldDeferTerminalKeyToIme({ key: "a", keyCode: 65, isComposing: true })).toBe(true);
+    expect(shouldDeferTerminalKeyToIme({ key: "a", keyCode: 65, isComposing: false })).toBe(false);
+    expect(shouldDeferTerminalKeyToIme({ key: "ArrowLeft", keyCode: 37, isComposing: false })).toBe(false);
   });
 });

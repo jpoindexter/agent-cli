@@ -233,7 +233,7 @@ import {
   type McpOAuthStatus,
 } from "./connectionSettings";
 import { buildRepoUrl, parseRemoteUrl, sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
-import { imeCaretStyle } from "./terminalIme";
+import { imeCaretStyle, shouldDeferTerminalKeyToIme } from "./terminalIme";
 import { buildSnapshot, createRenderPerfState, recordFrameTime, recordIpcPayloadBytes } from "./renderPerf";
 import {
   addBackgroundExit,
@@ -5489,7 +5489,7 @@ function App() {
 
     const onKey = (e: KeyboardEvent) => {
       const target = e.target instanceof HTMLElement ? e.target : null;
-      if (e.isComposing) return;
+      if (e.isComposing || (target?.matches(".terminal-ime-input") && shouldDeferTerminalKeyToIme(e))) return;
       if (comboMatches(e, "chrome.command-palette")) {
         e.preventDefault();
         openCommandPalette();
