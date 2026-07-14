@@ -27,7 +27,6 @@ import {
   MoreHorizontal,
   ExternalLink,
   PanelLeft,
-  PanelLeftClose,
   PanelRight,
   Plus,
   Pin,
@@ -78,7 +77,6 @@ export type AppIconName =
   | "newChat"
   | "openExternal"
   | "panelLeft"
-  | "panelLeftClose"
   | "panelRight"
   | "plus"
   | "processes"
@@ -126,7 +124,6 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   newChat: SquarePen,
   openExternal: ExternalLink,
   panelLeft: PanelLeft,
-  panelLeftClose: PanelLeftClose,
   panelRight: PanelRight,
   plus: Plus,
   processes: Activity,

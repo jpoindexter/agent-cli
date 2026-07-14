@@ -159,9 +159,10 @@ assert(appCss.includes("grid-template-rows: 38px minmax(0, 1fr) 6px var(--utilit
 assert(appTsx.includes('aria-label="Reset interface"'), "Threads header must expose an always-visible interface reset");
 assert(appTsx.includes("window.setTimeout(() => setCrashNotice(null), 12_000)"), "Crash recovery feedback must clear without permanently covering the workbench");
 assert(appTsx.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
+assert((appTsx.match(/aria-label="Toggle Threads"/g) ?? []).length === 1, "Threads must have one visible chrome toggle");
+assert(!appTsx.includes('aria-label="Hide Threads"'), "Threads header must not duplicate the titlebar toggle");
 assert(appTsx.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
 assert(icons.includes("panelLeft: PanelLeft"), "Threads toggle must use the standard PanelLeft icon");
-assert(icons.includes("panelLeftClose: PanelLeftClose"), "Threads collapse action must use the standard PanelLeftClose icon");
 assert(icons.includes("panelRight: PanelRight"), "Tools toggle must use the standard PanelRight icon");
 assert(icons.includes("newChat: SquarePen"), "New chat must use the standard compose icon");
 assert(icons.includes("terminal: SquareTerminal"), "Terminal surfaces must use the standard terminal icon");

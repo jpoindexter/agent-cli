@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { Activity, Bot, PanelLeft, PanelLeftClose, PanelRight, SquarePen, SquareTerminal } from "lucide-react";
+import { Activity, Bot, PanelLeft, PanelRight, SquarePen, SquareTerminal } from "lucide-react";
 import { ICONS, activityIconNames, agentActivityAccessibleLabel, agentActivityIconName, paneStateAccessibleLabel, paneStateIconName } from "./icons";
 
 describe("icon system", () => {
   it("uses standard panel and compose glyphs for shell navigation", () => {
     expect(ICONS.panelLeft).toBe(PanelLeft);
-    expect(ICONS.panelLeftClose).toBe(PanelLeftClose);
     expect(ICONS.panelRight).toBe(PanelRight);
     expect(ICONS.layout).toBe(PanelRight);
     expect(ICONS.newChat).toBe(SquarePen);

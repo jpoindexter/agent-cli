@@ -5792,15 +5792,6 @@ function App() {
           <button className="drawer-collapse-button" type="button" title="Reset interface" aria-label="Reset interface" onClick={resetInterface}>
             <AppIcon name="reload" />
           </button>
-          <button
-            className="drawer-collapse-button"
-            type="button"
-            title="Hide Threads"
-            aria-label="Hide Threads"
-            onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
-          >
-            <AppIcon name="panelLeftClose" />
-          </button>
         </div>
         <div className="drawer-mode-switcher" role="tablist" aria-label="Side drawer">
           {DRAWER_MODES.map((mode) => (
