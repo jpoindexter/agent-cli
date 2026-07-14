@@ -153,6 +153,7 @@ assert(appCss.includes("grid-template-rows: 38px minmax(0, 1fr) 6px var(--utilit
 assert(appTsx.includes('aria-label="Reset interface"'), "Threads header must expose an always-visible interface reset");
 assert(appTsx.includes("window.setTimeout(() => setCrashNotice(null), 12_000)"), "Crash recovery feedback must clear without permanently covering the workbench");
 assert(appTsx.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
+assert(appTsx.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
 assert(toolTrayTabs.includes('title={mode === "files" ? "Hide Files panel" : "Show Files panel"}'), "Right dock must retain persistent tool panel toggles");
 assert(appCss.includes("grid-template-columns: repeat(4, minmax(32px, 1fr)) 32px;"), "Narrow tool dock must reserve four stable icon tabs and a fixed close control");
 assert(/@media \(max-width: 1120px\)[\s\S]*?\.tool-tray-tabs__tab span,[\s\S]*?\.titlebar-pill span\s*\{\s*display: none;/s.test(appCss), "Narrow chrome must hide dock and runtime labels before they collide");

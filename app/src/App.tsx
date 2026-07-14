@@ -5752,6 +5752,20 @@ function App() {
             <button className={`titlebar-action ${!sideDrawerCollapsed ? "titlebar-action--active" : ""}`} type="button" title="Toggle Threads" aria-label="Toggle Threads" aria-pressed={!sideDrawerCollapsed} onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}>
               <AppIcon name="menu" />
             </button>
+            <button
+              className={`titlebar-action ${renderedWorkbenchLayout !== "hidden" ? "titlebar-action--active" : ""}`}
+              type="button"
+              title="Toggle Tools"
+              aria-label="Toggle Tools"
+              aria-pressed={renderedWorkbenchLayout !== "hidden"}
+              onClick={() => setWorkbenchLayout(
+                renderedWorkbenchLayout === "hidden"
+                  ? workbenchLayout === "hidden" ? "right" : workbenchLayout
+                  : "hidden",
+              )}
+            >
+              <AppIcon name="layout" />
+            </button>
           </div>
           <span className={`titlebar-pill titlebar-pill--${primarySurfaceState}`} title={`${primarySurfaceLabel} · ${primarySurfaceStatusLabel}`}>
             <AppIcon name={paneStateIconName(primarySurfaceState)} />
