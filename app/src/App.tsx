@@ -267,6 +267,7 @@ import {
   type OrchestrationChildDraft,
 } from "./chatOrchestration";
 import { launchOrchestration as launchOrchestrationWithContext } from "./orchestrationLaunch";
+import { executeOrchestrationChildResult } from "./orchestrationChildResult";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
@@ -2271,25 +2272,19 @@ function App() {
   };
 
   const returnChildResult = async (projectPath: string, session: ProjectSession) => {
-    const metadata = session.orchestration;
-    if (!metadata || metadata.returnedAt) return;
-    const childConversation = chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)];
-    const result = [...(childConversation?.messages ?? [])].reverse().find((message) => message.role === "assistant");
-    if (!result) {
-      setActionNotice("This child has no assistant result yet");
-      return;
-    }
-    const parentChatId = composerHarnessSessionKey(projectPath, metadata.parentSessionId);
-    updateChatConversation(parentChatId, (conversation) => appendToolChatMessage(
-      conversation,
-      `${session.title} result`,
-      result.text,
-      `${metadata.dispatchId}:${session.id}:result`,
-    ));
-    await updateProjectSessionMetadata(projectPath, session.id, {
-      orchestration: { ...metadata, returnedAt: Date.now() },
+    return executeOrchestrationChildResult({
+      childConversation: chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)],
+      now: Date.now,
+      returnResult: ({ itemId, parentSessionId, text, title }) => {
+        const parentChatId = composerHarnessSessionKey(projectPath, parentSessionId);
+        updateChatConversation(parentChatId, (conversation) => appendToolChatMessage(conversation, title, text, itemId));
+      },
+      session,
+      setNotice: setActionNotice,
+      updateSessionMetadata: (orchestration) => updateProjectSessionMetadata(projectPath, session.id, {
+        orchestration,
+      }),
     });
-    setActionNotice(`Returned ${session.title} to its parent chat`);
   };
 
   const removeChildWorktree = async (projectPath: string, session: ProjectSession) => {
