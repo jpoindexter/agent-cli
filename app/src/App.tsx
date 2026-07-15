@@ -253,6 +253,7 @@ import {
 import type { ChatConversation, ChatConversationRecords, ChatMessage, ChatProvider } from "./chatConversation";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
+import { useWorkspaceTree } from "./useWorkspaceTree";
 import { createChatForkPlan } from "./chatForkPlan";
 import {
   deleteDurableChatConversation,
@@ -269,7 +270,7 @@ import {
 } from "./workspaceCheckpoints";
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
-import type { FileTreeNode, FileTreeResponse } from "./fileTreeTypes";
+import type { FileTreeNode } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
 import {
   type OrchestrationChildDraft,
@@ -438,12 +439,16 @@ function App() {
   const [activeTerminalPaneId, setActiveTerminalPaneId] = useState<number | null>(null);
   const [paneLabelsBySession, setPaneLabelsBySession] = useState<PaneLabelsBySession>({});
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
-  const [fileTree, setFileTree] = useState<FileTreeNode[]>([]);
-  const [fileTreeError, setFileTreeError] = useState<string | null>(null);
+  const {
+    error: fileTreeError, loading: fileTreeLoading, refresh: refreshFileTree,
+    refreshKey: treeRefreshNonce, setError: setFileTreeError, setTree: setFileTree,
+    tree: fileTree, truncated: fileTreeTruncated,
+  } = useWorkspaceTree({
+    onClearWorkspace: () => resetEditor(),
+    onRootResolved: (root) => { workspacePathRef.current = root; },
+    workspacePath,
+  });
   const [fileOpError, setFileOpError] = useState<string | null>(null);
-  const [fileTreeLoading, setFileTreeLoading] = useState(false);
-  const [fileTreeTruncated, setFileTreeTruncated] = useState(false);
-  const [treeRefreshNonce, setTreeRefreshNonce] = useState(0);
   const [railHeight, setRailHeight] = useState(240);
   const [selectedFile, setSelectedFile] = useState<FileTreeNode | null>(null);
   const [editorTabs, setEditorTabs] = useState<FileTreeNode[]>([]);
@@ -621,7 +626,6 @@ function App() {
       ? detectedLocalDevServer
       : null;
 
-  const refreshFileTree = () => setTreeRefreshNonce((value) => value + 1);
   const focusEditorLine = (line: number) => {
     const targetLine = Math.max(1, line);
     window.setTimeout(() => {
@@ -3750,38 +3754,6 @@ function App() {
     observer.observe(el);
     return () => observer.disconnect();
   }, [sideDrawerMode]);
-
-  useEffect(() => {
-    if (!workspacePath) {
-      setFileTree([]);
-      setFileTreeError(null);
-      setFileTreeTruncated(false);
-      resetEditor();
-      return;
-    }
-    let cancelled = false;
-    setFileTreeLoading(true);
-    setFileTreeError(null);
-    invoke<FileTreeResponse>("list_workspace_tree", { path: workspacePath })
-      .then((result) => {
-        if (cancelled) return;
-        workspacePathRef.current = result.root;
-        setFileTree(result.nodes);
-        setFileTreeTruncated(result.truncated);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setFileTree([]);
-        setFileTreeError(String(err));
-        setFileTreeTruncated(false);
-      })
-      .finally(() => {
-        if (!cancelled) setFileTreeLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [workspacePath, treeRefreshNonce]);
 
   useEffect(() => {
     if (!workspacePath || fileTreeLoading || fileTreeError || fileTree.length === 0 || selectedFile) return;
