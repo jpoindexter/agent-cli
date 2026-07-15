@@ -159,7 +159,6 @@ import { QuickOpenDialog } from "./QuickOpenDialog";
 import { useQuickOpen } from "./useQuickOpen";
 import {
   DEFAULT_COMMAND_PALETTE_SOURCES,
-  type CommandPaletteSourceId,
 } from "./commandPaletteSources";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import {
@@ -244,6 +243,7 @@ import {
   type BackgroundExit,
 } from "./backgroundExits";
 import { requestPermission } from "@tauri-apps/plugin-notification";
+import { createSettingsPreferenceActions } from "./settingsPreferenceActions";
 import {
   addPaneTranscript,
   buildPaneTranscript,
@@ -4263,6 +4263,19 @@ function App() {
   const drawerActiveTitle = drawerTitleFor(sideDrawerMode);
   const sourceHostToolStatus = repoLocation?.kind === "github" ? sourceControlStatus?.gh : sourceControlStatus?.glab;
   const sourceRepoStatusTitle = sourceRepoStatusTitleFor(repoLocation, sourceHostToolStatus);
+  const settingsPreferenceActions = createSettingsPreferenceActions({
+    commandPaletteSources,
+    keybindingOverrides,
+    requestNotificationPermission: requestPermission,
+    saveSetting: (key, value) => {
+      void storeRef.current?.set(key, value);
+      void storeRef.current?.save();
+    },
+    setCommandPaletteSources,
+    setKeybindingOverrides: (next) => { setActiveKeybindingOverrides(next); setKeybindingOverrides(next); },
+    setNotificationsEnabled,
+    setTheme: setAppTheme,
+  });
 
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${renderedWorkbenchLayout === "hidden" ? "app-shell--tools-hidden" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
@@ -4714,12 +4727,7 @@ function App() {
             recordStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
             server,
           })}
-          onCommandPaletteSourceChange={(source: CommandPaletteSourceId, enabled) => {
-            const next = { ...commandPaletteSources, [source]: enabled };
-            setCommandPaletteSources(next);
-            void storeRef.current?.set("commandPaletteSources", next);
-            void storeRef.current?.save();
-          }}
+          onCommandPaletteSourceChange={settingsPreferenceActions.onCommandPaletteSourceChange}
           onAddCustomTerminalProfile={(label, command) => void addCustomTerminalProfile(label, command)}
           keybindingOverrides={keybindingOverrides}
           onResetLocalData={() => void resetSettingsLocalData({
@@ -4735,28 +4743,11 @@ function App() {
             settings: aiConnectionSettings,
           })}
           notificationsEnabled={notificationsEnabled}
-          onNotificationsChange={(enabled) => {
-            setNotificationsEnabled(enabled);
-            void storeRef.current?.set("notificationsEnabled", enabled);
-            void storeRef.current?.save();
-            if (enabled) void requestPermission().catch(() => {});
-          }}
+          onNotificationsChange={settingsPreferenceActions.onNotificationsChange}
           onRemoveCustomTerminalProfile={(profileId) => void removeCustomTerminalProfile(profileId)}
           theme={appTheme}
-          onThemeChange={(theme) => {
-            setAppTheme(theme);
-            void storeRef.current?.set("appTheme", theme);
-            void storeRef.current?.save();
-          }}
-          onKeybindingOverrideChange={(id, keys) => {
-            const next = { ...keybindingOverrides };
-            if (keys) next[id] = keys;
-            else delete next[id];
-            setActiveKeybindingOverrides(next);
-            setKeybindingOverrides(next);
-            void storeRef.current?.set("keybindingOverrides", next);
-            void storeRef.current?.save();
-          }}
+          onThemeChange={settingsPreferenceActions.onThemeChange}
+          onKeybindingOverrideChange={settingsPreferenceActions.onKeybindingOverrideChange}
           onClose={() => setSettingsOpen(false)}
           onLayoutChange={setWorkbenchLayout}
           onProfileChange={(scope, profileId) => {
