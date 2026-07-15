@@ -205,14 +205,9 @@ import {
   structuredChatProviderId,
 } from "./agentConnections";
 import {
-  CONNECTION_PROVIDER_IDS,
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
-  environmentSecretKey,
-  mcpOauthClientSecretKey,
   mcpOauthTokenKey,
-  mcpSecretKey,
-  providerSecretKey,
   type AiConnectionSettings,
   type ConnectionSecretStatus,
   type ConnectionTargetStatus,
@@ -293,6 +288,7 @@ import {
   disconnectSettingsMcpOAuth,
   probeSettingsMcpServer,
 } from "./settingsMcpActions";
+import { connectionSecretKeys, resetSettingsLocalData } from "./settingsLocalReset";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
@@ -2369,13 +2365,6 @@ function App() {
     await storeRef.current?.set("customLaunchProfiles", next);
     await storeRef.current?.save();
   };
-
-  const connectionSecretKeys = (settings: AiConnectionSettings) => [
-    ...CONNECTION_PROVIDER_IDS.map(providerSecretKey),
-    ...settings.mcpServers.filter((server) => server.authMode === "bearer").map((server) => mcpSecretKey(server.id)),
-    ...settings.mcpServers.filter((server) => server.authMode === "oauth").flatMap((server) => [mcpOauthTokenKey(server.id), mcpOauthClientSecretKey(server.id)]),
-    ...Object.values(settings.environmentByProject).flat().filter((variable) => variable.secret).map((variable) => environmentSecretKey(variable.id)),
-  ];
 
   const refreshConnectionSecretPresence = async (settings: AiConnectionSettings) => {
     const statuses = await Promise.all(connectionSecretKeys(settings).map(async (key) => {
@@ -4733,22 +4722,18 @@ function App() {
           }}
           onAddCustomTerminalProfile={(label, command) => void addCustomTerminalProfile(label, command)}
           keybindingOverrides={keybindingOverrides}
-          onResetLocalData={() => {
-            void (async () => {
-              if (!await confirmDialog("Reset all local data? This clears saved projects, chats, transcripts, layout, and local state files. This cannot be undone.")) return;
-              await Promise.all(connectionSecretKeys(aiConnectionSettings).map((key) =>
-                invoke("delete_connection_secret", { key }).catch(() => null)
-              ));
+          onResetLocalData={() => void resetSettingsLocalData({
+            clearStore: async () => {
               const store = storeRef.current;
-              if (store) {
-                await store.clear();
-                await store.save();
-              }
-              await resetDurableChatStore();
-              await invoke("reset_local_state").catch(() => {});
-              window.location.reload();
-            })();
-          }}
+              if (store) { await store.clear(); await store.save(); }
+            },
+            confirmReset: (message) => confirmDialog(message),
+            deleteSecret: (key) => invoke("delete_connection_secret", { key }),
+            reload: () => window.location.reload(),
+            resetDurableChats: resetDurableChatStore,
+            resetNativeState: () => invoke("reset_local_state"),
+            settings: aiConnectionSettings,
+          })}
           notificationsEnabled={notificationsEnabled}
           onNotificationsChange={(enabled) => {
             setNotificationsEnabled(enabled);
