@@ -191,7 +191,6 @@ import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
   type AiConnectionSettings,
-  type ConnectionSecretStatus,
   type ConnectionTargetStatus,
   type McpServerConfig,
   type McpOAuthStart,
@@ -279,7 +278,7 @@ import {
   disconnectSettingsMcpOAuth,
   probeSettingsMcpServer,
 } from "./settingsMcpActions";
-import { connectionSecretKeys, resetSettingsLocalData } from "./settingsLocalReset";
+import { resetSettingsLocalData } from "./settingsLocalReset";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
@@ -490,7 +489,9 @@ function App() {
   } = useSettingsRuntimeStatus(settingsOpen, workspacePath);
   const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const {
-    secretPresence: connectionSecretPresence, setSecretPresence: setConnectionSecretPresence,
+    deleteSecret: deleteConnectionSecret, refreshSecretPresence: refreshConnectionSecretPresence,
+    saveSecret: saveConnectionSecret, secretPresence: connectionSecretPresence,
+    setSecretPresence: setConnectionSecretPresence,
     setStatuses: setMcpOAuthStatuses, statuses: mcpOAuthStatuses,
   } = useMcpOAuthStatus();
   const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
@@ -1929,32 +1930,11 @@ function App() {
     await storeRef.current?.save();
   };
 
-  const refreshConnectionSecretPresence = async (settings: AiConnectionSettings) => {
-    const statuses = await Promise.all(connectionSecretKeys(settings).map(async (key) => {
-      try {
-        return await invoke<ConnectionSecretStatus>("connection_secret_status", { key });
-      } catch {
-        return { key, present: false };
-      }
-    }));
-    setConnectionSecretPresence(Object.fromEntries(statuses.map((status) => [status.key, status.present])));
-  };
-
   const saveAiConnectionSettings = async (next: AiConnectionSettings) => {
     aiConnectionSettingsRef.current = next;
     setAiConnectionSettings(next);
     await storeRef.current?.set("aiConnectionSettings", next);
     await storeRef.current?.save();
-  };
-
-  const saveConnectionSecret = async (key: string, value: string) => {
-    const status = await invoke<ConnectionSecretStatus>("set_connection_secret", { key, value });
-    setConnectionSecretPresence((current) => ({ ...current, [status.key]: status.present }));
-  };
-
-  const deleteConnectionSecret = async (key: string) => {
-    const status = await invoke<ConnectionSecretStatus>("delete_connection_secret", { key });
-    setConnectionSecretPresence((current) => ({ ...current, [status.key]: false }));
   };
 
   const removeCustomTerminalProfile = async (profileId: string) => {
