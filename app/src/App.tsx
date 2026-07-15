@@ -53,7 +53,6 @@ import {
   setProjectSessionStatus,
   setProjectSessionArchived,
   setProjectSessionPinned,
-  upsertProjectSession,
 } from "./workspaceState";
 import type { ActiveFileByWorkspace, ActiveSessionByProject, OpenProject, ProjectRailStatus, ProjectSession, ProjectSessionsByProject } from "./workspaceState";
 import {
@@ -238,13 +237,12 @@ import {
   appendToolChatMessage,
   applyChatRunEnvelope,
   chatProviderLabel,
-  emptyChatConversation,
 } from "./chatConversation";
-import type { ChatConversation, ChatConversationRecords, ChatMessage, ChatProvider } from "./chatConversation";
+import type { ChatConversationRecords, ChatMessage, ChatProvider } from "./chatConversation";
+import { createChatConversationActions } from "./chatConversationActions";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
 import { useWorkspaceTree } from "./useWorkspaceTree";
-import { createChatForkPlan } from "./chatForkPlan";
 import {
   deleteDurableChatConversation,
   deleteDurableProjectChats,
@@ -793,89 +791,43 @@ function App() {
   const browserPreviewSessionKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
   const composerHarnessSessionKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
-  const updateChatConversation = (
-    key: string,
-    updater: (conversation: ChatConversation) => ChatConversation,
-  ) => {
-    const previous = chatConversationsRef.current[key] ?? emptyChatConversation();
-    const updated = updater(previous);
-    const nextConversation = { ...updated, revision: previous.revision + 1 };
-    const next = { ...chatConversationsRef.current, [key]: nextConversation };
-    chatConversationsRef.current = next;
-    setChatConversations(next);
-    void saveDurableChatConversation(key, nextConversation).catch((error) => {
-      const message = `Could not save chat history: ${String(error)}`;
+  const chatConversationActions = createChatConversationActions({
+    createCheckpoint: createWorkspaceCheckpoint,
+    getActiveChatId: () => activeComposerHarnessKey,
+    getConversations: () => chatConversationsRef.current,
+    getForkContext: () => {
+      const projectPath = workspacePathRef.current;
+      const sourceSessionId = activeProjectSessionId(
+        activeSessionByProjectRef.current, projectSessionsRef.current, projectPath,
+      );
+      return {
+        browserUrl: browserUrlRef.current,
+        projectPath,
+        sessions: projectPath ? projectSessionsRef.current[projectPath] ?? [] : [],
+        sessionsByProject: projectSessionsRef.current,
+        sourceSessionId,
+      };
+    },
+    now: Date.now,
+    persistBrowserUrl: (root, sessionId, url) => persistBrowserPreviewUrl(root, sessionId, url),
+    persistSessions: (sessions) => persistProjectSessions(sessions, activeSessionByProjectRef.current),
+    refreshSearch: refreshChatSearch,
+    reportPersistenceError: (message) => {
       setLaunchError(message);
       void invoke("log_health_event", { message }).catch(() => {});
-    });
-    return nextConversation;
-  };
-
-  const toggleChatMessageBookmark = (message: ChatMessage) => {
-    const chatId = activeComposerHarnessKey;
-    if (!chatId) return;
-    const bookmarked = !message.bookmarked;
-    updateChatConversation(chatId, (conversation) => ({
-      ...conversation,
-      messages: conversation.messages.map((item) =>
-        item.id === message.id ? { ...item, bookmarked: bookmarked ? true : undefined } : item,
-      ),
-      updatedAt: Date.now(),
-    }));
-    refreshChatSearch();
-    setActionNotice(bookmarked ? "Bookmarked message" : "Removed bookmark");
-  };
-
-  const forkChatFromMessage = async (message: ChatMessage) => {
-    const projectPath = workspacePathRef.current;
-    const sourceSessionId = activeProjectSessionId(
-      activeSessionByProjectRef.current,
-      projectSessionsRef.current,
-      projectPath,
-    );
-    if (!projectPath || !sourceSessionId) return;
-    const sourceChatId = composerHarnessSessionKey(projectPath, sourceSessionId);
-    const sourceConversation = chatConversationsRef.current[sourceChatId] ?? emptyChatConversation();
-    if (sourceConversation.activeRunId) {
-      setActionNotice("Wait for this response to finish before forking the chat");
-      return;
-    }
-    const existing = projectSessionsRef.current[projectPath] ?? [];
-    const sourceSession = existing.find((session) => session.id === sourceSessionId);
-    let checkpointError: string | null = null;
-    const checkpoint = await createWorkspaceCheckpoint(
-      projectPath,
-      `Fork from ${sourceSession?.title ?? "chat"}`,
-    ).catch((error) => {
-      checkpointError = String(error);
-      return null;
-    });
-    const plan = createChatForkPlan({
-      checkpoint,
-      existingSessions: existing,
-      messageId: message.id,
-      now: Date.now(),
-      sourceChatId,
-      sourceConversation,
-      sourceSessionId,
-    });
-    if (!plan) {
-      setLaunchError("This message cannot be used to fork the chat.");
-      return;
-    }
-    const forkedChatId = composerHarnessSessionKey(projectPath, plan.session.id);
-    const nextSessions = upsertProjectSession(projectSessionsRef.current, projectPath, plan.session);
-    const nextConversations = { ...chatConversationsRef.current, [forkedChatId]: plan.forkedConversation };
-    await saveDurableChatConversation(forkedChatId, plan.forkedConversation);
-    chatConversationsRef.current = nextConversations;
-    setChatConversations(nextConversations);
-    await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
-    await persistBrowserPreviewUrl(projectPath, plan.session.id, browserUrlRef.current);
-    await switchProjectSession(projectPath, plan.session.id);
-    setActionNotice(checkpointError
-      ? `Forked chat without workspace checkpoint: ${checkpointError}`
-      : `Forked ${plan.sourceTitle}`);
-  };
+    },
+    saveConversation: saveDurableChatConversation,
+    setConversations: (conversations) => {
+      chatConversationsRef.current = conversations;
+      setChatConversations(conversations);
+    },
+    setError: setLaunchError,
+    setNotice: setActionNotice,
+    switchSession: (root, sessionId) => switchProjectSession(root, sessionId),
+  });
+  const updateChatConversation = chatConversationActions.updateConversation;
+  const toggleChatMessageBookmark = chatConversationActions.toggleBookmark;
+  const forkChatFromMessage = chatConversationActions.forkFromMessage;
 
   useChatRunEvents((envelope) => {
     updateChatConversation(envelope.chatId, (conversation) =>
