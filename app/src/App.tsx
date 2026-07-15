@@ -209,6 +209,7 @@ import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
+import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
 import { planPaneExit } from "./paneExitPlan";
 import {
   addBackgroundExit,
@@ -3612,75 +3613,33 @@ function App() {
     }
   };
 
-  const projectSessionContextMenuItems = (projectPath: string, session: ProjectSession): ContextMenuItem[] => [
-    menuItem("session.switch", "Switch to Chat", () => switchProjectSession(projectPath, session.id), {
-      icon: "file",
-      disabled: projectPath === workspacePath && session.id === activeSessionId,
-    }),
-    menuItem("session.rename", "Rename Chat", () => renameProjectSession(projectPath, session), { icon: "file" }),
-    menuItem("session.copy-name", "Copy Chat Name", async () => { await writeText(session.title); setActionNotice("Copied chat name"); }, { icon: "file" }),
-    ...(session.orchestration ? [
-      menuItem("session.stop-child", "Stop Child Run", () => stopChildChatRun(projectPath, session), {
-        icon: "stop",
-        danger: true,
-        disabled: !chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)]?.activeRunId,
-      }),
-      menuItem("session.return-child", session.orchestration.returnedAt ? "Result Returned" : "Return Result to Parent", () => returnChildResult(projectPath, session), {
-        icon: "send",
-        disabled: Boolean(session.orchestration.returnedAt)
-          || Boolean(chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)]?.activeRunId)
-          || !chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)]?.messages.some((message) => message.role === "assistant"),
-      }),
-      ...(session.orchestration.worktreePath ? [menuItem(
-        "session.remove-child-worktree",
-        "Remove Child Worktree",
-        () => removeChildWorktree(projectPath, session),
-        {
-          icon: "close",
-          danger: true,
-          disabled: Boolean(chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)]?.activeRunId),
-        },
-      )] : []),
-    ] : []),
-    menuItem("session.capture-checkpoint", session.checkpointId ? "Replace Workspace Checkpoint" : "Capture Workspace Checkpoint", () => captureSessionCheckpoint(projectPath, session), {
-      icon: "save",
-      disabled: projectPath !== workspacePath,
-    }),
-    ...(session.checkpointId ? [menuItem(
-      "session.restore-checkpoint",
-      "Restore Workspace Checkpoint",
-      () => restoreSessionCheckpoint(projectPath, session, session.checkpointId as string),
-      { icon: "reload", disabled: projectPath !== workspacePath },
-    )] : []),
-    ...(session.recoveryCheckpointId ? [menuItem(
-      "session.restore-recovery",
-      "Restore Recovery Checkpoint",
-      () => restoreSessionCheckpoint(projectPath, session, session.recoveryCheckpointId as string),
-      { icon: "reload", disabled: projectPath !== workspacePath },
-    )] : []),
-    menuItem(
-      "session.pin",
-      session.pinnedAt ? "Unpin Chat" : "Pin Chat",
-      () => pinProjectSession(projectPath, session, !session.pinnedAt),
-      { icon: "pin" },
-    ),
-    menuItem(
-      "session.archive",
-      session.archived ? "Unarchive Chat" : "Archive Chat",
-      () => archiveProjectSession(projectPath, session, !session.archived),
-      {
-        icon: "close",
-        disabled:
-          !session.archived &&
-          (projectSessionsRef.current[projectPath] ?? []).filter((s) => !s.archived).length <= 1,
+  const projectSessionContextMenuItems = (projectPath: string, session: ProjectSession): ContextMenuItem[] => {
+    const sessions = projectSessionsRef.current[projectPath] ?? [];
+    const conversation = chatConversationsRef.current[composerHarnessSessionKey(projectPath, session.id)];
+    return buildProjectSessionContextMenuItems({
+      activeProjectSessionCount: sessions.filter((s) => !s.archived).length,
+      hasAssistantMessage: Boolean(conversation?.messages.some((message) => message.role === "assistant")),
+      hasRunningChildRun: Boolean(conversation?.activeRunId),
+      isActiveSession: projectPath === workspacePath && session.id === activeSessionId,
+      isWorkspaceProject: projectPath === workspacePath,
+      projectSessionCount: sessions.length,
+      session,
+      actions: {
+        archive: () => archiveProjectSession(projectPath, session, !session.archived),
+        captureCheckpoint: () => captureSessionCheckpoint(projectPath, session),
+        copyName: async () => { await writeText(session.title); setActionNotice("Copied chat name"); },
+        delete: () => deleteProjectSession(projectPath, session),
+        pin: () => pinProjectSession(projectPath, session, !session.pinnedAt),
+        removeChildWorktree: () => removeChildWorktree(projectPath, session),
+        rename: () => renameProjectSession(projectPath, session),
+        restoreCheckpoint: () => session.checkpointId ? restoreSessionCheckpoint(projectPath, session, session.checkpointId) : undefined,
+        restoreRecoveryCheckpoint: () => session.recoveryCheckpointId ? restoreSessionCheckpoint(projectPath, session, session.recoveryCheckpointId) : undefined,
+        returnChildResult: () => returnChildResult(projectPath, session),
+        stopChildRun: () => stopChildChatRun(projectPath, session),
+        switchChat: () => switchProjectSession(projectPath, session.id),
       },
-    ),
-    menuItem("session.delete", "Delete Chat", () => deleteProjectSession(projectPath, session), {
-      icon: "error",
-      danger: true,
-      disabled: (projectSessionsRef.current[projectPath] ?? []).length <= 1,
-    }),
-  ];
+    });
+  };
 
   const archiveProjectSession = async (projectPath: string, session: ProjectSession, archived: boolean) => {
     const next = setProjectSessionArchived(projectSessionsRef.current, projectPath, session.id, archived);
