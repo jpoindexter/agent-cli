@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -34,6 +34,7 @@ import {
 } from "./browserPreview";
 import { useBrowserPreviewState } from "./useBrowserPreviewState";
 import { useFilesRailHeight } from "./useFilesRailHeight";
+import { useComposerLocalState } from "./useComposerLocalState";
 import type { BrowserPreviewRecords } from "./browserPreview";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
@@ -100,11 +101,10 @@ import type { ComposerAppCommand } from "./agentComposer";
 import { runComposerAppCommand as runComposerAppCommandWithContext } from "./composerAppCommands";
 import {
   createComposerAttachment,
-  defaultComposerHarnessState,
   removeComposerAttachment,
   upsertComposerAttachment,
 } from "./composerHarness";
-import type { ComposerAttachment, ComposerHarnessRecords, ComposerHarnessState, ComposerReasoningEffort } from "./composerHarness";
+import type { ComposerAttachment, ComposerHarnessRecords, ComposerReasoningEffort } from "./composerHarness";
 import { prepareChatContext } from "./chatContext";
 import { submitComposerDraft as submitComposerDraftWithContext } from "./composerSubmission";
 import {
@@ -509,16 +509,8 @@ function App() {
   const [transcriptsOpen, setTranscriptsOpen] = useState(false);
   const [openTranscriptId, setOpenTranscriptId] = useState<string | null>(null);
   const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
-  const [composerDraft, setComposerDraft] = useState("");
   const [composerSending, setComposerSending] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
-  const [composerHistory, setComposerHistory] = useState<string[]>([]);
-  const [composerHistoryIndex, setComposerHistoryIndex] = useState<number | null>(null);
-  const composerLocalStateRef = useRef<{ key: string | null; draft: string; history: string[] }>({
-    key: null,
-    draft: "",
-    history: [],
-  });
   const [agentActivityEvents, setAgentActivityEvents] = useState<AgentActivityEvent[]>([]);
   const agentActivityFilter: AgentActivityLogFilter = "all";
   const {
@@ -588,11 +580,6 @@ function App() {
     [chatConversations, chatSearchResults, commandPalette.query, projectSessions],
   );
   const quickOpen = useQuickOpen(searchableFiles, () => setContextMenu(null));
-  const composerMentionQuery = composerDraft.match(/(?:^|\s)@([^\s@]*)$/)?.[1] ?? null;
-  const composerMentionResults = useMemo(
-    () => composerMentionQuery == null ? [] : filterWorkspaceFiles(searchableFiles, composerMentionQuery, 8),
-    [composerMentionQuery, searchableFiles],
-  );
   const {
     activeAgentProfileSetting, activeApprovalSetting, activeBrowserSetting,
     activeChatConversation, activeComposerHarness, activeComposerHarnessKey,
@@ -602,6 +589,22 @@ function App() {
     launchProfileId: launchProfile.id, projectSessions, resolveLaunchProfile,
     scopedSettings, workspacePath,
   });
+  const {
+    draft: composerDraft, flush: flushActiveComposerLocalState,
+    history: composerHistory, historyIndex: composerHistoryIndex,
+    setHistoryIndex: setComposerHistoryIndex, setLocalState: setComposerLocalState,
+    updateHarness: updateActiveComposerHarness,
+  } = useComposerLocalState({
+    activeHarness: activeComposerHarness, activeKey: activeComposerHarnessKey,
+    getDefaultProfileId: () => launchProfileRef.current.id,
+    getRecords: () => composerHarnessBySessionRef.current,
+    persistRecords: (records) => persistComposerHarnessRecords(records),
+  });
+  const composerMentionQuery = composerDraft.match(/(?:^|\s)@([^\s@]*)$/)?.[1] ?? null;
+  const composerMentionResults = useMemo(
+    () => composerMentionQuery == null ? [] : filterWorkspaceFiles(searchableFiles, composerMentionQuery, 8),
+    [composerMentionQuery, searchableFiles],
+  );
   const agentApprovalMode: AgentApprovalMode = activeComposerHarness.approvalMode;
   const {
     activeAgentSessionDescriptor, activeTerminalPane,
@@ -1090,63 +1093,6 @@ function App() {
     if (next === scopedSettingsRef.current) return false;
     await persistScopedSettings(next);
     return true;
-  };
-
-  const setComposerLocalState = (key: string | null, draft: string, history: string[]) => {
-    composerLocalStateRef.current = { key, draft, history };
-    setComposerDraft(draft);
-    setComposerHistory(history);
-  };
-
-  const flushActiveComposerLocalState = async () => {
-    const local = composerLocalStateRef.current;
-    if (!local.key) return;
-    const previous = composerHarnessBySessionRef.current[local.key] ?? defaultComposerHarnessState(launchProfileRef.current.id);
-    if (previous.draft === local.draft && previous.history === local.history) return;
-    await persistComposerHarnessRecords({
-      ...composerHarnessBySessionRef.current,
-      [local.key]: { ...previous, draft: local.draft, history: local.history },
-    });
-  };
-
-  useLayoutEffect(() => {
-    composerLocalStateRef.current = {
-      key: activeComposerHarnessKey,
-      draft: activeComposerHarness.draft,
-      history: activeComposerHarness.history,
-    };
-    setComposerDraft(activeComposerHarness.draft);
-    setComposerHistory(activeComposerHarness.history);
-    setComposerHistoryIndex(null);
-  }, [activeComposerHarness.draft, activeComposerHarness.history, activeComposerHarnessKey]);
-
-  useEffect(() => {
-    const key = activeComposerHarnessKey;
-    const local = composerLocalStateRef.current;
-    if (!key || local.key !== key || local.draft !== composerDraft || local.history !== composerHistory) return;
-    const timer = window.setTimeout(() => {
-      const current = composerLocalStateRef.current;
-      if (current.key !== key || current.draft !== composerDraft || current.history !== composerHistory) return;
-      const previous = composerHarnessBySessionRef.current[key] ?? defaultComposerHarnessState(launchProfileRef.current.id);
-      if (previous.draft === composerDraft && previous.history === composerHistory) return;
-      void persistComposerHarnessRecords({
-        ...composerHarnessBySessionRef.current,
-        [key]: { ...previous, draft: composerDraft, history: composerHistory },
-      });
-    }, 180);
-    return () => window.clearTimeout(timer);
-  }, [activeComposerHarnessKey, composerDraft, composerHistory]);
-
-  const updateActiveComposerHarness = async (updater: (state: ComposerHarnessState) => ComposerHarnessState) => {
-    const key = activeComposerHarnessKey;
-    if (!key) return null;
-    const stored = composerHarnessBySessionRef.current[key] ?? defaultComposerHarnessState(launchProfileRef.current.id);
-    const local = composerLocalStateRef.current;
-    const previous = local.key === key ? { ...stored, draft: local.draft, history: local.history } : stored;
-    const nextState = updater(previous);
-    const next = { ...composerHarnessBySessionRef.current, [key]: nextState };
-    await persistComposerHarnessRecords(next);
-    return nextState;
   };
 
   const logComposerHarnessEvent = (
