@@ -221,6 +221,7 @@ import { planCheckpointRestore } from "./checkpointRestorePlan";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
 import { buildWorkspaceOpenPane } from "./workspaceOpenPanes";
+import { prepareWorkspaceOpenSession, workspaceOpenLayoutForRoot } from "./workspaceOpenSession";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -1737,17 +1738,15 @@ function App() {
     const previousActivePaneId = activeTerminalPaneIdRef.current;
     setFocusedTerminalPane(null);
     try {
-      const preparedSessions = ensureProjectSessions(projectSessionsRef.current, path, Date.now());
-      const requestedSessionId = activeProjectSessionId(activeSessionByProjectRef.current, preparedSessions, path);
-      const preparedActiveSessions = requestedSessionId
-        ? setActiveProjectSession(activeSessionByProjectRef.current, path, requestedSessionId)
-        : activeSessionByProjectRef.current;
+      const { activeSessions: preparedActiveSessions, fallbackLayout,
+        layout: initialLayout, sessionId: requestedSessionId, sessions: preparedSessions } = prepareWorkspaceOpenSession({
+        activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
+        paneLayouts: paneLayoutsBySessionRef.current, path, now: Date.now(),
+        defaultProfileId: defaultTerminalLaunchProfile().id, savedLabel: savedPaneLabelForSlot(path, 0),
+      });
       projectSessionsRef.current = preparedSessions;
       activeSessionByProjectRef.current = preparedActiveSessions;
       const existingPanes = terminalPanesForSession(path, requestedSessionId);
-      const requestedLayout = requestedSessionId ? paneLayoutsBySessionRef.current[sessionSnapshotKey(path, requestedSessionId)] : null;
-      const fallbackLayout = [{ slot: 0, profileId: defaultTerminalLaunchProfile().id, label: savedPaneLabelForSlot(path, 0, requestedSessionId) }];
-      const initialLayout = requestedLayout && requestedLayout.length > 0 ? requestedLayout : fallbackLayout;
       let root = path;
       let nextProjectPanes = existingPanes;
       let nextActivePaneId = activePaneForSession(path, requestedSessionId, existingPanes);
@@ -1758,9 +1757,7 @@ function App() {
         const firstProfile = resolveLaunchProfile(firstLayout.profileId);
         const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, path) });
         root = result.root;
-        const layout = requestedSessionId
-          ? paneLayoutsBySessionRef.current[sessionSnapshotKey(root, requestedSessionId)] ?? initialLayout
-          : initialLayout;
+        const layout = workspaceOpenLayoutForRoot({ initialLayout, paneLayouts: paneLayoutsBySessionRef.current, root, sessionId: requestedSessionId });
         const [firstRecord, ...restRecords] = layout.length > 0 ? layout : fallbackLayout;
         const pane = buildWorkspaceOpenPane({
           createdAt: Date.now(),
