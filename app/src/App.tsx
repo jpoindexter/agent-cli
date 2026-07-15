@@ -273,6 +273,11 @@ import { requestProjectClose } from "./projectCloseRequest";
 import { planProjectSessionSwitch } from "./projectSessionSwitch";
 import { planProjectSessionCreate } from "./projectSessionCreate";
 import { planSessionScopedRecordRemoval } from "./sessionScopedRecords";
+import {
+  buildCreatedPaneActivity,
+  buildCreatedWorktreePaneActivity,
+  buildRestartedPaneActivity,
+} from "./paneActivityRecords";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -2056,41 +2061,15 @@ function App() {
     projectSessionId: string,
     label: string,
   ) => {
-    if (!restarted) return;
-    recordAgentActivity(
-      buildAgentSessionHandleDescriptor({
-        pane: restarted,
-        projectId,
-        projectSessionId,
-        label,
-        approvalMode: agentApprovalMode,
-      }),
-      {
-        kind: "process",
-        label: "Restarted process",
-        detail: launchProfileCommandLine(previousPane.profile),
-        target: previousPane.cwd,
-        status: "running",
-      },
-    );
+    const record = buildRestartedPaneActivity({
+      approvalMode: agentApprovalMode, label, previousPane, projectId, projectSessionId, restarted,
+    });
+    if (record) recordAgentActivity(record.handle, record.event);
   };
 
   const recordCreatedPaneActivity = (pane: ManagedTerminalPane, projectId: string, projectSessionId: string) => {
-    recordAgentActivity(
-      buildAgentSessionHandleDescriptor({
-        pane,
-        projectId,
-        projectSessionId,
-        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot),
-        approvalMode: agentApprovalMode,
-      }),
-      {
-        kind: "process",
-        label: "Created pane",
-        detail: pane.profile.label,
-        status: "running",
-      },
-    );
+    const record = buildCreatedPaneActivity({ approvalMode: agentApprovalMode, pane, projectId, projectSessionId });
+    recordAgentActivity(record.handle, record.event);
   };
 
   const recordCreatedWorktreePaneActivity = (
@@ -2099,16 +2078,8 @@ function App() {
     projectSessionId: string,
     branch: string,
   ) => {
-    recordAgentActivity(
-      buildAgentSessionHandleDescriptor({
-        pane,
-        projectId,
-        projectSessionId,
-        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot),
-        approvalMode: agentApprovalMode,
-      }),
-      { kind: "process", label: "Created worktree pane", detail: branch, status: "running" },
-    );
+    const record = buildCreatedWorktreePaneActivity({ approvalMode: agentApprovalMode, branch, pane, projectId, projectSessionId });
+    recordAgentActivity(record.handle, record.event);
   };
 
   const finalizeCreatedTerminalPane = async (
