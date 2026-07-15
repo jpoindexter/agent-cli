@@ -114,6 +114,7 @@ import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescripto
 import { executeAgentPaneInterrupt } from "./agentPaneInterrupt";
 import { executeTerminalPaneClose } from "./terminalPaneCloseWorkflow";
 import { executeTerminalPaneCreate } from "./terminalPaneCreateWorkflow";
+import { executeTerminalPaneFocus } from "./terminalPaneFocusWorkflow";
 import { AppIcon } from "./icons";
 import type { AppIconName } from "./icons";
 import {
@@ -1739,35 +1740,33 @@ function App() {
   const setComposerRuntime = composerSettingsActions.setRuntime;
   const setComposerReasoningEffort = composerSettingsActions.setReasoningEffort;
 
-  const focusTerminalPane = async (paneId: number, requestedBy: "user" | "agent" = "user") => {
-    if (paneId === activeTerminalPaneIdRef.current) return;
-    const pane = terminalPanesRef.current.find((item) => item.id === paneId);
-    const audit = await gateAppAction(createAppAction({
-      kind: "focus-pane",
-      label: "Focus pane",
-      target: pane ? terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot) : `pane:${paneId}`,
-      risk: "low",
+  const focusTerminalPane = (paneId: number, requestedBy: "user" | "agent" = "user") =>
+    executeTerminalPaneFocus({
+      activePaneId: () => activeTerminalPaneIdRef.current,
+      currentPanes: () => terminalPanesRef.current,
+      focusPane: (id) => invoke("focus_pane", { paneId: id }),
+      gateAction: async (action) => (await gateAppAction(action)).decision,
+      paneId,
+      recordActivePane: (id) => {
+        const root = workspacePathRef.current;
+        const sessionId = activeSessionForProject(root);
+        const contextKey = paneContextKey(root, sessionId);
+        if (contextKey) activeTerminalPaneByContextRef.current = {
+          ...activeTerminalPaneByContextRef.current, [contextKey]: id,
+        };
+      },
       requestedBy,
-    }));
-    if (audit.decision !== "approved") return;
-    try {
-      await invoke("focus_pane", { paneId });
-      const root = workspacePathRef.current;
-      const sessionId = activeSessionForProject(root);
-      const contextKey = paneContextKey(root, sessionId);
-      if (contextKey) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: paneId };
-      setFocusedTerminalPane(paneId);
-      const cached = terminalSnapshotsRef.current[paneId];
-      if (cached) {
+      restoreSnapshot: (id) => {
+        const cached = terminalSnapshotsRef.current[id];
+        if (!cached) return;
         latest.current = cached;
         selection.current = null;
         requestTerminalPaintRef.current();
-      }
-      setTimeout(sendTerminalResize, 0);
-    } catch (err) {
-      setLaunchError(String(err));
-    }
-  };
+      },
+      scheduleResize: () => setTimeout(sendTerminalResize, 0),
+      setError: setLaunchError,
+      setFocusedPane: setFocusedTerminalPane,
+    });
 
   const createTerminalPane = async (
     profile: LaunchProfile = terminalLaunchProfileRef.current,
