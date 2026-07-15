@@ -12,6 +12,7 @@ const assert = (condition, message) => {
 
 const appCss = `${read("app/src/App.css")}\n${read("app/src/composerModelPicker.css")}\n${read("app/src/responsive-shell.css")}\n${read("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
+const appTitlebar = read("app/src/AppTitlebar.tsx");
 const composerModelPicker = read("app/src/ComposerModelPicker.tsx");
 const composerModelPopover = read("app/src/ComposerModelPopover.tsx");
 const composerReasoningPicker = read("app/src/ComposerReasoningPicker.tsx");
@@ -97,6 +98,7 @@ const rejectedWarmAccent = /#e07a4f|#251b16|#d9a079|var\(--orange\)|orange accen
 const checkedText = [
   ["app/src/App.css", appCss],
   ["app/src/App.tsx", appTsx],
+  ["app/src/AppTitlebar.tsx", appTitlebar],
   ["app/src/ChatThreadSurface.tsx", chatThreadSurface],
   ["app/src/ToolDockMenu.tsx", toolDockMenu],
   ["demo/keelhouse-chrome-demo.html", demo],
@@ -177,7 +179,7 @@ assert(appTsx.includes("Project chats"), "Projects drawer must present independe
 assert(appTsx.includes('aria-label="Agent conversation"'), "Center surface must remain the agent conversation");
 assert(!appTsx.includes('className="agent-surface-switcher"'), "The agent header must not duplicate the titlebar chat/terminal toggle");
 assert(!appTsx.includes('className="terminal-titlebar"'), "The conversation must not duplicate the active chat title below the native titlebar");
-assert((appTsx.match(/<span>\{activeSessionTitle\}<\/span>/g) ?? []).length === 1, "The active chat title must render exactly once in application chrome");
+assert((appTitlebar.match(/<span>\{props\.activeSessionTitle\}<\/span>/g) ?? []).length === 1, "The active chat title must render exactly once in application chrome");
 assert(!editorQaFixture.includes("agent-surface-switcher"), "Editor QA fixture must not retain the removed chat/terminal switcher");
 assert(!editorQaFixture.includes("agent-chat-terminal-hint"), "Editor QA fixture must not retain duplicate raw-terminal access");
 assert(!editorQaFixture.includes("agent-activity-log__filter"), "Editor QA fixture must not retain the removed activity filter toolbar");
@@ -196,16 +198,16 @@ assert(/\.titlebar-branch\s*\{[^}]*overflow:\s*hidden;[^}]*max-width:\s*30ch;[^}
 assert(/\.titlebar-search span\s*\{[^}]*overflow:\s*hidden;[^}]*text-overflow:\s*ellipsis;[^}]*white-space:\s*nowrap;/s.test(appCss), "Titlebar search must stay on one line when adjacent panels are visible");
 assert(tauriBackend.includes('format!("@ {sha}")'), "Detached HEAD must show a useful short SHA in the titlebar");
 assert(appCss.includes("grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);"), "Workbench must reserve the approved resizable bottom utility tray");
-assert(appTsx.includes('aria-label="Reset interface"'), "Threads header must expose an always-visible interface reset");
+assert(appTitlebar.includes('aria-label="Reset interface"'), "Threads header must expose an always-visible interface reset");
 assert(appTsx.includes("window.setTimeout(() => setCrashNotice(null), 12_000)"), "Crash recovery feedback must clear without permanently covering the workbench");
-assert(appTsx.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
-assert((appTsx.match(/aria-label="Toggle Threads"/g) ?? []).length === 1, "Threads must have one visible chrome toggle");
-assert(!appTsx.includes('aria-label="Hide Threads"'), "Threads header must not duplicate the titlebar toggle");
-assert(appTsx.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
-assert(!appTsx.includes('aria-label="Thread settings"'), "Titlebar must not duplicate the global settings action");
-assert(appTsx.includes('aria-label="Open settings and more"'), "Titlebar must keep one global settings and more entry point");
-assert(appTsx.includes('aria-label="Toggle Terminal tray"'), "Titlebar must expose the approved bottom terminal tray toggle");
-assert(appTsx.includes('onClick={() => void toggleRawTerminal()}'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
+assert(appTitlebar.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
+assert((appTitlebar.match(/aria-label="Toggle Threads"/g) ?? []).length === 1, "Threads must have one visible chrome toggle");
+assert(!`${appTsx}\n${appTitlebar}`.includes('aria-label="Hide Threads"'), "Threads header must not duplicate the titlebar toggle");
+assert(appTitlebar.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
+assert(!`${appTsx}\n${appTitlebar}`.includes('aria-label="Thread settings"'), "Titlebar must not duplicate the global settings action");
+assert(appTitlebar.includes('aria-label="Open settings and more"'), "Titlebar must keep one global settings and more entry point");
+assert(appTitlebar.includes('aria-label="Toggle Terminal tray"'), "Titlebar must expose the approved bottom terminal tray toggle");
+assert(appTsx.includes('onToggleTerminal={() => void toggleRawTerminal()}'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
 assert(icons.includes("panelBottom: PanelBottom"), "Bottom terminal tray toggle must use the standard PanelBottom icon");
 assert(icons.includes("panelLeft: PanelLeft"), "Threads toggle must use the standard PanelLeft icon");
 assert(icons.includes("panelRight: PanelRight"), "Tools toggle must use the standard PanelRight icon");
@@ -229,7 +231,7 @@ assert(toolDockMenu.includes("Hide tools"), "Tool dock menu must expose a direct
 assert(toolDockMenu.includes('aria-label="Tools and dock position"'), "Tool dock controls must use one compact, labelled menu");
 assert(commandPaletteController.includes("const [open, setOpen] = useState(false)"), "App chrome must expose a command palette state");
 assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command palette must show its shortcut label");
-assert(appTsx.includes('<div className="titlebar-identity"') && appTsx.includes('title="New chat"') && appTsx.includes('title="Search tasks or run a command"') && appTsx.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
+assert(appTitlebar.includes('<div className="titlebar-identity"') && appTitlebar.includes('title="New chat"') && appTitlebar.includes('title="Search tasks or run a command"') && appTitlebar.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
 assert(!appTsx.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
 assert(appTsx.includes("filterCommandPaletteCommands(commandPaletteCommands, commandPalette.query, commandPaletteSources)"), "Command palette source settings must filter live results");
 assert(appTsx.includes('source: "chats"') && appTsx.includes('source: "files"') && appTsx.includes('source: "tabs"') && appTsx.includes('source: "worktrees"'), "Command palette must include real chat, file, tab, and worktree sources");

@@ -14,6 +14,7 @@ import { Tree } from "react-arborist";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
+import { AppTitlebar } from "./AppTitlebar";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -287,11 +288,9 @@ import {
   restoreWorkspaceCheckpoint,
 } from "./workspaceCheckpoints";
 import { mergeChatDiscoveryResults, type ChatSearchResult, type ChatSearchViewResult } from "./chatDiscovery";
-import { ToolDockMenu } from "./ToolDockMenu";
 import { ToolTrayTabs } from "./ToolTrayTabs";
 import { FileTreeRow } from "./FileTreeRow";
 import type { FileTreeNode, FileTreeResponse } from "./fileTreeTypes";
-import { toggleNativeWindowMaximize } from "./windowControls";
 import { StatusBar } from "./StatusBar";
 import {
   buildOrchestrationPreview,
@@ -5556,104 +5555,28 @@ function App() {
 
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${renderedWorkbenchLayout === "hidden" ? "app-shell--tools-hidden" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
-      <header className="app-titlebar" aria-label="Application chrome" data-tauri-drag-region>
-        <div className="titlebar-identity" data-tauri-drag-region>
-          <button
-            className={`titlebar-action titlebar-leading-action ${!sideDrawerCollapsed ? "titlebar-action--active" : ""}`}
-            type="button"
-            title="Toggle Threads"
-            aria-label="Toggle Threads"
-            aria-pressed={!sideDrawerCollapsed}
-            onClick={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
-          >
-            <AppIcon name="panelLeft" />
-          </button>
-          <button
-            className="titlebar-action"
-            type="button"
-            title="New chat"
-            aria-label="New chat"
-            disabled={!workspacePath}
-            onClick={() => workspacePath && void createProjectSession(workspacePath)}
-          >
-            <AppIcon name="newChat" />
-          </button>
-          <button
-            className="titlebar-action"
-            type="button"
-            title="Search tasks or run a command"
-            aria-label="Search tasks or run a command"
-            onClick={commandPalette.openDialog}
-          >
-            <AppIcon name="search" />
-          </button>
-          <button className="titlebar-action" type="button" title="Reset interface" aria-label="Reset interface" onClick={resetInterface}>
-            <AppIcon name="reload" />
-          </button>
-        </div>
-        <div className="titlebar-splitter" aria-hidden="true" />
-        <div className="titlebar-agent-context" aria-label="Active chat" data-tauri-drag-region>
-          <div
-            className="titlebar-workspace"
-            data-tauri-drag-region
-            onDoubleClick={(event) => {
-              event.preventDefault();
-              void toggleNativeWindowMaximize();
-            }}
-            title="Current chat. Double-click to maximize or restore the window."
-          >
-            <AppIcon name="file" />
-            <span>{activeSessionTitle}</span>
-          </div>
-          <div className="titlebar-chat-actions" aria-label="Chat actions">
-            <button className="titlebar-action" type="button" title="Open workspace externally" aria-label="Open workspace externally" disabled={!workspacePath} onClick={() => workspacePath && void openPath(workspacePath)}>
-              <AppIcon name="openExternal" />
-            </button>
-            <ToolDockMenu
-              layout={renderedWorkbenchLayout}
-              toolMode={toolTrayMode}
-              onLayoutChange={setWorkbenchLayout}
-              onToolModeChange={setToolTrayMode}
-            />
-          </div>
-        </div>
-        <div className="titlebar-splitter" aria-hidden="true" />
-        <div className="titlebar-actions">
-          <div className="titlebar-panel-toggles" aria-label="Toggle panels">
-            <button
-              className={`titlebar-action ${agentSurfaceMode === "terminal" ? "titlebar-action--active" : ""}`}
-              type="button"
-              title={agentSurfaceMode === "terminal" ? "Hide Terminal" : "Show Terminal"}
-              aria-label="Toggle Terminal tray"
-              aria-pressed={agentSurfaceMode === "terminal"}
-              onClick={() => void toggleRawTerminal()}
-            >
-              <AppIcon name="panelBottom" />
-            </button>
-            <button
-              className={`titlebar-action ${renderedWorkbenchLayout !== "hidden" ? "titlebar-action--active" : ""}`}
-              type="button"
-              title="Toggle Tools"
-              aria-label="Toggle Tools"
-              aria-pressed={renderedWorkbenchLayout !== "hidden"}
-              onClick={() => setWorkbenchLayout(
-                renderedWorkbenchLayout === "hidden"
-                  ? workbenchLayout === "hidden" ? "right" : workbenchLayout
-                  : "hidden",
-              )}
-            >
-              <AppIcon name="panelRight" />
-            </button>
-          </div>
-          <span className={`titlebar-pill titlebar-pill--${primarySurfaceState}`} title={`${primarySurfaceLabel} · ${primarySurfaceStatusLabel}`}>
-            <AppIcon name={paneStateIconName(primarySurfaceState)} />
-            <span>{primarySurfaceLabel}</span>
-          </span>
-          <button className="titlebar-action" type="button" title="More" aria-label="Open settings and more" onClick={() => setSettingsOpen(true)}>
-            <AppIcon name="more" />
-          </button>
-        </div>
-      </header>
+      <AppTitlebar
+        activeSessionTitle={activeSessionTitle}
+        hasWorkspace={Boolean(workspacePath)}
+        layout={renderedWorkbenchLayout}
+        primarySurfaceLabel={primarySurfaceLabel}
+        primarySurfaceState={primarySurfaceState}
+        primarySurfaceStatusLabel={primarySurfaceStatusLabel}
+        sideDrawerOpen={!sideDrawerCollapsed}
+        terminalOpen={agentSurfaceMode === "terminal"}
+        toolMode={toolTrayMode}
+        toolsOpen={renderedWorkbenchLayout !== "hidden"}
+        onCreateChat={() => { if (workspacePath) void createProjectSession(workspacePath); }}
+        onLayoutChange={setWorkbenchLayout}
+        onOpenCommandPalette={commandPalette.openDialog}
+        onOpenSettings={() => setSettingsOpen(true)}
+        onOpenWorkspace={() => { if (workspacePath) void openPath(workspacePath); }}
+        onResetInterface={resetInterface}
+        onToggleSideDrawer={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
+        onToggleTerminal={() => void toggleRawTerminal()}
+        onToggleTools={() => setWorkbenchLayout(renderedWorkbenchLayout === "hidden" ? workbenchLayout === "hidden" ? "right" : workbenchLayout : "hidden")}
+        onToolModeChange={setToolTrayMode}
+      />
       <aside className={`file-rail ${sideDrawerCollapsed ? "file-rail--collapsed" : ""}`} aria-label={`${sideDrawerMode === "projects" ? "Project threads" : drawerActiveTitle} drawer`}>
         <div className="drawer-toolbar">
           <span>{sideDrawerMode === "projects" ? "Threads" : drawerActiveTitle}</span>
