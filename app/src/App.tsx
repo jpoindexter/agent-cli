@@ -208,7 +208,7 @@ import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { executeProjectSessionDelete } from "./projectSessionDelete";
 import { executeTerminalPaneRestart } from "./terminalPaneRestartWorkflow";
 import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
-import { planCheckpointRestore } from "./checkpointRestorePlan";
+import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
 import { openWorkspaceTerminalPanes } from "./workspaceOpenPanes";
@@ -258,10 +258,7 @@ import {
 } from "./chatStore";
 import { useChatSearch } from "./useChatSearch";
 import {
-  checkpointPreviewMessage,
   createWorkspaceCheckpoint,
-  previewWorkspaceCheckpoint,
-  restoreWorkspaceCheckpoint,
 } from "./workspaceCheckpoints";
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
@@ -2691,93 +2688,34 @@ function App() {
     await persistProjectSessions(next, activeSessionByProjectRef.current);
   };
 
-  const captureSessionCheckpoint = async (projectPath: string, session: ProjectSession) => {
-    if (projectPath !== workspacePathRef.current) {
-      setLaunchError("Switch to this project before capturing its workspace checkpoint.");
-      return;
-    }
-    try {
-      const checkpoint = await createWorkspaceCheckpoint(projectPath, `Chat checkpoint: ${session.title}`);
-      await updateProjectSessionMetadata(projectPath, session.id, {
-        checkpointId: checkpoint.id,
-        checkpointCreatedAt: checkpoint.createdAt,
-      });
-      setActionNotice(`Captured ${checkpoint.fileCount} changed file${checkpoint.fileCount === 1 ? "" : "s"}`);
-    } catch (error) {
-      setLaunchError(`Could not capture workspace checkpoint: ${String(error)}`);
-    }
-  };
-
-  const reconcileRestoredActiveFile = async (
-    activeFile: FileTreeNode | null,
-    action: "write" | "delete" | null,
-  ) => {
-    if (!activeFile || !action) return;
-    if (action === "delete") {
-      setSelectedFile(null);
-      setEditorText("");
-      setSavedEditorText("");
-      return;
-    }
-    await openEditorFileDirect(activeFile);
-  };
-
-  const approveCheckpointRestore = async (projectPath: string, fileCount: number) => gateAppAction(createAppAction({
-    kind: "restore-checkpoint",
-    label: "Restore workspace checkpoint",
-    target: `${fileCount} files in ${projectPath}`,
-    risk: "high",
-    requestedBy: "user",
-    undoHint: "Restore the recovery checkpoint created before this operation.",
-  }));
-
-  const restoreSessionCheckpoint = async (
-    projectPath: string,
-    session: ProjectSession,
-    checkpointId: string,
-  ) => {
-    if (projectPath !== workspacePathRef.current) {
-      setLaunchError("Switch to this project before restoring its workspace checkpoint.");
-      return;
-    }
-    try {
-      const preview = await previewWorkspaceCheckpoint(projectPath, checkpointId);
-      if (preview.files.length === 0) {
-        setActionNotice("Workspace already matches this checkpoint");
-        return;
-      }
-      const plan = planCheckpointRestore({
-        dirtyTabPaths,
-        preview,
-        projectPath,
-        selectedFilePath: selectedFileRef.current?.path ?? null,
-      });
-      if (plan.protectedDirtyPath) {
-        setLaunchError(`Save or discard the dirty editor buffer before restore: ${plan.protectedDirtyPath}`);
-        return;
-      }
-      if (!await confirmDialog(checkpointPreviewMessage(preview))) return;
-      const audit = await approveCheckpointRestore(projectPath, preview.files.length);
-      if (audit.decision !== "approved") return;
-      const result = await restoreWorkspaceCheckpoint(
-        projectPath,
-        checkpointId,
-        preview.previewToken,
-        plan.relativeDirtyPaths,
-      );
-      for (const path of plan.affectedAbsolutePaths) delete editorBuffersRef.current[path];
+  const {
+    capture: captureSessionCheckpoint,
+    restore: restoreSessionCheckpoint,
+  } = createSessionCheckpointActions({
+    gateAction: (action) => gateAppAction(action),
+    getDirtyTabPaths: () => dirtyTabPaths,
+    getSelectedFile: () => selectedFileRef.current,
+    getWorkspacePath: () => workspacePathRef.current,
+    onClearBuffers: (paths) => {
+      for (const path of paths) delete editorBuffersRef.current[path];
       setEditorBufferRevision((revision) => revision + 1);
-      await reconcileRestoredActiveFile(selectedFileRef.current, plan.activeFileAction);
-      await updateProjectSessionMetadata(projectPath, session.id, {
-        recoveryCheckpointId: result.recoveryCheckpointId,
-      });
-      refreshFileTree();
-      await refreshGitStatus();
-      setActionNotice(`Restored ${result.restoredFiles} files; recovery checkpoint is ready`);
-    } catch (error) {
-      setLaunchError(`Could not restore workspace checkpoint: ${String(error)}`);
-    }
-  };
+    },
+    onMetadata: updateProjectSessionMetadata,
+    onReconcile: async (activeFile, action) => {
+      if (!activeFile || !action) return;
+      if (action === "delete") {
+        setSelectedFile(null);
+        setEditorText("");
+        setSavedEditorText("");
+        return;
+      }
+      await openEditorFileDirect(activeFile);
+    },
+    refreshFiles: refreshFileTree,
+    refreshGit: () => refreshGitStatus(),
+    setError: setLaunchError,
+    setNotice: setActionNotice,
+  });
 
   const projectSessionContextMenuItems = (projectPath: string, session: ProjectSession): ContextMenuItem[] => {
     const sessions = projectSessionsRef.current[projectPath] ?? [];
