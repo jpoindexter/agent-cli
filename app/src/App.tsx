@@ -26,6 +26,7 @@ import { FilesSideDrawer } from "./FilesSideDrawer";
 import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
 import { EditorChrome } from "./EditorChrome";
+import { EditorDiffView } from "./EditorDiffView";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -198,7 +199,6 @@ import type { TerminalPaneState } from "./terminalPane";
 import {
   decorateFileTreeWithGitStatus,
   absolutePathForGitFile,
-  gitStatusLabel,
 } from "./fileGitStatus";
 import type { GitStatusFile } from "./fileGitStatus";
 import { parseUnifiedDiff } from "./diffView";
@@ -5767,54 +5767,14 @@ function App() {
             onUnstageDiff={() => { if (diffReview) void runGitFileAction("unstage", diffReview.file); }}
           />
           {diffReview || diffReviewLoading || diffReviewError ? (
-            <div className="diff-view" aria-label="Diff review" onContextMenu={(event) => openContextMenu(event, diffContextMenuItems())}>
-              {diffReviewLoading ? <div className="diff-empty">Loading diff…</div> : null}
-              {diffReviewError ? (
-                <div className="editor-error editor-error--inline">
-                  <div className="editor-error__title">Diff failed</div>
-                  <div className="editor-error__body">{diffReviewError}</div>
-                </div>
-              ) : null}
-              {diffReview && !diffReviewLoading ? (
-                <>
-                  <div className="diff-view__header">
-                    <div>
-                      <div className="diff-view__title">{diffReview.response.path}</div>
-                      <div className="diff-view__meta">{gitStatusLabel(diffReview.file)} · {diffReview.response.source}</div>
-                    </div>
-                    <div className="diff-view__summary" aria-label="Diff summary">
-                      <span className="diff-view__additions">+{diffReview.parsed.additions}</span>
-                      <span className="diff-view__deletions">-{diffReview.parsed.deletions}</span>
-                    </div>
-                  </div>
-                  {diffReview.parsed.lines.length === 0 ? (
-                    <div className="diff-empty">No diff for this file.</div>
-                  ) : (
-                    <div className="diff-view__body" role="table" aria-label={`Diff for ${diffReview.response.path}`}>
-                      {diffReview.parsed.lines.map((line) => (
-                        <div className={`diff-line diff-line--${line.kind}`} role="row" key={line.id}>
-                          <span className="diff-line__number" aria-label={line.oldLine == null ? "No old line" : `Old line ${line.oldLine}`}>{line.oldLine ?? ""}</span>
-                          <span className="diff-line__number" aria-label={line.newLine == null ? "No new line" : `New line ${line.newLine}`}>{line.newLine ?? ""}</span>
-                          {line.kind === "hunk" ? (
-                            <button
-                              className="diff-line__jump"
-                              type="button"
-                              disabled={!diffReviewCanOpenFile || line.hunkNewStart == null}
-                              title={diffReviewCanOpenFile ? "Open file at hunk" : "File cannot be opened from this diff"}
-                              onClick={() => void openDiffFile(line.hunkNewStart)}
-                            >
-                              {line.text}
-                            </button>
-                          ) : (
-                            <code className="diff-line__code">{line.text || " "}</code>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : null}
-            </div>
+            <EditorDiffView
+              canOpenFile={diffReviewCanOpenFile}
+              error={diffReviewError}
+              loading={diffReviewLoading}
+              review={diffReview}
+              onContextMenu={(event) => openContextMenu(event, diffContextMenuItems())}
+              onOpenFile={(line) => void openDiffFile(line)}
+            />
           ) : selectedFile ? (
             <div
               className="editor-code"
