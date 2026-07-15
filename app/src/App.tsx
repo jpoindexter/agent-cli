@@ -214,6 +214,7 @@ import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { replaceRestartedPane } from "./terminalPaneRestart";
 import { planCheckpointRestore } from "./checkpointRestorePlan";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
+import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -2179,6 +2180,39 @@ function App() {
     );
   };
 
+  const recordCreatedWorktreePaneActivity = (
+    pane: ManagedTerminalPane,
+    projectId: string,
+    projectSessionId: string,
+    branch: string,
+  ) => {
+    recordAgentActivity(
+      buildAgentSessionHandleDescriptor({
+        pane,
+        projectId,
+        projectSessionId,
+        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot),
+        approvalMode: agentApprovalMode,
+      }),
+      { kind: "process", label: "Created worktree pane", detail: branch, status: "running" },
+    );
+  };
+
+  const finalizeCreatedTerminalPane = async (
+    root: string,
+    nextPanes: ManagedTerminalPane[],
+    profile: LaunchProfile,
+  ) => {
+    terminalLaunchProfileRef.current = profile;
+    setTerminalLaunchProfile(profile);
+    await storeRef.current?.set("terminalLaunchProfile", profile);
+    await storeRef.current?.save();
+    setLaunchError(null);
+    setTimeout(sendTerminalResize, 0);
+    await updateOpenProjectStatus(root, projectStatusForRoot(root));
+    await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
+  };
+
   const deleteProjectSession = async (projectPath: string, session: ProjectSession) => {
     const plan = planProjectSessionDelete({
       activeSessionByProject: activeSessionByProjectRef.current,
@@ -2785,14 +2819,7 @@ function App() {
       const nextPanes = [...existingPanes, pane];
       setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
       recordCreatedPaneActivity(pane, root, sessionId);
-      terminalLaunchProfileRef.current = profile;
-      setTerminalLaunchProfile(profile);
-      await storeRef.current?.set("terminalLaunchProfile", profile);
-      await storeRef.current?.save();
-      setLaunchError(null);
-      setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, projectStatusForRoot(root));
-      await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
+      await finalizeCreatedTerminalPane(root, nextPanes, profile);
       return true;
     } catch (err) {
       setLaunchError(String(err));
@@ -2916,52 +2943,26 @@ function App() {
       const worktree = await invoke<WorktreeResponse>("create_project_worktree", { root, label });
       const result = await invoke<OpenPaneResponse>("create_pane", { path: worktree.path, profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) });
       const existingPanes = terminalPanesForSession(root, sessionId);
-      const slot = existingPanes.length;
-      const pane: ManagedTerminalPane = {
-        id: result.paneId,
-        profile,
-        cwd: worktree.path,
-        slot,
-        label: normalizeTerminalPaneLabel(label),
-        state: "running",
-        exitCode: null,
+      const { pane, record } = buildCreatedWorktreePaneState({
+        branch: worktree.branch,
         createdAt: Date.now(),
-      };
+        existingPanes,
+        label,
+        paneId: result.paneId,
+        path: worktree.path,
+        profile,
+        projectRoot: root,
+      });
       const nextPanes = [...existingPanes, pane];
       setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
       setWorktrees((current) => {
-        const next = addWorktree(current, {
-          paneId: String(result.paneId),
-          projectRoot: root,
-          path: worktree.path,
-          branch: worktree.branch,
-          label: normalizeTerminalPaneLabel(label) ?? label,
-          createdAt: Date.now(),
-        });
+        const next = addWorktree(current, record);
         void storeRef.current?.set("worktrees", next);
         void storeRef.current?.save();
         return next;
       });
-      if (sessionId) {
-        recordAgentActivity(
-          buildAgentSessionHandleDescriptor({
-            pane,
-            projectId: root,
-            projectSessionId: sessionId,
-            label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, slot),
-            approvalMode: agentApprovalMode,
-          }),
-          { kind: "process", label: "Created worktree pane", detail: worktree.branch, status: "running" },
-        );
-      }
-      terminalLaunchProfileRef.current = profile;
-      setTerminalLaunchProfile(profile);
-      await storeRef.current?.set("terminalLaunchProfile", profile);
-      await storeRef.current?.save();
-      setLaunchError(null);
-      setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, projectStatusForRoot(root));
-      await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
+      recordCreatedWorktreePaneActivity(pane, root, sessionId, worktree.branch);
+      await finalizeCreatedTerminalPane(root, nextPanes, profile);
     } catch (err) {
       setLaunchError(String(err));
       await updateOpenProjectStatus(root, "attention");
