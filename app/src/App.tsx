@@ -226,6 +226,7 @@ import { deriveActiveChatState } from "./activeChatState";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
 import { executeWorkspaceOpenFailure } from "./workspaceOpenFailureWorkflow";
+import { executeWorkspaceOpenDirect } from "./workspaceOpenDirectWorkflow";
 import { resolveWorkspaceOpenTarget } from "./workspaceOpenTarget";
 import { executeWorkspaceOpenSuccess } from "./workspaceOpenSuccessWorkflow";
 import {
@@ -1231,29 +1232,26 @@ function App() {
     });
   };
 
-  const openWorkspaceDirect = async (
+  const openWorkspaceDirect = (
     path: string,
     profileOverride: LaunchProfile = launchProfileRef.current,
     options: { captureCurrentSession?: boolean } = {},
-  ) => {
-    const previousRoot = workspacePathRef.current;
-    await flushActiveComposerLocalState();
-    if (options.captureCurrentSession !== false) captureCurrentSessionSnapshot();
-    const store = storeRef.current;
-    const profile = profileOverride;
-    const previousPanes = terminalPanesRef.current;
-    const previousActivePaneId = activeTerminalPaneIdRef.current;
-    setFocusedTerminalPane(null);
-    try {
-      const opened = await prepareAndOpenWorkspaceTarget(path);
-      applyOpenedWorkspaceTarget(opened);
-      await completeOpenedWorkspace(opened, profile, previousRoot, store);
-      return true;
-    } catch (err) {
-      await handleWorkspaceOpenError(err, path, previousPanes, previousActivePaneId, store);
-      return false;
-    }
-  };
+  ) => executeWorkspaceOpenDirect({
+    applyOpened: applyOpenedWorkspaceTarget,
+    captureCurrentSession: captureCurrentSessionSnapshot,
+    captureCurrentSessionBeforeOpen: options.captureCurrentSession,
+    completeOpened: completeOpenedWorkspace,
+    flushComposer: flushActiveComposerLocalState,
+    getPreviousActivePaneId: () => activeTerminalPaneIdRef.current,
+    getPreviousPanes: () => terminalPanesRef.current,
+    getPreviousRoot: () => workspacePathRef.current,
+    getStore: () => storeRef.current,
+    handleError: handleWorkspaceOpenError,
+    openTarget: prepareAndOpenWorkspaceTarget,
+    path,
+    profile: profileOverride,
+    setFocusedPane: setFocusedTerminalPane,
+  });
 
   const requestOpenWorkspace = async (path: string) => {
     setBackgroundExits((exits) => clearBackgroundExitsForProject(exits, path));
