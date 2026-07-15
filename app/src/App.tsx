@@ -23,6 +23,7 @@ import { BrowserToolsDrawer } from "./BrowserToolsDrawer";
 import { SourceControlDrawer } from "./SourceControlDrawer";
 import { QuickSettingsDrawer } from "./QuickSettingsDrawer";
 import { FilesSideDrawer } from "./FilesSideDrawer";
+import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -57,14 +58,11 @@ import {
   removeOpenProject,
   rememberActiveFile,
   removeRecentProject,
-  sessionRecencyLabel,
   setActiveProjectSession,
   setOpenProjectStatus,
   setProjectSessionStatus,
   setProjectSessionArchived,
   setProjectSessionPinned,
-  activeSessionsForRail,
-  archivedSessionCount,
   upsertOpenProject,
   upsertProjectSession,
 } from "./workspaceState";
@@ -249,7 +247,6 @@ import { imeCaretStyle, shouldDeferTerminalKeyToIme } from "./terminalIme";
 import { buildSnapshot, createRenderPerfState, recordFrameTime, recordIpcPayloadBytes } from "./renderPerf";
 import {
   addBackgroundExit,
-  backgroundExitCountForProject,
   clearBackgroundExitsForProject,
   isBackgroundExit,
   notificationBody,
@@ -3554,18 +3551,6 @@ function App() {
     return "exited";
   };
 
-  const projectRailStatusLabel = (status: ProjectRailStatus) => {
-    if (status === "running") return "Running";
-    if (status === "attention") return "Needs attention";
-    return "Idle";
-  };
-
-  const projectRailStatusIcon = (status: ProjectRailStatus): AppIconName => {
-    if (status === "running") return "loading";
-    if (status === "attention") return "error";
-    return "idle";
-  };
-
   const projectSessionsFor = (projectPath: string) => projectSessions[projectPath] ?? [];
 
   const projectSessionStatus = (projectPath: string, session: ProjectSession): ProjectRailStatus => {
@@ -5597,121 +5582,25 @@ function App() {
             </button>
           ))}
         </div>
-        {!sideDrawerCollapsed && sideDrawerMode === "projects" && visibleOpenProjects.length > 0 ? (
-          <nav className="project-rail" aria-label="Open projects">
-            <div className="project-rail__heading">Today</div>
-            {visibleOpenProjects.map((project) => {
-              const status = projectRailStatus(project);
-              const active = project.path === workspacePath;
-              const allSessions = projectSessionsFor(project.path);
-              const sessions = activeSessionsForRail(allSessions, showArchivedSessions);
-              const archivedCount = archivedSessionCount(allSessions);
-              const sessionsExpanded = expandedSessionProjects[project.path] ?? false;
-              const visibleSessions = sessionsExpanded ? sessions : sessions.slice(0, 3);
-              const hiddenSessionCount = Math.max(0, sessions.length - visibleSessions.length);
-              return (
-                <div className="project-group" key={project.path}>
-                  <button
-                    className={`project-row ${active ? "project-row--active" : ""} project-row--${status}`}
-                    type="button"
-                    aria-current={active ? "page" : undefined}
-                    aria-label={`${active ? "Active project" : "Switch to project"} ${basename(project.path)}, ${projectRailStatusLabel(status)}`}
-                    title={project.path}
-                    onPointerDown={(event) => {
-                      if (event.button !== 0) return;
-                      event.preventDefault();
-                      if (!active) void requestOpenWorkspace(project.path);
-                    }}
-                    onContextMenu={(event) => openContextMenu(event, projectRailContextMenuItems(project))}
-                  >
-                    <span className="project-row__copy">
-                      <span className="project-row__name">
-                        <AppIcon name="workspace" />
-                        <span>{basename(project.path)}</span>
-                      </span>
-                    </span>
-                    {backgroundExitCountForProject(backgroundExits, project.path) > 0 && project.path !== workspacePath ? (
-                      <span className="project-row__badge" aria-label={`${backgroundExitCountForProject(backgroundExits, project.path)} background exits`}>
-                        {backgroundExitCountForProject(backgroundExits, project.path)}
-                      </span>
-                    ) : (
-                      <span className="project-row__state" aria-hidden="true" />
-                    )}
-                  </button>
-                  <div className="session-list" aria-label={`${basename(project.path)} chats`}>
-                    {visibleSessions.map((session) => {
-                      const sessionStatus = projectSessionStatus(project.path, session);
-                      const sessionActive = active && session.id === activeSessionId;
-                      return (
-                        <button
-                          className={`session-row ${sessionActive ? "session-row--active" : ""} session-row--${sessionStatus}`}
-                          type="button"
-                          key={session.id}
-                          aria-current={sessionActive ? "page" : undefined}
-                          aria-label={`${sessionActive ? "Active chat" : "Switch to chat"} ${session.title}, ${projectRailStatusLabel(sessionStatus)}`}
-                          title={`${session.title} · ${projectRailStatusLabel(sessionStatus)}${session.orchestration ? ` · Child ${session.orchestration.index + 1} of ${session.orchestration.count} · ${chatProviderLabel(session.orchestration.provider)} · ${session.orchestration.worktreeMode === "isolated" ? "isolated worktree" : "shared project"}${session.orchestration.returnedAt ? " · result returned" : ""}` : ""}${session.checkpointId ? " · Workspace checkpoint saved" : ""}`}
-                          onPointerDown={(event) => {
-                            if (event.button !== 0) return;
-                            event.preventDefault();
-                            if (!sessionActive) void switchProjectSession(project.path, session.id);
-                          }}
-                          onContextMenu={(event) => openContextMenu(event, projectSessionContextMenuItems(project.path, session))}
-                        >
-                          <span className="session-row__copy">
-                            {session.orchestration
-                              ? <AppIcon className="session-row__fork" name="agent" label={`Child ${session.orchestration.index + 1} of ${session.orchestration.count}`} />
-                              : session.parentSessionId
-                                ? <AppIcon className="session-row__fork" name="git" label="Forked chat" />
-                                : null}
-                            <span>{session.title}</span>
-                          </span>
-                          <span className="session-row__state">
-                            {session.pinnedAt ? <AppIcon className="session-row__pin" name="pin" label="Pinned chat" /> : null}
-                            <span className="session-row__time">{sessionRecencyLabel(session.updatedAt)}</span>
-                            <AppIcon name={projectRailStatusIcon(sessionStatus)} />
-                          </span>
-                        </button>
-                      );
-                    })}
-                    {sessions.length > 3 ? (
-                      <button
-                        className="session-row session-row--more"
-                        type="button"
-                        aria-expanded={sessionsExpanded}
-                        aria-label={sessionsExpanded ? `Show fewer chats in ${basename(project.path)}` : `Show ${hiddenSessionCount} more chats in ${basename(project.path)}`}
-                        onPointerDown={(event) => {
-                          if (event.button !== 0) return;
-                          event.preventDefault();
-                          setExpandedSessionProjects((expanded) => ({
-                            ...expanded,
-                            [project.path]: !sessionsExpanded,
-                          }));
-                        }}
-                      >
-                        <span>{sessionsExpanded ? "Show fewer" : `Show more (${hiddenSessionCount})`}</span>
-                      </button>
-                    ) : null}
-                    {archivedCount > 0 ? (
-                      <button
-                        className="session-row session-row--more"
-                        type="button"
-                        aria-pressed={showArchivedSessions}
-                        onPointerDown={(event) => {
-                          if (event.button !== 0) return;
-                          event.preventDefault();
-                          setShowArchivedSessions((show) => !show);
-                        }}
-                      >
-                        <span>{showArchivedSessions ? "Hide archived" : `Show archived (${archivedCount})`}</span>
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </nav>
+        {!sideDrawerCollapsed && sideDrawerMode === "projects" ? (
+          <ProjectThreadsDrawer
+            activeProjectPath={workspacePath}
+            activeSessionId={activeSessionId}
+            backgroundExits={backgroundExits}
+            expandedProjects={expandedSessionProjects}
+            projects={visibleOpenProjects}
+            sessionsByProject={projectSessions}
+            showArchived={showArchivedSessions}
+            projectStatus={projectRailStatus}
+            sessionStatus={projectSessionStatus}
+            onProjectContextMenu={(event, project) => openContextMenu(event, projectRailContextMenuItems(project))}
+            onSelectProject={(path) => void requestOpenWorkspace(path)}
+            onSelectSession={(path, sessionId) => void switchProjectSession(path, sessionId)}
+            onSessionContextMenu={(event, path, session) => openContextMenu(event, projectSessionContextMenuItems(path, session))}
+            onToggleArchived={() => setShowArchivedSessions((show) => !show)}
+            onToggleExpanded={(path) => setExpandedSessionProjects((expanded) => ({ ...expanded, [path]: !(expanded[path] ?? false) }))}
+          />
         ) : null}
-        {!sideDrawerCollapsed && sideDrawerMode === "projects" && visibleOpenProjects.length === 0 ? <div className="rail-status">Open a folder to start a chat</div> : null}
         {!sideDrawerCollapsed && sideDrawerMode === "git" ? (
           <SourceControlDrawer
             error={gitStatusError}

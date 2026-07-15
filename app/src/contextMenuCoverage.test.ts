@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const projectThreadsDrawer = readFileSync(new URL("./ProjectThreadsDrawer.tsx", import.meta.url), "utf8");
 const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
 
 describe("production context-menu coverage", () => {
@@ -16,7 +17,7 @@ describe("production context-menu coverage", () => {
   it("wires project, session, file, editor, Git, diff, browser, terminal, and composer surfaces", () => {
     for (const marker of [
       "projectRailContextMenuItems(project)",
-      "projectSessionContextMenuItems(project.path, session)",
+      "projectSessionContextMenuItems(path, session)",
       "file-tree-context-menu",
       "editorTabContextMenuItems(tab)",
       "editorContextMenuItems()",
@@ -31,6 +32,8 @@ describe("production context-menu coverage", () => {
     ]) {
       expect(app).toContain(marker);
     }
+    expect(projectThreadsDrawer).toContain("props.onProjectContextMenu(event, project)");
+    expect(projectThreadsDrawer).toContain("onContextMenu(event, path, session)");
   });
 
   it("opens a Keelhouse add menu from the composer plus control", () => {
