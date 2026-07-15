@@ -25,6 +25,7 @@ import { QuickSettingsDrawer } from "./QuickSettingsDrawer";
 import { FilesSideDrawer } from "./FilesSideDrawer";
 import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
+import { EditorChrome } from "./EditorChrome";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -5732,186 +5733,39 @@ function App() {
             }
           }}
         >
-          <div className="editor-tabbar">
-            <div className="editor-tabs" role="tablist" aria-label="Open files">
-              {diffReview || diffReviewLoading || diffReviewError ? (
-                <div className="editor-tab editor-tab--active editor-tab--diff" title={diffReview?.response.path ?? diffReviewError ?? "Loading diff"}>
-                  <button
-                    className="editor-tab__activate"
-                    type="button"
-                    role="tab"
-                    aria-selected="true"
-                    aria-label={diffReview ? `Diff for ${diffReview.response.path}` : "Diff review"}
-                  >
-                    <span className="editor-tab__name">{diffReview ? `Diff: ${basename(diffReview.response.path)}` : "Diff review"}</span>
-                  </button>
-                  <button
-                    className="editor-tab__close"
-                    type="button"
-                    aria-label="Close diff review"
-                    title="Close diff review"
-                    onPointerDown={(event) => {
-                      if (event.button !== 0) return;
-                      event.preventDefault();
-                      event.stopPropagation();
-                      closeDiffReview();
-                    }}
-                  >
-                    <AppIcon name="close" />
-                  </button>
-                </div>
-              ) : null}
-              {editorTabs.length > 0 ? (
-                editorTabs.map((tab) => {
-                  const active = selectedFile?.path === tab.path;
-                  const dirty = tabIsDirty(tab.path);
-                  return (
-                    <div
-                      className={`editor-tab ${dirty ? "editor-tab--dirty" : ""} ${active ? "editor-tab--active" : ""}`}
-                      title={tab.path}
-                      key={tab.path}
-                      onContextMenu={(event) => openContextMenu(event, editorTabContextMenuItems(tab))}
-                    >
-                      <button
-                        className="editor-tab__activate"
-                        type="button"
-                        role="tab"
-                        aria-selected={active}
-                        aria-label={`${tab.name}${dirty ? ", unsaved changes" : ""}`}
-                        onPointerDown={(event) => {
-                          if (event.button !== 0) return;
-                          event.preventDefault();
-                          void requestOpenEditorFile(tab, { focusEditor: true });
-                        }}
-                      >
-                        <span className="editor-tab__name">{tab.name}</span>
-                        {dirty ? <span className="editor-tab__dirty" aria-label="Unsaved changes" /> : null}
-                      </button>
-                      <button
-                        className="editor-tab__close"
-                        type="button"
-                        aria-label={`Close ${tab.name}`}
-                        title={shortcutTitle("editor.close-tab", `Close ${tab.name}`)}
-                        onPointerDown={(event) => {
-                          if (event.button !== 0) return;
-                          event.preventDefault();
-                          event.stopPropagation();
-                          void closeEditorTab(tab);
-                        }}
-                      >
-                        <AppIcon name="close" />
-                      </button>
-                    </div>
-                  );
-                })
-              ) : !diffReview && !diffReviewLoading && !diffReviewError ? (
-                <div className="editor-tab editor-tab--empty">
-                  <span className="editor-tab__name">No file open</span>
-                </div>
-              ) : null}
-            </div>
-            {diffReview || diffReviewLoading || diffReviewError ? (
-              <div className="editor-actions editor-actions--diff">
-                <button
-                  className="editor-command"
-                  type="button"
-                  disabled={!diffReview || !diffReviewCanStage || diffReviewLoading}
-                  title="Stage file"
-                  onClick={() => diffReview && void runGitFileAction("stage", diffReview.file)}
-                >
-                  <AppIcon name="git" />
-                  <span>Stage</span>
-                </button>
-                <button
-                  className="editor-command"
-                  type="button"
-                  disabled={!diffReview || !diffReviewCanUnstage || diffReviewLoading}
-                  title="Unstage file"
-                  onClick={() => diffReview && void runGitFileAction("unstage", diffReview.file)}
-                >
-                  <AppIcon name="git" />
-                  <span>Unstage</span>
-                </button>
-                <button
-                  className="editor-command editor-command--danger"
-                  type="button"
-                  disabled={!diffReview || !diffReviewCanDiscard || diffReviewLoading}
-                  title="Discard unstaged changes"
-                  onClick={() => diffReview && void runGitFileAction("discard", diffReview.file)}
-                >
-                  <AppIcon name="error" />
-                  <span>Discard</span>
-                </button>
-                <button
-                  className="editor-command"
-                  type="button"
-                  disabled={!diffReview || diffReview.response.diff.length === 0}
-                  title="Copy shown diff"
-                  onClick={() => void copyShownDiff()}
-                >
-                  <AppIcon name="copy" />
-                  <span>Copy</span>
-                </button>
-                <button
-                  className="editor-command"
-                  type="button"
-                  disabled={!diffReview || !diffReviewCanOpenFile}
-                  title={diffReviewCanOpenFile ? "Open file" : "File cannot be opened from this diff"}
-                  onClick={() => void openDiffFile()}
-                >
-                  <AppIcon name="file" />
-                </button>
-                <button className="editor-command" type="button" title="Close diff review" onClick={closeDiffReview}>
-                  <AppIcon name="close" />
-                </button>
-              </div>
-            ) : selectedFile ? (
-              <div className="editor-actions">
-                {activeFileMissing ? <span className="editor-badge editor-badge--warn">Missing from tree</span> : null}
-                <span className="editor-meta">{editorLanguage}</span>
-                <span className="editor-meta">{formatBytes(editorBytes)}</span>
-                <span className="editor-meta">
-                  Ln {editorCursor.line}, Col {editorCursor.column}
-                </span>
-                <span className="editor-status" title={selectedFile.path}>
-                  {editorLoading ? "Loading" : editorDirty ? "Unsaved" : "Saved"}
-                </span>
-                <button className="editor-command" type="button" disabled={editorLoading} title={shortcutTitle("editor.find", "Find and replace")} onClick={openEditorSearch}>
-                  <AppIcon name="search" />
-                  <span>Find</span>
-                </button>
-                <button
-                  className="editor-save"
-                  type="button"
-                  disabled={!editorDirty || editorSaving || editorLoading}
-                  title={shortcutTitle("editor.save", "Save")}
-                  onClick={() => void saveEditorFile()}
-                >
-                  <AppIcon name={editorSaving ? "loading" : "save"} />
-                  <span>{editorSaving ? "Saving" : "Save"}</span>
-                </button>
-              </div>
-            ) : null}
-          </div>
-          {diffReview ? (
-            <nav className="editor-pathbar" aria-label="Diff file path" title={diffReview.absolutePath}>
-              {diffBreadcrumbs.map((part, index) => (
-                <span className="editor-crumb" key={`${part}-${index}`}>
-                  {index > 0 ? <span className="editor-crumb__separator">/</span> : null}
-                  <span className={index === diffBreadcrumbs.length - 1 ? "editor-crumb__current" : ""}>{part}</span>
-                </span>
-              ))}
-            </nav>
-          ) : selectedFile ? (
-            <nav className="editor-pathbar" aria-label="Active file path" title={selectedFile.path}>
-              {editorBreadcrumbs.map((part, index) => (
-                <span className="editor-crumb" key={`${part}-${index}`}>
-                  {index > 0 ? <span className="editor-crumb__separator">/</span> : null}
-                  <span className={index === editorBreadcrumbs.length - 1 ? "editor-crumb__current" : ""}>{part}</span>
-                </span>
-              ))}
-            </nav>
-          ) : null}
+          <EditorChrome
+            activeFileMissing={activeFileMissing}
+            breadcrumbs={diffReview ? diffBreadcrumbs : editorBreadcrumbs}
+            canCopyDiff={Boolean(diffReview?.response.diff.length)}
+            canDiscardDiff={diffReviewCanDiscard}
+            canOpenDiff={diffReviewCanOpenFile}
+            canStageDiff={diffReviewCanStage}
+            canUnstageDiff={diffReviewCanUnstage}
+            cursorColumn={editorCursor.column}
+            cursorLine={editorCursor.line}
+            diff={diffReview ? { absolutePath: diffReview.absolutePath, hasDiff: Boolean(diffReview.response.diff.length), path: diffReview.response.path } : null}
+            diffError={diffReviewError}
+            diffLoading={diffReviewLoading}
+            editorBytesLabel={formatBytes(editorBytes)}
+            editorDirty={editorDirty}
+            editorLanguage={editorLanguage}
+            editorLoading={editorLoading}
+            editorSaving={editorSaving}
+            selectedFile={selectedFile}
+            tabs={editorTabs}
+            tabIsDirty={tabIsDirty}
+            onCloseDiff={closeDiffReview}
+            onCloseTab={(tab) => void closeEditorTab(tab)}
+            onCopyDiff={() => void copyShownDiff()}
+            onDiscardDiff={() => { if (diffReview) void runGitFileAction("discard", diffReview.file); }}
+            onFind={openEditorSearch}
+            onOpenDiff={() => void openDiffFile()}
+            onSave={() => void saveEditorFile()}
+            onSelectTab={(tab) => void requestOpenEditorFile(tab, { focusEditor: true })}
+            onStageDiff={() => { if (diffReview) void runGitFileAction("stage", diffReview.file); }}
+            onTabContextMenu={(event, tab) => openContextMenu(event, editorTabContextMenuItems(tab))}
+            onUnstageDiff={() => { if (diffReview) void runGitFileAction("unstage", diffReview.file); }}
+          />
           {diffReview || diffReviewLoading || diffReviewError ? (
             <div className="diff-view" aria-label="Diff review" onContextMenu={(event) => openContextMenu(event, diffContextMenuItems())}>
               {diffReviewLoading ? <div className="diff-empty">Loading diff…</div> : null}
