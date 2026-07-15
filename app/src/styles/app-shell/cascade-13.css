@@ -1,0 +1,238 @@
+
+
+.editor-error__body,
+.editor-error__recovery {
+  overflow-wrap: anywhere;
+}
+
+.editor-error__recovery {
+  margin-top: 5px;
+  color: #ffabb8;
+}
+
+.editor-error__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.editor-error__button {
+  border-color: #7f3c49;
+  background: #32121a;
+  color: #ffe4e9;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 20px;
+  padding: 0 8px;
+}
+
+.editor-empty {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  place-content: center;
+  gap: 4px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.editor-empty-title {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.editor-empty-path {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.browser-toolbar {
+  display: grid;
+  min-width: 0;
+  height: 34px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-strong);
+  padding: 0 10px;
+}
+
+.browser-toolbar__nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.browser-detected-banner {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--color-accent-muted);
+  color: var(--color-text);
+  font-size: 11px;
+  padding: 6px 10px;
+}
+
+.browser-detected-banner span {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.browser-detected-banner button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--color-accent-border);
+  cursor: default;
+  font: inherit;
+  font-weight: 750;
+  padding: 0;
+}
+
+.browser-detected-banner button:hover {
+  color: var(--steel-cyan-400);
+}
+
+.browser-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  padding: 0 7px;
+}
+
+.browser-button .app-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.browser-button--go {
+  min-width: 44px;
+}
+
+.browser-address {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: var(--color-app-bg);
+  color: var(--color-text-subtle);
+  padding: 0 4px 0 8px;
+}
+
+.browser-address__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.browser-address input {
+  width: 100%;
+  min-width: 0;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-strong);
+  font: 12px var(--font-ui);
+  outline: none;
+}
+
+.browser-frame-wrap {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  background: #0d0d0d;
+}
+
+.browser-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.browser-error {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  max-width: min(420px, calc(100% - 16px));
+  padding: 6px 8px;
+  border: 1px solid var(--color-danger-border);
+  border-radius: 6px;
+  background: var(--color-danger-bg);
+  color: #ffd6dd;
+  font-size: 12px;
+  box-shadow: var(--shadow-overlay);
+}
+
+@container (max-width: 280px) {
+  .browser-toolbar {
+    gap: 4px;
+    padding: 0 6px;
+  }
+
+  .browser-toolbar__nav {
+    gap: 1px;
+  }
+
+  .browser-button {
+    min-width: 24px;
+    padding: 0 5px;
+  }
+
+  .browser-button--go {
+    display: none;
+  }
+
+  .browser-address {
+    gap: 5px;
+    padding-left: 6px;
+  }
+}
+
+.terminal-panel {
+  grid-area: terminal;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-app-bg);
+}
+
+.terminal-titlebar {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--gray-800);
+  color: var(--color-text);
+}
+
+.terminal-profile {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}

@@ -1,0 +1,240 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Primitive tokens */
+  --gray-950: #101010;
+  --gray-925: #151515;
+  --gray-900: #181818;
+  --gray-875: #1b1b1b;
+  --gray-850: #202020;
+  --gray-825: #222222;
+  --gray-800: #282828;
+  --gray-775: #2c3440;
+  --gray-750: #333333;
+  --gray-700: #3c3c3c;
+  --gray-600: #6d6d6d;
+  --gray-500: #858585;
+  --gray-400: #929292;
+  --gray-300: #cfcfcf;
+  --gray-200: #dcdcdc;
+  --gray-100: #f0f0f0;
+  --steel-cyan-400: #9bd9e3;
+  --steel-cyan-500: #67c3d1;
+  --steel-cyan-900: #162c33;
+  --blue-500: var(--steel-cyan-500);
+  --blue-700: var(--steel-cyan-900);
+  --green-500: #8fd9a3;
+  --green-800: #315f42;
+  --yellow-500: #e2c06d;
+  --yellow-800: #594b24;
+  --red-400: #ffb5c0;
+  --red-800: #7f2d3b;
+  --red-950: #210c12;
+
+  /* Semantic tokens */
+  --color-app-bg: var(--gray-950);
+  --color-rail-bg: var(--gray-900);
+  --color-surface: var(--gray-875);
+  --color-surface-raised: var(--gray-825);
+  --color-surface-overlay: #202026;
+  --color-border: var(--gray-750);
+  --color-border-strong: var(--gray-700);
+  --color-row-hover: #22242d;
+  --color-row-active: #252732;
+  --color-focus-ring: var(--blue-500);
+  --color-text: #d7d7d7;
+  --color-text-strong: var(--gray-100);
+  --color-text-muted: var(--gray-400);
+  /* #8f92a1 instead of gray-500 #707383: subtle text carries essential
+     small labels (recency stamps, section headers); 4.7:1+ on every
+     chrome surface incl. row-active. Ratios: docs/chrome-polish-system.md */
+  --color-text-subtle: #8f92a1;
+  --color-text-disabled: var(--gray-600);
+  --color-warning: var(--yellow-500);
+  --color-warning-border: var(--yellow-800);
+  --color-success: var(--green-500);
+  --color-success-border: var(--green-800);
+  --color-danger: var(--red-400);
+  --color-danger-border: var(--red-800);
+  --color-danger-bg: var(--red-950);
+  --color-info-active: rgba(103, 195, 209, 0.11);
+  --color-accent-border: var(--blue-500);
+  --color-accent-muted: rgba(103, 195, 209, 0.16);
+
+  /* Component tokens */
+  --control-bg: var(--gray-800);
+  --control-bg-hover: #323232;
+  --control-border: var(--color-border-strong);
+  --toolbar-control-bg-hover: rgba(255, 255, 255, 0.055);
+  --toolbar-control-active-bg: rgba(103, 195, 209, 0.1);
+  --control-radius: 4px;
+  --surface-card: #191a22;
+  --surface-card-border: #30323d;
+  --card-radius: 6px;
+  --shadow-card: 0 12px 34px rgba(0, 0, 0, 0.18);
+  --shadow-composer: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --run-column-pad: 64px;
+  /* Chat and composer share one readable axis. Tool trays can use the rest. */
+  --run-column-width: min(56rem, calc(100% - var(--run-column-pad)));
+  --control-height-sm: 22px;
+  --control-height-md: 28px;
+  --menu-bg: #1b1c23;
+  --menu-item-hover: #252732;
+  --surface-strip: #1d1e25;
+  --overlay-border: #343642;
+  --field-bg: #15161d;
+  --titlebar-top: #22232b;
+  --badge-radius: 4px;
+  --shadow-overlay: 0 18px 40px rgba(0, 0, 0, 0.42);
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --motion-fast: 120ms ease;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-app-bg);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+}
+
+.app-shell {
+  --chrome-bg: var(--color-app-bg);
+  --panel-bg: var(--color-surface);
+  --panel-strong: var(--color-surface-raised);
+  --panel-border: var(--color-border);
+  --text-muted: var(--color-text-muted);
+  --text-strong: var(--color-text-strong);
+  --side-drawer-width: 300px;
+
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(52px, var(--side-drawer-width)) minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr) 20px;
+  grid-template-areas:
+    "titlebar titlebar"
+    "sidebar main"
+    "status status";
+  width: 100%;
+  height: 100%;
+  background: var(--chrome-bg);
+}
+
+.app-titlebar {
+  grid-area: titlebar;
+  display: grid;
+  grid-template-columns: var(--side-drawer-width) minmax(220px, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  border-bottom: 1px solid var(--panel-border);
+  background: linear-gradient(var(--titlebar-top), var(--menu-bg));
+  padding: 0 8px 0 0;
+}
+
+.titlebar-identity,
+.titlebar-agent-context,
+.titlebar-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.titlebar-panel-toggles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titlebar-action--active {
+  color: #9bd9e3;
+}
+
+.titlebar-actions {
+  justify-content: flex-end;
+}
+
+.titlebar-identity {
+  height: 100%;
+  padding-left: 76px;
+  border-right: 1px solid var(--panel-border);
+}
+
+.titlebar-search {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex: 1;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 12px var(--font-ui);
+  padding: 0 10px;
+  text-align: left;
+}
+
+.titlebar-search span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titlebar-search:hover {
+  color: var(--color-text-strong);
+}
+
+.titlebar-agent-context {
+  padding: 0 10px;
+}
+
+.titlebar-product {
+  flex: 0 0 auto;
+  color: var(--color-text-strong);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.titlebar-workspace,
+.titlebar-action,
+.titlebar-meta {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.titlebar-workspace,
+.titlebar-action {
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text);
+  font: 600 12px var(--font-ui);
+  padding: 0 6px;
+}
+
+.titlebar-action {
+  width: 28px;
+  justify-content: center;
+  padding: 0;
+}
+
+.titlebar-workspace:hover,
+.titlebar-action:hover {
+  background: var(--toolbar-control-bg-hover);
+  color: var(--steel-cyan-400);
+}

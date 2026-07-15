@@ -1,0 +1,238 @@
+
+
+@media (max-width: 720px) {
+  .app-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 38px 120px minmax(0, 1fr) 24px;
+    grid-template-areas:
+      "titlebar"
+      "sidebar"
+      "main"
+      "status";
+  }
+
+  .app-titlebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .titlebar-agent-context {
+    display: none;
+  }
+
+  .titlebar-actions .titlebar-action span {
+    display: none;
+  }
+
+  .file-rail {
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .workbench {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(360px, 1fr) minmax(160px, 0.42fr) minmax(120px, 0.32fr);
+    grid-template-areas:
+      "terminal"
+      "editor"
+      "browser";
+  }
+
+  .workbench--drawer-hidden {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "terminal";
+  }
+
+  .workbench-resizer {
+    display: none;
+  }
+
+  .browser-toolbar {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .browser-toolbar > .browser-button {
+    display: none;
+  }
+
+  .terminal-titlebar {
+    height: auto;
+    min-height: 32px;
+    align-items: stretch;
+    flex-wrap: wrap;
+    padding: 5px 10px;
+  }
+
+  .terminal-profile,
+  .terminal-actions {
+    width: 100%;
+  }
+
+  .terminal-actions {
+    justify-content: flex-start;
+  }
+
+  .terminal-pane-strip {
+    max-width: none;
+    flex: 1;
+  }
+
+  .terminal-profile-picker__label,
+  .terminal-new-pane span {
+    display: none;
+  }
+}
+
+
+/* THEME: mono-ghost — near-monochrome ghost palette from the cockpit demo
+   mood. Remaps primitive/semantic slots only; component rules stay intact
+   (chrome-polish token contract). Default graphite values above are the
+   chrome-contract reference. */
+[data-theme="mono-ghost"] {
+  --color-app-bg: #0b0b0c;
+  --color-rail-bg: #101012;
+  --color-surface: #121214;
+  --color-surface-raised: #16161a;
+  --color-surface-overlay: #16161a;
+  --color-border: #232326;
+  --color-border-strong: #2c2c30;
+  --color-row-hover: #1a1a1f;
+  --color-row-active: #202027;
+  --color-text: #e8e8ea;
+  --color-text-strong: #f4f4f6;
+  --color-text-muted: #9a9aa2;
+  --color-text-subtle: #8f8f9a;
+  --steel-cyan-400: #c2c8d6;
+  --steel-cyan-500: #9aa3b5;
+  --steel-cyan-900: #1c1f26;
+  --color-accent-muted: rgba(154, 163, 181, 0.14);
+  --menu-bg: #131316;
+  --menu-item-hover: #202027;
+  --surface-strip: #141417;
+  --overlay-border: #2c2c30;
+  --field-bg: #0f0f12;
+  --titlebar-top: #1a1a1e;
+  --surface-card: #111114;
+  --surface-card-border: #26262b;
+  --control-bg: #1c1c21;
+  --control-bg-hover: #26262c;
+}
+
+/* MOTION-POLISH (2026-07-11): functional micro-motion only — property-
+   specific transitions, sub-200ms, decelerate on enter. The global
+   prefers-reduced-motion block above zeroes all of it. */
+
+.project-row,
+.session-row,
+.file-node,
+.settings-modal__nav-row,
+.command-palette__row,
+.context-menu__item {
+  transition: background var(--motion-fast), color var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.titlebar-pill,
+.project-row__state,
+.session-row__state,
+.agent-activity__row {
+  transition: color var(--motion-fast), background var(--motion-fast);
+}
+
+.context-menu.context-menu,
+.command-palette,
+.settings-modal,
+.tool-dock-menu__popover {
+  transition: opacity 140ms cubic-bezier(0, 0, 0.2, 1), translate 140ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.command-palette-backdrop {
+  transition: opacity 140ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.agent-thread-event {
+  transition: opacity 160ms cubic-bezier(0, 0, 0.2, 1), translate 160ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@starting-style {
+  .context-menu,
+  .command-palette,
+  .settings-modal,
+  .tool-dock-menu__popover {
+    opacity: 0;
+    translate: 0 3px;
+  }
+
+  .command-palette-backdrop {
+    opacity: 0;
+  }
+
+  .agent-thread-event {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+/* Approved chrome contract: literal geometry and visual grammar from
+   demo/keelhouse-chrome-demo.html. Keep this final layer source-aligned. */
+.app-shell {
+  --color-app-bg: #121318;
+  --color-rail-bg: #1b1c23;
+  --color-surface: #171820;
+  --color-surface-raised: #1d1e25;
+  --color-border: #2b2d36;
+  --color-border-strong: #343642;
+  --color-row-hover: #22242d;
+  --color-row-active: #252732;
+  --color-text: #ececf4;
+  --color-text-strong: #ececf4;
+  --color-text-muted: #a6a8b6;
+  --color-text-subtle: #707383;
+  --color-success: #87b08a;
+  --color-danger: #d16d6d;
+  --gray-800: #2b2d36;
+  --panel-border: #2b2d36;
+  --panel-strong: #1f2028;
+  --surface-strip: #1d1e25;
+  --control-border: #343642;
+  --overlay-border: #343642;
+  --field-bg: #121318;
+  --menu-bg: #1b1c23;
+  --titlebar-top: #22232b;
+  --toolbar-control-active-bg: #171820;
+
+  grid-template-columns: minmax(52px, var(--side-drawer-width)) 1px minmax(0, 1fr);
+  grid-template-rows: 36px minmax(0, 1fr) 24px;
+  grid-template-areas:
+    "titlebar titlebar titlebar"
+    "sidebar sidesplit main"
+    "status status status";
+  background: #121318;
+}
+
+.app-titlebar {
+  grid-template-columns: var(--side-drawer-width) 6px minmax(420px, 1fr) 6px var(--dock-width, 430px);
+  gap: 0;
+  height: 44px;
+  background: #1d1e25;
+  padding: 0;
+}
+
+.titlebar-identity {
+  gap: 14px;
+  padding-left: 76px;
+  border-right: 0;
+  background: #1b1c23;
+}
+
+.titlebar-search {
+  gap: 7px;
+  color: #a6a8b6;
+  font-size: 13px;
+  padding: 0 12px;
+}
+
+.titlebar-splitter {
+  align-self: stretch;
+  border-right: 1px solid #232530;
+  border-left: 1px solid #2b2d36;
+  background: #101118;
+}

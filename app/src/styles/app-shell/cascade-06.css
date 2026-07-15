@@ -1,0 +1,235 @@
+
+
+.project-row--active {
+  background: var(--color-row-active);
+}
+
+.project-row__copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.project-row__name,
+.project-row__path {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-row__name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.project-row__state {
+  display: inline-flex;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+}
+
+.project-row__badge {
+  display: inline-grid;
+  min-width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--color-accent-muted);
+  color: var(--steel-cyan-400);
+  font: 600 10px/1 var(--font-mono);
+  padding: 0 4px;
+}
+
+.project-row--running .project-row__state {
+  background: var(--color-success);
+}
+
+.project-row--exited .project-row__state {
+  background: var(--color-text-subtle);
+}
+
+.project-row--attention .project-row__state {
+  background: var(--color-danger);
+}
+
+.session-list {
+  display: grid;
+  gap: 1px;
+  padding: 0 8px 5px 28px;
+}
+
+.session-row {
+  display: grid;
+  width: 100%;
+  min-height: 28px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: default;
+  padding: 3px 6px;
+  text-align: left;
+}
+
+.session-row:hover,
+.session-row:focus-visible {
+  background: var(--color-row-hover);
+  color: var(--color-text);
+}
+
+.session-row--active {
+  background: var(--color-row-active);
+  color: var(--color-text-strong);
+}
+
+.session-row--new {
+  color: var(--color-text-subtle);
+}
+
+.session-row--more {
+  display: block;
+  min-height: 24px;
+  color: var(--color-text-subtle);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.session-row__copy {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.session-row__copy span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-row__fork {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+}
+
+.session-row__time {
+  flex: 0 0 auto;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-row__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-subtle);
+}
+
+.session-row__state .app-icon {
+  width: 11px;
+  height: 11px;
+}
+
+.session-row--running .session-row__state {
+  color: var(--color-success);
+}
+
+.session-row--attention .session-row__state {
+  color: var(--color-danger);
+}
+
+.rail-tree {
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  padding: 6px 0;
+}
+
+.rail-tree [role="tree"] {
+  outline: none;
+}
+
+.rail-tree [role="tree"]:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.rail-tree [role="treeitem"]:focus-visible {
+  outline: 1px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.rail-status {
+  padding: 8px 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rail-status--error {
+  color: var(--color-danger);
+}
+
+.rail-status--muted {
+  border-top: 1px solid var(--gray-800);
+  color: var(--color-text-disabled);
+}
+
+.drawer-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer-field,
+.drawer-form {
+  display: grid;
+  gap: 5px;
+}
+
+.drawer-field {
+  padding: 8px 12px;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.drawer-field input,
+.drawer-field select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: var(--control-bg);
+  color: var(--color-text-strong);
+  font: inherit;
+  font-size: 12px;
+  padding: 0 8px;
+  text-transform: none;
+}
+
+.drawer-field input:disabled,
+.drawer-field select:disabled {
+  color: var(--color-text-disabled);
+}

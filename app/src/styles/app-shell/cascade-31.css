@@ -1,0 +1,237 @@
+
+
+.titlebar-splitter {
+  border-right: 1px solid #2b2d36;
+  border-left: 0;
+  background: transparent;
+}
+
+.titlebar-agent-context {
+  gap: 9px;
+  overflow: visible;
+  padding-inline: 14px;
+  background: transparent;
+}
+
+.titlebar-workspace {
+  font-weight: 600;
+}
+
+.titlebar-chat-actions {
+  display: flex;
+  min-width: max-content;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+}
+
+.titlebar-chat-actions .tool-dock-menu summary {
+  width: 28px;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
+}
+
+.titlebar-chat-actions .tool-dock-menu__popover {
+  right: 0;
+  left: auto;
+}
+
+.titlebar-actions {
+  gap: 6px;
+  padding-inline: 12px;
+  background: transparent;
+}
+
+.titlebar-panel-toggles {
+  gap: 2px;
+}
+
+.titlebar-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  color: #a6a8b6;
+}
+
+.titlebar-action:hover {
+  background: #252732;
+  color: #ececf4;
+}
+
+.titlebar-action--active {
+  color: #9bd9e3;
+}
+
+.titlebar-pill {
+  height: 28px;
+  gap: 6px;
+  color: #9bd9e3;
+  font-size: 13px;
+  font-weight: 600;
+  padding-inline: 3px;
+}
+
+@media (max-width: 1120px) and (min-width: 721px) {
+  .app-titlebar {
+    grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(0, 1fr) auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-titlebar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .titlebar-identity {
+    padding-left: 76px;
+  }
+}
+
+.drawer-toolbar {
+  height: 44px;
+  flex-basis: 44px;
+  border-bottom: 1px solid #2b2d36;
+  font-size: 13px;
+  font-weight: 600;
+  padding-inline: 12px;
+}
+
+.titlebar-workspace .app-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+}
+
+.titlebar-action--active {
+  color: #ececf4;
+}
+
+.drawer-toolbar {
+  height: 42px;
+  flex-basis: 42px;
+  background: #1f2028;
+  padding-inline: 12px;
+}
+
+.terminal-tab-action {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+}
+
+.workbench.workbench--drawer-right {
+  grid-template-columns: minmax(420px, 1fr) 1px var(--dock-width, 430px);
+  grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit files"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-editor.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit editor"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-browser.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit browser"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-git.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit git"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-split.workbench--drawer-right {
+  grid-template-rows:
+    38px
+    minmax(140px, calc(var(--tool-primary-size) - 38px))
+    minmax(140px, calc(100% - var(--tool-primary-size)))
+    6px
+    var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit editor"
+    "terminal rightsplit browser"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--drawer-left {
+  grid-template-columns: var(--dock-width, 430px) 1px minmax(420px, 1fr);
+  grid-template-rows: 38px minmax(0, 1fr) 6px var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "files rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-editor.workbench--drawer-left {
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "editor rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-browser.workbench--drawer-left {
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "browser rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-git.workbench--drawer-left {
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "git rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-split.workbench--drawer-left {
+  grid-template-rows:
+    38px
+    minmax(140px, calc(var(--tool-primary-size) - 38px))
+    minmax(140px, calc(100% - var(--tool-primary-size)))
+    6px
+    var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "editor rightsplit terminal"
+    "browser rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--drawer-bottom {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows:
+    minmax(320px, 1fr)
+    6px
+    38px
+    minmax(140px, var(--tool-tray-size))
+    6px
+    var(--utility-tray-height, 42px);
+  grid-template-areas:
+    "terminal"
+    "rightsplit"
+    "traytabs"
+    "files"
+    "utilitysplit"
+    "utility";
+}

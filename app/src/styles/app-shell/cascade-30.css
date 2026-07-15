@@ -1,0 +1,237 @@
+
+
+@container tool-tabs (max-width: 720px) {
+  .tool-tray-tabs__tab {
+    gap: 0;
+  }
+
+  .tool-tray-tabs__tab span {
+    display: none;
+  }
+
+  .tool-tray-tabs__tab--active {
+    gap: 7px;
+    padding-inline: 10px;
+  }
+
+  .tool-tray-tabs__tab--active span {
+    display: block;
+  }
+}
+
+@container tool-tabs (max-width: 480px) {
+  .tool-tray-tabs__tab--active {
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  .tool-tray-tabs__tab--active span {
+    display: none;
+  }
+}
+
+/* WebKit does not consistently re-evaluate this dock's container query while
+   the native split view is dragged. ToolTrayTabs also applies a measured class
+   so labels cannot overlap during or after a resize. */
+.tool-tray-tabs--compact .tool-tray-tabs__tab span,
+.tool-tray-tabs--icons .tool-tray-tabs__tab span {
+  display: none;
+}
+
+.tool-tray-tabs--compact .tool-tray-tabs__tab--active {
+  gap: 7px;
+  padding-inline: 10px;
+}
+
+.tool-tray-tabs--compact .tool-tray-tabs__tab--active span {
+  display: block;
+}
+
+.tool-tray-tabs--icons .tool-tray-tabs__tab,
+.tool-tray-tabs--icons .tool-tray-tabs__tab--active {
+  gap: 0;
+  padding-inline: 0;
+}
+
+.files-dock,
+.git-dock,
+.editor-area,
+.browser-preview {
+  background: #171820;
+}
+
+.files-dock .dock-surface__header {
+  display: none;
+}
+
+.dock-file-filter {
+  height: 28px;
+  flex: 0 0 28px;
+  margin: 12px 12px 10px;
+  border-color: #343642;
+  background: #121318;
+  color: #a6a8b6;
+  padding: 0 9px;
+}
+
+.dock-file-list {
+  padding: 0 12px 12px;
+}
+
+.dock-file-row {
+  min-height: 28px;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 7px;
+  border-radius: 6px;
+  color: #a6a8b6;
+  font-size: 13px;
+  padding: 0 6px;
+}
+
+.dock-file-row:hover {
+  background: #22242d;
+  color: #ececf4;
+}
+
+.dock-file-row--active {
+  background: #252732;
+  box-shadow: none;
+  color: #ececf4;
+}
+
+.files-dock .dock-file-row__path {
+  display: none;
+}
+
+.status-bar {
+  height: 20px;
+  display: grid;
+  grid-template-columns: var(--side-drawer-width) 1fr auto;
+  gap: 0;
+  border-top: 1px solid #2b2d36;
+  background: #171820;
+  color: #707383;
+  font-size: 11px;
+  padding: 0;
+}
+
+.status-bar__group {
+  display: flex;
+  min-width: 0;
+  height: 20px;
+  align-items: center;
+  gap: 14px;
+  padding: 0 10px;
+}
+
+.status-bar__group--right {
+  justify-content: flex-end;
+}
+
+@media (max-width: 1180px) and (min-width: 1121px) {
+  .app-shell {
+    --side-drawer-width: 286px !important;
+    --dock-width: 360px !important;
+  }
+
+  .app-titlebar {
+    grid-template-columns: var(--side-drawer-width) 6px minmax(420px, 1fr) 6px var(--dock-width);
+  }
+
+  .workbench.workbench--drawer-right {
+    grid-template-columns: minmax(420px, 1fr) 6px var(--dock-width);
+  }
+
+  .agent-run-output__transcript,
+  .agent-activity-log__list {
+    width: calc(100% - 36px);
+  }
+
+  .session-row {
+    padding-left: 24px;
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 721px) {
+  .app-shell {
+    --side-drawer-width: 270px !important;
+    grid-template-columns: var(--side-drawer-width) 8px minmax(0, 1fr);
+  }
+
+  .app-titlebar {
+    grid-template-columns: var(--side-drawer-width) 8px minmax(0, 1fr) auto;
+  }
+
+  .app-titlebar .titlebar-splitter:nth-child(4) {
+    display: none;
+  }
+
+  .workbench.workbench--drawer-hidden {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "terminal";
+  }
+
+  .workbench.workbench--drawer-right,
+  .workbench.workbench--drawer-left {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 38px minmax(0, 1fr);
+    grid-template-areas:
+      "traytabs"
+      "files";
+  }
+
+  .workbench.workbench--tools-editor.workbench--drawer-right,
+  .workbench.workbench--tools-editor.workbench--drawer-left {
+    grid-template-areas:
+      "traytabs"
+      "editor";
+  }
+
+  .workbench.workbench--tools-browser.workbench--drawer-right,
+  .workbench.workbench--tools-browser.workbench--drawer-left {
+    grid-template-areas:
+      "traytabs"
+      "browser";
+  }
+
+  .workbench.workbench--tools-git.workbench--drawer-right,
+  .workbench.workbench--tools-git.workbench--drawer-left {
+    grid-template-areas:
+      "traytabs"
+      "git";
+  }
+
+  .workbench--drawer-right .terminal-panel,
+  .workbench--drawer-left .terminal-panel,
+  .workbench--drawer-right .workbench-resizer,
+  .workbench--drawer-left .workbench-resizer {
+    display: none;
+  }
+
+  .titlebar-actions {
+    min-width: max-content;
+  }
+}
+
+/* Chrome convergence: one continuous native titlebar, with pane boundaries used
+   only for orientation. The dock keeps its own compact tab strip below it. */
+.app-titlebar {
+  grid-template-columns: var(--titlebar-leading-width, var(--side-drawer-width)) 1px minmax(420px, 1fr) 1px var(--dock-width, 430px);
+  height: 40px;
+  align-items: stretch;
+  border-bottom-color: #2b2d36;
+  background: #1b1c23;
+}
+
+.titlebar-identity {
+  gap: 2px;
+  padding-left: 76px;
+  padding-right: 10px;
+  background: transparent;
+}
+
+.titlebar-leading-action {
+  flex: 0 0 28px;
+  margin-left: auto;
+}

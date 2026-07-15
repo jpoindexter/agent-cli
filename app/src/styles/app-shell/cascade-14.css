@@ -1,0 +1,233 @@
+
+
+.terminal-actions {
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.terminal-pane-strip {
+  display: flex;
+  min-width: 0;
+  max-width: min(38vw, 440px);
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.terminal-pane-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.terminal-pane-button {
+  display: inline-flex;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+  max-width: 132px;
+  gap: 5px;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 0 7px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.terminal-pane-button .app-icon {
+  flex: 0 0 auto;
+}
+
+.terminal-pane-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-pane-button--active {
+  border-color: transparent;
+  border-bottom-color: var(--color-accent-border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--color-text-strong);
+}
+
+.terminal-new-pane {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.terminal-new-pane--danger {
+  color: #ffd6dd;
+}
+
+.terminal-kicker {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.terminal-title {
+  display: none;
+}
+
+.terminal-cwd {
+  overflow: hidden;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-command,
+.terminal-mode {
+  display: none;
+}
+
+.terminal-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  border: 1px solid var(--control-border);
+  border-radius: var(--badge-radius);
+  color: var(--color-text);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  padding: 0 7px;
+}
+
+.terminal-state .app-icon {
+  width: 13px;
+  height: 13px;
+}
+
+.terminal-state--running {
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+.terminal-state--starting,
+.terminal-state--thinking,
+.terminal-state--waiting {
+  border-color: #5e5131;
+  color: var(--color-warning);
+}
+
+.terminal-state--exited,
+.terminal-state--error {
+  border-color: #63313a;
+  color: var(--color-danger);
+}
+
+.terminal-state--complete {
+  border-color: var(--color-success-border);
+  color: var(--color-success);
+}
+
+.terminal-state--idle {
+  color: var(--color-text-subtle);
+}
+
+.terminal-cwd {
+  max-width: min(22vw, 220px);
+}
+
+.terminal-titlebar .terminal-kicker,
+.terminal-titlebar .terminal-state,
+.terminal-titlebar .terminal-cwd {
+  display: none;
+}
+
+.terminal-titlebar .terminal-title {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  color: var(--color-text-strong);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.thread-tab-context {
+  overflow: hidden;
+  min-width: 0;
+  color: #a6a8b6;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-tab-action {
+  display: grid;
+  width: 18px;
+  height: 24px;
+  flex: 0 0 18px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #a6a8b6;
+}
+
+.terminal-tab-action:hover:not(:disabled) {
+  color: #ececf4;
+}
+
+.terminal-titlebar .terminal-title span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.terminal-titlebar .terminal-command,
+.terminal-titlebar .terminal-mode,
+.terminal-titlebar .tool-dock-menu,
+.terminal-titlebar .terminal-pane-strip,
+.terminal-titlebar .terminal-profile-picker,
+.terminal-titlebar .terminal-new-pane {
+  display: none;
+}
+
+.terminal-panel--terminal .terminal-titlebar .terminal-pane-strip,
+.terminal-panel--terminal .terminal-titlebar .terminal-profile-picker,
+.terminal-panel--terminal .terminal-titlebar .terminal-new-pane {
+  display: flex;
+}
+
+.terminal-profile-picker {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.terminal-profile-picker__label {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.terminal-profile-picker select {
+  height: 28px;
+  font-size: 11px;
+  font-weight: 650;
+  padding: 0 24px 0 8px;
+}

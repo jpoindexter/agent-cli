@@ -1,0 +1,238 @@
+
+
+.drawer-field input:focus-visible,
+.drawer-field select:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.drawer-form {
+  border-bottom: 1px solid var(--gray-800);
+  padding-bottom: 8px;
+}
+
+.drawer-form .drawer-field {
+  padding-bottom: 3px;
+}
+
+.drawer-form > .rail-open-button {
+  justify-self: start;
+  margin-left: 12px;
+}
+
+.drawer-list {
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 0 8px;
+}
+
+.drawer-list-row {
+  display: grid;
+  width: 100%;
+  min-height: 34px;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  font: inherit;
+  padding: 4px 12px;
+  text-align: left;
+}
+
+.drawer-list-row:hover,
+.drawer-list-row:focus-visible {
+  background: var(--color-row-hover);
+  outline: none;
+}
+
+.drawer-list-row .app-icon {
+  color: var(--color-text-muted);
+}
+
+.drawer-list-row__main,
+.drawer-list-row__meta {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-list-row__main {
+  color: var(--color-text-strong);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.drawer-list-row__meta {
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.drawer-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  border-bottom: 1px solid var(--gray-800);
+  padding: 8px 12px;
+}
+
+.drawer-summary div,
+.drawer-callout {
+  min-width: 0;
+  border: 1px solid var(--control-border);
+  border-radius: var(--control-radius);
+  background: var(--control-bg);
+}
+
+.drawer-summary div {
+  display: grid;
+  gap: 2px;
+  padding: 7px;
+}
+
+.drawer-summary span {
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.drawer-summary strong {
+  overflow: hidden;
+  color: var(--color-text-strong);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-action-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-bottom: 1px solid var(--gray-800);
+  padding: 8px 12px;
+}
+
+.drawer-callout {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 8px 12px;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  padding: 8px;
+}
+
+.drawer-callout span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawer-detected-server {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 12px 0;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--control-radius);
+  background: var(--color-accent-muted);
+  padding: 8px;
+}
+
+.drawer-detected-server div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.drawer-detected-server span {
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.drawer-detected-server strong {
+  overflow: hidden;
+  color: var(--color-text-strong);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-node {
+  display: flex;
+  height: 24px;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  padding-right: 8px;
+  color: var(--color-text);
+  font-size: 12px;
+  line-height: 24px;
+}
+
+.file-node--selected {
+  background: var(--color-row-active);
+  color: var(--color-text-strong);
+}
+
+.file-node__twisty {
+  width: 14px;
+  flex: 0 0 14px;
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.file-node__icon {
+  width: 16px;
+  flex: 0 0 16px;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.file-node__twisty .app-icon,
+.file-node__icon .app-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.file-node__icon--directory {
+  color: #9eb6cf;
+}
+
+.file-node__name {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-node__dirty {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 999px;
+  background: var(--color-warning);
+}
+
+.file-node__git {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}

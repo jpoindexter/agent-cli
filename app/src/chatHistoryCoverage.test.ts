@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const thread = [
@@ -8,7 +9,7 @@ const thread = [
   readFileSync(new URL("./ChatMessageArticle.tsx", import.meta.url), "utf8"),
 ].join("\n");
 const searchDialog = readFileSync(new URL("./SearchCommandDialog.tsx", import.meta.url), "utf8");
-const css = `${readFileSync(new URL("./App.css", import.meta.url), "utf8")}\n${readFileSync(new URL("./SearchCommandDialog.css", import.meta.url), "utf8")}`;
+const css = `${readCssSource(new URL("./App.css", import.meta.url))}\n${readCssSource(new URL("./SearchCommandDialog.css", import.meta.url))}`;
 
 describe("chat history discovery production wiring", () => {
   it("searches durable history and opens stable message targets", () => {

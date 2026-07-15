@@ -4,13 +4,21 @@ import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const cssImport = /^@import\s+["']([^"']+)["'];\s*$/gm;
+const readCss = (file) => {
+  const absolute = path.join(root, file);
+  const css = fs.readFileSync(absolute, "utf8");
+  return css.replace(cssImport, (_statement, relativePath) =>
+    readCss(path.relative(root, path.resolve(path.dirname(absolute), relativePath)))
+  );
+};
 const fail = [];
 
 const assert = (condition, message) => {
   if (!condition) fail.push(message);
 };
 
-const appCss = `${read("app/src/App.css")}\n${read("app/src/composerModelPicker.css")}\n${read("app/src/responsive-shell.css")}\n${read("app/src/SearchCommandDialog.css")}`;
+const appCss = `${readCss("app/src/App.css")}\n${readCss("app/src/composerModelPicker.css")}\n${readCss("app/src/responsive-shell.css")}\n${readCss("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
 const appTitlebar = read("app/src/AppTitlebar.tsx");
 const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");

@@ -1,0 +1,218 @@
+
+
+.utility-tray__icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #a6a8b6;
+}
+
+.utility-tray__icon:hover,
+.utility-tray__icon:focus-visible {
+  color: #ececf4;
+}
+
+.utility-tray__body {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #171820;
+}
+
+.utility-tray__terminal-controls {
+  height: 36px;
+  display: none;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  border-bottom: 1px solid #2b2d36;
+  padding: 0 12px;
+}
+
+.utility-tray__terminal-controls .terminal-pane-strip,
+.utility-tray__terminal-controls .terminal-profile-picker {
+  display: flex;
+}
+
+.utility-tray__terminal-controls .terminal-new-pane {
+  display: inline-flex;
+}
+
+.utility-tray__body--terminal {
+  display: grid;
+  grid-template-rows: 36px minmax(0, 1fr);
+}
+
+.utility-tray__body--terminal:has(.terminal-find) {
+  grid-template-rows: 36px 32px minmax(0, 1fr);
+}
+
+.utility-tray__body--terminal .utility-tray__terminal-controls,
+.utility-tray__body--terminal .utility-tray__terminal {
+  display: flex;
+}
+
+.utility-tray__terminal {
+  position: relative;
+  inset: auto;
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #171820;
+}
+
+.utility-tray__terminal-empty {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 7px;
+  background: #171820;
+  color: #a6a8b6;
+  font: 12px/1.35 var(--font-ui);
+  text-align: center;
+}
+
+.utility-tray__terminal-empty > .app-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.utility-tray__terminal-empty strong {
+  color: #d7d8e2;
+  font-weight: 600;
+}
+
+.utility-tray__terminal-empty button {
+  height: 28px;
+  margin-top: 3px;
+  border: 1px solid #41434f;
+  border-radius: 4px;
+  background: #23242d;
+  color: #ececf4;
+  font: 500 12px/1 var(--font-ui);
+  padding: 0 10px;
+}
+
+.utility-tray__terminal-empty button:hover,
+.utility-tray__terminal-empty button:focus-visible {
+  border-color: #5c5f6d;
+  background: #30323d;
+}
+
+.utility-tray__body > .terminal-find {
+  min-height: 32px;
+}
+
+.utility-tray__processes,
+.utility-tray__logs {
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.utility-tray__body--processes .utility-tray__processes,
+.utility-tray__body--logs .utility-tray__logs {
+  display: block;
+}
+
+.utility-tray__processes,
+.utility-tray__logs {
+  padding: 8px 12px;
+}
+
+.utility-tray__processes > button,
+.utility-tray__log-row {
+  width: 100%;
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: 18px minmax(140px, 1fr) minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-bottom: 1px solid #232530;
+  border-radius: 0;
+  background: transparent;
+  color: #a6a8b6;
+  font: 12px/1.4 var(--font-ui);
+  padding: 0 4px;
+  text-align: left;
+}
+
+.utility-tray__processes > button:hover {
+  background: #22242d;
+  color: #ececf4;
+}
+
+.utility-tray__log-row {
+  grid-template-columns: 60px minmax(140px, 0.8fr) minmax(180px, 1.5fr) auto;
+}
+
+.utility-tray__log-row strong {
+  overflow: hidden;
+  color: #ececf4;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.utility-tray__empty {
+  color: #707383;
+  padding: 12px 4px;
+}
+
+/* A collapsed thread drawer is absent, not a clipped miniature toolbar. The
+   titlebar keeps a macOS-safe leading lane with the standard restore control. */
+.app-shell.app-shell--side-drawer-collapsed {
+  grid-template-columns: 0 0 minmax(0, 1fr);
+}
+
+.side-drawer-resizer {
+  width: 9px;
+  margin-left: -4px;
+  border: 0;
+  background: transparent;
+}
+
+.side-drawer-resizer::before {
+  inset: 0 4px;
+  background: #2b2d36;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right {
+  width: 9px;
+  margin-left: -4px;
+  border: 0;
+  background: transparent;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::before {
+  inset: 0 4px;
+  background: #2b2d36;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::after {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .file-rail {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .status-bar__group--left {
+  display: none;
+}
+
+.app-shell--side-drawer-collapsed .status-bar {
+  grid-template-columns: 0 minmax(0, 1fr) auto;
+}

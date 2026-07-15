@@ -1,0 +1,240 @@
+
+
+.orchestration-review .orchestration-message {
+  margin-inline: 0;
+}
+
+.orchestration-message--warning {
+  color: var(--color-warning);
+}
+
+.orchestration-message--error {
+  color: var(--color-danger);
+}
+
+@media (max-width: 960px) {
+  .orchestration-child {
+    grid-template-columns: repeat(3, minmax(110px, 1fr)) 28px;
+  }
+
+  .orchestration-field--task {
+    grid-column: 2 / 4;
+  }
+
+  .orchestration-field--targets {
+    grid-column: 1 / 4;
+  }
+}
+
+@media (max-width: 640px) {
+  .orchestration-overlay {
+    padding: 12px;
+  }
+
+  .orchestration-dialog {
+    width: calc(100vw - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .orchestration-child {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 28px;
+  }
+
+  .orchestration-field--task,
+  .orchestration-field--targets {
+    grid-column: 1 / 3;
+  }
+
+  .orchestration-review__summary,
+  .orchestration-review__row {
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .orchestration-review__summary span,
+  .orchestration-review__row > span:last-child {
+    grid-column: 2;
+  }
+}
+
+.command-palette {
+  display: grid;
+  width: min(640px, calc(100vw - 72px));
+  max-height: min(560px, calc(100vh - 96px));
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--overlay-border);
+  border-radius: 10px;
+  background: var(--menu-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.command-palette__field {
+  display: grid;
+  min-height: 42px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--field-bg);
+  color: var(--color-text-muted);
+  padding: 0 13px;
+}
+
+.command-palette__field input {
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--color-text-strong);
+  font: 14px/20px var(--font-ui);
+}
+
+.command-palette__field span {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+}
+
+.command-palette__list {
+  overflow: auto;
+  padding: 5px;
+}
+
+.command-palette__row {
+  display: grid;
+  width: 100%;
+  min-height: 32px;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  font: inherit;
+  padding: 3px 9px;
+  text-align: left;
+}
+
+.command-palette__row:hover:not(:disabled),
+.command-palette__row--active:not(:disabled) {
+  background: var(--menu-item-hover);
+  color: var(--color-text-strong);
+}
+
+.command-palette__row:disabled {
+  color: var(--color-text-disabled);
+}
+
+.command-palette__icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  color: var(--color-text-muted);
+}
+
+.command-palette__copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.command-palette__copy strong,
+.command-palette__copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-palette__copy strong {
+  color: var(--color-text-strong);
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.command-palette__copy span,
+.command-palette__shortcut,
+.command-palette__empty {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.command-palette__shortcut {
+  justify-self: end;
+}
+
+.command-palette__empty {
+  padding: 18px 12px;
+}
+
+.rail-root {
+  display: flex;
+  overflow: hidden;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--gray-800);
+}
+
+.rail-root__button {
+  overflow: hidden;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-strong);
+  cursor: default;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 8px 12px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rail-root__button:hover,
+.rail-root__button:focus-visible {
+  background: var(--color-row-active);
+  outline: none;
+}
+
+.project-rail {
+  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 6px 0;
+}
+
+.project-rail__heading {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 24px;
+  padding: 0 12px;
+  text-transform: uppercase;
+}
+
+.project-group {
+  display: grid;
+  gap: 1px;
+}
+
+.project-row {
+  display: grid;
+  width: 100%;
+  min-height: 34px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  padding: 4px 12px;
+  text-align: left;
+}
+
+.project-row:hover,
+.project-row:focus-visible {
+  background: var(--color-row-hover);
+}

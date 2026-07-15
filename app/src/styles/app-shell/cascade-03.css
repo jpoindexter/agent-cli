@@ -1,0 +1,238 @@
+
+
+/* Visually hidden, not display:none — the label must stay in the
+   accessibility tree so the icon-only switcher keeps its name without
+   relying on title-attribute fallback (A11Y-CHROME-AUDIT). */
+.drawer-mode-switcher__button span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.drawer-mode-switcher__button:hover {
+  background: var(--control-bg-hover);
+  color: var(--color-text);
+}
+
+.drawer-mode-switcher__button--active {
+  border-color: transparent;
+  background: var(--toolbar-control-active-bg);
+  box-shadow: inset 0 -2px 0 var(--color-accent-border);
+  color: var(--color-text-strong);
+}
+
+.panel-title,
+.terminal-titlebar,
+.editor-tabbar {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-strong);
+}
+
+.panel-title {
+  height: 34px;
+  padding: 9px 12px 0;
+  color: var(--text-strong);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.panel-title--with-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 0;
+}
+
+.panel-title--with-action > span {
+  flex: 1;
+}
+
+/* Demo control grammar (chrome-contract v2): default controls are flat text
+   actions — no box, weight 600, color-only emphasis. Only Send and
+   modal-confirm primaries are filled. */
+.rail-open-button,
+.editor-command,
+.editor-save,
+.browser-button,
+.editor-error__button,
+.terminal-profile-picker select,
+.terminal-pane-button,
+.terminal-new-pane,
+.agent-composer__button,
+.draft-modal__button {
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  font: inherit;
+  font-weight: 600;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), outline-color var(--motion-fast);
+}
+
+.rail-open-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 20px;
+  padding: 0 8px;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* Flat controls keep a ~40px vertical hit target without visible chrome.
+   Vertical-only so adjacent toolbar controls never overlap horizontally;
+   <select> is excluded because it cannot host pseudo-elements. */
+.rail-open-button,
+.editor-command,
+.editor-save,
+.browser-button,
+.editor-error__button,
+.terminal-pane-button,
+.terminal-new-pane,
+.agent-composer__button,
+.draft-modal__button,
+.titlebar-workspace,
+.titlebar-action {
+  position: relative;
+}
+
+.rail-open-button::after,
+.editor-command::after,
+.editor-save::after,
+.browser-button::after,
+.editor-error__button::after,
+.terminal-pane-button::after,
+.terminal-new-pane::after,
+.agent-composer__button::after,
+.draft-modal__button::after,
+.titlebar-workspace::after,
+.titlebar-action::after {
+  content: "";
+  position: absolute;
+  inset: -7px 0;
+}
+
+.rail-open-button:hover:not(:disabled),
+.editor-command:hover:not(:disabled),
+.editor-save:hover:not(:disabled),
+.browser-button:hover:not(:disabled),
+.editor-error__button:hover:not(:disabled),
+.terminal-profile-picker select:hover:not(:disabled),
+.terminal-pane-button:hover:not(:disabled),
+.terminal-new-pane:hover:not(:disabled),
+.agent-composer__button:hover:not(:disabled),
+.draft-modal__button:hover:not(:disabled) {
+  background: var(--toolbar-control-bg-hover);
+  color: var(--steel-cyan-400);
+}
+
+.rail-open-button:disabled,
+.editor-command:disabled,
+.editor-save:disabled,
+.browser-button:disabled,
+.editor-error__button:disabled,
+.terminal-profile-picker select:disabled,
+.terminal-pane-button:disabled,
+.terminal-new-pane:disabled,
+.agent-composer__button:disabled,
+.draft-modal__button:disabled {
+  color: var(--color-text-disabled);
+}
+
+.rail-open-button:focus-visible,
+.drawer-mode-switcher__button:focus-visible,
+.project-row:focus-visible,
+.session-row:focus-visible,
+.rail-root__button:focus-visible,
+.editor-tab__activate:focus-visible,
+.editor-tab__close:focus-visible,
+.editor-command:focus-visible,
+.editor-save:focus-visible,
+.browser-button:focus-visible,
+.browser-address input:focus-visible,
+.terminal-profile-picker select:focus-visible,
+.terminal-pane-button:focus-visible,
+.terminal-new-pane:focus-visible,
+.agent-composer__input:focus-visible,
+.agent-composer__button:focus-visible,
+.draft-modal__button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.browser-button,
+.terminal-profile-picker select,
+.terminal-pane-button,
+.terminal-new-pane,
+.agent-chat-terminal-hint__button {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.browser-button:hover:not(:disabled),
+.terminal-profile-picker select:hover:not(:disabled),
+.terminal-pane-button:hover:not(:disabled),
+.terminal-new-pane:hover:not(:disabled),
+.agent-chat-terminal-hint__button:hover {
+  background: var(--toolbar-control-bg-hover);
+}
+
+.context-menu {
+  position: fixed;
+  z-index: 30;
+  display: grid;
+  min-width: 252px;
+  padding: 5px 0;
+  border: 1px solid var(--overlay-border);
+  border-radius: 6px;
+  background: var(--menu-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.context-menu__item {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  padding: 0 9px;
+}
+
+.context-menu__label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-menu__item:hover:not(:disabled),
+.context-menu__item:focus-visible:not(:disabled) {
+  background: var(--menu-item-hover);
+  outline: none;
+}
+
+.context-menu__item:disabled {
+  color: var(--color-text-disabled);
+}
+
+.context-menu__item--danger {
+  color: var(--color-danger) !important;
+}

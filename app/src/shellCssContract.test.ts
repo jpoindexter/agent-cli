@@ -1,7 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { readCssSource } from "./readCssSource";
 
-const css = readFileSync(new URL("./App.css", import.meta.url), "utf8");
+const css = readCssSource(new URL("./App.css", import.meta.url));
 const transitions = readFileSync(new URL("./workbenchTransitions.css", import.meta.url), "utf8");
 
 describe("responsive shell CSS contract", () => {

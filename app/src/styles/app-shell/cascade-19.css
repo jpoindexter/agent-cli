@@ -1,0 +1,225 @@
+
+
+.settings-modal__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-right: 1px solid var(--color-border);
+  padding: 8px;
+}
+
+.settings-modal__nav-row {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: default;
+  font: 600 13px var(--font-ui);
+  padding: 0 8px;
+  text-align: left;
+}
+
+.settings-modal__nav-row:hover {
+  background: var(--color-row-hover);
+  color: var(--color-text);
+}
+
+.settings-modal__nav-row--active {
+  background: var(--color-row-active);
+  color: var(--color-text-strong);
+}
+
+.settings-modal__nav-row .app-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.settings-modal__content {
+  overflow: auto;
+  padding: 10px 22px 18px;
+}
+
+.settings-modal__row {
+  display: grid;
+  min-height: 48px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  border-bottom: 1px solid var(--line-soft, #232530);
+}
+
+.settings-modal__copy {
+  display: grid;
+  gap: 2px;
+  padding: 8px 0;
+}
+
+.settings-modal__copy strong {
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.settings-modal__copy span {
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.settings-modal__select,
+.settings-modal__input {
+  min-width: 132px;
+  height: 28px;
+  border: 1px solid var(--line-soft, #232530);
+  border-radius: var(--control-radius);
+  background: var(--field-bg);
+  color: var(--color-text-strong);
+  font: 12px var(--font-ui);
+  padding: 0 9px;
+}
+
+.settings-modal__input {
+  width: 240px;
+}
+
+.settings-modal__action {
+  border: 1px solid transparent;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: default;
+  font: 600 12px var(--font-ui);
+  padding: 5px 8px;
+}
+
+.settings-modal__action:hover {
+  background: var(--toolbar-control-bg-hover);
+  color: var(--steel-cyan-400);
+}
+
+.settings-modal__action--danger {
+  color: var(--color-danger);
+}
+
+.settings-modal__action--danger:hover {
+  background: var(--color-danger-bg);
+  color: #ffd6dd;
+}
+
+.settings-modal__value {
+  color: var(--color-text-muted);
+  font: 12px var(--font-mono);
+}
+
+.settings-modal__empty {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 18px 0;
+}
+
+.settings-modal__row--block {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  padding-bottom: 12px;
+}
+
+.settings-modal__shortcuts {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.settings-modal__shortcuts th {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: uppercase;
+  padding: 4px 12px 4px 0;
+}
+
+.settings-modal__shortcuts td {
+  border-top: 1px solid var(--line-soft, #232530);
+  color: var(--color-text);
+  padding: 5px 12px 5px 0;
+}
+
+.settings-modal__shortcuts td:nth-child(2) {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.settings-modal__conflict {
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--card-radius);
+  background: var(--color-danger-bg);
+  color: #ffd6dd;
+  font-size: 12px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+
+.settings-modal__capture {
+  width: 150px;
+  height: 24px;
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--control-radius);
+  background: var(--field-bg);
+  color: var(--color-text-strong);
+  font: 12px var(--font-mono);
+  padding: 0 8px;
+}
+
+.settings-modal__overridden {
+  color: var(--steel-cyan-400);
+  font-size: 10px;
+}
+
+.settings-modal__shortcut-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.settings-modal__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Settings is a workbench destination, not an overlay. The workbench remains
+   mounted so terminal and agent processes keep their state while it is open. */
+.app-shell--settings-open > :not(.settings-workspace) {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.settings-workspace {
+  z-index: 20;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-area: 1 / 1 / -1 / -1;
+  grid-template-rows: 44px minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--color-app-bg);
+  color: var(--color-text);
+}
+
+.settings-workspace__header {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 230px minmax(80px, 1fr) minmax(220px, 360px);
+  align-items: center;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--surface-strip);
+  padding: 0 18px 0 76px;
+}

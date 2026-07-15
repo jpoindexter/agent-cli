@@ -1,0 +1,231 @@
+
+
+.connection-settings__check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.connection-settings__check input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--steel-cyan-500);
+}
+
+.connection-settings__error {
+  color: var(--color-danger-text) !important;
+}
+
+@media (max-width: 1120px) {
+  .connection-settings__provider,
+  .connection-settings__form,
+  .connection-settings__form--environment {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .connection-settings__provider > strong,
+  .connection-settings__actions {
+    grid-column: 1;
+  }
+}
+
+.settings-workspace__profile-row {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--color-border);
+  padding: 7px 0;
+}
+
+.settings-workspace__profile-row > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.settings-workspace__profile-row small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-workspace__profile-form {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.75fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 8px;
+}
+
+.settings-workspace__profile-form label {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  color: var(--color-text-muted);
+  font-size: 10px;
+}
+
+.settings-workspace__profile-form .settings-modal__input {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 1100px) {
+  .settings-workspace__provider {
+    grid-template-columns: minmax(120px, 1fr) auto;
+  }
+
+  .settings-workspace__provider-status {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-items: start;
+    text-align: left;
+  }
+
+  .settings-workspace__profile-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .settings-workspace__profile-form .settings-modal__action {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
+.settings-workspace__scope-editor {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.settings-workspace__scope-select {
+  height: 22px;
+  border: 0;
+  border-bottom: 1px solid var(--control-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: 10px var(--font-ui);
+  padding: 0 16px 0 2px;
+}
+
+.settings-workspace__scope-reset {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--steel-cyan-400);
+  cursor: default;
+  font: 10px var(--font-ui);
+  padding: 2px 0;
+}
+
+.settings-workspace__scope-reset:hover,
+.settings-workspace__scope-reset:focus-visible {
+  color: var(--color-text-strong);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .settings-workspace__header {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding-right: 12px;
+  }
+
+  .settings-workspace__title {
+    display: none;
+  }
+
+  .settings-workspace__search-wrap {
+    justify-self: stretch;
+  }
+
+  .settings-workspace__body {
+    grid-template-columns: 190px minmax(0, 1fr);
+  }
+
+  .settings-workspace__content {
+    padding: 26px 20px 40px;
+  }
+
+  .settings-modal__row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px;
+    align-items: start;
+    padding: 10px 0;
+  }
+
+  .settings-workspace__row-control {
+    justify-items: start;
+  }
+
+  .settings-workspace__row-control .settings-workspace__scope {
+    text-align: left;
+  }
+
+  .settings-workspace__scope-editor {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+/* The native window bottoms out at 900px, so its compact settings mode must
+   activate within the reachable range rather than at a browser-only width. */
+@media (max-width: 920px) {
+  .settings-workspace__header {
+    grid-template-columns: 34px minmax(0, 1fr);
+    padding-left: 76px;
+  }
+
+  .settings-workspace__back {
+    width: 30px;
+    justify-content: center;
+  }
+
+  .settings-workspace__back span,
+  .settings-workspace__nav {
+    display: none;
+  }
+
+  .settings-workspace__body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .settings-workspace__sidebar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+    padding: 10px 14px;
+  }
+
+  .settings-workspace__mobile-label,
+  .settings-workspace__category-select {
+    display: block;
+  }
+
+  .settings-workspace__mobile-label {
+    color: var(--color-text-muted);
+    font: 600 12px var(--font-ui);
+  }
+
+  .settings-workspace__category-select {
+    min-width: 0;
+    height: 28px;
+    border: 1px solid var(--control-border);
+    border-radius: var(--control-radius);
+    background: var(--field-bg);
+    color: var(--color-text-strong);
+    font: 12px var(--font-ui);
+    padding: 0 8px;
+  }
+}

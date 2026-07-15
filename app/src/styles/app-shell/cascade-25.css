@@ -1,0 +1,239 @@
+
+
+.titlebar-agent-context {
+  gap: 10px;
+  overflow: hidden;
+  padding: 0 12px;
+  color: #a6a8b6;
+  font-size: 13px;
+}
+
+.titlebar-workspace {
+  overflow: hidden;
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 0;
+  cursor: default;
+  color: #ececf4;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0;
+}
+
+.titlebar-workspace:hover,
+.titlebar-action:hover {
+  background: transparent;
+  color: #ececf4;
+}
+
+.titlebar-branch {
+  overflow: hidden;
+  min-width: 0;
+  max-width: 30ch;
+  flex: 0 1 auto;
+  color: #707383;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.titlebar-actions {
+  gap: 10px;
+  padding: 0 12px;
+  background: #1b1c23;
+}
+
+.titlebar-pill {
+  color: #9bd9e3;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.titlebar-action {
+  width: 18px;
+  height: 24px;
+  color: #a6a8b6;
+}
+
+.side-drawer-resizer {
+  position: relative;
+  inset: auto;
+  z-index: 1;
+  grid-area: sidesplit;
+  width: 6px;
+  height: 100%;
+  border-right: 1px solid #232530;
+  border-left: 1px solid #2b2d36;
+  background: #101118;
+}
+
+.side-drawer-resizer::before {
+  inset: 0 2px;
+  background: transparent;
+}
+
+.file-rail {
+  border-right: 0;
+  background: #1b1c23;
+}
+
+.drawer-toolbar {
+  height: 44px;
+  flex: 0 0 44px;
+  gap: 8px;
+  border-bottom: 1px solid #2b2d36;
+  background: #1b1c23;
+  color: #ececf4;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
+  padding: 0 12px;
+  text-transform: none;
+}
+
+.project-rail {
+  padding: 12px 10px 16px;
+}
+
+.project-rail__heading {
+  height: 24px;
+  line-height: 24px;
+  padding: 0 2px;
+  color: #707383;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.project-group {
+  gap: 0;
+}
+
+.project-row {
+  min-height: 34px;
+  padding: 4px 10px;
+  color: #ececf4;
+}
+
+.project-row--active {
+  background: transparent;
+  box-shadow: none;
+}
+
+.project-row--active:hover,
+.project-row:hover,
+.project-row:focus-visible {
+  background: #22242d;
+}
+
+.project-row__name {
+  gap: 8px;
+  font-size: 13px;
+}
+
+.session-list {
+  gap: 0;
+  padding: 0;
+}
+
+.session-row {
+  min-height: 34px;
+  border-radius: 0;
+  padding: 4px 10px 4px 28px;
+  color: #a6a8b6;
+}
+
+.session-row__copy {
+  gap: 0;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.session-row__state > .app-icon {
+  display: none;
+}
+
+.session-row__state > .session-row__pin {
+  display: block;
+  width: 11px;
+  height: 11px;
+  color: #78c7d8;
+}
+
+.session-row__time {
+  color: #707383;
+  font-size: 13px;
+}
+
+.session-row--active {
+  background: #252732;
+  color: #ececf4;
+}
+
+.workbench.workbench--drawer-right {
+  grid-template-columns: minmax(420px, 1fr) 6px var(--dock-width, 430px);
+  grid-template-rows: 38px minmax(0, 1fr);
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit files";
+  gap: 0;
+  background: #121318;
+}
+
+.workbench.workbench--tools-editor.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit editor";
+}
+
+.workbench.workbench--tools-browser.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit browser";
+}
+
+.workbench.workbench--tools-git.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit git";
+}
+
+.workbench.workbench--drawer-hidden {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "terminal";
+}
+
+.workbench.workbench--drawer-hidden .files-dock,
+.workbench.workbench--drawer-hidden .git-dock,
+.workbench.workbench--drawer-hidden .editor-area,
+.workbench.workbench--drawer-hidden .browser-preview {
+  display: none;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right {
+  position: relative;
+  inset: auto;
+  z-index: 2;
+  grid-area: rightsplit;
+  width: 6px;
+  height: 100%;
+  border-right: 1px solid #232530;
+  border-left: 1px solid #2b2d36;
+  background: #101118;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::before {
+  inset: 0 2px;
+  background: transparent;
+}
+
+.workbench--drawer-right .workbench-resizer--tray.workbench-resizer--right::after {
+  top: calc(50% - 23px);
+  left: 2px;
+  width: 2px;
+  height: 46px;
+  border-radius: 0;
+  background: #626574;
+  opacity: 0.5;
+}

@@ -1,0 +1,230 @@
+
+
+.agent-composer__harness {
+  display: grid;
+  grid-template-columns: 120px 120px minmax(180px, 1fr);
+  gap: 8px;
+  align-items: end;
+  min-width: 0;
+}
+
+.agent-composer__settings {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.agent-composer__settings summary {
+  display: inline-flex;
+  height: 24px;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--control-radius);
+  color: var(--color-text-subtle);
+  cursor: default;
+  font-size: 11px;
+  list-style: none;
+  padding: 0 7px;
+}
+
+.agent-composer__settings summary::-webkit-details-marker {
+  display: none;
+}
+
+.agent-composer__settings summary:hover,
+.agent-composer__settings summary:focus-visible,
+.agent-composer__settings[open] summary {
+  background: var(--toolbar-control-bg-hover);
+  color: var(--color-text);
+}
+
+.agent-composer__settings summary:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}
+
+.agent-composer__settings summary .app-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.agent-composer__settings[open] .agent-composer__harness {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  z-index: 12;
+  width: min(480px, calc(100vw - 32px));
+  border: 1px solid var(--color-border-strong);
+  border-radius: 6px;
+  background: var(--color-surface-overlay);
+  box-shadow: var(--shadow-overlay);
+  padding: 10px;
+}
+
+.agent-composer__settings:not([open]) .agent-composer__harness {
+  display: none;
+}
+
+.agent-composer__target {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.agent-composer__target strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-text-strong);
+}
+
+.agent-composer__target span {
+  overflow: hidden;
+  max-width: 100%;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-composer__field {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.agent-composer__field select,
+.agent-composer__field input {
+  min-width: 0;
+  height: 22px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--control-bg);
+  color: var(--color-text-strong);
+  font: 11px/1 var(--font-ui);
+  padding: 0 7px;
+}
+
+.agent-composer__field select {
+  padding-right: 24px;
+}
+
+.agent-composer__field--goal {
+  min-width: 140px;
+}
+
+.agent-composer__attachments {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+
+.agent-composer__attachments::-webkit-scrollbar {
+  display: none;
+}
+
+.agent-composer__attachment-button,
+.agent-composer__attachment {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  height: 20px;
+  border: 1px solid transparent;
+  border-radius: var(--badge-radius);
+  background: transparent;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 650;
+  padding: 0 5px;
+}
+
+.agent-composer__attachment {
+  max-width: 190px;
+  color: var(--color-text);
+}
+
+.agent-composer__attachment span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-composer__attachment img {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+  object-fit: cover;
+}
+
+.agent-composer__attachment button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-text-subtle);
+  padding: 0;
+}
+
+.agent-composer__attachment button:hover {
+  background: var(--control-bg-hover);
+  color: var(--color-text-strong);
+}
+
+.agent-composer__input {
+  min-width: 0;
+  min-height: 58px;
+  max-height: 112px;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-strong);
+  font: 13px/1.45 var(--font-ui);
+  outline: none;
+  padding: 12px 13px;
+}
+
+.agent-composer__input:disabled {
+  color: var(--color-text-disabled);
+}
+
+.agent-composer__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.agent-composer__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: var(--control-radius);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 24px;
+  padding: 0 6px;
+}
+
+.agent-composer__button--danger:not(:disabled) {
+  color: var(--color-danger);
+}
