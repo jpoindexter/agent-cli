@@ -168,6 +168,7 @@ import {
 import type { TerminalPaneState } from "./terminalPane";
 import { absolutePathForGitFile } from "./fileGitStatus";
 import type { GitStatusFile } from "./fileGitStatus";
+import { useGitStatus, type GitStatusResponse } from "./useGitStatus";
 import { parseUnifiedDiff } from "./diffView";
 import type { ParsedDiff } from "./diffView";
 import {
@@ -316,16 +317,6 @@ type WorkspaceTreeChanged = { root: string; count: number };
 type TextFileResponse = { path: string; content: string; bytes: number; modifiedMs: number | null };
 type ChatImageResponse = { path: string; bytes: number; mimeType: string };
 type FileOpResponse = { path: string };
-type GitStatusResponse = {
-  isRepository: boolean;
-  branch: string | null;
-  ahead: number;
-  behind: number;
-  staged: number;
-  unstaged: number;
-  untracked: number;
-  files: GitStatusFile[];
-};
 type GitDiffResponse = { path: string; diff: string; source: string };
 type GitFileAction = "stage" | "unstage" | "discard";
 type ActiveDiffReview = {
@@ -556,10 +547,13 @@ function App() {
   const [chatSearchError, setChatSearchError] = useState<string | null>(null);
   const [chatSearchRevision, setChatSearchRevision] = useState(0);
   const [focusedChatMessageId, setFocusedChatMessageId] = useState<string | null>(null);
-  const [gitStatus, setGitStatus] = useState<GitStatusResponse | null>(null);
-  const [gitStatusRoot, setGitStatusRoot] = useState<string | null>(null);
-  const [gitStatusLoading, setGitStatusLoading] = useState(false);
-  const [gitStatusError, setGitStatusError] = useState<string | null>(null);
+  const {
+    error: gitStatusError, loading: gitStatusLoading, refresh: refreshGitStatus,
+    root: gitStatusRoot, setRoot: setGitStatusRoot, setStatus: setGitStatus, status: gitStatus,
+  } = useGitStatus({
+    active: sideDrawerMode === "files" || sideDrawerMode === "git", refreshKey: treeRefreshNonce,
+    resolveRoot: () => workspacePathRef.current ?? workspacePath, workspacePath,
+  });
   const [diffReview, setDiffReview] = useState<ActiveDiffReview | null>(null);
   const [diffReviewLoading, setDiffReviewLoading] = useState(false);
   const [diffReviewError, setDiffReviewError] = useState<string | null>(null);
@@ -626,28 +620,6 @@ function App() {
       : null;
 
   const refreshFileTree = () => setTreeRefreshNonce((value) => value + 1);
-  const refreshGitStatus = async () => {
-    const root = workspacePathRef.current ?? workspacePath;
-    if (!root) {
-      setGitStatus(null);
-      setGitStatusRoot(null);
-      setGitStatusError(null);
-      return;
-    }
-    setGitStatusLoading(true);
-    setGitStatusError(null);
-    try {
-      setGitStatus(await invoke<GitStatusResponse>("git_status", { root }));
-      setGitStatusRoot(root);
-    } catch (err) {
-      setGitStatusError(String(err));
-      setGitStatus(null);
-      setGitStatusRoot(root);
-    } finally {
-      setGitStatusLoading(false);
-    }
-  };
-
   useEffect(() => {
     if (!commandPalette.open) return;
     const query = commandPalette.query.trim();
@@ -838,12 +810,6 @@ function App() {
   useSyncRef(projectSessionsRef, projectSessions);
   useSyncRef(activeSessionByProjectRef, activeSessionByProject);
   useSyncRef(paneLabelsBySessionRef, paneLabelsBySession);
-
-  useEffect(() => {
-    if (sideDrawerMode === "files" || sideDrawerMode === "git") {
-      void refreshGitStatus();
-    }
-  }, [sideDrawerMode, workspacePath, treeRefreshNonce]);
 
   useSyncRef(browserPreviewByProjectRef, browserPreviewByProject);
   useSyncRef(browserPreviewBySessionRef, browserPreviewBySession);
