@@ -258,15 +258,15 @@ import {
   deleteDurableProjectChats,
   resetDurableChatStore,
   saveDurableChatConversation,
-  searchDurableChatMessages,
 } from "./chatStore";
+import { useChatSearch } from "./useChatSearch";
 import {
   checkpointPreviewMessage,
   createWorkspaceCheckpoint,
   previewWorkspaceCheckpoint,
   restoreWorkspaceCheckpoint,
 } from "./workspaceCheckpoints";
-import { mergeChatDiscoveryResults, type ChatSearchResult, type ChatSearchViewResult } from "./chatDiscovery";
+import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
 import type { FileTreeNode, FileTreeResponse } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
@@ -542,10 +542,10 @@ function App() {
     workbenchStyle,
   } = useShellLayout(() => setSettingsOpen(false));
   const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
-  const [chatSearchResults, setChatSearchResults] = useState<ChatSearchResult[]>([]);
-  const [chatSearchLoading, setChatSearchLoading] = useState(false);
-  const [chatSearchError, setChatSearchError] = useState<string | null>(null);
-  const [chatSearchRevision, setChatSearchRevision] = useState(0);
+  const {
+    error: chatSearchError, loading: chatSearchLoading, refresh: refreshChatSearch,
+    results: chatSearchResults, setError: setChatSearchError,
+  } = useChatSearch({ open: commandPalette.open, query: commandPalette.query });
   const [focusedChatMessageId, setFocusedChatMessageId] = useState<string | null>(null);
   const {
     error: gitStatusError, loading: gitStatusLoading, refresh: refreshGitStatus,
@@ -620,39 +620,6 @@ function App() {
       : null;
 
   const refreshFileTree = () => setTreeRefreshNonce((value) => value + 1);
-  useEffect(() => {
-    if (!commandPalette.open) return;
-    const query = commandPalette.query.trim();
-    if (query.length < 2) {
-      setChatSearchResults([]);
-      setChatSearchError(null);
-      setChatSearchLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setChatSearchLoading(true);
-    setChatSearchError(null);
-    const timer = window.setTimeout(() => {
-      searchDurableChatMessages(query, false, 80)
-        .then((results) => {
-          if (!cancelled) setChatSearchResults(results);
-        })
-        .catch((error) => {
-          if (!cancelled) {
-            setChatSearchResults([]);
-            setChatSearchError(String(error));
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setChatSearchLoading(false);
-        });
-    }, 140);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [chatSearchRevision, commandPalette.open, commandPalette.query]);
-
   const focusEditorLine = (line: number) => {
     const targetLine = Math.max(1, line);
     window.setTimeout(() => {
@@ -1043,7 +1010,7 @@ function App() {
       ),
       updatedAt: Date.now(),
     }));
-    setChatSearchRevision((revision) => revision + 1);
+    refreshChatSearch();
     setActionNotice(bookmarked ? "Bookmarked message" : "Removed bookmark");
   };
 

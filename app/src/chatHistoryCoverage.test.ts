@@ -4,7 +4,8 @@ import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const chatPalette = readFileSync(new URL("./commandPaletteChats.ts", import.meta.url), "utf8");
-const productionWiring = `${app}\n${chatPalette}`;
+const chatSearch = readFileSync(new URL("./useChatSearch.ts", import.meta.url), "utf8");
+const productionWiring = `${app}\n${chatPalette}\n${chatSearch}`;
 const thread = [
   readFileSync(new URL("./ChatThreadSurface.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("./ChatTurn.tsx", import.meta.url), "utf8"),
@@ -15,7 +16,8 @@ const css = `${readCssSource(new URL("./App.css", import.meta.url))}\n${readCssS
 
 describe("chat history discovery production wiring", () => {
   it("searches durable history and opens stable message targets", () => {
-    expect(app).toContain("searchDurableChatMessages");
+    expect(app).toContain("useChatSearch({ open: commandPalette.open");
+    expect(chatSearch).toContain("searchDurableChatMessages(query, false, 80)");
     expect(app).toContain("openChatSearchResult(result)");
     expect(app).toContain('setFocusedChatMessageId(result.messageId ?? null)');
     expect(thread).toContain('data-message-id={message.id}');
