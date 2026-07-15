@@ -137,6 +137,7 @@ import {
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { AppIcon, paneStateIconName } from "./icons";
+import { AppNotices } from "./AppNotices";
 import type { AppIconName } from "./icons";
 
 type AgentHookRequest = {
@@ -7097,47 +7098,19 @@ function App() {
         projectSessionId={activeSessionId}
         transcripts={paneTranscripts}
       />
-      {crashNotice ? (
-        <div className="crash-notice" role="status">
-          <AppIcon name="reload" />
-          <span>{crashNotice}</span>
-          <button className="editor-command" type="button" aria-label="Dismiss recovery notice" onClick={() => setCrashNotice(null)}>
-            <AppIcon name="close" />
-          </button>
-        </div>
-      ) : null}
-      {actionNotice ? (
-        <div className="context-action-notice" role="status">
-          <AppIcon name="check" />
-          <span>{actionNotice}</span>
-          <button className="editor-command" type="button" aria-label="Dismiss action notice" onClick={() => setActionNotice(null)}>
-            <AppIcon name="close" />
-          </button>
-        </div>
-      ) : null}
-      {launchError ? (
-        <div className="launch-error" role="alert">
-          <span className="launch-error__message">{launchError}</span>
-          <span className="launch-error__actions">
-            <button className="editor-command" type="button" onClick={() => void pickWorkspace()}>
-              <AppIcon name="folderOpen" />
-              <span>Open Folder</span>
-            </button>
-            <button
-              className="editor-command"
-              type="button"
-              disabled={launchProfileChanging || launchProfile.id === "shell"}
-              onClick={() => {
-                const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
-                if (shell) void switchLaunchProfile(shell);
-              }}
-            >
-              <AppIcon name="terminal" />
-              <span>Use Shell profile</span>
-            </button>
-          </span>
-        </div>
-      ) : null}
+      <AppNotices
+        actionNotice={actionNotice}
+        canUseShellProfile={!launchProfileChanging && launchProfile.id !== "shell"}
+        crashNotice={crashNotice}
+        launchError={launchError}
+        onDismissAction={() => setActionNotice(null)}
+        onDismissCrash={() => setCrashNotice(null)}
+        onOpenFolder={() => void pickWorkspace()}
+        onUseShellProfile={() => {
+          const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
+          if (shell) void switchLaunchProfile(shell);
+        }}
+      />
       <OrchestrationDialog
         open={orchestrationOpen}
         projectPath={workspacePath ?? ""}
