@@ -219,7 +219,6 @@ import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
 import { openWorkspaceTerminalPanes } from "./workspaceOpenPanes";
 import { prepareWorkspaceOpenSession } from "./workspaceOpenSession";
-import { planWorkspaceOpenSuccess } from "./workspaceOpenSuccess";
 import { persistMissingWorkspaceCleanup } from "./workspaceOpenRecoveryPersistence";
 import { persistWorkspaceOpenFailure, persistWorkspaceOpenSuccess } from "./workspaceOpenPersistence";
 import { requestWorkspaceOpen } from "./workspaceOpenRequest";
@@ -237,6 +236,7 @@ import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
 import { executeWorkspaceOpenFailure } from "./workspaceOpenFailureWorkflow";
 import { resolveWorkspaceOpenTarget } from "./workspaceOpenTarget";
+import { executeWorkspaceOpenSuccess } from "./workspaceOpenSuccessWorkflow";
 import {
   addPaneTranscript,
   buildPaneTranscript,
@@ -1649,30 +1649,26 @@ function App() {
       setWorkspacePath(root);
       resetEditor();
       setTimeout(sendTerminalResize, 0);
-      const now = Date.now();
-      const previousStatus = previousRoot ? projectStatusForRoot(previousRoot) : "exited";
-      const { activeSessions: nextActiveSessions, openProjects: nextOpen, recentProjects: nextRecent,
-        sessionId, sessions: nextSessions } = planWorkspaceOpenSuccess({
-        activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
-        openProjects: openProjectsRef.current, recentProjects: recentProjectsRef.current,
-        previousRoot, previousStatus, root, now,
-        projectStatus: projectStatusForRoot(root), sessionStatus: terminalPaneProjectStatus(nextProjectPanes),
+      await executeWorkspaceOpenSuccess({
+        applyPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => {
+          applyWorkspaceCleanupRecord(recentProjectsRef, recentProjects, setRecentProjects);
+          applyWorkspaceCleanupRecord(openProjectsRef, openProjects, setOpenProjects);
+          applyWorkspaceCleanupRecord(projectSessionsRef, sessions, setProjectSessions);
+          applyWorkspaceCleanupRecord(activeSessionByProjectRef, activeSessions, setActiveSessionByProjectState);
+        },
+        now: Date.now(), panes: nextProjectPanes, persistPaneLayout: persistPaneLayoutForSession,
+        persistPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => persistWorkspaceOpenSuccess({
+          activeSessions, launchProfile: profile, openProjects, recentProjects, root, sessions, store,
+        }),
+        previousRoot, previousStatus: previousRoot ? projectStatusForRoot(previousRoot) : "exited",
+        projectStatus: projectStatusForRoot(root), restoreBrowser: restoreBrowserPreview,
+        restoreEditor: restoreSessionEditorSnapshot, root,
+        sessionStatus: terminalPaneProjectStatus(nextProjectPanes),
+        state: {
+          activeSessions: activeSessionByProjectRef.current, openProjects: openProjectsRef.current,
+          recentProjects: recentProjectsRef.current, sessions: projectSessionsRef.current,
+        },
       });
-      persistPaneLayoutForSession(root, sessionId, nextProjectPanes);
-      recentProjectsRef.current = nextRecent;
-      openProjectsRef.current = nextOpen;
-      projectSessionsRef.current = nextSessions;
-      activeSessionByProjectRef.current = nextActiveSessions;
-      setRecentProjects(nextRecent);
-      setOpenProjects(nextOpen);
-      setProjectSessions(nextSessions);
-      setActiveSessionByProjectState(nextActiveSessions);
-      await persistWorkspaceOpenSuccess({
-        activeSessions: nextActiveSessions, launchProfile: profile, openProjects: nextOpen,
-        recentProjects: nextRecent, root, sessions: nextSessions, store,
-      });
-      restoreSessionEditorSnapshot(root, sessionId);
-      restoreBrowserPreview(root, sessionId);
       return true;
     } catch (err) {
       const message = String(err);
