@@ -261,6 +261,7 @@ import {
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
 import type { FileTreeNode } from "./fileTreeTypes";
+import { createWorkspaceFileActions } from "./workspaceFileActions";
 import { StatusBar } from "./StatusBar";
 import {
   type OrchestrationChildDraft,
@@ -306,7 +307,6 @@ type WorktreeResponse = { path: string; branch: string };
 type TerminalPanesByContext = Record<string, ManagedTerminalPane[]>;
 type ActiveTerminalPaneByContext = Record<string, number>;
 type TextFileResponse = { path: string; content: string; bytes: number; modifiedMs: number | null };
-type FileOpResponse = { path: string };
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
 type DetectedLocalDevServer = {
@@ -338,7 +338,9 @@ type OpenedWorkspaceTarget = {
 };
 
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-const dirname = (path: string) => path.replace(/[\\/][^\\/]*$/, "") || path;
+const fileNodeFromPath = (path: string, kind: FileTreeNode["kind"]): FileTreeNode => ({
+  id: path, kind, name: basename(path), path,
+});
 const formatBytes = (bytes: number | null) => {
   if (bytes == null) return "--";
   if (bytes < 1024) return `${bytes} B`;
@@ -2513,138 +2515,50 @@ function App() {
     requestAnimationFrame(() => view.focus());
   };
 
-  const fileOpParent = (node: FileTreeNode | null) => {
-    if (!workspacePath) return null;
-    if (!node) return workspacePath;
-    return node.kind === "directory" ? node.path : dirname(node.path);
-  };
-
-  const fileNodeFromPath = (path: string, kind: FileTreeNode["kind"]): FileTreeNode => ({
-    id: path,
-    name: basename(path),
-    path,
-    kind,
-  });
-
-  const createFileInRail = async (node: FileTreeNode | null = null) => {
-    const root = workspacePathRef.current ?? workspacePath;
-    const parent = fileOpParent(node);
-    if (!root || !parent) return;
-    const name = window.prompt("New file name");
-    if (!name) return;
-    setFileOpError(null);
-    try {
-      const result = await invoke<FileOpResponse>("create_workspace_file", { root, parent, name });
-      refreshFileTree();
-      await requestOpenEditorFile(fileNodeFromPath(result.path, "file"), { focusEditor: true });
-    } catch (err) {
-      setFileOpError(String(err));
-    }
-  };
-
-  const createFolderInRail = async (node: FileTreeNode | null = null) => {
-    const root = workspacePathRef.current ?? workspacePath;
-    const parent = fileOpParent(node);
-    if (!root || !parent) return;
-    const name = window.prompt("New folder name");
-    if (!name) return;
-    setFileOpError(null);
-    try {
-      await invoke<FileOpResponse>("create_workspace_folder", { root, parent, name });
-      refreshFileTree();
-    } catch (err) {
-      setFileOpError(String(err));
-    }
-  };
-
-  const renameRailNode = async (node: FileTreeNode) => {
-    const root = workspacePathRef.current ?? workspacePath;
-    if (!root) return;
-    const affectedSelectedFile = selectedFileIsWithin(node);
-    if (
-      affectedSelectedFile &&
-      editorDirty &&
-      !await confirmDialog("Rename this item and discard the unsaved editor buffer?")
-    ) {
-      return;
-    }
-    const name = window.prompt("Rename to", node.name);
-    if (!name || name === node.name) return;
-    setFileOpError(null);
-    try {
-      const result = await invoke<FileOpResponse>("rename_workspace_path", { root, path: node.path, name });
-      setEditorTabs((tabs) => retargetEditorTabs(tabs, node.path, result.path, basename));
-      editorBuffersRef.current = retargetEditorBuffers(editorBuffersRef.current, node.path, result.path);
-      editorViewStatesRef.current = retargetEditorBuffers(editorViewStatesRef.current, node.path, result.path);
+  const {
+    createFile: createFileInRail,
+    createFolder: createFolderInRail,
+    delete: deleteRailNode,
+    duplicate: duplicateRailNode,
+    rename: renameRailNode,
+    reveal: revealRailNode,
+  } = createWorkspaceFileActions({
+    editorDirty,
+    getRoot: () => workspacePathRef.current ?? workspacePath,
+    getSelectedFile: () => selectedFile,
+    onOpenFile: async (file) => { await requestOpenEditorFile(file, { focusEditor: true }); },
+    onRename: async (node, nextPath, affectedSelectedFile) => {
+      setEditorTabs((tabs) => retargetEditorTabs(tabs, node.path, nextPath, basename));
+      editorBuffersRef.current = retargetEditorBuffers(editorBuffersRef.current, node.path, nextPath);
+      editorViewStatesRef.current = retargetEditorBuffers(editorViewStatesRef.current, node.path, nextPath);
       setEditorBufferRevision((value) => value + 1);
-      refreshFileTree();
-      if (affectedSelectedFile && selectedFile) {
-        const nextSelectedPath =
-          selectedFile.path === node.path ? result.path : `${result.path}${selectedFile.path.slice(node.path.length)}`;
-        selectedFileRef.current = null;
-        setSelectedFile(null);
-        await openEditorFileDirect(fileNodeFromPath(nextSelectedPath, "file"), { focusEditor: true });
-      }
-    } catch (err) {
-      setFileOpError(String(err));
-    }
-  };
-
-  const selectedFileIsWithin = (node: FileTreeNode) =>
-    selectedFile != null && (selectedFile.path === node.path || selectedFile.path.startsWith(`${node.path}/`));
-
-  const deleteRailNode = async (node: FileTreeNode) => {
-    const root = workspacePathRef.current ?? workspacePath;
-    if (!root) return;
-    const affectedSelectedFile = selectedFileIsWithin(node);
-    const message = `Delete ${node.kind === "directory" ? "folder" : "file"} "${node.name}"? This cannot be undone.`;
-    if (!await confirmDialog(message)) return;
-    if (affectedSelectedFile && editorDirty && !await confirmDialog("The selected file has unsaved changes. Delete anyway?")) return;
-    setFileOpError(null);
-    try {
-      await invoke("delete_workspace_path", { root, path: node.path });
+      if (!affectedSelectedFile) return;
+      const selectedPath = affectedSelectedFile.path === node.path
+        ? nextPath : `${nextPath}${affectedSelectedFile.path.slice(node.path.length)}`;
+      selectedFileRef.current = null;
+      setSelectedFile(null);
+      await openEditorFileDirect({ id: selectedPath, kind: "file", name: basename(selectedPath), path: selectedPath }, { focusEditor: true });
+    },
+    onDelete: async (node, affectedSelectedFile) => {
       const nextTabs = removeEditorTabsWithin(editorTabs, node.path);
       editorBuffersRef.current = removeEditorBuffersWithin(editorBuffersRef.current, node.path);
       editorViewStatesRef.current = removeEditorBuffersWithin(editorViewStatesRef.current, node.path);
       setEditorTabs(nextTabs);
       setEditorBufferRevision((value) => value + 1);
-      if (affectedSelectedFile) {
-        const nextTab = nextTabs[0] ?? null;
-        if (nextTab) {
-          selectedFileRef.current = null;
-          setSelectedFile(null);
-          await openEditorFileDirect(nextTab, { focusEditor: true });
-        } else {
-          if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
-          resetEditor();
-        }
+      if (!affectedSelectedFile) return;
+      const nextTab = nextTabs[0] ?? null;
+      if (nextTab) {
+        selectedFileRef.current = null;
+        setSelectedFile(null);
+        await openEditorFileDirect(nextTab, { focusEditor: true });
+      } else {
+        if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
+        resetEditor();
       }
-      refreshFileTree();
-    } catch (err) {
-      setFileOpError(String(err));
-    }
-  };
-
-  const duplicateRailNode = async (node: FileTreeNode) => {
-    const root = workspacePathRef.current ?? workspacePath;
-    if (!root) return;
-    setFileOpError(null);
-    try {
-      await invoke<FileOpResponse>("duplicate_workspace_path", { root, path: node.path });
-      refreshFileTree();
-    } catch (err) {
-      setFileOpError(String(err));
-    }
-  };
-
-  const revealRailNode = async (node: FileTreeNode) => {
-    setFileOpError(null);
-    try {
-      await revealItemInDir(node.path);
-    } catch (err) {
-      setFileOpError(`Could not reveal ${node.name}: ${err}`);
-    }
-  };
+    },
+    refresh: refreshFileTree,
+    setError: setFileOpError,
+  });
 
   const terminalSelectedText = () => {
     const snap = latest.current;
