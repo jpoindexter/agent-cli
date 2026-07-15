@@ -271,6 +271,7 @@ import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./Cont
 import { paneContextBelongsToProject, paneContextKey, paneContextParts } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { closeProjectResources as closeProjectResourcesWithContext } from "./projectResourceClose";
+import { requestProjectClose } from "./projectCloseRequest";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -1945,22 +1946,18 @@ function App() {
   };
 
   const requestCloseProject = async (project: OpenProject) => {
-    const runCount = Object.entries(chatConversationsRef.current)
-      .filter(([key, conversation]) => key.startsWith(`${project.path}\n`) && conversation.activeRunId)
-      .length;
-    const paneCount = terminalPanesForProject(project.path).filter((pane) => pane.state !== "exited").length;
-    if ((runCount > 0 || paneCount > 0) && !await confirmDialog(`Close ${basename(project.path)} and stop ${runCount + paneCount} running task${runCount + paneCount === 1 ? "" : "s"}?`)) {
-      return false;
-    }
-    if (project.path === workspacePathRef.current && dirtyTabPaths.length === 1 && selectedFileRef.current) {
-      setDraftDialogError(null);
-      setPendingNavigation({ kind: "close-project", projectPath: project.path });
-      return false;
-    }
-    if (project.path === workspacePathRef.current && dirtyTabPaths.length > 1 && !await confirmDialog(`Close ${basename(project.path)} with ${dirtyTabPaths.length} unsaved editor tabs?`)) {
-      return false;
-    }
-    return closeProjectDirect(project.path);
+    return requestProjectClose({
+      activeProjectPath: workspacePathRef.current, closeProject: closeProjectDirect,
+      confirmDirtyTabs: (count) => confirmDialog(`Close ${basename(project.path)} with ${count} unsaved editor tabs?`),
+      confirmRunningTasks: (count) => confirmDialog(`Close ${basename(project.path)} and stop ${count} running task${count === 1 ? "" : "s"}?`),
+      conversations: chatConversationsRef.current,
+      deferNavigation: () => {
+        setDraftDialogError(null);
+        setPendingNavigation({ kind: "close-project", projectPath: project.path });
+      },
+      dirtyTabCount: dirtyTabPaths.length, hasSelectedFile: selectedFileRef.current != null,
+      panes: terminalPanesForProject(project.path), projectPath: project.path,
+    });
   };
 
   const switchProjectSession = async (projectPath: string, sessionId: string) => {
