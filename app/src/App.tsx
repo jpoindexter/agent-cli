@@ -134,6 +134,10 @@ import {
   type KeybindingOverrides,
 } from "./shortcuts";
 import { filterCommandPaletteCommands } from "./commandPalette";
+import {
+  buildCommandPaletteLayoutCommands,
+  buildCommandPaletteResourceCommands,
+} from "./commandPaletteNavigation";
 import { SearchCommandDialog, type SearchDialogCommand } from "./SearchCommandDialog";
 import { useCommandPalette } from "./useCommandPalette";
 import { QuickOpenDialog } from "./QuickOpenDialog";
@@ -3789,6 +3793,26 @@ function App() {
   const activeTerminalPaneLabelForCommands = activeTerminalPane
     ? terminalPaneLabel(activeTerminalPane, activeTerminalPaneCommandIndex >= 0 ? activeTerminalPaneCommandIndex : activeTerminalPane.slot)
     : null;
+  const commandPaletteNavigation = {
+    drawerModes: DRAWER_MODES,
+    editorTabs,
+    files: searchableFiles,
+    onFocusWorktree: (paneId: number) => {
+      setAgentSurfaceMode("terminal");
+      void focusTerminalPane(paneId);
+    },
+    onLayoutChange: setWorkbenchLayout,
+    onOpenFile: (file: FileTreeNode) => void requestOpenEditorFile(file, { focusEditor: true }),
+    onShowDrawer: (mode: SideDrawerMode) => {
+      setSideDrawerCollapsed(false);
+      setSideDrawerMode(mode);
+    },
+    onTrayModeChange: setToolTrayMode,
+    terminalPanes,
+    workbenchLayout,
+    workspacePath,
+    worktrees,
+  };
   const commandPaletteCommands: CommandPaletteCommand[] = [
     ...visibleOpenProjects.flatMap((project) => projectSessionsFor(project.path).map((session): CommandPaletteCommand => ({
       id: `chat.${project.path}.${session.id}`,
@@ -4003,45 +4027,7 @@ function App() {
       keywords: ["localhost", "preview", "vite", "next"],
       run: () => void openDetectedLocalDevServer(),
     },
-    ...DRAWER_MODES.map((mode): CommandPaletteCommand => ({
-      id: `drawer.${mode.id}`,
-      label: `Show ${mode.label}`,
-      detail: "Switch side drawer",
-      icon: mode.icon,
-      keywords: ["drawer", "sidebar", mode.id],
-      run: () => {
-        setSideDrawerCollapsed(false);
-        setSideDrawerMode(mode.id);
-      },
-    })),
-    ...([
-      ["right", "Dock Tools Right"],
-      ["left", "Dock Tools Left"],
-      ["bottom", "Dock Tools Bottom"],
-      ["hidden", "Hide Tool Tray"],
-    ] as const).map(([mode, label]): CommandPaletteCommand => ({
-      id: `layout.${mode}`,
-      label,
-      detail: "Move or hide the editor/browser tray",
-      icon: mode === "hidden" ? "close" : "browser",
-      keywords: ["layout", "tray", "dock"],
-      run: () => setWorkbenchLayout(mode),
-    })),
-    ...([
-      ["split", "Show Split Tools"],
-      ["editor", "Show Editor Tray"],
-      ["browser", "Show Browser Tray"],
-    ] as const).map(([mode, label]): CommandPaletteCommand => ({
-      id: `tool-tray.${mode}`,
-      label,
-      detail: "Choose visible tool tray content",
-      icon: mode === "browser" ? "browser" : mode === "editor" ? "file" : "workspace",
-      keywords: ["tray", "editor", "browser"],
-      run: () => {
-        if (workbenchLayout === "hidden") setWorkbenchLayout("right");
-        setToolTrayMode(mode);
-      },
-    })),
+    ...buildCommandPaletteLayoutCommands(commandPaletteNavigation),
     {
       id: "composer.attach-current",
       label: "Attach Current File",
@@ -4060,43 +4046,7 @@ function App() {
       keywords: ["composer", "context", "browser"],
       run: () => void attachPreviewToComposer(),
     },
-    ...editorTabs.map((tab): CommandPaletteCommand => ({
-      id: `tab.${tab.path}`,
-      label: tab.name,
-      detail: `Open tab · ${tab.path}`,
-      source: "tabs",
-      icon: "file",
-      keywords: ["tab", "editor", tab.path],
-      run: () => void requestOpenEditorFile(tab, { focusEditor: true }),
-    })),
-    ...worktrees
-      .filter((worktree) => worktree.projectRoot === workspacePath)
-      .map((worktree): CommandPaletteCommand => {
-        const pane = terminalPanes.find((candidate) => String(candidate.id) === worktree.paneId);
-        return {
-          id: `worktree.${worktree.paneId}`,
-          label: worktree.label,
-          detail: `${worktree.branch} · ${worktree.path}`,
-          source: "worktrees",
-          icon: "terminal",
-          disabled: !pane,
-          keywords: ["worktree", "branch", "terminal", worktree.branch],
-          run: () => {
-            if (!pane) return;
-            setAgentSurfaceMode("terminal");
-            void focusTerminalPane(pane.id);
-          },
-        };
-      }),
-    ...searchableFiles.map((file): CommandPaletteCommand => ({
-      id: `file.${file.path}`,
-      label: file.name,
-      detail: file.path,
-      source: "files",
-      icon: "file",
-      keywords: ["file", "project", file.path],
-      run: () => void requestOpenEditorFile(file, { focusEditor: true }),
-    })),
+    ...buildCommandPaletteResourceCommands(commandPaletteNavigation),
   ];
   const filteredCommandPaletteCommands = filterCommandPaletteCommands(commandPaletteCommands, commandPalette.query, commandPaletteSources);
   const visibleCommandPaletteCommands = commandPalette.query.trim()

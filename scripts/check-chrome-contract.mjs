@@ -31,6 +31,10 @@ const composerSurface = read("app/src/AgentComposerSurface.tsx");
 const appChromeState = read("app/src/useAppChromeState.ts");
 const searchCommandDialog = read("app/src/SearchCommandDialog.tsx");
 const commandPaletteController = read("app/src/useCommandPalette.ts");
+const commandPaletteSurface = [
+  appTsx,
+  read("app/src/commandPaletteNavigation.ts"),
+].join("\n");
 const quickOpenSurface = [
   appTsx,
   read("app/src/QuickOpenDialog.tsx"),
@@ -249,7 +253,7 @@ assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command pal
 assert(appTitlebar.includes('<div className="titlebar-identity"') && appTitlebar.includes('title="New chat"') && appTitlebar.includes('title="Search tasks or run a command"') && appTitlebar.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
 assert(!appTsx.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
 assert(appTsx.includes("filterCommandPaletteCommands(commandPaletteCommands, commandPalette.query, commandPaletteSources)"), "Command palette source settings must filter live results");
-assert(appTsx.includes('source: "chats"') && appTsx.includes('source: "files"') && appTsx.includes('source: "tabs"') && appTsx.includes('source: "worktrees"'), "Command palette must include real chat, file, tab, and worktree sources");
+assert(commandPaletteSurface.includes('source: "chats"') && commandPaletteSurface.includes('"files" | "tabs"') && commandPaletteSurface.includes('source: "worktrees"'), "Command palette must include real chat, file, tab, and worktree sources");
 assert(commandPaletteSources.includes('COMMAND_PALETTE_SOURCE_IDS = ["chats", "commands", "files", "tabs", "worktrees"]'), "Command palette sources must use the persisted typed source contract");
 assert(searchCommandDialog.includes('placeholder="Search tasks or run a command"'), "Search must use the centered task and command palette");
 assert(searchCommandDialog.includes('label="Tasks"') && searchCommandDialog.includes('label="Actions"'), "Centered search must separate tasks from actions");
