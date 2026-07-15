@@ -222,6 +222,7 @@ import { prepareWorkspaceOpenSession } from "./workspaceOpenSession";
 import { planWorkspaceOpenSuccess } from "./workspaceOpenSuccess";
 import { planWorkspaceOpenFailure } from "./workspaceOpenFailure";
 import { persistMissingWorkspaceCleanup } from "./workspaceOpenRecoveryPersistence";
+import { persistWorkspaceOpenFailure, persistWorkspaceOpenSuccess } from "./workspaceOpenPersistence";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -1806,13 +1807,10 @@ function App() {
       setOpenProjects(nextOpen);
       setProjectSessions(nextSessions);
       setActiveSessionByProjectState(nextActiveSessions);
-      await store?.set("launchProfile", profile);
-      await store?.set("folder", root);
-      await store?.set("recentFolders", nextRecent);
-      await store?.set("openProjects", nextOpen);
-      await store?.set("projectSessions", nextSessions);
-      await store?.set("activeSessionByProject", nextActiveSessions);
-      await store?.save();
+      await persistWorkspaceOpenSuccess({
+        activeSessions: nextActiveSessions, launchProfile: profile, openProjects: nextOpen,
+        recentProjects: nextRecent, root, sessions: nextSessions, store,
+      });
       restoreSessionEditorSnapshot(root, sessionId);
       restoreBrowserPreview(root, sessionId);
       return true;
@@ -1890,10 +1888,9 @@ function App() {
         setOpenProjects(nextOpen);
         setProjectSessions(nextSessions);
         setActiveSessionByProjectState(nextActiveSessions);
-        await store?.set("openProjects", nextOpen);
-        await store?.set("projectSessions", nextSessions);
-        await store?.set("activeSessionByProject", nextActiveSessions);
-        await store?.save();
+        await persistWorkspaceOpenFailure({
+          activeSessions: nextActiveSessions, openProjects: nextOpen, sessions: nextSessions, store,
+        });
       }
       return false;
     }
