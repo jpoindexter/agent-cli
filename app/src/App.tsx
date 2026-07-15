@@ -272,6 +272,7 @@ import { closeProjectResources as closeProjectResourcesWithContext } from "./pro
 import { requestProjectClose } from "./projectCloseRequest";
 import { planProjectSessionSwitch } from "./projectSessionSwitch";
 import { planProjectSessionCreate } from "./projectSessionCreate";
+import { planSessionScopedRecordRemoval } from "./sessionScopedRecords";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -2033,24 +2034,19 @@ function App() {
   };
 
   const removeSessionScopedRecords = async (plan: Extract<ReturnType<typeof planProjectSessionDelete>, { canDelete: true }>) => {
-    if (plan.contextKey) {
-      const { [plan.contextKey]: _removedPanes, ...nextPaneContexts } = terminalPanesByContextRef.current;
-      const { [plan.contextKey]: _removedActive, ...nextActiveContexts } = activeTerminalPaneByContextRef.current;
-      terminalPanesByContextRef.current = nextPaneContexts;
-      activeTerminalPaneByContextRef.current = nextActiveContexts;
-    }
-    const nextBrowserSessions = { ...browserPreviewBySessionRef.current };
-    delete nextBrowserSessions[plan.browserSessionKey];
-    const nextComposerHarness = { ...composerHarnessBySessionRef.current };
-    delete nextComposerHarness[plan.chatSessionKey];
-    const nextChatConversations = { ...chatConversationsRef.current };
-    delete nextChatConversations[plan.chatSessionKey];
-    chatConversationsRef.current = nextChatConversations;
-    setChatConversations(nextChatConversations);
-    browserPreviewBySessionRef.current = nextBrowserSessions;
-    setBrowserPreviewBySession(nextBrowserSessions);
-    await storeRef.current?.set("browserPreviewBySession", nextBrowserSessions);
-    await persistComposerHarnessRecords(nextComposerHarness);
+    const removed = planSessionScopedRecordRemoval({
+      activePanes: activeTerminalPaneByContextRef.current,
+      browserSessionKey: plan.browserSessionKey, browserSessions: browserPreviewBySessionRef.current,
+      chatSessionKey: plan.chatSessionKey, composerHarness: composerHarnessBySessionRef.current,
+      contextKey: plan.contextKey, conversations: chatConversationsRef.current,
+      projectPanes: terminalPanesByContextRef.current,
+    });
+    applyWorkspaceCleanupRecord(activeTerminalPaneByContextRef, removed.activePanes);
+    applyWorkspaceCleanupRecord(terminalPanesByContextRef, removed.projectPanes);
+    applyWorkspaceCleanupRecord(browserPreviewBySessionRef, removed.browserSessions, setBrowserPreviewBySession);
+    applyWorkspaceCleanupRecord(chatConversationsRef, removed.conversations, setChatConversations);
+    await storeRef.current?.set("browserPreviewBySession", removed.browserSessions);
+    await persistComposerHarnessRecords(removed.composerHarness);
   };
 
   const recordRestartedPaneActivity = (
