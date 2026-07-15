@@ -101,11 +101,9 @@ import {
 } from "./scopedSettings";
 import type { ScopedSettingKey, ScopedSettingsState, SettingsScope } from "./scopedSettings";
 import {
-  composerHistoryAfterSubmit,
   composerHistoryAt,
   nextComposerHistoryIndex,
   previousComposerHistoryIndex,
-  routeComposerDraft,
   composerHelpText,
   COMPOSER_APP_COMMANDS,
 } from "./agentComposer";
@@ -118,6 +116,7 @@ import {
 } from "./composerHarness";
 import type { ComposerAttachment, ComposerHarnessRecords, ComposerHarnessState, ComposerReasoningEffort } from "./composerHarness";
 import { prepareChatContext } from "./chatContext";
+import { submitComposerDraft as submitComposerDraftWithContext } from "./composerSubmission";
 import {
   appActionAuditLabel,
   createAppAction,
@@ -242,7 +241,6 @@ import {
   appendToolChatMessage,
   applyChatRunEnvelope,
   chatProviderLabel,
-  chatTitleFromPrompt,
   emptyChatConversation,
   forkChatConversation,
   startChatRun,
@@ -2399,115 +2397,33 @@ function App() {
   };
 
   const submitComposerDraft = async (draftOverride?: string) => {
-    if (composerSending || activeChatConversation.activeRunId) return;
-    const submittedDraft = draftOverride ?? composerDraft;
-    const route = routeComposerDraft(submittedDraft);
-    if (route.kind === "empty") return;
-    if (route.kind === "unknown-app") {
-      setComposerError(`Unknown app command ${route.input}. Try >help for the list.`);
-      return;
-    }
-    setComposerSending(true);
-    setComposerError(null);
-    setComposerNotice(null);
-    try {
-      if (route.kind === "chat") {
-        if (!workspacePathRef.current) {
-          setComposerError("Open a workspace before starting a chat.");
-          return;
-        }
-        const chatId = activeComposerHarnessKey;
-        if (!chatId) {
-          setComposerError("Create or select a chat before sending.");
-          return;
-        }
-        const provider = structuredChatProviderId(activeComposerHarness.selectedProfileId);
-        if (!provider) {
-          const profile = resolveLaunchProfile(activeComposerHarness.selectedProfileId);
-          setComposerError(`${profile.label} structured chat is not available yet. Open Raw terminal and select ${profile.label} to use its native CLI.`);
-          return;
-        }
-        const preparedContext = await prepareChatContext(route.text, activeComposerHarness, {
-          readFile: (attachment) => invoke<TextFileResponse>("read_chat_context_file", {
-            root: workspacePathRef.current,
-            path: attachment.target,
-          }),
-          inspectImage: (attachment) => invoke<ChatImageResponse>("inspect_chat_image", {
-            path: attachment.target,
-          }),
-        });
-        const storedConversation = chatConversationsRef.current[chatId] ?? emptyChatConversation(Date.now(), provider);
-        const previousConversation = storedConversation.provider === provider
-          ? storedConversation
-          : { ...storedConversation, provider, providerThreadId: undefined };
-        const runId = `chat-run-${crypto.randomUUID()}`;
-        updateChatConversation(chatId, () =>
-          startChatRun(appendUserChatMessage(previousConversation, route.text), runId)
-        );
-        const session = projectSessionsRef.current[workspacePathRef.current]?.find((item) => item.id === activeSessionId);
-        if (session && (session.title === "Current work" || /^New (session|chat)( \d+)?$/.test(session.title))) {
-          const title = chatTitleFromPrompt(route.text);
-          const nextSessions = {
-            ...projectSessionsRef.current,
-            [workspacePathRef.current]: (projectSessionsRef.current[workspacePathRef.current] ?? []).map((item) =>
-              item.id === session.id ? { ...item, title, updatedAt: Date.now() } : item
-            ),
-          };
-          void persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
-        }
-        await invoke("start_chat_run", {
-          request: {
-            runId,
-            chatId,
-            projectPath: workspacePathRef.current,
-            provider,
-            providerThreadId: previousConversation.providerThreadId ?? null,
-            prompt: preparedContext.prompt,
-            images: preparedContext.images,
-            approvalMode: activeComposerHarness.approvalMode,
-            model: activeComposerHarness.model.trim() || aiConnectionSettings.providerModels[provider].trim() || null,
-            reasoningEffort: activeComposerHarness.reasoningEffort === "default" ? null : activeComposerHarness.reasoningEffort,
-            budgetSeconds: null,
-            environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, workspacePathRef.current),
-          },
-        });
-      } else {
-        const ok = await runComposerAppCommand(route.command);
-        if (!ok) {
-          recordAgentActivity(activeAgentSessionHandle, {
-            kind: "error",
-            label: "Command failed",
-            detail: route.command,
-            status: "error",
-          });
-          return;
-        }
-        recordAgentActivity(activeAgentSessionHandle, {
-          kind: "app",
-          label: "Ran command",
-          detail: route.command,
-          status: "complete",
-        });
-      }
-      const nextHistory = composerHistoryAfterSubmit(composerHistory, submittedDraft);
-      setComposerLocalState(activeComposerHarnessKey, "", nextHistory);
-      setComposerHistoryIndex(null);
-      void updateActiveComposerHarness((state) => ({ ...state, draft: "", history: nextHistory }));
-    } catch (err) {
-      setComposerError(String(err));
-      const chatId = activeComposerHarnessKey;
-      if (chatId) {
-        updateChatConversation(chatId, (conversation) => applyChatRunEnvelope(conversation, {
-          runId: "launch-error",
-          chatId,
-          provider: activeComposerProvider ?? activeChatConversation.provider,
-          stream: "lifecycle",
-          event: { type: "run.completed", exitCode: 1, message: String(err) },
-        }));
-      }
-    } finally {
-      setComposerSending(false);
-    }
+    await submitComposerDraftWithContext({
+      sending: composerSending,
+      activeRunId: activeChatConversation.activeRunId,
+      draft: composerDraft,
+      history: composerHistory,
+      workspacePath: workspacePathRef.current,
+      chatId: activeComposerHarnessKey,
+      activeSessionId,
+      harness: activeComposerHarness,
+      settings: aiConnectionSettingsRef.current,
+      activeProvider: activeComposerProvider,
+      activeConversation: activeChatConversation,
+      conversations: chatConversationsRef.current,
+      sessions: projectSessionsRef.current,
+      activeSessions: activeSessionByProjectRef.current,
+      resolveProfileLabel: (id) => resolveLaunchProfile(id).label,
+      runAppCommand: runComposerAppCommand,
+      updateConversation: updateChatConversation,
+      persistSessions: persistProjectSessions,
+      recordActivity: (event) => recordAgentActivity(activeAgentSessionHandle, event),
+      setError: setComposerError,
+      setNotice: setComposerNotice,
+      setSending: setComposerSending,
+      setLocalState: setComposerLocalState,
+      setHistoryIndex: setComposerHistoryIndex,
+      updateHarness: updateActiveComposerHarness,
+    }, draftOverride);
   };
 
   const stopActiveChatRun = async () => {

@@ -20,6 +20,7 @@ const assert = (condition, message) => {
 
 const appCss = `${readCss("app/src/App.css")}\n${readCss("app/src/composerModelPicker.css")}\n${readCss("app/src/responsive-shell.css")}\n${readCss("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
+const composerSubmission = read("app/src/composerSubmission.ts");
 const appTitlebar = read("app/src/AppTitlebar.tsx");
 const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");
 const bottomUtilityTray = read("app/src/BottomUtilityTray.tsx");
@@ -162,7 +163,7 @@ assert(chatConversation.includes("activeRunId"), "Each chat must own its active 
 assert(chatHarness.includes("codex app-server --stdio"), "Structured Codex chat must use the provider-native app-server event stream");
 assert(chatHarness.includes('(\"thread/resume\", 2)'), "Structured Codex chat must resume the selected chat's provider thread");
 assert(chatConversation.includes('eventType === "item/agentMessage/delta"'), "Structured Codex chat must render provider-native response deltas");
-assert(appTsx.includes('route.kind === "chat"'), "Normal composer prompts must route to structured chat, not a pty paste path");
+assert(composerSubmission.includes('route.kind === "chat"'), "Normal composer prompts must route to structured chat, not a pty paste path");
 assert(appTsx.includes('invoke<ResolveWorkspaceResponse>("resolve_workspace"'), "Opening a chat must resolve its project without spawning a hidden terminal");
 assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a no-pty project open path for chat mode");
 assert(bottomUtilityTray.includes('className={`utility-tray ${props.open ?') && appTsx.includes('open={agentSurfaceMode === "terminal"}'), "Raw terminal must live in the approved bottom utility tray");
@@ -183,7 +184,7 @@ assert(composerSurface.includes('aria-label="Composer goal"'), "Composer must ex
 assert(composerModelPopover.includes('aria-label="Search models"') && composerModelPopover.includes("Custom model ID"), "Composer must expose searchable provider models and custom model IDs");
 assert(composerSurface.includes("onSelect={props.onRuntimeChange}") && appTsx.includes("onRuntimeChange={setComposerRuntime}"), "Composer model selection must persist through the runtime boundary");
 assert(composerReasoningPicker.includes("OPTIONS.map") && composerReasoningPicker.includes('role="menuitemradio"'), "Composer must expose separate accessible reasoning effort choices");
-assert(appTsx.includes('reasoningEffort: activeComposerHarness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
+assert(composerSubmission.includes('reasoningEffort: context.harness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
 assert(chatHarness.includes('params["effort"] = json!(effort);'), "Native chat runs must apply the selected Codex reasoning effort");
 assert(claudeAdapter.includes('args.extend(["--effort".into(), effort.into()]);'), "Native Claude chat runs must apply the selected reasoning effort");
 assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
@@ -260,7 +261,7 @@ assert(settingsWorkspace.includes("Unavailable until AI-CONNECTIONS environment 
 assert(settingsModalData.includes('id: "connections.manage"') && settingsModalData.includes('label: "Connections"'), "Settings must expose the dedicated AI and MCP Connections workspace");
 assert(connectionSettings.includes("environmentByProject") && connectionSettings.includes("mcpServers") && connectionSettings.includes("providerModels"), "Connection settings must use typed provider, environment, and MCP records");
 assert(connectionSecretControls.includes('type="password"') && connectionSecretControls.includes("onSaveSecret"), "Connection secret controls must use the Keychain callback boundary");
-assert(connectionSettings.includes("connectionEnvironmentInputs") && appTsx.includes("environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current"), "All new chat and terminal runs must carry project environment references without renderer-side secret values");
+assert(connectionSettings.includes("connectionEnvironmentInputs") && appTsx.includes("environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current") && composerSubmission.includes("environment: connectionEnvironmentInputs(context.settings"), "All new chat and terminal runs must carry project environment references without renderer-side secret values");
 assert(connectionSecrets.includes("resolve_connection_environment") && connectionSecrets.includes('provider:codex:api-key') && connectionSecrets.includes('OPENAI_API_KEY'), "Rust must resolve project and provider credentials only at the process boundary");
 assert(mcpProbe.includes('"initialize"') && mcpProbe.includes('"tools/list"') && mcpProbe.includes("spawn_blocking") && mcpProbe.includes("read_connection_secret"), "MCP health must execute a bounded backend protocol probe with Keychain auth");
 assert(connectionSecrets.includes('KEYCHAIN_SERVICE') && connectionSecrets.includes('keyring::Entry::new') && connectionSecrets.includes('.set_password(value)') && !connectionSecrets.includes('Command::new("/usr/bin/security")'), "Connection secrets must use the native Keychain API without putting values in process arguments");
@@ -271,7 +272,7 @@ assert(appTsx.includes('invoke<AgentHookRequest[]>("take_agent_hook_requests")')
 assert(statusBar.includes('className="status-bar__item status-bar__item--button"') && appTsx.includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
 assert(sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/merge_requests`') && sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/pipelines`'), "Self-hosted non-GitHub remotes must use GitLab merge-request and pipeline routes");
 assert(appTsx.includes('storeRef.current?.set("aiConnectionSettings", next)') && !appTsx.includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");
-assert(appTsx.includes("aiConnectionSettings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");
+assert(composerSubmission.includes("context.settings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");
 assert(appTsx.includes('invoke("delete_connection_secret", { key })'), "Full local reset must remove known Keychain connection secrets before clearing metadata");
 assert(/\.settings-workspace__policy small\s*\{[^}]*overflow-wrap:\s*anywhere;[^}]*white-space:\s*normal;/s.test(appCss), "Policy values must wrap instead of truncating important safety text");
 assert(appCss.includes(".command-palette"), "App CSS must style the command palette surface");
