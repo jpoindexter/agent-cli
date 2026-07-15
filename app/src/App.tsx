@@ -36,7 +36,7 @@ import {
   pushBrowserHistory,
 } from "./browserPreview";
 import type { BrowserPreviewRecords } from "./browserPreview";
-import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
+import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
   activeProjectSessionId,
@@ -159,7 +159,6 @@ type AgentHookStatus = {
   running: boolean;
 };
 import {
-  comboMatches,
   normalizeKeybindingOverrides,
   setActiveKeybindingOverrides,
   shortcutKeys,
@@ -239,8 +238,8 @@ import {
   type McpOAuthStatus,
 } from "./connectionSettings";
 import { buildRepoUrl, sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
-import { imeCaretStyle, shouldDeferTerminalKeyToIme } from "./terminalIme";
-import { buildSnapshot, createRenderPerfState, recordFrameTime, recordIpcPayloadBytes } from "./renderPerf";
+import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
+import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -369,13 +368,6 @@ type PendingNavigation =
   | { kind: "close-project"; projectPath: string };
 type CommandPaletteCommand = SearchDialogCommand;
 
-const FONT_SIZE = 15;
-// JetBrains Mono has no CJK glyphs; chain macOS's bundled CJK system fonts
-// ahead of the generic monospace fallback so unmatched glyphs (e.g. agent
-// output containing Chinese/Japanese/Korean text) render instead of tofu.
-const FONT_FAMILY = '"JetBrains Mono", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", monospace';
-const LINE_HEIGHT = 1.25;
-const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 const dirname = (path: string) => path.replace(/[\\/][^\\/]*$/, "") || path;
 const formatBytes = (bytes: number | null) => {
@@ -5000,96 +4992,8 @@ function App() {
     };
   }, []);
 
-  useEffect(() => {
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext("2d")!;
-
-    const paint = () => {
-      frame.current = null;
-      const snap = latest.current;
-      if (!snap) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        return;
-      }
-      const paintStart = performance.now();
-      const { cw, ch } = metrics.current;
-      const dpr = window.devicePixelRatio || 1;
-      const w = snap.cols * cw;
-      const h = snap.rows * ch;
-      if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
-        canvas.width = Math.round(w * dpr);
-        canvas.height = Math.round(h * dpr);
-        canvas.style.width = `${w}px`;
-        canvas.style.height = `${h}px`;
-      }
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      ctx.textBaseline = "top";
-      ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
-
-      for (let y = 0; y < snap.rows; y++) {
-        for (let x = 0; x < snap.cols; x++) {
-          const cell = snap.cells[y * snap.cols + x];
-          if (!cell) continue;
-          const selected = isCellSelected(x, y, selection.current);
-          ctx.fillStyle = selected ? "#2f6f9f" : rgb(cell.b);
-          ctx.fillRect(x * cw, y * ch, cw, ch);
-          if (cell.t !== " ") {
-            ctx.fillStyle = selected ? "#ffffff" : rgb(cell.f);
-            ctx.font = `${cell.bold ? "bold " : ""}${FONT_SIZE}px ${FONT_FAMILY}`;
-            ctx.fillText(cell.t, x * cw, y * ch + (ch - FONT_SIZE) / 2);
-          }
-        }
-      }
-      if (snap.cvis) {
-        ctx.fillStyle = "rgba(230,230,230,0.55)";
-        ctx.fillRect(snap.cx * cw, snap.cy * ch, cw, ch);
-      }
-      // Track the IME composition input to the cursor cell so the OS candidate
-      // window (CJK IME, dead-key accent picker) anchors near the caret.
-      const imeInput = imeInputRef.current;
-      if (imeInput) {
-        const caret = imeCaretStyle(snap.cx, snap.cy, cw, ch);
-        imeInput.style.transform = caret.transform;
-        imeInput.style.width = caret.width;
-        imeInput.style.height = caret.height;
-      }
-      recordFrameTime(renderPerfRef.current, performance.now() - paintStart);
-    };
-
-    const requestPaint = () => {
-      if (frame.current == null) frame.current = requestAnimationFrame(paint);
-    };
-    requestTerminalPaintRef.current = requestPaint;
-
-    // Measure the monospace advance once the font is loaded, then report size.
-    const setup = async () => {
-      await (document as any).fonts?.ready;
-      ctx.font = `${FONT_SIZE}px ${FONT_FAMILY}`;
-      const cw = Math.max(1, Math.round(ctx.measureText("M").width));
-      const ch = Math.round(FONT_SIZE * LINE_HEIGHT);
-      metrics.current = { cw, ch };
-      const staleLock = await invoke<boolean>("begin_session").catch(() => false);
-      await initWorkspace();
-      const recovery = deriveCrashRecovery(staleLock, openProjectsRef.current.length);
-      setCrashNotice(crashRecoveryMessage(recovery));
-      const cleanup = () => {
-        void invoke("end_session_clean").catch(() => {});
-      };
-      window.addEventListener("beforeunload", cleanup);
-    };
-
-    const scrollViewport = (delta: number) => {
-      if (activeTerminalPaneIdRef.current == null) return;
-      if (!Number.isFinite(delta) || delta === 0) return;
-      selection.current = null;
-      requestPaint();
-      invoke("scroll_pty", { delta: Math.trunc(delta) }).catch(() => {});
-    };
-
-    // Workspace: reopen the last folder on startup, else prompt. Opening a folder
-    // spawns the selected launch profile in it (backend `open_workspace`) and
-    // persists the active folder plus recent and open-project rail lists.
-    const initWorkspace = async () => {
+  // Reopen the last folder on startup, otherwise ask for a workspace.
+  const initWorkspace = async () => {
       const store = await load("workspace.json", { autoSave: true, defaults: {} });
       storeRef.current = store;
       const storedEntries = Object.fromEntries(await store.entries());
@@ -5192,115 +5096,33 @@ function App() {
       if (last) await openWorkspaceDirect(last, savedGlobalProfile);
       else await pickWorkspace();
       sendTerminalResize();
-    };
+  };
 
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target instanceof HTMLElement ? e.target : null;
-      if (e.isComposing || (target?.matches(".terminal-ime-input") && shouldDeferTerminalKeyToIme(e))) return;
-      if (comboMatches(e, "chrome.command-palette")) {
-        e.preventDefault();
-        commandPalette.openDialog();
-        return;
-      }
-      if (comboMatches(e, "workspace.quick-open")) {
-        e.preventDefault();
-        quickOpen.openDialog();
-        return;
-      }
-      if (comboMatches(e, "chrome.settings")) {
-        e.preventDefault();
-        setSettingsOpen(true);
-        return;
-      }
-      if (target?.closest(".file-rail, .editor-area, .browser-preview, .terminal-titlebar, .agent-composer, .command-palette")) return;
-      if (activeTerminalPaneIdRef.current == null) return;
-      // Cmd (meta) combos are app-level, not pty input. Let them through so the
-      // native copy/paste clipboard events fire; handle the few we own explicitly.
-      if (e.metaKey) {
-        const k = e.key.toLowerCase();
-        if (k === "k") {
-          // Clear — map to Ctrl-L (shell clear-screen). Ship-ugly stopgap.
-          e.preventDefault();
-          invoke("send_key", { code: "KeyL", text: null, shift: false, alt: false, ctrl: true, sup: false }).catch(() => {});
-        } else if (k === "c") {
-          const snap = latest.current;
-          const selectedText = snap && selection.current ? selectionToText(snap.cells, snap.cols, selection.current) : "";
-          if (selectedText) {
-            e.preventDefault();
-            writeText(selectedText).catch(() => {});
-          }
-        } else if (k === "v") {
-          // Paste: the browser `paste` event never fires on a bare canvas, so read
-          // the clipboard directly and send it through the (bracketed-aware) command.
-          e.preventDefault();
-          selection.current = null;
-          requestPaint();
-          readText().then((t) => t && invoke("paste", { text: t })).catch(() => {});
-        }
-        return;
-      }
-      if (e.shiftKey && (e.code === "PageUp" || e.code === "PageDown")) {
-        e.preventDefault();
-        const rows = latest.current?.rows ?? 24;
-        scrollViewport(e.code === "PageUp" ? -(rows - 1) : rows - 1);
-        return;
-      }
-      const code = e.code;
-      if (!code) return;
-      selection.current = null;
-      requestPaint();
-      // utf8 text: printable single char only, and only when no ctrl/alt transform.
-      const text = e.key.length === 1 && !e.ctrlKey && !e.altKey ? e.key : null;
-      e.preventDefault();
-      invoke("send_key", {
-        code,
-        text,
-        shift: e.shiftKey,
-        alt: e.altKey,
-        ctrl: e.ctrlKey,
-        sup: false,
-      }).catch(() => {});
-    };
+  useTerminalCanvasRuntime({
+    canvasRef,
+    imeInputRef,
+    terminalHostRef,
+    activePaneIdRef: activeTerminalPaneIdRef,
+    latest,
+    frame,
+    metrics,
+    selection,
+    selecting,
+    requestPaintRef: requestTerminalPaintRef,
+    renderPerfRef,
+    onCommandPalette: commandPalette.openDialog,
+    onQuickOpen: quickOpen.openDialog,
+    onSettings: () => setSettingsOpen(true),
+    onResize: sendTerminalResize,
+    onReady: async () => {
+      const staleLock = await invoke<boolean>("begin_session").catch(() => false);
+      await initWorkspace();
+      setCrashNotice(crashRecoveryMessage(deriveCrashRecovery(staleLock, openProjectsRef.current.length)));
+      window.addEventListener("beforeunload", () => { void invoke("end_session_clean").catch(() => {}); });
+    },
+  });
 
-    const pointForEvent = (e: MouseEvent) => {
-      const snap = latest.current;
-      if (!snap) return null;
-      const { cw, ch } = metrics.current;
-      return pointFromMouse(canvas.getBoundingClientRect(), cw, ch, snap.cols, snap.rows, e.clientX, e.clientY);
-    };
-
-    const onMouseDown = (e: MouseEvent) => {
-      if (e.button !== 0) return;
-      const point = pointForEvent(e);
-      if (!point) return;
-      e.preventDefault();
-      selection.current = { start: point, end: point };
-      selecting.current = true;
-      requestPaint();
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!selecting.current) return;
-      const point = pointForEvent(e);
-      if (!point || !selection.current) return;
-      selection.current = { ...selection.current, end: point };
-      requestPaint();
-    };
-
-    const onMouseUp = () => {
-      selecting.current = false;
-    };
-
-    const onWheel = (e: WheelEvent) => {
-      const snap = latest.current;
-      if (!snap || snap.sb === 0) return;
-      e.preventDefault();
-      const { ch } = metrics.current;
-      const rawRows = e.deltaY / ch;
-      const rows = Math.sign(rawRows) * Math.max(1, Math.round(Math.abs(rawRows)));
-      scrollViewport(rows);
-    };
-
+  useEffect(() => {
     const unlisten = listen<GridPayload>("grid", (ev) => {
       ipcSampleCounter.current += 1;
       if (ipcSampleCounter.current % 20 === 0) {
@@ -5310,7 +5132,7 @@ function App() {
       detectLocalDevServerFromSnapshot(ev.payload.paneId, ev.payload.snapshot);
       if (ev.payload.paneId === activeTerminalPaneIdRef.current) {
         latest.current = ev.payload.snapshot;
-        requestPaint();
+        requestTerminalPaintRef.current();
       }
     });
     const unlistenMenu = listen("menu-open-folder", () => {
@@ -5379,16 +5201,6 @@ function App() {
       }
     });
 
-    window.addEventListener("keydown", onKey);
-    canvas.addEventListener("mousedown", onMouseDown);
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    const resizeObserver = new ResizeObserver(sendTerminalResize);
-    if (terminalHostRef.current) resizeObserver.observe(terminalHostRef.current);
-    window.addEventListener("resize", sendTerminalResize);
-    setup();
-
     return () => {
       unlisten.then((f) => f());
       unlistenMenu.then((f) => f());
@@ -5396,14 +5208,6 @@ function App() {
       unlistenMenuFind.then((f) => f());
       unlistenMenuCloseTab.then((f) => f());
       unlistenPaneExit.then((f) => f());
-      window.removeEventListener("keydown", onKey);
-      canvas.removeEventListener("mousedown", onMouseDown);
-      canvas.removeEventListener("wheel", onWheel);
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("resize", sendTerminalResize);
-      resizeObserver.disconnect();
-      if (frame.current != null) cancelAnimationFrame(frame.current);
     };
   }, []);
 
