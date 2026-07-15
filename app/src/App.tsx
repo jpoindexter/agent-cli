@@ -35,6 +35,7 @@ import { useBrowserPreviewState } from "./useBrowserPreviewState";
 import { useFilesRailHeight } from "./useFilesRailHeight";
 import { useComposerLocalState } from "./useComposerLocalState";
 import { useComposerAttachments } from "./useComposerAttachments";
+import { useEditorNavigationLifecycle } from "./useEditorNavigationLifecycle";
 import type { BrowserPreviewRecords } from "./browserPreview";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
@@ -65,12 +66,7 @@ import {
   type EditorFileLoadState,
 } from "./editorFileLoadState";
 import {
-  discardDraftAndContinueNavigation,
-  saveDraftAndContinueNavigation,
-} from "./draftProtection";
-import {
   removeEditorBuffersWithin,
-  removeEditorTab,
   removeEditorTabsWithin,
   retargetEditorBuffers,
   retargetEditorTabs,
@@ -326,10 +322,6 @@ type ProjectEditorSnapshot = {
   buffers: Record<string, EditorBuffer>;
   viewStates: Record<string, EditorViewState>;
 };
-type PendingNavigation =
-  | { kind: "file"; file: FileTreeNode; options: OpenEditorFileOptions }
-  | { kind: "workspace"; path: string }
-  | { kind: "close-project"; projectPath: string };
 type CommandPaletteCommand = SearchDialogCommand;
 type WorkspaceBootstrapSnapshot = Awaited<ReturnType<typeof loadWorkspaceBootstrap>>;
 type OpenedWorkspaceTarget = {
@@ -466,8 +458,6 @@ function App() {
     url: browserUrl,
   } = useBrowserPreviewState((url) => { browserUrlRef.current = url; });
   const [detectedLocalDevServer, setDetectedLocalDevServer] = useState<DetectedLocalDevServer | null>(null);
-  const [pendingNavigation, setPendingNavigation] = useState<PendingNavigation | null>(null);
-  const [draftDialogError, setDraftDialogError] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const commandPalette = useCommandPalette(() => setContextMenu(null));
   const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
@@ -1473,10 +1463,7 @@ function App() {
     setBackgroundExits((exits) => clearBackgroundExitsForProject(exits, path));
     return requestWorkspaceOpen({
       confirmDiscard: (count) => confirmDialog(`Switch workspace and discard ${count} unsaved editor tabs?`),
-      deferNavigation: () => {
-        setDraftDialogError(null);
-        setPendingNavigation({ kind: "workspace", path });
-      },
+      deferNavigation: () => requestPendingNavigation({ kind: "workspace", path }),
       dirtyTabPaths, editorDirty, editorTabs, path,
       openEditorFile: openEditorFileDirect, openWorkspace: openWorkspaceDirect,
       selectedFilePath: selectedFileRef.current?.path ?? null,
@@ -1536,10 +1523,7 @@ function App() {
       confirmDirtyTabs: (count) => confirmDialog(`Close ${basename(project.path)} with ${count} unsaved editor tabs?`),
       confirmRunningTasks: (count) => confirmDialog(`Close ${basename(project.path)} and stop ${count} running task${count === 1 ? "" : "s"}?`),
       conversations: chatConversationsRef.current,
-      deferNavigation: () => {
-        setDraftDialogError(null);
-        setPendingNavigation({ kind: "close-project", projectPath: project.path });
-      },
+      deferNavigation: () => requestPendingNavigation({ kind: "close-project", projectPath: project.path }),
       dirtyTabCount: dirtyTabPaths.length, hasSelectedFile: selectedFileRef.current != null,
       panes: terminalPanesForProject(project.path), projectPath: project.path,
     });
@@ -3141,36 +3125,41 @@ function App() {
         ...filteredCommandPaletteCommands.filter((command) => command.source !== "chats").slice(0, 6),
       ];
   const tabIsDirty = (path: string) => dirtyTabPathSet.has(path);
-
-  const closeEditorTab = async (tab: FileTreeNode) => {
-    captureCurrentEditorViewState();
-    captureCurrentEditorBuffer();
-    if (tabIsDirty(tab.path) && !await confirmDialog(`Close ${tab.name} and discard unsaved changes?`)) return;
-    const result = removeEditorTab(editorTabs, selectedFileRef.current?.path ?? null, tab.path);
-    setEditorTabs(result.tabs);
-    delete editorBuffersRef.current[tab.path];
-    delete editorViewStatesRef.current[tab.path];
-    setEditorBufferRevision((value) => value + 1);
-    if (!result.nextActivePath) {
+  const {
+    cancelNavigation: cancelPendingNavigation,
+    closeActiveTab: closeActiveEditorTab,
+    closeTab: closeEditorTab,
+    discardAndContinue: discardDraftAndContinue,
+    draftDialogError,
+    pendingNavigation,
+    requestNavigation: requestPendingNavigation,
+    saveAndContinue: saveDraftAndContinue,
+  } = useEditorNavigationLifecycle({
+    activeFile: selectedFile,
+    captureEditor: () => { captureCurrentEditorViewState(); captureCurrentEditorBuffer(); },
+    closeProject: async (projectPath) => { await closeProjectDirect(projectPath); },
+    confirmClose: (message) => confirmDialog(message),
+    editorTabs,
+    isDirty: tabIsDirty,
+    onActivateTab: async (tab) => {
+      selectedFileRef.current = null;
+      setSelectedFile(null);
+      await openEditorFileDirect(tab, { focusEditor: true });
+    },
+    onRemoveTab: (path) => {
+      delete editorBuffersRef.current[path];
+      delete editorViewStatesRef.current[path];
+      setEditorBufferRevision((value) => value + 1);
+    },
+    onResetAfterClose: () => {
       if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
       resetEditor();
-      return;
-    }
-    if (result.nextActivePath !== selectedFileRef.current?.path) {
-      const nextTab = result.tabs.find((candidate) => candidate.path === result.nextActivePath);
-      if (nextTab) {
-        selectedFileRef.current = null;
-        setSelectedFile(null);
-        await openEditorFileDirect(nextTab, { focusEditor: true });
-      }
-    }
-  };
-
-  const closeActiveEditorTab = async () => {
-    const file = selectedFileRef.current;
-    if (!file) return;
-    await closeEditorTab(file);
-  };
+    },
+    openFile: async (file, options) => { await openEditorFileDirect(file, options); },
+    openWorkspace: async (path) => { await openWorkspaceDirect(path); },
+    saveEditorFile: () => saveEditorFile(),
+    setEditorTabs,
+  });
 
   saveEditorFileRef.current = saveEditorFile;
   openEditorSearchRef.current = openEditorSearch;
@@ -3215,35 +3204,6 @@ function App() {
       targets: report.targets,
     }),
   });
-
-  const continuePendingNavigation = async (navigation: PendingNavigation) => {
-    if (navigation.kind === "file") {
-      await openEditorFileDirect(navigation.file, navigation.options);
-    } else if (navigation.kind === "workspace") {
-      await openWorkspaceDirect(navigation.path);
-    } else {
-      await closeProjectDirect(navigation.projectPath);
-    }
-  };
-
-  const saveDraftAndContinue = async () => {
-    await saveDraftAndContinueNavigation({
-      pendingNavigation,
-      saveEditorFile,
-      continuePendingNavigation,
-      setPendingNavigation,
-      setDraftDialogError,
-    });
-  };
-
-  const discardDraftAndContinue = async () => {
-    await discardDraftAndContinueNavigation({
-      pendingNavigation,
-      continuePendingNavigation,
-      setPendingNavigation,
-      setDraftDialogError,
-    });
-  };
 
   useSyncRef(workspacePathRef, workspacePath);
 
@@ -4019,7 +3979,7 @@ function App() {
           fileName={selectedFile.name}
           error={draftDialogError}
           saving={editorSaving}
-          onCancel={() => setPendingNavigation(null)}
+          onCancel={cancelPendingNavigation}
           onDiscard={() => void discardDraftAndContinue()}
           onSave={() => void saveDraftAndContinue()}
         />
