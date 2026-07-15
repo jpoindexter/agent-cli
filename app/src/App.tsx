@@ -194,7 +194,6 @@ import { formatCliToolStatus, type SourceControlStatus } from "./sourceControl";
 import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
-  mcpOauthTokenKey,
   type AiConnectionSettings,
   type ConnectionSecretStatus,
   type ConnectionTargetStatus,
@@ -202,6 +201,7 @@ import {
   type McpOAuthStart,
   type McpOAuthStatus,
 } from "./connectionSettings";
+import { useMcpOAuthStatus } from "./useMcpOAuthStatus";
 import { buildRepoUrl, sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
 import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
@@ -495,8 +495,10 @@ function App() {
     repoLocation, sourceControlStatus,
   } = useSettingsRuntimeStatus(settingsOpen, workspacePath);
   const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
-  const [connectionSecretPresence, setConnectionSecretPresence] = useState<Record<string, boolean>>({});
-  const [mcpOAuthStatuses, setMcpOAuthStatuses] = useState<Record<string, McpOAuthStatus>>({});
+  const {
+    secretPresence: connectionSecretPresence, setSecretPresence: setConnectionSecretPresence,
+    setStatuses: setMcpOAuthStatuses, statuses: mcpOAuthStatuses,
+  } = useMcpOAuthStatus();
   const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
   const [backgroundExits, setBackgroundExits] = useState<BackgroundExit[]>([]);
   const [paneTranscripts, setPaneTranscripts] = useState<PaneTranscript[]>([]);
@@ -805,27 +807,6 @@ function App() {
     window.addEventListener("file-tree-context-menu", onContextMenu);
     return () => {
       window.removeEventListener("file-tree-context-menu", onContextMenu);
-    };
-  }, []);
-
-  useEffect(() => {
-    let disposed = false;
-    let removeListener: (() => void) | null = null;
-    void listen<McpOAuthStatus>("mcp-oauth-result", (event) => {
-      setMcpOAuthStatuses((current) => ({ ...current, [event.payload.serverId]: event.payload }));
-      if (event.payload.state === "connected" || event.payload.state === "idle") {
-        setConnectionSecretPresence((current) => ({
-          ...current,
-          [mcpOauthTokenKey(event.payload.serverId)]: event.payload.state === "connected",
-        }));
-      }
-    }).then((remove) => {
-      if (disposed) remove();
-      else removeListener = remove;
-    });
-    return () => {
-      disposed = true;
-      removeListener?.();
     };
   }, []);
 
