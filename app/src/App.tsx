@@ -198,6 +198,11 @@ import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
+import {
+  buildBrowserContextMenuItems,
+  buildComposerAddMenuItems,
+  buildComposerContextMenuItems,
+} from "./browserComposerContextMenu";
 import { planPaneExit } from "./paneExitPlan";
 import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { executeProjectSessionDelete } from "./projectSessionDelete";
@@ -3045,66 +3050,39 @@ function App() {
     ];
   };
 
-  const browserContextMenuItems = (): ContextMenuItem[] => [
-    menuItem("browser.back", "Back", () => goBrowserHistory(-1), {
-      icon: "back",
-      disabled: !browserCanGoBack,
-    }),
-    menuItem("browser.forward", "Forward", () => goBrowserHistory(1), {
-      icon: "forward",
-      disabled: !browserCanGoForward,
-    }),
-    menuItem("browser.reload", "Reload", reloadBrowserPreview, { icon: "reload" }),
-    menuItem("browser.open-external", "Open Externally", () => openUrl(browserUrl), { icon: "openExternal" }),
-    menuItem("browser.copy-url", "Copy URL", async () => { await writeText(browserUrl); setActionNotice("Copied browser URL"); }, { icon: "browser" }),
-  ];
+  const browserContextMenuItems = (): ContextMenuItem[] => buildBrowserContextMenuItems({
+    canGoBack: browserCanGoBack,
+    canGoForward: browserCanGoForward,
+    actions: {
+      back: () => goBrowserHistory(-1),
+      copyUrl: async () => { await writeText(browserUrl); setActionNotice("Copied browser URL"); },
+      forward: () => goBrowserHistory(1),
+      openExternal: () => openUrl(browserUrl),
+      reload: reloadBrowserPreview,
+    },
+  });
 
-  const composerContextMenuItems = (): ContextMenuItem[] => [
-    menuItem("composer.send", "Send Draft", () => submitComposerDraft(), {
-      icon: "send",
-      shortcut: shortcutKeys("composer.send"),
-      disabled: composerSending || !composerDraft.trim(),
-    }),
-    menuItem("composer.clear", "Clear Draft", () => setComposerLocalState(activeComposerHarnessKey, "", composerHistory), { icon: "close", disabled: !composerDraft }),
-    menuItem("composer.attach-file", "Attach Local File", () => attachLocalFileToComposer(), { icon: "filePlus" }),
-    menuItem("composer.attach-current", "Attach Current File", () => attachSelectedFileToComposer(), {
-      icon: "file",
-      disabled: !selectedFile,
-    }),
-    menuItem("composer.attach-preview", "Attach Browser Preview", () => attachPreviewToComposer(), { icon: "browser" }),
-    menuItem("composer.parallel", "Run Parallel Child Chats", () => {
-      setOrchestrationError(null);
-      setOrchestrationOpen(true);
-    }, {
-      icon: "agent",
-      disabled: !workspacePath || !activeSessionId || Boolean(activeChatConversation.activeRunId),
-    }),
-    menuItem("composer.stop", "Stop Chat Run", () => stopActiveChatRun(), {
-      icon: "stop",
-      danger: true,
-      disabled: !activeChatConversation.activeRunId,
-    }),
-    menuItem("composer.copy-cwd", "Copy Target Workspace", () => workspacePath ? copyPathToClipboard(workspacePath) : undefined, {
-      icon: "workspace",
-      disabled: !workspacePath,
-    }),
-  ];
-
-  const composerAddMenuItems = (): ContextMenuItem[] => [
-    menuItem("composer.add.files", "Files and folders", () => attachLocalFileToComposer(), { icon: "filePlus" }),
-    menuItem("composer.add.current", "Current editor file", () => attachSelectedFileToComposer(), {
-      icon: "file",
-      disabled: !selectedFile,
-    }),
-    menuItem("composer.add.preview", "Browser preview", () => attachPreviewToComposer(), { icon: "browser" }),
-    menuItem("composer.add.parallel", "Parallel child chats", () => {
-      setOrchestrationError(null);
-      setOrchestrationOpen(true);
-    }, {
-      icon: "agent",
-      disabled: !workspacePath || !activeSessionId || Boolean(activeChatConversation.activeRunId),
-    }),
-  ];
+  const composerMenuInput = () => ({
+    activeRun: Boolean(activeChatConversation.activeRunId),
+    canAttachCurrent: Boolean(selectedFile),
+    canRunParallel: Boolean(workspacePath && activeSessionId && !activeChatConversation.activeRunId),
+    draft: composerDraft,
+    hasWorkspace: Boolean(workspacePath),
+    sending: composerSending,
+    shortcut: shortcutKeys("composer.send"),
+    actions: {
+      attachCurrent: () => attachSelectedFileToComposer(),
+      attachLocal: () => attachLocalFileToComposer(),
+      attachPreview: () => attachPreviewToComposer(),
+      clearDraft: () => setComposerLocalState(activeComposerHarnessKey, "", composerHistory),
+      copyWorkspace: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
+      parallel: () => { setOrchestrationError(null); setOrchestrationOpen(true); },
+      send: () => submitComposerDraft(),
+      stop: () => stopActiveChatRun(),
+    },
+  });
+  const composerContextMenuItems = (): ContextMenuItem[] => buildComposerContextMenuItems(composerMenuInput());
+  const composerAddMenuItems = (): ContextMenuItem[] => buildComposerAddMenuItems(composerMenuInput());
 
   const openComposerAddMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();

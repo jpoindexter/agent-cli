@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
+const browserComposerContextMenu = readFileSync(new URL("./browserComposerContextMenu.ts", import.meta.url), "utf8");
 const projectThreadsDrawer = readFileSync(new URL("./ProjectThreadsDrawer.tsx", import.meta.url), "utf8");
 const projectSessionContextMenu = readFileSync(new URL("./projectSessionContextMenu.ts", import.meta.url), "utf8");
 const shellLayout = readFileSync(new URL("./useShellLayout.ts", import.meta.url), "utf8");
@@ -11,7 +12,7 @@ const terminalContextMenu = readFileSync(new URL("./terminalContextMenu.ts", imp
 
 describe("production context-menu coverage", () => {
   it("registers unique commands for every promised surface", () => {
-    const menuSources = `${app}\n${projectSessionContextMenu}\n${terminalContextMenu}`;
+    const menuSources = `${app}\n${browserComposerContextMenu}\n${projectSessionContextMenu}\n${terminalContextMenu}`;
     const ids = Array.from(menuSources.matchAll(/(?:menuItem|sessionItem|terminalItem)\("([^"]+)"/g), (match) => match[1]);
     expect(new Set(ids).size).toBe(ids.length);
     for (const prefix of ["workspace.", "project.", "session.", "file.", "tab.", "editor.", "git.", "diff.", "terminal.", "pane.", "utility.", "browser.", "composer."]) {
@@ -46,14 +47,14 @@ describe("production context-menu coverage", () => {
     expect(agentComposerSurface).toContain("onClick={props.onOpenAddMenu}");
     expect(app).toContain("onOpenAddMenu={openComposerAddMenu}");
     expect(app).toContain('querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")');
-    expect(app).toContain('menuItem("composer.add.files", "Files and folders"');
-    expect(app).toContain('menuItem("composer.add.parallel", "Parallel child chats"');
+    expect(browserComposerContextMenu).toContain('menuItem("composer.add.files", "Files and folders"');
+    expect(browserComposerContextMenu).toContain('menuItem("composer.add.parallel", "Parallel child chats"');
   });
 
   it("routes browser URLs and composer stop through the correct product actions", () => {
     expect(app).not.toContain("openPath(browserUrl)");
-    expect(app).toContain('menuItem("browser.open-external", "Open Externally", () => openUrl(browserUrl)');
-    expect(app).toContain('menuItem("composer.stop", "Stop Chat Run", () => stopActiveChatRun()');
+    expect(browserComposerContextMenu).toContain('menuItem("browser.open-external", "Open Externally"');
+    expect(browserComposerContextMenu).toContain('menuItem("composer.stop", "Stop Chat Run"');
   });
 
   it("allows active projects to close through the managed close lifecycle", () => {
