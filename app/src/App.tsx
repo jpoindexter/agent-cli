@@ -208,6 +208,7 @@ import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./r
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
+import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import { planPaneExit } from "./paneExitPlan";
 import {
   addBackgroundExit,
@@ -3801,59 +3802,37 @@ function App() {
     }).catch((err) => setLaunchError(`Render perf snapshot failed: ${String(err)}`));
   };
 
-  const terminalContextMenuItems = (): ContextMenuItem[] => [
-    menuItem("terminal.new-pane", `New ${terminalLaunchProfile.label} Pane`, () => createTerminalPane(terminalLaunchProfile), {
-      icon: "terminal",
-      disabled: !workspacePath || launchProfileChanging,
-    }),
-    menuItem("terminal.new-worktree-pane", "New Worktree Pane", () => createWorktreePane(terminalLaunchProfile), {
-      icon: "terminal",
-      disabled: !workspacePath || launchProfileChanging,
-    }),
-    menuItem("terminal.rename-pane", "Rename Selected Pane", () => activeTerminalPane ? renameTerminalPane(activeTerminalPane) : undefined, {
-      icon: "terminal",
-      disabled: !activeTerminalPane,
-    }),
-    menuItem("terminal.save-transcript", "Save Transcript", saveActivePaneTranscript, {
-      icon: "file",
-      disabled: !activeTerminalPane,
-    }),
-    menuItem("terminal.restart-pane", "Restart Selected Process", () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined, {
-      icon: "reload",
-      disabled: !activeTerminalPane || launchProfileChanging,
-    }),
-    menuItem("terminal.terminate-pane", "Kill Selected Process", () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined, {
-      icon: "stop",
-      danger: true,
-      disabled: !activeTerminalPane || activeTerminalPane.state === "exited",
-    }),
-    menuItem("terminal.close-pane", "Close Selected Pane", () => activeAgentSessionHandle ? activeAgentSessionHandle.close() : undefined, {
-      icon: "close",
-      danger: true,
-      disabled: !activeAgentSessionHandle,
-    }),
-    menuItem("terminal.remove-worktree", "Remove Worktree", () => activeTerminalPane ? closeWorktreePane(activeTerminalPane.id) : undefined, {
-      icon: "close",
-      danger: true,
-      disabled: !activeTerminalPane || !worktreeForPaneId(worktrees, activeTerminalPane ? String(activeTerminalPane.id) : null),
-    }),
-    menuItem("terminal.copy", "Copy Selection", async () => { await copyTerminalSelection(); setActionNotice("Copied terminal selection"); }, {
-      icon: "terminal",
-      shortcut: shortcutKeys("terminal.copy-selection"),
-      disabled: !terminalSelectedText(),
-    }),
-    menuItem("terminal.paste", "Paste", () => pasteIntoTerminal(), { icon: "terminal", shortcut: shortcutKeys("terminal.paste"), disabled: !activeTerminalPane }),
-    menuItem("terminal.copy-tail", "Copy Last 20 Lines", async () => { await copyActivePaneTail(); setActionNotice("Copied last 20 lines"); }, {
-      icon: "terminal",
-      disabled: !activeAgentSessionHandle,
-    }),
-    menuItem("terminal.clear", "Clear Terminal", () => clearActiveTerminal(), { icon: "terminal", shortcut: shortcutKeys("terminal.clear"), disabled: !activeTerminalPane }),
-    menuItem("terminal.interrupt", "Interrupt Process", () => interruptActivePane(), { icon: "stop", danger: true, disabled: !activeTerminalPane || activeTerminalPane.state === "exited" }),
-    menuItem("terminal.copy-cwd", "Copy Working Directory", () => workspacePath ? copyPathToClipboard(workspacePath) : undefined, {
-      icon: "workspace",
-      disabled: !workspacePath,
-    }),
-  ];
+  const terminalContextMenuItems = (): ContextMenuItem[] => buildTerminalContextMenuItems({
+    activePaneState: activeTerminalPane?.state ?? null,
+    hasActiveHandle: Boolean(activeAgentSessionHandle),
+    hasActivePane: Boolean(activeTerminalPane),
+    hasSelection: Boolean(terminalSelectedText()),
+    hasWorkspace: Boolean(workspacePath),
+    hasWorktreeForActivePane: Boolean(activeTerminalPane && worktreeForPaneId(worktrees, String(activeTerminalPane.id))),
+    launchProfileChanging,
+    launchProfileLabel: terminalLaunchProfile.label,
+    shortcuts: {
+      clear: shortcutKeys("terminal.clear"),
+      copy: shortcutKeys("terminal.copy-selection"),
+      paste: shortcutKeys("terminal.paste"),
+    },
+    actions: {
+      clear: () => clearActiveTerminal(),
+      closePane: () => activeAgentSessionHandle?.close(),
+      copySelection: async () => { await copyTerminalSelection(); setActionNotice("Copied terminal selection"); },
+      copyTail: async () => { await copyActivePaneTail(); setActionNotice("Copied last 20 lines"); },
+      copyWorkingDirectory: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
+      createPane: () => createTerminalPane(terminalLaunchProfile),
+      createWorktreePane: () => createWorktreePane(terminalLaunchProfile),
+      interrupt: () => interruptActivePane(),
+      killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
+      paste: () => pasteIntoTerminal(),
+      removeWorktree: () => activeTerminalPane ? closeWorktreePane(activeTerminalPane.id) : undefined,
+      renamePane: () => activeTerminalPane ? renameTerminalPane(activeTerminalPane) : undefined,
+      restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
+      saveTranscript: saveActivePaneTranscript,
+    },
+  });
 
   const terminalPaneContextMenuItems = (pane: ManagedTerminalPane): ContextMenuItem[] => [
     menuItem("pane.focus", "Focus Pane", () => focusTerminalPane(pane.id), {

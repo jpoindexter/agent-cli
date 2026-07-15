@@ -6,10 +6,11 @@ const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", 
 const projectThreadsDrawer = readFileSync(new URL("./ProjectThreadsDrawer.tsx", import.meta.url), "utf8");
 const shellLayout = readFileSync(new URL("./useShellLayout.ts", import.meta.url), "utf8");
 const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
+const terminalContextMenu = readFileSync(new URL("./terminalContextMenu.ts", import.meta.url), "utf8");
 
 describe("production context-menu coverage", () => {
   it("registers unique commands for every promised surface", () => {
-    const ids = Array.from(app.matchAll(/menuItem\("([^"]+)"/g), (match) => match[1]);
+    const ids = Array.from(`${app}\n${terminalContextMenu}`.matchAll(/(?:menuItem|terminalItem)\("([^"]+)"/g), (match) => match[1]);
     expect(new Set(ids).size).toBe(ids.length);
     for (const prefix of ["workspace.", "project.", "session.", "file.", "tab.", "editor.", "git.", "diff.", "terminal.", "pane.", "utility.", "browser.", "composer."]) {
       expect(ids.some((id) => id.startsWith(prefix))).toBe(true);
