@@ -236,6 +236,7 @@ import { deriveActiveChatState } from "./activeChatState";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
 import { executeWorkspaceOpenFailure } from "./workspaceOpenFailureWorkflow";
+import { resolveWorkspaceOpenTarget } from "./workspaceOpenTarget";
 import {
   addPaneTranscript,
   buildPaneTranscript,
@@ -1613,13 +1614,11 @@ function App() {
       projectSessionsRef.current = preparedSessions;
       activeSessionByProjectRef.current = preparedActiveSessions;
       const existingPanes = terminalPanesForSession(path, requestedSessionId);
-      let root = path;
-      let nextProjectPanes = existingPanes;
-      let nextActivePaneId = activePaneForSession(path, requestedSessionId, existingPanes);
-      if (existingPanes.length > 0 && nextActivePaneId != null) {
-        await invoke("focus_pane", { paneId: nextActivePaneId });
-      } else if (agentSurfaceMode === "terminal") {
-        const opened = await openWorkspaceTerminalPanes({
+      const opened = await resolveWorkspaceOpenTarget({
+        activePaneId: activePaneForSession(path, requestedSessionId, existingPanes),
+        existingPanes,
+        focusPane: (paneId) => invoke("focus_pane", { paneId }),
+        openTerminalPanes: () => openWorkspaceTerminalPanes({
           createPane: (target, paneProfile) => invoke<OpenPaneResponse>("create_pane", {
             path: target, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
           }),
@@ -1629,16 +1628,12 @@ function App() {
           }),
           paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId, resolveProfile: resolveLaunchProfile,
           savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, requestedSessionId),
-        });
-        root = opened.root;
-        nextProjectPanes = opened.panes;
-        nextActivePaneId = opened.activePaneId;
-      } else {
-        const result = await invoke<ResolveWorkspaceResponse>("resolve_workspace", { path });
-        root = result.root;
-        nextProjectPanes = [];
-        nextActivePaneId = null;
-      }
+        }),
+        path,
+        resolveWorkspace: (target) => invoke<ResolveWorkspaceResponse>("resolve_workspace", { path: target }),
+        surfaceMode: agentSurfaceMode,
+      });
+      const { activePaneId: nextActivePaneId, panes: nextProjectPanes, root } = opened;
       const contextKey = paneContextKey(root, requestedSessionId);
       if (!contextKey || !requestedSessionId) throw new Error("Workspace session context is unavailable");
       terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [contextKey]: nextProjectPanes };
