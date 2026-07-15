@@ -212,6 +212,7 @@ import { planPaneExit } from "./paneExitPlan";
 import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { executeProjectSessionDelete } from "./projectSessionDelete";
 import { replaceRestartedPane } from "./terminalPaneRestart";
+import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
 import { planCheckpointRestore } from "./checkpointRestorePlan";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
@@ -2155,37 +2156,19 @@ function App() {
   const terminateTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
     const root = workspacePathRef.current;
     if (!root || !pane) return false;
-    const label = terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot);
-    const audit = await gateAppAction(createAppAction({
-      kind: "terminate-process",
-      label: "Terminate process",
-      target: label,
-      risk: "destructive",
-      requestedBy: "user",
-      undoHint: "Restart the pane from the same profile.",
-    }), activeAgentSessionDescriptor);
-    if (audit.decision !== "approved") return false;
-    try {
-      await invoke("terminate_pane", { paneId: pane.id });
-      intentionallyTerminatedPaneIdsRef.current.add(pane.id);
-      const nextPanes = setPaneState(pane.id, "exited", null);
-      await updateOpenProjectStatus(root, projectStatusForRoot(root));
-      await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
-      recordAgentActivity(activeAgentSessionDescriptor, {
-        kind: "process",
-        label: "Terminate sent",
-        detail: label,
-        target: pane.cwd,
-        status: "waiting",
-      });
-      setLaunchError(null);
-      return true;
-    } catch (err) {
-      setLaunchError(String(err));
-      await updateOpenProjectStatus(root, "attention");
-      await updateActiveSessionStatus(root, "attention");
-      return false;
-    }
+    return executeTerminalPaneTerminate({
+      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionDescriptor)).decision,
+      markIntentionallyTerminated: (paneId) => intentionallyTerminatedPaneIdsRef.current.add(paneId),
+      pane,
+      projectStatus: () => projectStatusForRoot(root),
+      recordActivity: (activity) => recordAgentActivity(activeAgentSessionDescriptor, activity),
+      sessionStatus: terminalPaneProjectStatus,
+      setError: setLaunchError,
+      setPaneExited: (paneId) => setPaneState(paneId, "exited", null),
+      terminatePane: (paneId) => invoke("terminate_pane", { paneId }),
+      updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
+      updateSessionStatus: (status) => updateActiveSessionStatus(root, status),
+    });
   };
 
   const restartTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
