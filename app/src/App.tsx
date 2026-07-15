@@ -288,6 +288,11 @@ import {
 } from "./chatOrchestration";
 import { launchOrchestration as launchOrchestrationWithContext } from "./orchestrationLaunch";
 import { executeOrchestrationChildResult } from "./orchestrationChildResult";
+import {
+  beginSettingsMcpOAuth,
+  disconnectSettingsMcpOAuth,
+  probeSettingsMcpServer,
+} from "./settingsMcpActions";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
@@ -4703,37 +4708,22 @@ function App() {
           onAiConnectionSettingsChange={(next) => void saveAiConnectionSettings(next)}
           onDeleteConnectionSecret={deleteConnectionSecret}
           onSaveConnectionSecret={saveConnectionSecret}
-          onValidateConnectionTarget={(server: McpServerConfig) => invoke<ConnectionTargetStatus>("probe_mcp_server", {
-            request: {
-              ...server,
-              environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, workspacePath ?? ""),
-            },
+          onValidateConnectionTarget={(server: McpServerConfig) => probeSettingsMcpServer({
+            probe: (input) => invoke<ConnectionTargetStatus>("probe_mcp_server", input),
+            server, settings: aiConnectionSettingsRef.current, workspacePath: workspacePath ?? "",
           })}
-          onBeginMcpOAuth={(server: McpServerConfig) => invoke<McpOAuthStart>("begin_mcp_oauth", {
-            request: {
-              id: server.id,
-              target: server.target,
-              oauthIssuer: server.oauthIssuer,
-              oauthClientId: server.oauthClientId,
-              oauthScopes: server.oauthScopes,
-            },
-          }).then((start) => {
-            setMcpOAuthStatuses((current) => ({
-              ...current,
-              [server.id]: { serverId: server.id, state: "pending", message: start.message },
-            }));
-            return start;
+          onBeginMcpOAuth={(server: McpServerConfig) => beginSettingsMcpOAuth({
+            recordStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
+            server,
+            start: (input) => invoke<McpOAuthStart>("begin_mcp_oauth", input),
           })}
-          onDisconnectMcpOAuth={(server: McpServerConfig) => invoke<McpOAuthStatus>("disconnect_mcp_oauth", {
-            serverId: server.id,
-          }).then((status) => {
-            setMcpOAuthStatuses((current) => ({ ...current, [server.id]: status }));
-            setConnectionSecretPresence((current) => ({
-              ...current,
-              [mcpOauthTokenKey(server.id)]: false,
-              [mcpOauthClientSecretKey(server.id)]: false,
-            }));
-            return status;
+          onDisconnectMcpOAuth={(server: McpServerConfig) => disconnectSettingsMcpOAuth({
+            clearSecretPresence: (keys) => setConnectionSecretPresence((current) => ({
+              ...current, ...Object.fromEntries(keys.map((key) => [key, false])),
+            })),
+            disconnect: (input) => invoke<McpOAuthStatus>("disconnect_mcp_oauth", input),
+            recordStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
+            server,
           })}
           onCommandPaletteSourceChange={(source: CommandPaletteSourceId, enabled) => {
             const next = { ...commandPaletteSources, [source]: enabled };
