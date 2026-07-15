@@ -20,6 +20,7 @@ import { UtilityTrayLogs, UtilityTrayProcesses } from "./UtilityTrayViews";
 import { TerminalPaneControls } from "./TerminalPaneControls";
 import { TerminalViewport } from "./TerminalViewport";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
+import { BrowserToolsDrawer } from "./BrowserToolsDrawer";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -5826,67 +5827,23 @@ function App() {
           </section>
         ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "browser" ? (
-          <section className="drawer-panel" aria-label="Browser tools">
-            <div className="panel-title panel-title--with-action">
-              <span>Browser</span>
-              <button className="rail-open-button" type="button" onClick={() => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout)}>
-                <AppIcon name="browser" />
-                <span>Show</span>
-              </button>
-            </div>
-            <form className="drawer-form" onSubmit={submitBrowserAddress}>
-              <label className="drawer-field">
-                <span>Preview URL</span>
-                <input
-                  value={browserAddress}
-                  placeholder="localhost:5173"
-                  onChange={(event) => {
-                    setBrowserAddress(event.currentTarget.value);
-                    setBrowserError(null);
-                  }}
-                />
-              </label>
-              <button className="rail-open-button" type="submit">
-                <AppIcon name="browser" />
-                <span>Open</span>
-              </button>
-            </form>
-            {browserError ? <div className="rail-status rail-status--error">{browserError}</div> : null}
-            {activeDetectedLocalDevServer ? (
-              <div className="drawer-detected-server" title={activeDetectedLocalDevServer.url}>
-                <div>
-                  <span>Detected from {activeDetectedLocalDevServer.paneLabel}</span>
-                  <strong>{activeDetectedLocalDevServer.url}</strong>
-                </div>
-                <button className="rail-open-button" type="button" disabled={activeDetectedLocalDevServer.url === browserUrl} onClick={() => void openDetectedLocalDevServer()}>
-                  <AppIcon name="browser" />
-                  <span>{activeDetectedLocalDevServer.url === browserUrl ? "Current" : "Open detected"}</span>
-                </button>
-              </div>
-            ) : null}
-            <div className="drawer-action-grid">
-              <button className="rail-open-button" type="button" disabled={!browserCanGoBack} onClick={() => goBrowserHistory(-1)}>
-                <AppIcon name="back" />
-                <span>Back</span>
-              </button>
-              <button className="rail-open-button" type="button" disabled={!browserCanGoForward} onClick={() => goBrowserHistory(1)}>
-                <AppIcon name="forward" />
-                <span>Forward</span>
-              </button>
-              <button className="rail-open-button" type="button" onClick={reloadBrowserPreview}>
-                <AppIcon name="reload" />
-                <span>Reload</span>
-              </button>
-              <button className="rail-open-button" type="button" onClick={() => void openUrl(browserUrl)}>
-                <AppIcon name="openExternal" />
-                <span>External</span>
-              </button>
-            </div>
-            <div className="drawer-callout" title={browserUrl}>
-              <AppIcon name="browser" />
-              <span>{browserUrl}</span>
-            </div>
-          </section>
+          <BrowserToolsDrawer
+            address={browserAddress}
+            canGoBack={browserCanGoBack}
+            canGoForward={browserCanGoForward}
+            detectedPaneLabel={activeDetectedLocalDevServer?.paneLabel ?? null}
+            detectedUrl={activeDetectedLocalDevServer?.url ?? null}
+            error={browserError}
+            url={browserUrl}
+            onAddressChange={(address) => { setBrowserAddress(address); setBrowserError(null); }}
+            onBack={() => goBrowserHistory(-1)}
+            onForward={() => goBrowserHistory(1)}
+            onOpenDetected={() => void openDetectedLocalDevServer()}
+            onOpenExternal={() => void openUrl(browserUrl)}
+            onReload={reloadBrowserPreview}
+            onShow={() => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout)}
+            onSubmit={submitBrowserAddress}
+          />
         ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "settings" ? (
           <section className="drawer-panel" aria-label="Settings">
