@@ -17,6 +17,9 @@ import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
 import { AppTitlebar } from "./AppTitlebar";
 import { BottomUtilityTabs, type UtilityTrayMode } from "./BottomUtilityTabs";
 import { UtilityTrayLogs, UtilityTrayProcesses } from "./UtilityTrayViews";
+import { TerminalPaneControls } from "./TerminalPaneControls";
+import { TerminalViewport } from "./TerminalViewport";
+import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -140,7 +143,7 @@ import {
   readTailFromSnapshot,
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
-import { AppIcon, paneStateIconName } from "./icons";
+import { AppIcon } from "./icons";
 import { AppNotices } from "./AppNotices";
 import type { AppIconName } from "./icons";
 
@@ -187,7 +190,6 @@ import {
   normalizeTerminalPaneLabel,
   terminalPaneLabelForDisplay,
   terminalPaneProjectStatus as projectStatusFromTerminalPanes,
-  terminalPaneStateLabel,
 } from "./terminalPane";
 import type { TerminalPaneState } from "./terminalPane";
 import {
@@ -321,16 +323,6 @@ type ResolveWorkspaceResponse = { root: string };
 type OpenPaneResponse = { paneId: number };
 type ClosePaneResponse = { activePaneId: number | null };
 type WorktreeResponse = { path: string; branch: string };
-type ManagedTerminalPane = {
-  id: number;
-  profile: LaunchProfile;
-  cwd: string;
-  slot: number;
-  label: string | null;
-  state: TerminalPaneState;
-  exitCode: number | null;
-  createdAt: number;
-};
 type TerminalPanesByContext = Record<string, ManagedTerminalPane[]>;
 type ActiveTerminalPaneByContext = Record<string, number>;
 type PaneLabelRecord = { slot: number; label: string; updatedAt: number };
@@ -6679,84 +6671,38 @@ function App() {
             onToggleVisibility={toggleUtilityTrayVisibility}
           />
           <div className={`utility-tray__body utility-tray__body--${utilityTrayMode}`}>
-            <div className="utility-tray__terminal-controls">
-              <div className="terminal-pane-strip" aria-label="Terminal panes">
-                {terminalPanes.map((pane, index) => {
-                  const label = terminalPaneLabel(pane, index);
-                  return (
-                    <button
-                      key={pane.id}
-                      className={`terminal-pane-button ${pane.id === activeTerminalPaneId ? "terminal-pane-button--active" : ""}`}
-                      type="button"
-                      title={`${label} - ${terminalPaneStateLabel(pane.state, pane.exitCode)}. Double-click to rename.`}
-                      aria-label={`Focus ${label}. Double-click to rename.`}
-                      aria-pressed={pane.id === activeTerminalPaneId}
-                      onClick={() => void focusTerminalPane(pane.id)}
-                      onDoubleClick={() => void renameTerminalPane(pane)}
-                      onContextMenu={(event) => openContextMenu(event, terminalPaneContextMenuItems(pane))}
-                    >
-                      <AppIcon name={paneStateIconName(pane.state)} />
-                      <span>{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <span className="utility-tray__spacer" />
-              <label className="terminal-profile-picker" title="New terminal profile">
-                <select aria-label="New pane profile" value={terminalLaunchProfile.id} disabled={launchProfileChanging} onChange={(event) => void switchTerminalLaunchProfile(resolveLaunchProfile(event.currentTarget.value))}>
-                  {allLaunchProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.label}</option>)}
-                </select>
-              </label>
-              <button className="terminal-new-pane" type="button" title={`New ${terminalLaunchProfile.label} pane`} aria-label={`New ${terminalLaunchProfile.label} pane`} disabled={!workspacePath || launchProfileChanging} onClick={() => void createTerminalPane(terminalLaunchProfile)}>
-                <AppIcon name="plus" />
-              </button>
-              <button className="terminal-new-pane" type="button" title="Find in terminal scrollback" aria-label="Find in terminal scrollback" disabled={!activeTerminalPane} onClick={terminalFind.toggle}>
-                <AppIcon name="search" />
-              </button>
-              <button className="terminal-new-pane" type="button" title="Restart selected process" aria-label="Restart selected process" disabled={!activeTerminalPane || launchProfileChanging} onClick={() => void restartTerminalPane(activeTerminalPane)}>
-                <AppIcon name="reload" />
-              </button>
-              <button className="terminal-new-pane terminal-new-pane--danger" type="button" title="Kill selected process" aria-label="Kill selected process" disabled={!activeTerminalPane || activeTerminalPane.state === "exited"} onClick={() => void terminateTerminalPane(activeTerminalPane)}>
-                <AppIcon name="stop" />
-              </button>
-              <button className="terminal-new-pane terminal-new-pane--danger" type="button" title="Close selected pane" aria-label="Close selected pane" disabled={!activeAgentSessionHandle} onClick={() => activeAgentSessionHandle && void activeAgentSessionHandle.close()}>
-                <AppIcon name="close" />
-              </button>
-            </div>
+            <TerminalPaneControls
+              activePane={activeTerminalPane}
+              activePaneId={activeTerminalPaneId}
+              canClose={Boolean(activeAgentSessionHandle)}
+              hasWorkspace={Boolean(workspacePath)}
+              launchProfile={terminalLaunchProfile}
+              launchProfileChanging={launchProfileChanging}
+              launchProfiles={allLaunchProfiles}
+              panes={terminalPanes}
+              onClose={() => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); }}
+              onContextMenu={(event, pane) => openContextMenu(event, terminalPaneContextMenuItems(pane))}
+              onCreate={(profile) => void createTerminalPane(profile)}
+              onFind={terminalFind.toggle}
+              onFocus={(paneId) => void focusTerminalPane(paneId)}
+              onKill={() => { if (activeTerminalPane) void terminateTerminalPane(activeTerminalPane); }}
+              onProfileChange={(profileId) => void switchTerminalLaunchProfile(resolveLaunchProfile(profileId))}
+              onRename={(pane) => void renameTerminalPane(pane)}
+              onRestart={() => { if (activeTerminalPane) void restartTerminalPane(activeTerminalPane); }}
+            />
             <TerminalFindBar controller={terminalFind} />
-            <div ref={terminalHostRef} className="terminal-host utility-tray__terminal" onPointerDown={() => imeInputRef.current?.focus()} onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}>
-              <canvas ref={canvasRef} className="term" aria-hidden="true" />
-              {!workspacePath ? (
-                <div className="utility-tray__terminal-empty">
-                  <AppIcon name="terminal" />
-                  <strong>Open a folder to start a terminal</strong>
-                  <span>Shell panes run in the selected project.</span>
-                  <button type="button" onClick={() => void pickWorkspace({ openTerminal: true })}>Open folder</button>
-                </div>
-              ) : terminalPanes.length === 0 ? (
-                <div className="utility-tray__terminal-empty">
-                  <AppIcon name="terminal" />
-                  <strong>No terminal panes</strong>
-                  <button type="button" onClick={() => void createTerminalPane(defaultTerminalLaunchProfile())}>Start Shell</button>
-                </div>
-              ) : null}
-              <textarea
-                ref={imeInputRef}
-                className="terminal-ime-input"
-                tabIndex={0}
-                role="application"
-                aria-label={`${activeTerminalProfile.label} terminal pane. Type to send keyboard input to the active process.`}
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck={false}
-                onCompositionEnd={(event) => {
-                  const text = event.data;
-                  event.currentTarget.value = "";
-                  if (text) invoke("paste", { text }).catch(() => {});
-                }}
-              />
-            </div>
+            <TerminalViewport
+              activeProfileLabel={activeTerminalProfile.label}
+              canvasRef={canvasRef}
+              imeInputRef={imeInputRef}
+              paneCount={terminalPanes.length}
+              terminalHostRef={terminalHostRef}
+              workspaceOpen={Boolean(workspacePath)}
+              onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}
+              onOpenFolder={() => void pickWorkspace({ openTerminal: true })}
+              onPaste={(text) => { invoke("paste", { text }).catch(() => {}); }}
+              onStartShell={() => void createTerminalPane(defaultTerminalLaunchProfile())}
+            />
             <UtilityTrayProcesses panes={terminalPanes} onFocus={(paneId) => void focusTerminalPane(paneId)} />
             <UtilityTrayLogs events={selectedAgentActivityLog} />
           </div>

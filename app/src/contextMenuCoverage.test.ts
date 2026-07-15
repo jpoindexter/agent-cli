@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
 
 describe("production context-menu coverage", () => {
   it("registers unique commands for every promised surface", () => {
@@ -57,7 +58,7 @@ describe("production context-menu coverage", () => {
     expect(app).toContain('useState<AgentSurfaceMode>("chat")');
     expect(app).toContain("createTerminalPane(defaultTerminalLaunchProfile())");
     expect(app).toContain('pickWorkspace({ openTerminal: true })');
-    expect(app).toContain("Open a folder to start a terminal");
+    expect(terminalViewport).toContain("Open a folder to start a terminal");
     expect(app).toContain('set("terminalLaunchProfile", profile)');
     expect(app).not.toContain("createTerminalPane(launchProfileRef.current)");
   });
