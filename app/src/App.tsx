@@ -15,6 +15,8 @@ import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
 import { AppTitlebar } from "./AppTitlebar";
+import { BottomUtilityTabs, type UtilityTrayMode } from "./BottomUtilityTabs";
+import { UtilityTrayLogs, UtilityTrayProcesses } from "./UtilityTrayViews";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -358,7 +360,6 @@ type ActiveDiffReview = {
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
 type AgentSurfaceMode = "chat" | "terminal";
-type UtilityTrayMode = "terminal" | "processes" | "logs";
 type SideDrawerMode = "projects" | "files" | "git" | "browser" | "settings";
 type DetectedLocalDevServer = {
   url: string;
@@ -6670,36 +6671,13 @@ function App() {
           }}
         />
         <section className={`utility-tray ${agentSurfaceMode === "terminal" ? "utility-tray--open" : "utility-tray--collapsed"}`} aria-label="Bottom utility tray">
-          <nav className="utility-tray__tabs" aria-label="Utility tray surfaces">
-            {([
-              ["terminal", "terminal", "Terminal"],
-              ["processes", "processes", "Processes"],
-              ["logs", "logs", "Logs"],
-            ] as const).map(([mode, icon, label]) => (
-              <button
-                className={`utility-tray__tab ${utilityTrayMode === mode ? "utility-tray__tab--active" : ""}`}
-                type="button"
-                aria-pressed={agentSurfaceMode === "terminal" && utilityTrayMode === mode}
-                key={mode}
-                onClick={() => void openUtilityTray(mode)}
-                onContextMenu={(event) => openContextMenu(event, utilityTrayTabContextMenuItems(mode))}
-              >
-                <AppIcon name={icon} />
-                <span>{label}</span>
-              </button>
-            ))}
-            <span className="utility-tray__spacer" />
-            <button
-              className="utility-tray__icon"
-              type="button"
-              title={agentSurfaceMode === "terminal" ? "Collapse tray" : "Expand tray"}
-              aria-label={agentSurfaceMode === "terminal" ? "Collapse utility tray" : "Expand utility tray"}
-              aria-expanded={agentSurfaceMode === "terminal"}
-              onClick={toggleUtilityTrayVisibility}
-            >
-              <AppIcon name={agentSurfaceMode === "terminal" ? "chevronDown" : "chevronUp"} />
-            </button>
-          </nav>
+          <BottomUtilityTabs
+            mode={utilityTrayMode}
+            open={agentSurfaceMode === "terminal"}
+            onContextMenu={(event, mode) => openContextMenu(event, utilityTrayTabContextMenuItems(mode))}
+            onOpen={(mode) => void openUtilityTray(mode)}
+            onToggleVisibility={toggleUtilityTrayVisibility}
+          />
           <div className={`utility-tray__body utility-tray__body--${utilityTrayMode}`}>
             <div className="utility-tray__terminal-controls">
               <div className="terminal-pane-strip" aria-label="Terminal panes">
@@ -6779,26 +6757,8 @@ function App() {
                 }}
               />
             </div>
-            <div className="utility-tray__processes" aria-label="Processes">
-              {terminalPanes.length === 0 ? <div className="utility-tray__empty">No processes in this chat.</div> : terminalPanes.map((pane, index) => (
-                <button type="button" key={pane.id} onClick={() => void focusTerminalPane(pane.id)}>
-                  <AppIcon name={paneStateIconName(pane.state)} />
-                  <span>{terminalPaneLabel(pane, index)}</span>
-                  <small>{pane.profile.label}</small>
-                  <span>{terminalPaneStateLabel(pane.state, pane.exitCode)}</span>
-                </button>
-              ))}
-            </div>
-            <div className="utility-tray__logs" aria-label="Agent logs">
-              {selectedAgentActivityLog.length === 0 ? <div className="utility-tray__empty">No activity logged for this chat.</div> : selectedAgentActivityLog.map((event) => (
-                <div className="utility-tray__log-row" key={event.id}>
-                  <span>{new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-                  <strong>{event.label}</strong>
-                  <span>{event.detail ?? event.target ?? event.kind}</span>
-                  <small>{event.status}</small>
-                </div>
-              ))}
-            </div>
+            <UtilityTrayProcesses panes={terminalPanes} onFocus={(paneId) => void focusTerminalPane(paneId)} />
+            <UtilityTrayLogs events={selectedAgentActivityLog} />
           </div>
         </section>
       </main>

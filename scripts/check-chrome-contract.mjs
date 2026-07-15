@@ -13,6 +13,7 @@ const assert = (condition, message) => {
 const appCss = `${read("app/src/App.css")}\n${read("app/src/composerModelPicker.css")}\n${read("app/src/responsive-shell.css")}\n${read("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
 const appTitlebar = read("app/src/AppTitlebar.tsx");
+const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");
 const composerModelPicker = read("app/src/ComposerModelPicker.tsx");
 const composerModelPopover = read("app/src/ComposerModelPopover.tsx");
 const composerReasoningPicker = read("app/src/ComposerReasoningPicker.tsx");
@@ -99,6 +100,7 @@ const checkedText = [
   ["app/src/App.css", appCss],
   ["app/src/App.tsx", appTsx],
   ["app/src/AppTitlebar.tsx", appTitlebar],
+  ["app/src/BottomUtilityTabs.tsx", bottomUtilityTabs],
   ["app/src/ChatThreadSurface.tsx", chatThreadSurface],
   ["app/src/ToolDockMenu.tsx", toolDockMenu],
   ["demo/keelhouse-chrome-demo.html", demo],
@@ -155,12 +157,12 @@ assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a
 assert(appTsx.includes('className={`utility-tray ${agentSurfaceMode === "terminal"'), "Raw terminal must live in the approved bottom utility tray");
 assert(appTsx.includes('hidden={false}'), "Opening the bottom tray must keep the chat timeline visible");
 assert(appTsx.includes('className="agent-composer" aria-label="Agent composer"'), "Opening the bottom tray must keep the chat composer visible");
-assert(appTsx.includes('aria-label="Utility tray surfaces"'), "Bottom tray must expose Terminal, Processes, and Logs modes");
-assert(appTsx.includes('aria-label={agentSurfaceMode === "terminal" ? "Collapse utility tray" : "Expand utility tray"}'), "Bottom tray chevron must describe its current open or closed action");
+assert(bottomUtilityTabs.includes('aria-label="Utility tray surfaces"'), "Bottom tray must expose Terminal, Processes, and Logs modes");
+assert(bottomUtilityTabs.includes('aria-label={open ? "Collapse utility tray" : "Expand utility tray"}'), "Bottom tray chevron must describe its current open or closed action");
 assert(appTsx.includes('const toggleUtilityTrayVisibility = () => {'), "Bottom tray chevron must have a layout-only visibility toggle");
 assert(appTsx.includes('setAgentSurfaceMode((current) => current === "terminal" ? "chat" : "terminal");'), "Bottom tray chevron must toggle tray visibility without launching a process");
-assert(appTsx.includes('onClick={toggleUtilityTrayVisibility}'), "Bottom tray chevron must use the layout-only visibility toggle");
-assert(appTsx.includes('name={agentSurfaceMode === "terminal" ? "chevronDown" : "chevronUp"}'), "Bottom tray chevron direction must reflect tray state");
+assert(appTsx.includes('onToggleVisibility={toggleUtilityTrayVisibility}'), "Bottom tray chevron must use the layout-only visibility toggle");
+assert(bottomUtilityTabs.includes('name={open ? "chevronDown" : "chevronUp"}'), "Bottom tray chevron direction must reflect tray state");
 assert(!appTsx.includes('utilityTrayMode === "browser"'), "Browser must not be duplicated in the bottom utility tray");
 assert(appTsx.includes("utilityTrayTabContextMenuItems"), "Bottom utility tabs must expose app-owned context menus");
 assert(appTsx.includes("terminalPaneContextMenuItems"), "Terminal pane tabs must expose lifecycle context menus");
