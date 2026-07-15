@@ -27,7 +27,12 @@ const chatRenderer = [
   read("app/src/ChatMessageArticle.tsx"),
   read("app/src/AgentActivityTimeline.tsx"),
 ].join("\n");
-const chatConversation = read("app/src/chatConversation.ts");
+const chatConversation = [
+  read("app/src/chatConversation.ts"),
+  read("app/src/chatConversationTypes.ts"),
+  read("app/src/chatConversationNormalization.ts"),
+  read("app/src/chatRunEnvelopeReducer.ts"),
+].join("\n");
 const chatHarness = read("app/src-tauri/src/chat_harness.rs");
 const claudeAdapter = read("app/src-tauri/src/claude_adapter.rs");
 const agentHooks = read("app/src-tauri/src/agent_hooks.rs");
