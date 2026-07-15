@@ -45,7 +45,6 @@ import {
   newProjectSession,
   planProjectClose,
   pushRecentProject,
-  removeProjectSession,
   removeOpenProject,
   rememberActiveFile,
   setActiveProjectSession,
@@ -211,6 +210,7 @@ import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookReques
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
 import { planPaneExit } from "./paneExitPlan";
+import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -2098,24 +2098,54 @@ function App() {
     await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
   };
 
+  const closeSessionTerminalPanes = async (projectPath: string, sessionId: string) => {
+    for (const pane of terminalPanesForSession(projectPath, sessionId)) {
+      intentionallyTerminatedPaneIdsRef.current.add(pane.id);
+      try {
+        await invoke("close_pane", { paneId: pane.id });
+      } catch (error) {
+        intentionallyTerminatedPaneIdsRef.current.delete(pane.id);
+        throw error;
+      }
+      delete terminalSnapshotsRef.current[pane.id];
+    }
+  };
+
+  const removeSessionScopedRecords = async (plan: Extract<ReturnType<typeof planProjectSessionDelete>, { canDelete: true }>) => {
+    if (plan.contextKey) {
+      const { [plan.contextKey]: _removedPanes, ...nextPaneContexts } = terminalPanesByContextRef.current;
+      const { [plan.contextKey]: _removedActive, ...nextActiveContexts } = activeTerminalPaneByContextRef.current;
+      terminalPanesByContextRef.current = nextPaneContexts;
+      activeTerminalPaneByContextRef.current = nextActiveContexts;
+    }
+    const nextBrowserSessions = { ...browserPreviewBySessionRef.current };
+    delete nextBrowserSessions[plan.browserSessionKey];
+    const nextComposerHarness = { ...composerHarnessBySessionRef.current };
+    delete nextComposerHarness[plan.chatSessionKey];
+    const nextChatConversations = { ...chatConversationsRef.current };
+    delete nextChatConversations[plan.chatSessionKey];
+    chatConversationsRef.current = nextChatConversations;
+    setChatConversations(nextChatConversations);
+    browserPreviewBySessionRef.current = nextBrowserSessions;
+    setBrowserPreviewBySession(nextBrowserSessions);
+    await storeRef.current?.set("browserPreviewBySession", nextBrowserSessions);
+    await persistComposerHarnessRecords(nextComposerHarness);
+  };
+
   const deleteProjectSession = async (projectPath: string, session: ProjectSession) => {
-    const existing = projectSessionsRef.current[projectPath] ?? [];
-    if (existing.length <= 1) return;
+    const plan = planProjectSessionDelete({
+      activeSessionByProject: activeSessionByProjectRef.current,
+      activeSessionId,
+      activeWorkspacePath: workspacePathRef.current,
+      projectPath,
+      projectSessions: projectSessionsRef.current,
+      sessionId: session.id,
+    });
+    if (!plan.canDelete) return;
     const ok = await confirmDialog(`Delete chat "${session.title}"? Its messages and saved workspace context will be removed.`);
     if (!ok) return;
-    const contextKey = paneContextKey(projectPath, session.id);
-    const ownedPanes = terminalPanesForSession(projectPath, session.id);
     try {
-      for (const pane of ownedPanes) {
-        intentionallyTerminatedPaneIdsRef.current.add(pane.id);
-        try {
-          await invoke("close_pane", { paneId: pane.id });
-        } catch (error) {
-          intentionallyTerminatedPaneIdsRef.current.delete(pane.id);
-          throw error;
-        }
-        delete terminalSnapshotsRef.current[pane.id];
-      }
+      await closeSessionTerminalPanes(projectPath, session.id);
     } catch (err) {
       setLaunchError(`Could not close this chat's terminal panes: ${String(err)}`);
       return;
@@ -2126,32 +2156,10 @@ function App() {
       setLaunchError(`Could not delete this chat's history: ${String(err)}`);
       return;
     }
-    if (contextKey) {
-      const { [contextKey]: _removedPanes, ...nextPaneContexts } = terminalPanesByContextRef.current;
-      const { [contextKey]: _removedActive, ...nextActiveContexts } = activeTerminalPaneByContextRef.current;
-      terminalPanesByContextRef.current = nextPaneContexts;
-      activeTerminalPaneByContextRef.current = nextActiveContexts;
-    }
-    const nextSessions = removeProjectSession(projectSessionsRef.current, projectPath, session.id);
-    const fallbackSessionId = activeProjectSessionId(activeSessionByProjectRef.current, nextSessions, projectPath);
-    const nextActiveSessions = fallbackSessionId
-      ? setActiveProjectSession(activeSessionByProjectRef.current, projectPath, fallbackSessionId)
-      : activeSessionByProjectRef.current;
     removePersistedSessionRestore(projectPath, session.id);
-    const nextBrowserSessions = { ...browserPreviewBySessionRef.current };
-    delete nextBrowserSessions[browserPreviewSessionKey(projectPath, session.id)];
-    const nextComposerHarness = { ...composerHarnessBySessionRef.current };
-    delete nextComposerHarness[composerHarnessSessionKey(projectPath, session.id)];
-    const nextChatConversations = { ...chatConversationsRef.current };
-    delete nextChatConversations[composerHarnessSessionKey(projectPath, session.id)];
-    chatConversationsRef.current = nextChatConversations;
-    setChatConversations(nextChatConversations);
-    browserPreviewBySessionRef.current = nextBrowserSessions;
-    setBrowserPreviewBySession(nextBrowserSessions);
-    await storeRef.current?.set("browserPreviewBySession", nextBrowserSessions);
-    await persistComposerHarnessRecords(nextComposerHarness);
-    await persistProjectSessions(nextSessions, nextActiveSessions);
-    if (workspacePathRef.current === projectPath && activeSessionId === session.id) {
+    await removeSessionScopedRecords(plan);
+    await persistProjectSessions(plan.nextSessions, plan.nextActiveSessions);
+    if (plan.shouldReopenActiveWorkspace) {
       await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
     }
   };
