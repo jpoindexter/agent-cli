@@ -134,6 +134,7 @@ import {
   type KeybindingOverrides,
 } from "./shortcuts";
 import { filterCommandPaletteCommands } from "./commandPalette";
+import { buildChatPaletteCommands } from "./commandPaletteChats";
 import {
   buildCommandPaletteLayoutCommands,
   buildCommandPaletteResourceCommands,
@@ -3867,39 +3868,22 @@ function App() {
     shortcut: shortcutKeys,
     workspacePath,
   };
-  const commandPaletteCommands: CommandPaletteCommand[] = [
-    ...visibleOpenProjects.flatMap((project) => projectSessionsFor(project.path).map((session): CommandPaletteCommand => ({
-      id: `chat.${project.path}.${session.id}`,
-      label: session.title,
-      detail: `${basename(project.path)}${session.archived ? " · Archived" : ""}`,
-      source: "chats",
-      icon: session.pinnedAt ? "pin" : "newChat",
-      keywords: ["chat", "task", "thread", project.path],
-      run: () => void switchProjectSession(project.path, session.id),
-    }))),
-    ...chatSearchViewResults
-      .filter((result) => result.role !== "title")
-      .map((result): CommandPaletteCommand => ({
-        id: `chat-message.${result.chatId}.${result.messageId ?? result.timestamp}`,
-        label: result.title,
-        detail: `${result.projectName} · ${result.snippet}`,
-        source: "chats",
-        icon: result.bookmarked ? "bookmark" : "newChat",
-        keywords: ["chat", "message", "history", result.projectPath, result.snippet],
-        run: () => void openChatSearchResult(result),
-      })),
-    {
-      id: "chat.parallel",
-      label: "Run Parallel Child Chats",
-      detail: "Preview and launch 2-8 bounded child chats",
-      icon: "agent",
-      disabled: !workspacePath || !activeSessionId || Boolean(activeChatConversation.activeRunId),
-      keywords: ["agents", "orchestration", "parallel", "children", "dispatch"],
-      run: () => {
-        setOrchestrationError(null);
-        setOrchestrationOpen(true);
-      },
+  const commandPaletteChats = {
+    activeRun: Boolean(activeChatConversation.activeRunId),
+    activeSessionId,
+    onOpenSearchResult: (result: ChatSearchViewResult) => void openChatSearchResult(result),
+    onOpenSession: (projectPath: string, sessionId: string) => void switchProjectSession(projectPath, sessionId),
+    onParallel: () => {
+      setOrchestrationError(null);
+      setOrchestrationOpen(true);
     },
+    openProjects: visibleOpenProjects,
+    projectSessions,
+    searchResults: chatSearchViewResults,
+    workspacePath,
+  };
+  const commandPaletteCommands: CommandPaletteCommand[] = [
+    ...buildChatPaletteCommands(commandPaletteChats),
     ...buildWorkspaceOpenCommands(commandPaletteWorkbench),
     ...COMPOSER_APP_COMMANDS.map((info) => ({
       id: `composer.${info.command}`,

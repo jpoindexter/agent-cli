@@ -33,6 +33,7 @@ const searchCommandDialog = read("app/src/SearchCommandDialog.tsx");
 const commandPaletteController = read("app/src/useCommandPalette.ts");
 const commandPaletteSurface = [
   appTsx,
+  read("app/src/commandPaletteChats.ts"),
   read("app/src/commandPaletteNavigation.ts"),
 ].join("\n");
 const quickOpenSurface = [

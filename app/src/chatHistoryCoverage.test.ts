@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const chatPalette = readFileSync(new URL("./commandPaletteChats.ts", import.meta.url), "utf8");
+const productionWiring = `${app}\n${chatPalette}`;
 const thread = [
   readFileSync(new URL("./ChatThreadSurface.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("./ChatTurn.tsx", import.meta.url), "utf8"),
@@ -25,7 +27,7 @@ describe("chat history discovery production wiring", () => {
   it("exposes bookmark, pin, and archived-chat discovery controls", () => {
     expect(app).toContain("toggleChatMessageBookmark");
     expect(app).toContain("pinProjectSession(projectPath, session, !session.pinnedAt)");
-    expect(app).toContain('session.archived ? " · Archived" : ""');
+    expect(productionWiring).toContain('session.archived ? " · Archived" : ""');
     expect(thread).toContain('aria-label={message.bookmarked ? "Remove bookmark" : "Bookmark message"}');
   });
 
@@ -33,7 +35,7 @@ describe("chat history discovery production wiring", () => {
     expect(searchDialog).toContain('placeholder="Search tasks or run a command"');
     expect(searchDialog).toContain('label="Tasks"');
     expect(searchDialog).toContain('label="Actions"');
-    expect(app).toContain('source: "chats"');
+    expect(productionWiring).toContain('source: "chats"');
     expect(app).not.toContain('sideDrawerMode === "search"');
     expect(css).not.toContain(".search-scope-tabs");
     expect(css).toContain(".session-row__state > .session-row__pin");
