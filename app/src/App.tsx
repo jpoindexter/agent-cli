@@ -130,19 +130,6 @@ import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescripto
 import { AppIcon } from "./icons";
 import { AppNotices } from "./AppNotices";
 import type { AppIconName } from "./icons";
-
-type AgentHookRequest = {
-  requestId: string;
-  tool: "focus_pane" | "open_file" | "create_shell" | "report_status";
-  arguments: Record<string, unknown>;
-  requestedBy: "agent-hook";
-};
-
-type AgentHookStatus = {
-  endpoint: string;
-  configPath: string;
-  running: boolean;
-};
 import {
   setActiveKeybindingOverrides,
   shortcutKeys,
@@ -220,6 +207,7 @@ import { buildRepoUrl, sourceRepoStatusLabel, type RepoLocation } from "./source
 import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
+import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { planPaneExit } from "./paneExitPlan";
 import {
   addBackgroundExit,
@@ -4403,91 +4391,27 @@ function App() {
     }).catch(() => {});
   }, [activeSessionId, editorTabs, openProjects, selectedFile?.path, terminalPanes, workspacePath]);
 
-  useEffect(() => {
-    void invoke<AgentHookStatus>("agent_hook_status").then(setAgentHookStatus).catch(() => setAgentHookStatus(null));
-    let disposed = false;
-    let polling = false;
-    const handleRequest = async (request: AgentHookRequest) => {
-      const respond = (ok: boolean, message: string) => invoke("resolve_agent_hook_request", {
-        requestId: request.requestId,
-        ok,
-        message,
-      }).catch(() => {});
-      try {
-        if (request.tool === "focus_pane") {
-          const paneId = typeof request.arguments.paneId === "number" ? request.arguments.paneId : -1;
-          if (!terminalPanesRef.current.some((pane) => pane.id === paneId)) throw new Error("Pane is not open in the active chat.");
-          await focusTerminalPane(paneId, "agent");
-          await respond(true, `Focused pane ${paneId}.`);
-          return;
-        }
-        if (request.tool === "open_file") {
-          const root = workspacePathRef.current;
-          const relativePath = typeof request.arguments.path === "string" ? request.arguments.path.trim() : "";
-          if (!root || !relativePath || relativePath.startsWith("/") || relativePath.split(/[\\/]/).includes("..")) {
-            throw new Error("open_file requires a workspace-relative path inside the active project.");
-          }
-          const opened = await requestOpenEditorFile(
-            fileNodeFromPath(`${root}/${relativePath.replace(/^\.\//, "")}`, "file"),
-            { focusEditor: true },
-            "agent",
-          );
-          if (!opened) throw new Error("The file-open request was denied.");
-          await respond(true, `Opened ${relativePath}.`);
-          return;
-        }
-        if (request.tool === "create_shell") {
-          const created = await createTerminalPane(defaultTerminalLaunchProfile(), "agent");
-          if (!created) throw new Error("The shell-pane request was denied or could not run.");
-          await respond(true, "Created a blank shell pane.");
-          return;
-        }
-        const status = typeof request.arguments.status === "string" ? request.arguments.status.trim().slice(0, 160) : "";
-        const detail = typeof request.arguments.detail === "string" ? request.arguments.detail.trim().slice(0, 1000) : "";
-        const runCardKind = request.arguments.kind === "thinking" || request.arguments.kind === "plan" || request.arguments.kind === "file" || request.arguments.kind === "approval" || request.arguments.kind === "command" || request.arguments.kind === "tool"
-          ? request.arguments.kind
-          : "tool";
-        const runCardStatus = request.arguments.state === "running" || request.arguments.state === "error" ? request.arguments.state : "complete";
-        const targets = Array.isArray(request.arguments.targets)
-          ? request.arguments.targets.filter((target): target is string => typeof target === "string" && Boolean(target.trim())).map((target) => target.trim()).slice(0, 24)
-          : [];
-        if (!status) throw new Error("report_status requires a status label.");
-        recordAgentActivity(activeChatActivityHandle(), {
-          kind: runCardKind === "file" ? "file" : runCardKind === "approval" ? "approval" : "tool",
-          label: status,
-          detail: detail || "Reported through the Keelhouse agent hook.",
-          status: runCardStatus,
-          provenance: "agent-hook",
-          runCardKind,
-          targets,
-        });
-        await respond(true, "Status recorded in the active chat activity log.");
-      } catch (error) {
-        await respond(false, String(error));
-      }
-    };
-    const pollRequests = async () => {
-      if (disposed || polling) return;
-      polling = true;
-      try {
-        const requests = await invoke<AgentHookRequest[]>("take_agent_hook_requests");
-        for (const request of requests) {
-          if (disposed) break;
-          await handleRequest(request);
-        }
-      } catch {
-        // The next interval retries if the backend is still starting.
-      } finally {
-        polling = false;
-      }
-    };
-    const interval = window.setInterval(() => void pollRequests(), 250);
-    void pollRequests();
-    return () => {
-      disposed = true;
-      window.clearInterval(interval);
-    };
-  }, []);
+  useAgentHookRequests({
+    setStatus: setAgentHookStatus,
+    isPaneOpen: (paneId) => terminalPanesRef.current.some((pane) => pane.id === paneId),
+    focusPane: (paneId) => focusTerminalPane(paneId, "agent"),
+    getWorkspacePath: () => workspacePathRef.current,
+    openFile: (root, path) => requestOpenEditorFile(
+      fileNodeFromPath(`${root}/${path}`, "file"),
+      { focusEditor: true },
+      "agent",
+    ),
+    createShell: () => createTerminalPane(defaultTerminalLaunchProfile(), "agent"),
+    recordReport: (report) => recordAgentActivity(activeChatActivityHandle(), {
+      kind: report.runCardKind === "file" ? "file" : report.runCardKind === "approval" ? "approval" : "tool",
+      label: report.status,
+      detail: report.detail || "Reported through the Keelhouse agent hook.",
+      status: report.runCardStatus,
+      provenance: "agent-hook",
+      runCardKind: report.runCardKind,
+      targets: report.targets,
+    }),
+  });
 
   const continuePendingNavigation = async (navigation: PendingNavigation) => {
     if (navigation.kind === "file") {

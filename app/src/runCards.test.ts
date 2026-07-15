@@ -71,7 +71,7 @@ describe("run card provenance", () => {
 
   it("binds hook status cards to the durable chat handle", () => {
     const source = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const hookHandler = source.slice(source.indexOf('if (request.tool === "create_shell")'), source.indexOf('await respond(true, "Status recorded'));
+    const hookHandler = source.slice(source.indexOf("useAgentHookRequests({"), source.indexOf("const continuePendingNavigation"));
 
     expect(hookHandler).toContain("recordAgentActivity(activeChatActivityHandle()");
     expect(hookHandler).not.toContain("recordAgentActivity(activeAgentActivityHandle()");
