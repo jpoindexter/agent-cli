@@ -7,8 +7,6 @@ import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
 import { EditorView, type ViewUpdate } from "@codemirror/view";
-import CodeMirror from "@uiw/react-codemirror";
-import { oneDark } from "@codemirror/theme-one-dark";
 import { openSearchPanel } from "@codemirror/search";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
@@ -27,7 +25,7 @@ import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
 import { EditorChrome } from "./EditorChrome";
 import { EditorDiffView } from "./EditorDiffView";
-import { EditorSaveError } from "./EditorSaveError";
+import { EditorCodeSurface } from "./EditorCodeSurface";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
 import {
@@ -40,7 +38,6 @@ import {
   pushBrowserHistory,
 } from "./browserPreview";
 import type { BrowserPreviewRecords } from "./browserPreview";
-import { editorExtensionsFor } from "./editorLanguages";
 import { isCellSelected, pointFromMouse, selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
@@ -5776,47 +5773,24 @@ function App() {
               onOpenFile={(line) => void openDiffFile(line)}
             />
           ) : selectedFile ? (
-            <div
-              className="editor-code"
+            <EditorCodeSurface
+              conflict={editorSaveConflict}
+              error={editorError}
+              filePath={selectedFile.path}
+              loading={editorLoading}
+              recoveryError={editorRecoveryError}
+              saving={editorSaving}
+              value={editorText}
+              onChange={setEditorText}
               onContextMenu={(event) => openContextMenu(event, editorContextMenuItems())}
-              onKeyDown={(event) => {
-                if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
-                  event.preventDefault();
-                  void saveEditorFile();
-                }
-              }}
-            >
-              {editorError ? (
-                <EditorSaveError
-                  message={editorError}
-                  recoveryError={editorRecoveryError}
-                  saving={editorSaving}
-                  canOpenExternally={Boolean(selectedFile)}
-                  conflict={editorSaveConflict}
-                  onRetry={() => void saveEditorFile()}
-                  onReload={() => void reloadSelectedFileFromDisk()}
-                  onOverwrite={() => void overwriteSelectedFile()}
-                  onOpenExternally={() => void openSelectedFileExternally()}
-                />
-              ) : null}
-              <CodeMirror
-                key={selectedFile.path}
-                value={editorText}
-                height="100%"
-                theme={oneDark}
-                basicSetup={{
-                  lineNumbers: true,
-                  foldGutter: true,
-                  highlightActiveLine: true,
-                  highlightActiveLineGutter: true,
-                }}
-                editable={!editorLoading}
-                extensions={editorExtensionsFor(selectedFile.path)}
-                onChange={(value) => setEditorText(value)}
-                onCreateEditor={restoreEditorView}
-                onUpdate={handleEditorUpdate}
-              />
-            </div>
+              onCreateEditor={restoreEditorView}
+              onOpenExternally={() => void openSelectedFileExternally()}
+              onOverwrite={() => void overwriteSelectedFile()}
+              onReload={() => void reloadSelectedFileFromDisk()}
+              onRetry={() => void saveEditorFile()}
+              onSave={() => void saveEditorFile()}
+              onUpdate={handleEditorUpdate}
+            />
           ) : (
             <div className="editor-empty">
               <div className="editor-empty-title">Select a file</div>
