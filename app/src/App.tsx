@@ -33,6 +33,7 @@ import {
   normalizeBrowserPreviewUrl,
 } from "./browserPreview";
 import { useBrowserPreviewState } from "./useBrowserPreviewState";
+import { useFilesRailHeight } from "./useFilesRailHeight";
 import type { BrowserPreviewRecords } from "./browserPreview";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
@@ -447,7 +448,6 @@ function App() {
     workspacePath,
   });
   const [fileOpError, setFileOpError] = useState<string | null>(null);
-  const [railHeight, setRailHeight] = useState(240);
   const [selectedFile, setSelectedFile] = useState<FileTreeNode | null>(null);
   const [editorTabs, setEditorTabs] = useState<FileTreeNode[]>([]);
   const [, setEditorBufferRevision] = useState(0);
@@ -547,6 +547,7 @@ function App() {
     workbenchSizing,
     workbenchStyle,
   } = useShellLayout(() => setSettingsOpen(false));
+  const railHeight = useFilesRailHeight(sideDrawerMode === "files", railBodyRef);
   const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
   const {
     error: chatSearchError, loading: chatSearchLoading, refresh: refreshChatSearch,
@@ -3709,20 +3710,6 @@ function App() {
   };
 
   useSyncRef(workspacePathRef, workspacePath);
-
-  useEffect(() => {
-    if (sideDrawerMode !== "files") return;
-    const el = railBodyRef.current;
-    if (!el) return;
-    const update = () => {
-      const rect = el.getBoundingClientRect();
-      setRailHeight(Math.max(120, Math.floor(rect.height)));
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [sideDrawerMode]);
 
   useEffect(() => {
     if (!workspacePath || fileTreeLoading || fileTreeError || fileTree.length === 0 || selectedFile) return;
