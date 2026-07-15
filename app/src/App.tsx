@@ -188,6 +188,7 @@ import type { PaneLayoutsBySession } from "./sessionRestore";
 import { useShellLayout, type SideDrawerMode } from "./useShellLayout";
 import { useAppChromeState } from "./useAppChromeState";
 import { useSettingsRuntimeStatus } from "./useSettingsRuntimeStatus";
+import { useSyncRef } from "./useSyncRef";
 import { loadWorkspaceBootstrap, type PaneLabelsBySession } from "./workspaceBootstrap";
 import { applyWorkspaceCleanupRecord, planMissingWorkspaceCleanup } from "./workspaceOpenRecovery";
 import { terminalSnapshotText } from "./terminalTranscript";
@@ -685,9 +686,7 @@ function App() {
     () => agentSessionDescriptors.find((handle) => handle.paneId === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, agentSessionDescriptors],
   );
-  useEffect(() => {
-    activeAgentSessionDescriptorRef.current = activeAgentSessionDescriptor;
-  }, [activeAgentSessionDescriptor]);
+  useSyncRef(activeAgentSessionDescriptorRef, activeAgentSessionDescriptor);
   const selectedAgentActivityLog = useMemo(() => {
     if (!workspacePath || !activeSessionId) return [];
     const paneIds = new Set([
@@ -926,25 +925,11 @@ function App() {
     setDiffReviewError(null);
   };
 
-  useEffect(() => {
-    recentProjectsRef.current = recentProjects;
-  }, [recentProjects]);
-
-  useEffect(() => {
-    openProjectsRef.current = openProjects;
-  }, [openProjects]);
-
-  useEffect(() => {
-    projectSessionsRef.current = projectSessions;
-  }, [projectSessions]);
-
-  useEffect(() => {
-    activeSessionByProjectRef.current = activeSessionByProject;
-  }, [activeSessionByProject]);
-
-  useEffect(() => {
-    paneLabelsBySessionRef.current = paneLabelsBySession;
-  }, [paneLabelsBySession]);
+  useSyncRef(recentProjectsRef, recentProjects);
+  useSyncRef(openProjectsRef, openProjects);
+  useSyncRef(projectSessionsRef, projectSessions);
+  useSyncRef(activeSessionByProjectRef, activeSessionByProject);
+  useSyncRef(paneLabelsBySessionRef, paneLabelsBySession);
 
   useEffect(() => {
     if (sideDrawerMode === "files" || sideDrawerMode === "git") {
@@ -952,37 +937,14 @@ function App() {
     }
   }, [sideDrawerMode, workspacePath, treeRefreshNonce]);
 
-  useEffect(() => {
-    browserPreviewByProjectRef.current = browserPreviewByProject;
-  }, [browserPreviewByProject]);
-
-  useEffect(() => {
-    browserPreviewBySessionRef.current = browserPreviewBySession;
-  }, [browserPreviewBySession]);
-
-  useEffect(() => {
-    composerHarnessBySessionRef.current = composerHarnessBySession;
-  }, [composerHarnessBySession]);
-
-  useEffect(() => {
-    scopedSettingsRef.current = scopedSettings;
-  }, [scopedSettings]);
-
-  useEffect(() => {
-    browserUrlRef.current = browserUrl;
-  }, [browserUrl]);
-
-  useEffect(() => {
-    terminalPanesRef.current = terminalPanes;
-  }, [terminalPanes]);
-
-  useEffect(() => {
-    activeTerminalPaneIdRef.current = activeTerminalPaneId;
-  }, [activeTerminalPaneId]);
-
-  useEffect(() => {
-    selectedFileRef.current = selectedFile;
-  }, [selectedFile]);
+  useSyncRef(browserPreviewByProjectRef, browserPreviewByProject);
+  useSyncRef(browserPreviewBySessionRef, browserPreviewBySession);
+  useSyncRef(composerHarnessBySessionRef, composerHarnessBySession);
+  useSyncRef(scopedSettingsRef, scopedSettings);
+  useSyncRef(browserUrlRef, browserUrl);
+  useSyncRef(terminalPanesRef, terminalPanes);
+  useSyncRef(activeTerminalPaneIdRef, activeTerminalPaneId);
+  useSyncRef(selectedFileRef, selectedFile);
 
   useEffect(() => {
     if (!selectedFile) return;
@@ -1723,13 +1685,8 @@ function App() {
     if (nextActive) void openEditorFileDirect(nextActive);
   };
 
-  useEffect(() => {
-    launchProfileRef.current = launchProfile;
-  }, [launchProfile]);
-
-  useEffect(() => {
-    terminalLaunchProfileRef.current = terminalLaunchProfile;
-  }, [terminalLaunchProfile]);
+  useSyncRef(launchProfileRef, launchProfile);
+  useSyncRef(terminalLaunchProfileRef, terminalLaunchProfile);
 
   const openWorkspaceDirect = async (
     path: string,
@@ -3986,9 +3943,7 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    workspacePathRef.current = workspacePath;
-  }, [workspacePath]);
+  useSyncRef(workspacePathRef, workspacePath);
 
   useEffect(() => {
     if (sideDrawerMode !== "files") return;
