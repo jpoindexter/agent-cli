@@ -13,6 +13,7 @@ import { openSearchPanel } from "@codemirror/search";
 import { Tree } from "react-arborist";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
+import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -6507,77 +6508,24 @@ function App() {
           </>
         ) : null}
 
-        <section className="browser-preview" aria-label="Browser preview" onContextMenu={(event) => openContextMenu(event, browserContextMenuItems())}>
-          <div className="browser-toolbar">
-            <div className="browser-toolbar__nav" aria-label="Browser navigation">
-              <button
-                className="browser-button"
-                type="button"
-                title="Back"
-                aria-label="Back"
-                disabled={!browserCanGoBack}
-                onClick={() => goBrowserHistory(-1)}
-              >
-                <AppIcon name="back" />
-              </button>
-              <button
-                className="browser-button"
-                type="button"
-                title="Forward"
-                aria-label="Forward"
-                disabled={!browserCanGoForward}
-                onClick={() => goBrowserHistory(1)}
-              >
-                <AppIcon name="forward" />
-              </button>
-              <button className="browser-button" type="button" title="Reload" aria-label="Reload browser preview" onClick={reloadBrowserPreview}>
-                <AppIcon name="reload" />
-              </button>
-            </div>
-            <form className="browser-address" onSubmit={submitBrowserAddress}>
-              <label className="browser-address__label" htmlFor="browser-preview-url">
-                Preview URL
-              </label>
-              <AppIcon name="browser" />
-              <input
-                id="browser-preview-url"
-                value={browserAddress}
-                spellCheck={false}
-                inputMode="url"
-                placeholder="localhost:3000"
-                onChange={(event) => {
-                  setBrowserAddress(event.currentTarget.value);
-                  setBrowserError(null);
-                }}
-              />
-              <button className="browser-button browser-button--go" type="submit" title="Open preview URL">
-                Open
-              </button>
-            </form>
-            <button className="browser-button" type="button" title="Open preview externally" aria-label="Open preview externally" onClick={() => void openUrl(browserUrl)}>
-              <AppIcon name="openExternal" />
-            </button>
-          </div>
-          {activeDetectedLocalDevServer && activeDetectedLocalDevServer.url !== browserUrl ? (
-            <div className="browser-detected-banner" title={activeDetectedLocalDevServer.url}>
-              <AppIcon name="browser" />
-              <span>Detected dev server from {activeDetectedLocalDevServer.paneLabel}</span>
-              <button type="button" onClick={() => void openDetectedLocalDevServer()}>
-                Open detected
-              </button>
-            </div>
-          ) : null}
-          <div className="browser-frame-wrap">
-            {browserError ? <div className="browser-error" role="alert">{browserError}</div> : null}
-            <iframe
-              key={`${browserUrl}-${browserReloadNonce}`}
-              className="browser-frame"
-              title={`Browser preview: ${browserUrl}`}
-              src={browserUrl}
-              referrerPolicy="no-referrer"
-            />
-          </div>
-        </section>
+        <BrowserPreviewPanel
+          address={browserAddress}
+          canGoBack={browserCanGoBack}
+          canGoForward={browserCanGoForward}
+          detectedPaneLabel={activeDetectedLocalDevServer?.paneLabel ?? null}
+          detectedUrl={activeDetectedLocalDevServer?.url ?? null}
+          error={browserError}
+          onAddressChange={(address) => { setBrowserAddress(address); setBrowserError(null); }}
+          onBack={() => goBrowserHistory(-1)}
+          onContextMenu={(event) => openContextMenu(event, browserContextMenuItems())}
+          onForward={() => goBrowserHistory(1)}
+          onOpenDetected={() => void openDetectedLocalDevServer()}
+          onOpenExternal={() => void openUrl(browserUrl)}
+          onReload={reloadBrowserPreview}
+          onSubmit={submitBrowserAddress}
+          reloadNonce={browserReloadNonce}
+          url={browserUrl}
+        />
 
         <section className={`terminal-panel terminal-panel--${agentSurfaceMode}`} aria-label="Agent conversation">
           <div className={`agent-surface agent-surface--${agentSurfaceMode}`}>
