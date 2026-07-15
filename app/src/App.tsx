@@ -217,8 +217,8 @@ import { replaceRestartedPane } from "./terminalPaneRestart";
 import { planCheckpointRestore } from "./checkpointRestorePlan";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import { buildCreatedWorktreePaneState } from "./terminalWorktreePaneCreate";
-import { buildWorkspaceOpenPane } from "./workspaceOpenPanes";
-import { prepareWorkspaceOpenSession, workspaceOpenLayoutForRoot } from "./workspaceOpenSession";
+import { openWorkspaceTerminalPanes } from "./workspaceOpenPanes";
+import { prepareWorkspaceOpenSession } from "./workspaceOpenSession";
 import { planWorkspaceOpenSuccess } from "./workspaceOpenSuccess";
 import { planWorkspaceOpenFailure } from "./workspaceOpenFailure";
 import { persistMissingWorkspaceCleanup } from "./workspaceOpenRecoveryPersistence";
@@ -1753,37 +1753,20 @@ function App() {
       if (existingPanes.length > 0 && nextActivePaneId != null) {
         await invoke("focus_pane", { paneId: nextActivePaneId });
       } else if (agentSurfaceMode === "terminal") {
-        const firstLayout = initialLayout[0] ?? fallbackLayout[0];
-        const firstProfile = resolveLaunchProfile(firstLayout.profileId);
-        const result = await invoke<OpenWorkspaceResponse>("open_workspace", { path, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, path) });
-        root = result.root;
-        const layout = workspaceOpenLayoutForRoot({ initialLayout, paneLayouts: paneLayoutsBySessionRef.current, root, sessionId: requestedSessionId });
-        const [firstRecord, ...restRecords] = layout.length > 0 ? layout : fallbackLayout;
-        const pane = buildWorkspaceOpenPane({
-          createdAt: Date.now(),
-          cwd: root,
-          layout: firstRecord,
-          paneId: result.paneId,
-          profile: firstProfile,
-          savedLabel: savedPaneLabelForSlot(root, firstRecord.slot, requestedSessionId),
+        const opened = await openWorkspaceTerminalPanes({
+          createPane: (target, paneProfile) => invoke<OpenPaneResponse>("create_pane", {
+            path: target, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
+          }),
+          fallbackLayout, initialLayout, now: Date.now,
+          openWorkspace: (target, firstProfile) => invoke<OpenWorkspaceResponse>("open_workspace", {
+            path: target, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
+          }),
+          paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId, resolveProfile: resolveLaunchProfile,
+          savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, requestedSessionId),
         });
-        nextProjectPanes = [pane];
-        nextActivePaneId = result.paneId;
-        for (const record of restRecords) {
-          const paneProfile = resolveLaunchProfile(record.profileId);
-          const nextPane = await invoke<OpenPaneResponse>("create_pane", { path: root, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) });
-          nextProjectPanes = [
-            ...nextProjectPanes,
-            buildWorkspaceOpenPane({
-              createdAt: Date.now(),
-              cwd: root,
-              layout: record,
-              paneId: nextPane.paneId,
-              profile: paneProfile,
-              savedLabel: savedPaneLabelForSlot(root, record.slot, requestedSessionId),
-            }),
-          ];
-        }
+        root = opened.root;
+        nextProjectPanes = opened.panes;
+        nextActivePaneId = opened.activePaneId;
       } else {
         const result = await invoke<ResolveWorkspaceResponse>("resolve_workspace", { path });
         root = result.root;
