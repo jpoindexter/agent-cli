@@ -163,7 +163,6 @@ import { filterWorkspaceFiles } from "./workspaceSearch";
 import {
   MAX_AGENT_ACTIVITY_LOG_EVENTS,
   createAgentActivityEvent,
-  filterAgentActivityEvents,
   pushAgentActivityEvent,
 } from "./agentActivity";
 import type { AgentActivityEvent, AgentActivityLogFilter } from "./agentActivity";
@@ -243,6 +242,7 @@ import { requestPermission } from "@tauri-apps/plugin-notification";
 import { createSettingsPreferenceActions } from "./settingsPreferenceActions";
 import { createSettingsScopedActions } from "./settingsScopedActions";
 import { deriveActiveChatState } from "./activeChatState";
+import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import {
   addPaneTranscript,
   buildPaneTranscript,
@@ -626,45 +626,16 @@ function App() {
     launchProfileId: launchProfile.id, projectSessions, resolveLaunchProfile,
     scopedSettings, workspacePath,
   });
-  const activeTerminalPane = useMemo(
-    () => terminalPanes.find((pane) => pane.id === activeTerminalPaneId) ?? null,
-    [activeTerminalPaneId, terminalPanes],
-  );
-  const terminalFind = useTerminalFind(activeTerminalPane != null);
   const agentApprovalMode: AgentApprovalMode = activeComposerHarness.approvalMode;
-  const agentSessionDescriptors = useMemo<AgentSessionHandleDescriptor[]>(() => {
-    if (!workspacePath || !activeSessionId) return [];
-    return terminalPanes.map((pane, index) =>
-      buildAgentSessionHandleDescriptor({
-        pane,
-        projectId: workspacePath,
-        projectSessionId: activeSessionId,
-        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, index),
-        approvalMode: agentApprovalMode,
-      }),
-    );
-  }, [activeSessionId, agentApprovalMode, terminalPanes, workspacePath]);
-  const activeAgentSessionDescriptor = useMemo(
-    () => agentSessionDescriptors.find((handle) => handle.paneId === activeTerminalPaneId) ?? null,
-    [activeTerminalPaneId, agentSessionDescriptors],
-  );
+  const {
+    activeAgentSessionDescriptor, activeTerminalPane,
+    selectedAgentActivityLog,
+  } = deriveActiveAgentSessionState({
+    activeSessionId, activeTerminalPaneId, agentActivityEvents, agentActivityFilter,
+    agentApprovalMode, terminalPanes, workspacePath,
+  });
+  const terminalFind = useTerminalFind(activeTerminalPane != null);
   useSyncRef(activeAgentSessionDescriptorRef, activeAgentSessionDescriptor);
-  const selectedAgentActivityLog = useMemo(() => {
-    if (!workspacePath || !activeSessionId) return [];
-    const paneIds = new Set([
-      `chat:${activeSessionId}`,
-      ...(activeAgentSessionDescriptor ? [activeAgentSessionDescriptor.id] : []),
-    ]);
-    return filterAgentActivityEvents(
-      agentActivityEvents.filter(
-        (event) =>
-          event.projectId === workspacePath &&
-          event.projectSessionId === activeSessionId &&
-          paneIds.has(event.paneId),
-      ),
-      agentActivityFilter,
-    );
-  }, [activeAgentSessionDescriptor, activeSessionId, agentActivityEvents, agentActivityFilter, workspacePath]);
   const activeTerminalProfile = activeTerminalPane?.profile ?? terminalLaunchProfile;
   const primarySurfaceState: TerminalPaneState = activeChatConversation.activeRunId ? "starting" : "idle";
   const primarySurfaceLabel = "Codex";
