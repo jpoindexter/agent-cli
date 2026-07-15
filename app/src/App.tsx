@@ -27,7 +27,7 @@ import { EditorChrome } from "./EditorChrome";
 import { EditorDiffView } from "./EditorDiffView";
 import { EditorCodeSurface } from "./EditorCodeSurface";
 import { AgentComposerSurface } from "./AgentComposerSurface";
-import { OrchestrationDialog } from "./OrchestrationDialog";
+import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import {
   browserHistoryCanGoBack,
   browserHistoryCanGoForward,
@@ -122,7 +122,6 @@ import {
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { executeAgentPaneInterrupt } from "./agentPaneInterrupt";
 import { AppIcon } from "./icons";
-import { AppNotices } from "./AppNotices";
 import type { AppIconName } from "./icons";
 import {
   setActiveKeybindingOverrides,
@@ -4611,34 +4610,29 @@ function App() {
         projectSessionId={activeSessionId}
         transcripts={paneTranscripts}
       />
-      <AppNotices
-        actionNotice={actionNotice}
-        canUseShellProfile={!launchProfileChanging && launchProfile.id !== "shell"}
-        crashNotice={crashNotice}
-        launchError={launchError}
-        onDismissAction={() => setActionNotice(null)}
-        onDismissCrash={() => setCrashNotice(null)}
-        onOpenFolder={() => void pickWorkspace()}
-        onUseShellProfile={() => {
-          const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
-          if (shell) void switchLaunchProfile(shell);
+      <AppRuntimeDialogs
+        notices={{
+          actionNotice, canUseShellProfile: !launchProfileChanging && launchProfile.id !== "shell", crashNotice, launchError,
+          onDismissAction: () => setActionNotice(null), onDismissCrash: () => setCrashNotice(null),
+          onOpenFolder: () => void pickWorkspace(),
+          onUseShellProfile: () => {
+            const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
+            if (shell) void switchLaunchProfile(shell);
+          },
         }}
-      />
-      <OrchestrationDialog
-        open={orchestrationOpen}
-        projectPath={workspacePath ?? ""}
-        parentTitle={projectSessions[workspacePath ?? ""]?.find((session) => session.id === activeSessionId)?.title ?? "Current chat"}
-        provider={activeComposerProvider ?? activeChatConversation.provider}
-        approvalMode={activeComposerHarness.approvalMode}
-        activeRunCount={Object.values(chatConversations).filter((conversation) => conversation.activeRunId).length}
-        launching={orchestrationLaunching}
-        error={orchestrationError}
-        onClose={() => {
-          if (orchestrationLaunching) return;
-          setOrchestrationOpen(false);
-          setOrchestrationError(null);
+        orchestration={{
+          approvalMode: activeComposerHarness.approvalMode, error: orchestrationError,
+          activeRunCount: Object.values(chatConversations).filter((conversation) => conversation.activeRunId).length,
+          launching: orchestrationLaunching, open: orchestrationOpen,
+          onClose: () => {
+            if (orchestrationLaunching) return;
+            setOrchestrationOpen(false);
+            setOrchestrationError(null);
+          },
+          parentTitle: projectSessions[workspacePath ?? ""]?.find((session) => session.id === activeSessionId)?.title ?? "Current chat",
+          onLaunch: (children) => void launchOrchestration(children), projectPath: workspacePath ?? "",
+          provider: activeComposerProvider ?? activeChatConversation.provider,
         }}
-        onLaunch={(children) => void launchOrchestration(children)}
       />
       {contextMenu ? (
         <ContextMenu
