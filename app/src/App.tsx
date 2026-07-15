@@ -81,6 +81,7 @@ import {
   launchProfileById,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
+import { createLaunchProfileActions } from "./launchProfileActions";
 import {
   defaultScopedSettings,
   resetScopedSetting,
@@ -1685,61 +1686,47 @@ function App() {
     setComposerLocalState(activeComposerHarnessKey, nextIndex == null ? "" : composerHistoryAt(composerHistory, nextIndex), composerHistory);
   };
 
-  const switchLaunchProfile = async (profile: LaunchProfile) => {
-    if (profile.id === launchProfile.id || launchProfileChanging) return;
-    const store = storeRef.current;
-    launchProfileRef.current = profile;
-    setLaunchProfile(profile);
-    const nextScopedSettings = setScopedSetting(
-      scopedSettingsRef.current,
-      "global",
-      "agentProfileId",
-      profile.id,
-      workspacePathRef.current,
-      activeSessionForProject(workspacePathRef.current),
-    );
-    scopedSettingsRef.current = nextScopedSettings;
-    setScopedSettings(nextScopedSettings);
-    await store?.set("launchProfile", profile);
-    await store?.set("scopedSettings", nextScopedSettings);
-    await store?.save();
-  };
-
-  const switchTerminalLaunchProfile = async (profile: LaunchProfile) => {
-    if (profile.id === terminalLaunchProfile.id || launchProfileChanging) return;
-    terminalLaunchProfileRef.current = profile;
-    setTerminalLaunchProfile(profile);
-    await storeRef.current?.set("terminalLaunchProfile", profile);
-    await storeRef.current?.save();
-  };
-
-  const addCustomTerminalProfile = async (label: string, command: string) => {
-    const profile = createCustomLaunchProfile(crypto.randomUUID(), label, command);
-    const next = [...customLaunchProfilesRef.current, profile];
-    customLaunchProfilesRef.current = next;
-    setCustomLaunchProfiles(next);
-    await storeRef.current?.set("customLaunchProfiles", next);
-    await storeRef.current?.save();
-  };
+  const launchProfileActions = createLaunchProfileActions({
+    createCustomProfile: createCustomLaunchProfile,
+    getState: () => ({
+      changing: launchProfileChanging,
+      customProfiles: customLaunchProfilesRef.current,
+      launchProfile: launchProfileRef.current,
+      root: workspacePathRef.current,
+      scopedSettings: scopedSettingsRef.current,
+      sessionId: activeSessionForProject(workspacePathRef.current),
+      terminalProfile: terminalLaunchProfileRef.current,
+    }),
+    randomId: () => crypto.randomUUID(),
+    saveStore: async () => { await storeRef.current?.save(); },
+    setCustomProfiles: (profiles) => {
+      customLaunchProfilesRef.current = profiles;
+      setCustomLaunchProfiles(profiles);
+    },
+    setLaunchProfile: (profile) => {
+      launchProfileRef.current = profile;
+      setLaunchProfile(profile);
+    },
+    setScopedSettings: (settings) => {
+      scopedSettingsRef.current = settings;
+      setScopedSettings(settings);
+    },
+    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
+    setTerminalProfile: (profile) => {
+      terminalLaunchProfileRef.current = profile;
+      setTerminalLaunchProfile(profile);
+    },
+  });
+  const switchLaunchProfile = launchProfileActions.switchLaunchProfile;
+  const switchTerminalLaunchProfile = launchProfileActions.switchTerminalProfile;
+  const addCustomTerminalProfile = launchProfileActions.addCustomProfile;
+  const removeCustomTerminalProfile = launchProfileActions.removeCustomProfile;
 
   const saveAiConnectionSettings = async (next: AiConnectionSettings) => {
     aiConnectionSettingsRef.current = next;
     setAiConnectionSettings(next);
     await storeRef.current?.set("aiConnectionSettings", next);
     await storeRef.current?.save();
-  };
-
-  const removeCustomTerminalProfile = async (profileId: string) => {
-    const next = customLaunchProfilesRef.current.filter((profile) => profile.id !== profileId);
-    if (next.length === customLaunchProfilesRef.current.length) return;
-    customLaunchProfilesRef.current = next;
-    setCustomLaunchProfiles(next);
-    await storeRef.current?.set("customLaunchProfiles", next);
-    if (terminalLaunchProfileRef.current.id === profileId) {
-      await switchTerminalLaunchProfile(defaultTerminalLaunchProfile());
-    } else {
-      await storeRef.current?.save();
-    }
   };
 
   const setComposerApprovalMode = async (approvalMode: AgentApprovalMode) => {
