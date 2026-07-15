@@ -124,6 +124,7 @@ import {
   readTailFromSnapshot,
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
+import { executeAgentPaneInterrupt } from "./agentPaneInterrupt";
 import { AppIcon } from "./icons";
 import { AppNotices } from "./AppNotices";
 import type { AppIconName } from "./icons";
@@ -2133,22 +2134,11 @@ function App() {
 
   const interruptActivePane = async () => {
     if (!activeAgentSessionHandle) return;
-    const audit = await gateAppAction(createAppAction({
-      kind: "interrupt-process",
-      label: "Interrupt process",
-      target: activeAgentSessionHandle.label,
-      risk: "high",
-      requestedBy: "user",
-      undoHint: "Restart or create a pane from the same profile.",
-    }), activeAgentSessionHandle);
-    if (audit.decision !== "approved") return;
-    setComposerError(null);
-    await activeAgentSessionHandle.interrupt();
-    recordAgentActivity(activeAgentSessionHandle, {
-      kind: "process",
-      label: "Stop sent",
-      detail: activeAgentSessionHandle.label,
-      status: "waiting",
+    return executeAgentPaneInterrupt({
+      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionHandle)).decision,
+      handle: activeAgentSessionHandle,
+      recordActivity: (activity) => recordAgentActivity(activeAgentSessionHandle, activity),
+      setError: setComposerError,
     });
   };
 
