@@ -74,13 +74,10 @@ import {
 } from "./editorTabs";
 import {
   LAUNCH_PROFILES,
-  createCustomLaunchProfile,
-  defaultLaunchProfile,
   defaultTerminalLaunchProfile,
-  launchProfileById,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
-import { createLaunchProfileActions } from "./launchProfileActions";
+import { useLaunchProfileController } from "./useLaunchProfileController";
 import {
   defaultScopedSettings,
   resetScopedSetting,
@@ -351,9 +348,6 @@ function App() {
   const composerHarnessBySessionRef = useRef<ComposerHarnessRecords>({});
   const scopedSettingsRef = useRef<ScopedSettingsState>(defaultScopedSettings());
   const chatConversationsRef = useRef<ChatConversationRecords>({});
-  const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
-  const terminalLaunchProfileRef = useRef<LaunchProfile>(defaultTerminalLaunchProfile());
-  const customLaunchProfilesRef = useRef<LaunchProfile[]>([]);
   const aiConnectionSettingsRef = useRef<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const intentionallyTerminatedPaneIdsRef = useRef<Set<number>>(new Set());
   const terminalPanesRef = useRef<ManagedTerminalPane[]>([]);
@@ -386,13 +380,6 @@ function App() {
   const selection = useRef<SelectionRange | null>(null);
   const selecting = useRef(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
-  const [launchProfile, setLaunchProfile] = useState<LaunchProfile>(defaultLaunchProfile);
-  const [terminalLaunchProfile, setTerminalLaunchProfile] = useState<LaunchProfile>(defaultTerminalLaunchProfile);
-  const [customLaunchProfiles, setCustomLaunchProfiles] = useState<LaunchProfile[]>([]);
-  const [launchProfileChanging, setLaunchProfileChanging] = useState(false);
-  const allLaunchProfiles = useMemo(() => [...LAUNCH_PROFILES, ...customLaunchProfiles], [customLaunchProfiles]);
-  const resolveLaunchProfile = (id: string) =>
-    customLaunchProfilesRef.current.find((profile) => profile.id === id) ?? launchProfileById(id);
   const [terminalPanes, setTerminalPanes] = useState<ManagedTerminalPane[]>([]);
   const [activeTerminalPaneId, setActiveTerminalPaneId] = useState<number | null>(null);
   const [paneLabelsBySession, setPaneLabelsBySession] = useState<PaneLabelsBySession>({});
@@ -429,6 +416,18 @@ function App() {
   const [composerHarnessBySession, setComposerHarnessBySession] = useState<ComposerHarnessRecords>({});
   const [scopedSettings, setScopedSettings] = useState<ScopedSettingsState>(defaultScopedSettings);
   const [chatConversations, setChatConversations] = useState<ChatConversationRecords>({});
+  const profiles = useLaunchProfileController({
+    getCurrentRoot: () => workspacePathRef.current,
+    getCurrentSessionId: () => activeSessionForProject(workspacePathRef.current),
+    randomId: () => crypto.randomUUID(),
+    saveStore: async () => { await storeRef.current?.save(); },
+    scopedSettings: scopedSettingsRef,
+    setScopedSettings: (settings) => {
+      scopedSettingsRef.current = settings;
+      setScopedSettings(settings);
+    },
+    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
+  });
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const commandPalette = useCommandPalette(() => setContextMenu(null));
   const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
@@ -543,7 +542,8 @@ function App() {
     activeComposerProvider, activeComposerProviderLabel, activeSessionId,
   } = deriveActiveChatState({
     activeSessionByProject, chatConversations, composerHarnessBySession,
-    launchProfileId: launchProfile.id, projectSessions, resolveLaunchProfile,
+    launchProfileId: profiles.launchProfile.id, projectSessions,
+    resolveLaunchProfile: profiles.resolveProfile,
     scopedSettings, workspacePath,
   });
   const browser = useBrowserPreviewController({
@@ -573,7 +573,7 @@ function App() {
     updateHarness: updateActiveComposerHarness,
   } = useComposerLocalState({
     activeHarness: activeComposerHarness, activeKey: activeComposerHarnessKey,
-    getDefaultProfileId: () => launchProfileRef.current.id,
+    getDefaultProfileId: () => profiles.launchProfileRef.current.id,
     getRecords: () => composerHarnessBySessionRef.current,
     persistRecords: (records) => persistComposerHarnessRecords(records),
   });
@@ -613,7 +613,7 @@ function App() {
   });
   const terminalFind = useTerminalFind(activeTerminalPane != null);
   useSyncRef(activeAgentSessionDescriptorRef, activeAgentSessionDescriptor);
-  const activeTerminalProfile = activeTerminalPane?.profile ?? terminalLaunchProfile;
+  const activeTerminalProfile = activeTerminalPane?.profile ?? profiles.terminalProfile;
   const primarySurfaceState: TerminalPaneState = activeChatConversation.activeRunId ? "starting" : "idle";
   const primarySurfaceLabel = "Codex";
   const primarySurfaceStatusLabel = activeChatConversation.activeRunId ? "Working" : "Ready";
@@ -1054,9 +1054,6 @@ function App() {
     if (nextActive) void openEditorFileDirect(nextActive);
   };
 
-  useSyncRef(launchProfileRef, launchProfile);
-  useSyncRef(terminalLaunchProfileRef, terminalLaunchProfile);
-
   const prepareAndOpenWorkspaceTarget = async (path: string): Promise<OpenedWorkspaceTarget> => {
     const prepared = prepareWorkspaceOpenSession({
       activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
@@ -1078,7 +1075,7 @@ function App() {
           path: target, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
         }),
         paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId: prepared.sessionId,
-        resolveProfile: resolveLaunchProfile,
+        resolveProfile: profiles.resolveProfile,
         savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, prepared.sessionId),
       }),
       path, resolveWorkspace: (target) => invoke<ResolveWorkspaceResponse>("resolve_workspace", { path: target }),
@@ -1175,7 +1172,7 @@ function App() {
 
   const openWorkspaceDirect = (
     path: string,
-    profileOverride: LaunchProfile = launchProfileRef.current,
+    profileOverride: LaunchProfile = profiles.launchProfileRef.current,
     options: { captureCurrentSession?: boolean } = {},
   ) => executeWorkspaceOpenDirect({
     applyOpened: applyOpenedWorkspaceTarget,
@@ -1281,7 +1278,9 @@ function App() {
     now: Date.now,
     openProject: async (projectPath, sameProject) => {
       if (sameProject) {
-        await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
+        await openWorkspaceDirect(
+          projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
+        );
       } else {
         await requestOpenWorkspace(projectPath);
       }
@@ -1372,8 +1371,7 @@ function App() {
     nextPanes: ManagedTerminalPane[],
     profile: LaunchProfile,
   ) => {
-    terminalLaunchProfileRef.current = profile;
-    setTerminalLaunchProfile(profile);
+    profiles.setTerminalProfile(profile);
     await storeRef.current?.set("terminalLaunchProfile", profile);
     await storeRef.current?.save();
     setLaunchError(null);
@@ -1400,7 +1398,9 @@ function App() {
       plan,
       removePersistedRestore: () => removePersistedSessionRestore(projectPath, session.id),
       removeScopedRecords: () => removeSessionScopedRecords(plan),
-      reopenActiveWorkspace: () => openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false }),
+      reopenActiveWorkspace: () => openWorkspaceDirect(
+        projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
+      ),
       title: session.title,
     });
     if (result.status === "failed") setLaunchError(result.message);
@@ -1446,7 +1446,7 @@ function App() {
   const restartTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
     const root = workspacePathRef.current;
     const sessionId = activeSessionForProject(root);
-    if (!root || !sessionId || !pane || launchProfileChanging) return false;
+    if (!root || !sessionId || !pane || profiles.changing) return false;
     return executeTerminalPaneRestart({
       clearLatestSnapshot: () => { latest.current = null; },
       clearPaneSnapshot: (paneId) => { delete terminalSnapshotsRef.current[paneId]; },
@@ -1460,7 +1460,7 @@ function App() {
       restartPane: async () => (await invoke<OpenPaneResponse>("restart_pane", { path: root, paneId: pane.id, profile: pane.profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) })).paneId,
       scheduleResize: () => setTimeout(sendTerminalResize, 0),
       sessionStatus: terminalPaneProjectStatus,
-      setChanging: setLaunchProfileChanging,
+      setChanging: profiles.setChanging,
       setError: setLaunchError,
       setSessionPanes: (panes, paneId) => setSessionTerminalPanes(root, sessionId, panes, paneId),
       updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
@@ -1498,7 +1498,7 @@ function App() {
       conversations: chatConversationsRef.current,
       sessions: projectSessionsRef.current,
       activeSessions: activeSessionByProjectRef.current,
-      resolveProfileLabel: (id) => resolveLaunchProfile(id).label,
+      resolveProfileLabel: (id) => profiles.resolveProfile(id).label,
       runAppCommand: runComposerAppCommand,
       updateConversation: updateChatConversation,
       persistSessions: persistProjectSessions,
@@ -1617,42 +1617,6 @@ function App() {
     setComposerLocalState(activeComposerHarnessKey, nextIndex == null ? "" : composerHistoryAt(composerHistory, nextIndex), composerHistory);
   };
 
-  const launchProfileActions = createLaunchProfileActions({
-    createCustomProfile: createCustomLaunchProfile,
-    getState: () => ({
-      changing: launchProfileChanging,
-      customProfiles: customLaunchProfilesRef.current,
-      launchProfile: launchProfileRef.current,
-      root: workspacePathRef.current,
-      scopedSettings: scopedSettingsRef.current,
-      sessionId: activeSessionForProject(workspacePathRef.current),
-      terminalProfile: terminalLaunchProfileRef.current,
-    }),
-    randomId: () => crypto.randomUUID(),
-    saveStore: async () => { await storeRef.current?.save(); },
-    setCustomProfiles: (profiles) => {
-      customLaunchProfilesRef.current = profiles;
-      setCustomLaunchProfiles(profiles);
-    },
-    setLaunchProfile: (profile) => {
-      launchProfileRef.current = profile;
-      setLaunchProfile(profile);
-    },
-    setScopedSettings: (settings) => {
-      scopedSettingsRef.current = settings;
-      setScopedSettings(settings);
-    },
-    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
-    setTerminalProfile: (profile) => {
-      terminalLaunchProfileRef.current = profile;
-      setTerminalLaunchProfile(profile);
-    },
-  });
-  const switchLaunchProfile = launchProfileActions.switchLaunchProfile;
-  const switchTerminalLaunchProfile = launchProfileActions.switchTerminalProfile;
-  const addCustomTerminalProfile = launchProfileActions.addCustomProfile;
-  const removeCustomTerminalProfile = launchProfileActions.removeCustomProfile;
-
   const saveAiConnectionSettings = async (next: AiConnectionSettings) => {
     aiConnectionSettingsRef.current = next;
     setAiConnectionSettings(next);
@@ -1710,12 +1674,12 @@ function App() {
     });
 
   const createTerminalPane = async (
-    profile: LaunchProfile = terminalLaunchProfileRef.current,
+    profile: LaunchProfile = profiles.terminalProfileRef.current,
     requestedBy: "user" | "agent" = "user",
   ) => {
     const root = workspacePathRef.current ?? workspacePath;
     const sessionId = activeSessionForProject(root);
-    if (!root || !sessionId || launchProfileChanging) return false;
+    if (!root || !sessionId || profiles.changing) return false;
     return executeTerminalPaneCreate({
       createPane: async () => (await invoke<OpenPaneResponse>("create_pane", {
         path: root,
@@ -1731,7 +1695,7 @@ function App() {
       requestedBy,
       root,
       savedLabel: (slot) => savedPaneLabelForSlot(root, slot),
-      setChanging: setLaunchProfileChanging,
+      setChanging: profiles.setChanging,
       setError: setLaunchError,
       setSessionPanes: (panes, activeId) => setSessionTerminalPanes(root, sessionId, panes, activeId),
       updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
@@ -1777,7 +1741,7 @@ function App() {
 
   const openAgentConnection = async (providerId: "codex" | "gemini" | "claude") => {
     setSettingsOpen(false);
-    const created = await createTerminalPane(resolveLaunchProfile(providerId));
+    const created = await createTerminalPane(profiles.resolveProfile(providerId));
     if (!created) return;
     setUtilityTrayMode("terminal");
     setAgentSurfaceMode("terminal");
@@ -1810,10 +1774,10 @@ function App() {
     });
   };
 
-  const createWorktreePane = async (profile: LaunchProfile = terminalLaunchProfileRef.current) => {
+  const createWorktreePane = async (profile: LaunchProfile = profiles.terminalProfileRef.current) => {
     const root = workspacePathRef.current ?? workspacePath;
     const sessionId = activeSessionForProject(root);
-    if (!root || !sessionId || launchProfileChanging) return;
+    if (!root || !sessionId || profiles.changing) return;
     const rawLabel = window.prompt("Worktree label (used for the branch name)");
     const label = rawLabel?.trim();
     if (!label) return;
@@ -1826,7 +1790,7 @@ function App() {
       undoHint: "Remove the worktree from the pane's context menu.",
     }));
     if (audit.decision !== "approved") return;
-    setLaunchProfileChanging(true);
+    profiles.setChanging(true);
     try {
       const worktree = await invoke<WorktreeResponse>("create_project_worktree", { root, label });
       const result = await invoke<OpenPaneResponse>("create_pane", { path: worktree.path, profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) });
@@ -1856,7 +1820,7 @@ function App() {
       await updateOpenProjectStatus(root, "attention");
       await updateActiveSessionStatus(root, "attention");
     } finally {
-      setLaunchProfileChanging(false);
+      profiles.setChanging(false);
     }
   };
 
@@ -2444,8 +2408,8 @@ function App() {
     hasSelection: Boolean(terminalSelectedText()),
     hasWorkspace: Boolean(workspacePath),
     hasWorktreeForActivePane: Boolean(activeTerminalPane && worktreeForPaneId(worktrees, String(activeTerminalPane.id))),
-    launchProfileChanging,
-    launchProfileLabel: terminalLaunchProfile.label,
+    launchProfileChanging: profiles.changing,
+    launchProfileLabel: profiles.terminalProfile.label,
     shortcuts: {
       clear: shortcutKeys("terminal.clear"),
       copy: shortcutKeys("terminal.copy-selection"),
@@ -2457,8 +2421,8 @@ function App() {
       copySelection: async () => { await copyTerminalSelection(); setActionNotice("Copied terminal selection"); },
       copyTail: async () => { await copyActivePaneTail(); setActionNotice("Copied last 20 lines"); },
       copyWorkingDirectory: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
-      createPane: () => createTerminalPane(terminalLaunchProfile),
-      createWorktreePane: () => createWorktreePane(terminalLaunchProfile),
+      createPane: () => createTerminalPane(profiles.terminalProfile),
+      createWorktreePane: () => createWorktreePane(profiles.terminalProfile),
       interrupt: () => interruptActivePane(),
       killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
       paste: () => pasteIntoTerminal(),
@@ -2477,7 +2441,7 @@ function App() {
     menuItem("pane.rename", "Rename Pane", () => renameTerminalPane(pane), { icon: "terminal" }),
     menuItem("pane.restart", "Restart Process", () => restartTerminalPane(pane), {
       icon: "reload",
-      disabled: launchProfileChanging,
+      disabled: profiles.changing,
     }),
     menuItem("pane.kill", "Kill Process", () => terminateTerminalPane(pane), {
       icon: "stop",
@@ -2515,7 +2479,7 @@ function App() {
       ? [
           menuItem("utility.terminal.new-shell", "New Shell Pane", () => createTerminalPane(defaultTerminalLaunchProfile()), {
             icon: "terminal",
-            disabled: !workspacePath || launchProfileChanging,
+            disabled: !workspacePath || profiles.changing,
           }),
           menuItem("utility.terminal.close-pane", "Close Selected Pane", () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined, {
             icon: "close",
@@ -2527,7 +2491,7 @@ function App() {
         ? [
             menuItem("utility.processes.restart", "Restart Selected Process", () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined, {
               icon: "reload",
-              disabled: !activeTerminalPane || launchProfileChanging,
+              disabled: !activeTerminalPane || profiles.changing,
             }),
             menuItem("utility.processes.kill", "Kill Selected Process", () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined, {
               icon: "stop",
@@ -2632,7 +2596,7 @@ function App() {
     activePane: activeTerminalPane,
     activePaneLabel: activeTerminalPaneLabelForCommands,
     canClose: Boolean(activeAgentSessionHandle),
-    launchProfileChanging,
+    launchProfileChanging: profiles.changing,
     onClear: () => void clearActiveTerminal(),
     onClose: () => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); },
     onCreatePane: (profile: LaunchProfile) => void createTerminalPane(profile),
@@ -2642,7 +2606,7 @@ function App() {
     onRemoveWorktree: (paneId: number) => void closeWorktreePane(paneId),
     onRestart: (pane: ManagedTerminalPane) => void restartTerminalPane(pane),
     shortcut: shortcutKeys,
-    terminalProfile: terminalLaunchProfile,
+    terminalProfile: profiles.terminalProfile,
     workspacePath,
     worktrees,
   };
@@ -2862,17 +2826,16 @@ function App() {
     paneLabelsBySessionRef.current = data.paneLabels;
     sessionEditorSnapshotsRef.current = data.sessionSnapshots;
     paneLayoutsBySessionRef.current = data.paneLayouts;
-    launchProfileRef.current = data.launchProfile;
-    terminalLaunchProfileRef.current = data.terminalProfile;
-    customLaunchProfilesRef.current = data.customProfiles;
     aiConnectionSettingsRef.current = data.aiConnectionSettings;
     activeFilesByWorkspaceRef.current = data.activeFiles;
   };
 
   const applyBootstrapState = (data: WorkspaceBootstrapSnapshot) => {
-    setLaunchProfile(data.launchProfile);
-    setTerminalLaunchProfile(data.terminalProfile);
-    setCustomLaunchProfiles(data.customProfiles);
+    profiles.hydrate({
+      customProfiles: data.customProfiles,
+      launchProfile: data.launchProfile,
+      terminalProfile: data.terminalProfile,
+    });
     setAiConnectionSettings(data.aiConnectionSettings);
     void refreshConnectionSecretPresence(data.aiConnectionSettings);
     setRecentProjects(data.recentProjects);
@@ -3027,13 +2990,13 @@ function App() {
       scopedSettingsRef.current, "browserUrl", workspacePathRef.current,
       activeSessionForProject(workspacePathRef.current),
     ).value,
-    resolveLaunchProfile,
+    resolveLaunchProfile: profiles.resolveProfile,
     restoreBrowserPreview: () => browser.restoreScopedUrl(
       workspacePathRef.current, activeSessionForProject(workspacePathRef.current),
     ),
     setBrowserLocation: browser.setLocation,
     setComposerApprovalMode,
-    switchLaunchProfile,
+    switchLaunchProfile: profiles.switchLaunchProfile,
     updateScopedSetting,
   });
 
@@ -3140,9 +3103,9 @@ function App() {
             approvalMode={activeComposerHarness.approvalMode}
             canSetApproval={Boolean(activeComposerHarnessKey)}
             hasWorkspace={Boolean(workspacePath)}
-            launchProfile={terminalLaunchProfile}
-            launchProfileChanging={launchProfileChanging}
-            launchProfiles={allLaunchProfiles}
+            launchProfile={profiles.terminalProfile}
+            launchProfileChanging={profiles.changing}
+            launchProfiles={profiles.allProfiles}
             terminalOpen={agentSurfaceMode === "terminal"}
             toolMode={toolTrayMode}
             workbenchLayout={renderedWorkbenchLayout}
@@ -3150,7 +3113,9 @@ function App() {
             onBottomTrayChange={(open) => open ? void toggleRawTerminal() : setAgentSurfaceMode("chat")}
             onLayoutChange={setWorkbenchLayout}
             onOpenFolder={() => void pickWorkspace()}
-            onProfileChange={(profileId) => void switchTerminalLaunchProfile(resolveLaunchProfile(profileId))}
+            onProfileChange={(profileId) => {
+              void profiles.switchTerminalProfile(profiles.resolveProfile(profileId));
+            }}
             onRefreshFiles={refreshFileTree}
             onToolModeChange={setToolTrayMode}
           />
@@ -3395,8 +3360,9 @@ function App() {
           activePane={activeTerminalPane} activePaneId={activeTerminalPaneId}
           activeProfileLabel={activeTerminalProfile.label} canClose={Boolean(activeAgentSessionHandle)}
           canvasRef={canvasRef} events={selectedAgentActivityLog} find={terminalFind}
-          hasWorkspace={Boolean(workspacePath)} imeInputRef={imeInputRef} launchProfile={terminalLaunchProfile}
-          launchProfileChanging={launchProfileChanging} launchProfiles={allLaunchProfiles}
+          hasWorkspace={Boolean(workspacePath)} imeInputRef={imeInputRef}
+          launchProfile={profiles.terminalProfile} launchProfileChanging={profiles.changing}
+          launchProfiles={profiles.allProfiles}
           mode={utilityTrayMode} open={agentSurfaceMode === "terminal"} panes={terminalPanes}
           terminalHostRef={terminalHostRef}
           onClose={() => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); }}
@@ -3406,7 +3372,9 @@ function App() {
           onOpenTab={(mode) => void openUtilityTray(mode)}
           onPaneContextMenu={(event, pane) => openContextMenu(event, terminalPaneContextMenuItems(pane))}
           onPaste={(text) => { invoke("paste", { text }).catch(() => {}); }}
-          onProfileChange={(profileId) => void switchTerminalLaunchProfile(resolveLaunchProfile(profileId))}
+          onProfileChange={(profileId) => {
+            void profiles.switchTerminalProfile(profiles.resolveProfile(profileId));
+          }}
           onRename={(pane) => void renameTerminalPane(pane)}
           onResizeStart={(event) => { setAgentSurfaceMode("terminal"); beginUtilityTrayResize(event); }}
           onRestart={() => { if (activeTerminalPane) void restartTerminalPane(activeTerminalPane); }}
@@ -3428,7 +3396,7 @@ function App() {
           connectionSecretPresence={connectionSecretPresence}
           mcpOAuthStatuses={mcpOAuthStatuses}
           commandPaletteSources={commandPaletteSources}
-          customTerminalProfiles={customLaunchProfiles}
+          customTerminalProfiles={profiles.customProfiles}
           gitBranch={gitStatus?.branch ?? null}
           gitChangeCount={gitStatus ? gitStatus.files.length : null}
           sourceControlStatus={sourceControlStatus}
@@ -3472,7 +3440,9 @@ function App() {
             server,
           })}
           onCommandPaletteSourceChange={settingsPreferenceActions.onCommandPaletteSourceChange}
-          onAddCustomTerminalProfile={(label, command) => void addCustomTerminalProfile(label, command)}
+          onAddCustomTerminalProfile={(label, command) => {
+            void profiles.addCustomProfile(label, command);
+          }}
           keybindingOverrides={keybindingOverrides}
           onResetLocalData={() => void resetSettingsLocalData({
             clearStore: async () => {
@@ -3488,7 +3458,9 @@ function App() {
           })}
           notificationsEnabled={notificationsEnabled}
           onNotificationsChange={settingsPreferenceActions.onNotificationsChange}
-          onRemoveCustomTerminalProfile={(profileId) => void removeCustomTerminalProfile(profileId)}
+          onRemoveCustomTerminalProfile={(profileId) => {
+            void profiles.removeCustomProfile(profileId);
+          }}
           theme={appTheme}
           onThemeChange={settingsPreferenceActions.onThemeChange}
           onKeybindingOverrideChange={settingsPreferenceActions.onKeybindingOverrideChange}
@@ -3511,12 +3483,13 @@ function App() {
       />
       <AppRuntimeDialogs
         notices={{
-          actionNotice, canUseShellProfile: !launchProfileChanging && launchProfile.id !== "shell", crashNotice, launchError,
+          actionNotice, canUseShellProfile: !profiles.changing && profiles.launchProfile.id !== "shell",
+          crashNotice, launchError,
           onDismissAction: () => setActionNotice(null), onDismissCrash: () => setCrashNotice(null),
           onOpenFolder: () => void pickWorkspace(),
           onUseShellProfile: () => {
             const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
-            if (shell) void switchLaunchProfile(shell);
+            if (shell) void profiles.switchLaunchProfile(shell);
           },
         }}
         orchestration={{
