@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
@@ -206,7 +206,7 @@ import {
   paneLayoutFromPanes,
 } from "./sessionRestore";
 import type { PaneLayoutsBySession } from "./sessionRestore";
-import { useWorkbenchLayout } from "./useWorkbenchLayout";
+import { useShellLayout, type SideDrawerMode } from "./useShellLayout";
 import { terminalSnapshotText } from "./terminalTranscript";
 import { migrateWorkspaceStore } from "./workspaceMigrations";
 import { SettingsModal } from "./SettingsModal";
@@ -347,8 +347,6 @@ type ActiveDiffReview = {
 };
 type OpenEditorFileOptions = { focusEditor?: boolean };
 type SaveEditorFileOptions = { force?: boolean };
-type AgentSurfaceMode = "chat" | "terminal";
-type SideDrawerMode = "projects" | "files" | "git" | "browser" | "settings";
 type DetectedLocalDevServer = {
   url: string;
   paneId: number;
@@ -669,54 +667,31 @@ function App() {
   const [agentActivityEvents, setAgentActivityEvents] = useState<AgentActivityEvent[]>([]);
   const agentActivityFilter: AgentActivityLogFilter = "all";
   const {
+    agentSurfaceMode,
     appShellStyle,
     beginSideDrawerResize,
+    beginUtilityTrayResize,
     beginWorkbenchResize,
     nudgeSideDrawerResize,
     nudgeWorkbenchResize,
-    resetWorkbenchLayout,
+    resetInterface,
     renderedWorkbenchLayout,
     setSideDrawerCollapsed,
+    setAgentSurfaceMode,
+    setSideDrawerMode,
     setToolTrayMode,
+    setUtilityTrayMode,
     setWorkbenchLayout,
+    sideDrawerMode,
     sideDrawerCollapsed,
     toolTrayMode,
+    utilityTrayHeight,
+    utilityTrayMode,
     workbenchLayout,
     workbenchRef,
     workbenchSizing,
     workbenchStyle,
-  } = useWorkbenchLayout();
-  const [agentSurfaceMode, setAgentSurfaceMode] = useState<AgentSurfaceMode>("chat");
-  const [utilityTrayMode, setUtilityTrayMode] = useState<UtilityTrayMode>("terminal");
-  const [utilityTrayHeight, setUtilityTrayHeight] = useState(260);
-  const [sideDrawerMode, setSideDrawerMode] = useState<SideDrawerMode>("projects");
-  const resetInterface = () => {
-    resetWorkbenchLayout();
-    setSideDrawerMode("projects");
-    setAgentSurfaceMode("chat");
-    setUtilityTrayMode("terminal");
-    setUtilityTrayHeight(260);
-    setSettingsOpen(false);
-  };
-  const beginUtilityTrayResize = (event: ReactPointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    event.currentTarget.setPointerCapture(event.pointerId);
-    document.body.classList.add("is-resizing-workbench");
-    const move = (pointerEvent: PointerEvent) => {
-      const rect = workbenchRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      setUtilityTrayHeight(Math.round(Math.max(150, Math.min(rect.height * 0.65, rect.bottom - pointerEvent.clientY))));
-    };
-    const stop = () => {
-      document.body.classList.remove("is-resizing-workbench");
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      window.removeEventListener("pointercancel", stop);
-    };
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop);
-    window.addEventListener("pointercancel", stop);
-  };
+  } = useShellLayout(() => setSettingsOpen(false));
   const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
   const [chatSearchResults, setChatSearchResults] = useState<ChatSearchResult[]>([]);
   const [chatSearchLoading, setChatSearchLoading] = useState(false);

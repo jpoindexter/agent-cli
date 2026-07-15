@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const projectThreadsDrawer = readFileSync(new URL("./ProjectThreadsDrawer.tsx", import.meta.url), "utf8");
+const shellLayout = readFileSync(new URL("./useShellLayout.ts", import.meta.url), "utf8");
 const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
 
 describe("production context-menu coverage", () => {
@@ -60,7 +61,7 @@ describe("production context-menu coverage", () => {
   });
 
   it("keeps chat and raw-terminal launch defaults separate", () => {
-    expect(app).toContain('useState<AgentSurfaceMode>("chat")');
+    expect(shellLayout).toContain('useState<AgentSurfaceMode>("chat")');
     expect(app).toContain("createTerminalPane(defaultTerminalLaunchProfile())");
     expect(app).toContain('pickWorkspace({ openTerminal: true })');
     expect(terminalViewport).toContain("Open a folder to start a terminal");
