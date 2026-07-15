@@ -24,6 +24,7 @@ import { SourceControlDrawer } from "./SourceControlDrawer";
 import { QuickSettingsDrawer } from "./QuickSettingsDrawer";
 import { FilesSideDrawer } from "./FilesSideDrawer";
 import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
+import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -5695,82 +5696,32 @@ function App() {
             onClose={() => setWorkbenchLayout("hidden")}
           />
         ) : null}
-        <section className="files-dock" aria-label="Project files">
-          <div className="dock-surface__header">
-            <span title={workspacePath ?? ""}>{workspacePath ? basename(workspacePath) : "Files"}</span>
-            <div className="dock-surface__actions">
-              <button type="button" disabled={!workspacePath} title="New file" aria-label="Create new file" onClick={() => void createFileInRail()}>
-                <AppIcon name="filePlus" />
-              </button>
-              <button type="button" disabled={!workspacePath} title="New folder" aria-label="Create new folder" onClick={() => void createFolderInRail()}>
-                <AppIcon name="folderPlus" />
-              </button>
-              <button type="button" disabled={!workspacePath} title="Refresh files" aria-label="Refresh files" onClick={refreshFileTree}>
-                <AppIcon name="reload" />
-              </button>
-            </div>
-          </div>
-          <label className="dock-file-filter">
-            <AppIcon name="search" />
-            <input aria-label="Filter files" value={drawerSearchQuery} placeholder="Filter files…" onChange={(event) => setDrawerSearchQuery(event.currentTarget.value)} />
-          </label>
-          <div className="dock-file-list">
-            {fileTreeLoading ? <div className="rail-status">Loading files…</div> : null}
-            {fileTreeError ? <div className="rail-status rail-status--error">{fileTreeError}</div> : null}
-            {!workspacePath ? <div className="rail-status">Open a folder to browse files</div> : null}
-            {workspacePath && !fileTreeLoading && searchableFiles.length === 0 ? <div className="rail-status">Empty folder</div> : null}
-            {(drawerSearchQuery.trim() ? drawerSearchResults : searchableFiles.slice(0, 600)).map((file) => (
-              <button
-                className={`dock-file-row ${selectedFile?.path === file.path ? "dock-file-row--active" : ""}`}
-                type="button"
-                key={file.path}
-                title={file.path}
-                onClick={() => void requestOpenEditorFile(file, { focusEditor: true })}
-              >
-                <AppIcon name="file" />
-                <span className="dock-file-row__name">{file.name}</span>
-                <span className="dock-file-row__path">{pathBreadcrumbs(workspacePath, file.path).slice(0, -1).join(" / ")}</span>
-              </button>
-            ))}
-            {!drawerSearchQuery.trim() && searchableFiles.length > 600 ? <div className="rail-status rail-status--muted">Showing first 600 files. Use Quick Open for the full workspace.</div> : null}
-          </div>
-        </section>
-        <section className="git-dock" aria-label="Source control">
-          <div className="dock-surface__header">
-            <span>{gitStatus?.branch ?? "Source Control"}</span>
-            <div className="dock-surface__actions">
-              <button type="button" disabled={!workspacePath || gitStatusLoading} title="Refresh source control" aria-label="Refresh source control" onClick={() => void refreshGitStatus()}>
-                <AppIcon name="reload" />
-              </button>
-            </div>
-          </div>
-          <div className="git-dock__summary">
-            <span>{gitStatus?.files.length ?? 0} changes</span>
-            <span>{gitStatus?.staged ?? 0} staged</span>
-            <span>{gitStatus?.untracked ?? 0} untracked</span>
-          </div>
-          <div className="dock-file-list">
-            {gitStatusLoading ? <div className="rail-status">Reading git status…</div> : null}
-            {gitStatusError ? <div className="rail-status rail-status--error">{gitStatusError}</div> : null}
-            {!workspacePath ? <div className="rail-status">Open a folder to read source control</div> : null}
-            {workspacePath && gitStatus?.isRepository === false ? <div className="rail-status">This workspace is not a Git repository</div> : null}
-            {gitStatus?.isRepository && gitStatus.files.length === 0 ? <div className="rail-status">Working tree clean</div> : null}
-            {gitStatus?.files.map((file) => (
-              <button
-                className="dock-file-row"
-                type="button"
-                key={`${file.index}${file.worktree}${file.path}`}
-                title={`${gitStatusLabel(file)} · ${file.path}`}
-                onClick={() => void openGitDiff(file)}
-                onContextMenu={(event) => openContextMenu(event, gitFileContextMenuItems(file))}
-              >
-                <AppIcon name={file.index === "?" ? "filePlus" : "git"} />
-                <span className="dock-file-row__name">{basename(file.path)}</span>
-                <span className="dock-file-row__path">{gitStatusLabel(file)}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        <FilesDock
+          files={drawerSearchQuery.trim() ? drawerSearchResults : searchableFiles}
+          loading={fileTreeLoading}
+          error={fileTreeError}
+          query={drawerSearchQuery}
+          selectedFilePath={selectedFile?.path ?? null}
+          workspacePath={workspacePath}
+          onCreateFile={() => void createFileInRail()}
+          onCreateFolder={() => void createFolderInRail()}
+          onOpenFile={(file) => void requestOpenEditorFile(file, { focusEditor: true })}
+          onQueryChange={setDrawerSearchQuery}
+          onRefresh={refreshFileTree}
+        />
+        <SourceControlDock
+          branch={gitStatus?.branch ?? null}
+          error={gitStatusError}
+          files={gitStatus?.files ?? []}
+          isRepository={gitStatus?.isRepository ?? null}
+          loading={gitStatusLoading}
+          staged={gitStatus?.staged ?? 0}
+          untracked={gitStatus?.untracked ?? 0}
+          workspacePath={workspacePath}
+          onFileContextMenu={(event, file) => openContextMenu(event, gitFileContextMenuItems(file))}
+          onOpenDiff={(file) => void openGitDiff(file)}
+          onRefresh={() => void refreshGitStatus()}
+        />
         <section
           className="editor-area"
           aria-label="Editor"
