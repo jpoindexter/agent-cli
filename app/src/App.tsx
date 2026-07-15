@@ -10,7 +10,6 @@ import { EditorView, type ViewUpdate } from "@codemirror/view";
 import CodeMirror from "@uiw/react-codemirror";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { openSearchPanel } from "@codemirror/search";
-import { Tree } from "react-arborist";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
@@ -23,6 +22,7 @@ import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { BrowserToolsDrawer } from "./BrowserToolsDrawer";
 import { SourceControlDrawer } from "./SourceControlDrawer";
 import { QuickSettingsDrawer } from "./QuickSettingsDrawer";
+import { FilesSideDrawer } from "./FilesSideDrawer";
 import { EditorSaveError } from "./EditorSaveError";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
@@ -295,7 +295,6 @@ import {
 } from "./workspaceCheckpoints";
 import { mergeChatDiscoveryResults, type ChatSearchResult, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
-import { FileTreeRow } from "./FileTreeRow";
 import type { FileTreeNode, FileTreeResponse } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
 import {
@@ -5598,56 +5597,6 @@ function App() {
             </button>
           ))}
         </div>
-        {!sideDrawerCollapsed && sideDrawerMode === "files" ? (
-          <>
-            <div className="panel-title panel-title--with-action">
-              <span>Files</span>
-              <button
-                className="rail-open-button"
-                type="button"
-                disabled={!workspacePath}
-                title="New file"
-                aria-label="Create new file"
-                onClick={() => void createFileInRail()}
-              >
-                <AppIcon name="filePlus" />
-                <span>File</span>
-              </button>
-              <button
-                className="rail-open-button"
-                type="button"
-                disabled={!workspacePath}
-                title="New folder"
-                aria-label="Create new folder"
-                onClick={() => void createFolderInRail()}
-              >
-                <AppIcon name="folderPlus" />
-                <span>Folder</span>
-              </button>
-              <button
-                className="rail-open-button"
-                type="button"
-                title={shortcutTitle("workspace.open", "Open folder")}
-                aria-label="Open folder"
-                onClick={() => void pickWorkspace()}
-              >
-                <AppIcon name="folderOpen" />
-                <span>Open</span>
-              </button>
-            </div>
-            <div className="rail-root" title={workspacePath ?? ""}>
-              <button
-                className="rail-root__button"
-                type="button"
-                aria-label={workspacePath ? `Workspace ${basename(workspacePath)}` : "No workspace selected"}
-                onContextMenu={(event) => openContextMenu(event, workspaceContextMenuItems())}
-              >
-                <AppIcon name={workspacePath ? "workspace" : "folderOpen"} />
-                {workspacePath ? basename(workspacePath) : "No workspace"}
-              </button>
-            </div>
-          </>
-        ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "projects" && visibleOpenProjects.length > 0 ? (
           <nav className="project-rail" aria-label="Open projects">
             <div className="project-rail__heading">Today</div>
@@ -5813,46 +5762,25 @@ function App() {
           />
         ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "files" ? (
-          <div ref={railBodyRef} className="rail-tree">
-            {fileTreeLoading ? <div className="rail-status">Loading…</div> : null}
-            {fileTreeError ? <div className="rail-status rail-status--error">{fileTreeError}</div> : null}
-            {fileOpError ? <div className="rail-status rail-status--error">{fileOpError}</div> : null}
-            {!fileTreeLoading && !fileTreeError && workspacePath && fileTree.length === 0 ? (
-              <div className="rail-status">Empty folder</div>
-            ) : null}
-            {!workspacePath ? <div className="rail-status">Open a folder</div> : null}
-            {workspacePath && fileTree.length > 0 ? (
-              <Tree<FileTreeNode>
-                ref={treeRef}
-                aria-label="Project files"
-                data={visibleFileTree}
-                idAccessor="id"
-                childrenAccessor="children"
-                rowHeight={24}
-                height={railHeight}
-                width="100%"
-                indent={14}
-                overscanCount={8}
-                disableDrag
-                disableDrop
-                disableEdit
-                disableMultiSelection
-                selection={selectedFile?.id}
-                onActivate={(node) => {
-                  if (node.data.kind === "directory") {
-                    node.toggle();
-                  } else if (node.data.gitStatus?.code === "deleted") {
-                    node.select();
-                  } else {
-                    void requestOpenEditorFile(node.data, { focusEditor: true });
-                  }
-                }}
-              >
-                {FileTreeRow}
-              </Tree>
-            ) : null}
-            {fileTreeTruncated ? <div className="rail-status rail-status--muted">Showing first 8000 entries</div> : null}
-          </div>
+          <FilesSideDrawer
+            fileOpError={fileOpError}
+            fileTree={fileTree}
+            fileTreeError={fileTreeError}
+            fileTreeLoading={fileTreeLoading}
+            fileTreeTruncated={fileTreeTruncated}
+            railBodyRef={railBodyRef}
+            railHeight={railHeight}
+            selectedFileId={selectedFile?.id}
+            treeRef={treeRef}
+            visibleFileTree={visibleFileTree}
+            workspaceName={workspacePath ? basename(workspacePath) : null}
+            workspacePath={workspacePath}
+            onCreateFile={() => void createFileInRail()}
+            onCreateFolder={() => void createFolderInRail()}
+            onOpenFile={(file) => void requestOpenEditorFile(file, { focusEditor: true })}
+            onOpenFolder={() => void pickWorkspace()}
+            onWorkspaceContextMenu={(event) => openContextMenu(event, workspaceContextMenuItems())}
+          />
         ) : null}
       </aside>
       {!sideDrawerCollapsed ? (
