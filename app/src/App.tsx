@@ -1,5 +1,5 @@
 import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
@@ -26,8 +26,9 @@ import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
 import { EditorChrome } from "./EditorChrome";
 import { EditorDiffView } from "./EditorDiffView";
 import { EditorCodeSurface } from "./EditorCodeSurface";
+import { AgentComposerSurface } from "./AgentComposerSurface";
 import { OrchestrationDialog } from "./OrchestrationDialog";
-import { composerPopoverPosition, handleComposerMenuToggle } from "./composerPopover";
+import { composerPopoverPosition } from "./composerPopover";
 import {
   browserHistoryCanGoBack,
   browserHistoryCanGoForward,
@@ -165,7 +166,6 @@ import {
   normalizeKeybindingOverrides,
   setActiveKeybindingOverrides,
   shortcutKeys,
-  shortcutTitle,
   type KeybindingOverrides,
 } from "./shortcuts";
 import { filterCommandPaletteCommands } from "./commandPalette";
@@ -301,8 +301,7 @@ import {
 } from "./chatOrchestration";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextBelongsToProject, paneContextKey, paneContextParts, removeProjectPaneContexts } from "./paneOwnership";
-import { ComposerModelPicker } from "./ComposerModelPicker";
-import { ComposerReasoningPicker, composerReasoningLabel } from "./ComposerReasoningPicker";
+import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -382,8 +381,6 @@ const FONT_SIZE = 15;
 // output containing Chinese/Japanese/Korean text) render instead of tofu.
 const FONT_FAMILY = '"JetBrains Mono", "PingFang SC", "Hiragino Sans", "Apple SD Gothic Neo", monospace';
 const LINE_HEIGHT = 1.25;
-const composerApprovalLabel = (mode: AgentApprovalMode) =>
-  mode === "fullAccess" ? "Full access" : mode === "approveSafe" ? "Approve" : "Ask";
 const rgb = (c: [number, number, number]) => `rgb(${c[0]},${c[1]},${c[2]})`;
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 const dirname = (path: string) => path.replace(/[\\/][^\\/]*$/, "") || path;
@@ -5866,199 +5863,49 @@ function App() {
               focusMessageId={focusedChatMessageId}
             />
           </div>
-          <div className="agent-composer" aria-label="Agent composer" onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}>
-            <div className="agent-composer__card">
-              <textarea
-                className="agent-composer__input"
-                aria-label="Agent composer draft"
-                value={composerDraft}
-                rows={2}
-                placeholder="Ask Keelhouse to run agents, open files, inspect git, or use the browser..."
-                disabled={composerSending}
-                onChange={(event) => {
-                  setComposerLocalState(activeComposerHarnessKey, event.currentTarget.value, composerHistory);
-                  setComposerHistoryIndex(null);
-                }}
-                onPaste={(event) => {
-                  if ([...event.clipboardData.types].some((type) => type.startsWith("image/"))) {
-                    event.preventDefault();
-                    void pasteComposerImage();
-                  }
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void submitComposerDraft();
-                  } else if (event.key === "Escape") {
-                    event.currentTarget.blur();
-                  } else if (event.key === "ArrowUp" && !composerDraft && composerHistory.length > 0) {
-                    event.preventDefault();
-                    showPreviousComposerHistory();
-                  } else if (event.key === "ArrowDown" && composerHistoryIndex != null) {
-                    event.preventDefault();
-                    showNextComposerHistory();
-                  }
-                }}
-              />
-              {composerMentionQuery != null && composerMentionResults.length > 0 ? (
-                <div className="agent-composer__mentions" role="listbox" aria-label="Attach workspace file">
-                  {composerMentionResults.map((file) => (
-                    <button
-                      key={file.path}
-                      type="button"
-                      role="option"
-                      onClick={() => {
-                        setComposerLocalState(activeComposerHarnessKey, composerDraft.replace(/@[^\s@]*$/, ""), composerHistory);
-                        void attachWorkspaceFileToComposer(file);
-                      }}
-                    >
-                      <AppIcon name="file" />
-                      <span>{file.name}</span>
-                      <small>{file.path}</small>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-              <div className="agent-composer__bar">
-                <div className="agent-composer__attachments" aria-label="Composer context">
-                  <button
-                    className="agent-composer__attachment-button"
-                    type="button"
-                    aria-label="Add context or action"
-                    title="Add context or action"
-                    disabled={!activeComposerHarnessKey}
-                    onClick={openComposerAddMenu}
-                  >
-                    <AppIcon name="plus" />
-                  </button>
-                  <details className="agent-composer__menu agent-composer__menu--permission" onToggle={handleComposerMenuToggle}>
-                    <summary className={`agent-composer__control ${activeComposerHarness.approvalMode === "fullAccess" ? "agent-composer__control--warning" : ""}`}>
-                      <AppIcon name="shield" />
-                      <span>{composerApprovalLabel(activeComposerHarness.approvalMode)}</span>
-                      <AppIcon name="chevronDown" />
-                    </summary>
-                    <div className="agent-composer__popover agent-composer__popover--permission" role="menu" aria-label="Composer permission mode">
-                      <div className="agent-composer__popover-title">Permission mode</div>
-                      {([
-                        ["ask", "Ask for approval", "Confirm edits, commands, and network access."],
-                        ["approveSafe", "Approve safe actions", "Run workspace-scoped actions and ask for riskier access."],
-                        ["fullAccess", "Full access", "Allow unrestricted file and network access."],
-                      ] as const).map(([value, label, description]) => (
-                        <button
-                          className={`agent-composer__menu-option ${activeComposerHarness.approvalMode === value ? "agent-composer__menu-option--selected" : ""}`}
-                          type="button"
-                          role="menuitemradio"
-                          aria-checked={activeComposerHarness.approvalMode === value}
-                          key={value}
-                          onClick={(event) => {
-                            event.currentTarget.closest("details")?.removeAttribute("open");
-                            void setComposerApprovalMode(value);
-                          }}
-                        >
-                          <AppIcon name={activeComposerHarness.approvalMode === value ? "check" : "shield"} />
-                          <span><strong>{label}</strong><small>{description}</small></span>
-                        </button>
-                      ))}
-                    </div>
-                  </details>
-                  <details className="agent-composer__menu agent-composer__menu--goal" onToggle={handleComposerMenuToggle}>
-                    <summary className={`agent-composer__control ${activeComposerHarness.goal ? "agent-composer__control--active" : ""}`}>
-                      <AppIcon name="target" />
-                      <span>Goal</span>
-                    </summary>
-                    <div className="agent-composer__popover agent-composer__popover--goal">
-                      <label className="agent-composer__popover-field">
-                        <span>Goal for this chat</span>
-                        <input
-                          aria-label="Composer goal"
-                          value={activeComposerHarness.goal}
-                          maxLength={160}
-                          placeholder="Optional outcome to keep in context"
-                          disabled={!activeComposerHarnessKey}
-                          onChange={(event) => void setComposerGoal(event.currentTarget.value)}
-                          onBlur={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
-                        />
-                      </label>
-                      {activeComposerHarness.goal ? (
-                        <button className="agent-composer__clear" type="button" onClick={() => void setComposerGoal("")}>Clear goal</button>
-                      ) : null}
-                    </div>
-                  </details>
-                  <div className="agent-composer__attachment-list">
-                    {activeComposerHarness.attachments.map((attachment) => (
-                      <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>
-                        {attachment.kind === "image" ? <img src={convertFileSrc(attachment.target)} alt="" /> : null}
-                        <span>{attachment.label}</span>
-                        <button
-                          type="button"
-                          aria-label={`Remove attachment ${attachment.label}`}
-                          onClick={() => void removeComposerAttachmentById(attachment)}
-                        >
-                          <AppIcon name="close" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                  {activeComposerHarness.attachments.length > 0 || activeComposerHarness.goal ? (
-                    <button className="agent-composer__control" type="button" onClick={() => void reviewComposerContext()}>
-                      <AppIcon name="search" />
-                      <span>Review context</span>
-                    </button>
-                  ) : null}
-                </div>
-                <div className="agent-composer__actions">
-                  {activeComposerProvider ? (
-                    <>
-                      <ComposerReasoningPicker
-                        value={activeComposerHarness.reasoningEffort}
-                        disabled={!activeComposerHarnessKey || Boolean(activeChatConversation.activeRunId)}
-                        onSelect={setComposerReasoningEffort}
-                      />
-                      <ComposerModelPicker
-                        provider={activeComposerProvider}
-                        model={activeComposerHarness.model}
-                        configuredModels={aiConnectionSettings.providerModels}
-                        disabled={!activeComposerHarnessKey || Boolean(activeChatConversation.activeRunId)}
-                        onManageModels={() => setSettingsOpen(true)}
-                        onSelect={setComposerRuntime}
-                      />
-                    </>
-                  ) : null}
-                  {activeChatConversation.activeRunId ? (
-                    <button
-                      className="agent-composer__send agent-composer__send--stop"
-                      type="button"
-                      aria-label="Stop current chat run"
-                      title="Stop current chat run"
-                      onClick={() => void stopActiveChatRun()}
-                    >
-                      <AppIcon name="stop" />
-                    </button>
-                  ) : (
-                    <button
-                      className="agent-composer__send"
-                      type="button"
-                      aria-label={composerSending ? "Sending" : "Send"}
-                      title={shortcutTitle("composer.send", "Send")}
-                      disabled={composerSending || !composerDraft.trim()}
-                      onClick={() => void submitComposerDraft()}
-                    >
-                      <AppIcon name={composerSending ? "loading" : "send"} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            {composerError ? <div className="agent-composer__error">{composerError}</div> : null}
-            {composerNotice ? (
-              <div className="agent-composer__notice" role="status">
-                <pre>{composerNotice}</pre>
-                <button className="agent-composer__button" type="button" aria-label="Dismiss app command help" onClick={() => setComposerNotice(null)}>
-                  <AppIcon name="close" />
-                </button>
-              </div>
-            ) : null}
-          </div>
+          <AgentComposerSurface
+            activeRun={Boolean(activeChatConversation.activeRunId)}
+            approvalMode={activeComposerHarness.approvalMode}
+            attachments={activeComposerHarness.attachments}
+            configuredModels={aiConnectionSettings.providerModels}
+            draft={composerDraft}
+            error={composerError}
+            goal={activeComposerHarness.goal}
+            hasHarness={Boolean(activeComposerHarnessKey)}
+            hasHistory={composerHistory.length > 0}
+            historyCursorActive={composerHistoryIndex != null}
+            mentionResults={composerMentionQuery != null ? composerMentionResults : []}
+            model={activeComposerHarness.model}
+            notice={composerNotice}
+            provider={activeComposerProvider}
+            reasoningEffort={activeComposerHarness.reasoningEffort}
+            sending={composerSending}
+            onApprovalChange={(mode) => void setComposerApprovalMode(mode)}
+            onAttachMention={(file) => {
+              setComposerLocalState(activeComposerHarnessKey, composerDraft.replace(/@[^\s@]*$/, ""), composerHistory);
+              void attachWorkspaceFileToComposer(file);
+            }}
+            onClearGoal={() => void setComposerGoal("")}
+            onContextMenu={(event) => openContextMenu(event, composerContextMenuItems())}
+            onDismissNotice={() => setComposerNotice(null)}
+            onDraftChange={(draft) => {
+              setComposerLocalState(activeComposerHarnessKey, draft, composerHistory);
+              setComposerHistoryIndex(null);
+            }}
+            onGoalChange={(goal) => void setComposerGoal(goal)}
+            onGoalCommit={() => void setComposerGoal(activeComposerHarness.goal, { log: true })}
+            onManageModels={() => setSettingsOpen(true)}
+            onNextHistory={showNextComposerHistory}
+            onOpenAddMenu={openComposerAddMenu}
+            onPasteImage={() => void pasteComposerImage()}
+            onPreviousHistory={showPreviousComposerHistory}
+            onReasoningChange={setComposerReasoningEffort}
+            onRemoveAttachment={(attachment) => void removeComposerAttachmentById(attachment)}
+            onReviewContext={() => void reviewComposerContext()}
+            onRuntimeChange={setComposerRuntime}
+            onStop={() => void stopActiveChatRun()}
+            onSubmit={() => void submitComposerDraft()}
+          />
         </section>
         <button
           className="utility-tray-resizer"

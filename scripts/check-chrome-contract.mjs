@@ -17,6 +17,7 @@ const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");
 const composerModelPicker = read("app/src/ComposerModelPicker.tsx");
 const composerModelPopover = read("app/src/ComposerModelPopover.tsx");
 const composerReasoningPicker = read("app/src/ComposerReasoningPicker.tsx");
+const composerSurface = read("app/src/AgentComposerSurface.tsx");
 const searchCommandDialog = read("app/src/SearchCommandDialog.tsx");
 const commandPaletteController = read("app/src/useCommandPalette.ts");
 const quickOpenSurface = [
@@ -156,7 +157,7 @@ assert(appTsx.includes('invoke<ResolveWorkspaceResponse>("resolve_workspace"'), 
 assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a no-pty project open path for chat mode");
 assert(appTsx.includes('className={`utility-tray ${agentSurfaceMode === "terminal"'), "Raw terminal must live in the approved bottom utility tray");
 assert(appTsx.includes('hidden={false}'), "Opening the bottom tray must keep the chat timeline visible");
-assert(appTsx.includes('className="agent-composer" aria-label="Agent composer"'), "Opening the bottom tray must keep the chat composer visible");
+assert(composerSurface.includes('className="agent-composer" aria-label="Agent composer"'), "Opening the bottom tray must keep the chat composer visible");
 assert(bottomUtilityTabs.includes('aria-label="Utility tray surfaces"'), "Bottom tray must expose Terminal, Processes, and Logs modes");
 assert(bottomUtilityTabs.includes('aria-label={open ? "Collapse utility tray" : "Expand utility tray"}'), "Bottom tray chevron must describe its current open or closed action");
 assert(appTsx.includes('const toggleUtilityTrayVisibility = () => {'), "Bottom tray chevron must have a layout-only visibility toggle");
@@ -167,10 +168,10 @@ assert(!appTsx.includes('utilityTrayMode === "browser"'), "Browser must not be d
 assert(appTsx.includes("utilityTrayTabContextMenuItems"), "Bottom utility tabs must expose app-owned context menus");
 assert(appTsx.includes("terminalPaneContextMenuItems"), "Terminal pane tabs must expose lifecycle context menus");
 assert(/\.terminal-pane-button--active\s*\{[^}]*border-bottom-color:\s*var\(--color-accent-border\);[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s.test(appCss), "Active terminal pane tabs must use a flat underline, not rounded capsule chrome");
-assert(appTsx.includes('aria-label="Composer permission mode"'), "Composer must expose the real approval-mode menu");
-assert(appTsx.includes('aria-label="Composer goal"'), "Composer must expose its persisted goal control");
+assert(composerSurface.includes('aria-label="Composer permission mode"'), "Composer must expose the real approval-mode menu");
+assert(composerSurface.includes('aria-label="Composer goal"'), "Composer must expose its persisted goal control");
 assert(composerModelPopover.includes('aria-label="Search models"') && composerModelPopover.includes("Custom model ID"), "Composer must expose searchable provider models and custom model IDs");
-assert(composerModelPicker.includes("onSelect={setComposerRuntime}") || appTsx.includes("onSelect={setComposerRuntime}"), "Composer model selection must persist through the runtime boundary");
+assert(composerSurface.includes("onSelect={props.onRuntimeChange}") && appTsx.includes("onRuntimeChange={setComposerRuntime}"), "Composer model selection must persist through the runtime boundary");
 assert(composerReasoningPicker.includes("OPTIONS.map") && composerReasoningPicker.includes('role="menuitemradio"'), "Composer must expose separate accessible reasoning effort choices");
 assert(appTsx.includes('reasoningEffort: activeComposerHarness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
 assert(chatHarness.includes('params["effort"] = json!(effort);'), "Native chat runs must apply the selected Codex reasoning effort");

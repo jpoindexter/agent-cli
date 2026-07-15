@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const projectThreadsDrawer = readFileSync(new URL("./ProjectThreadsDrawer.tsx", import.meta.url), "utf8");
 const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
 
@@ -37,8 +38,9 @@ describe("production context-menu coverage", () => {
   });
 
   it("opens a Keelhouse add menu from the composer plus control", () => {
-    expect(app).toContain('aria-label="Add context or action"');
-    expect(app).toContain("onClick={openComposerAddMenu}");
+    expect(agentComposerSurface).toContain('aria-label="Add context or action"');
+    expect(agentComposerSurface).toContain("onClick={props.onOpenAddMenu}");
+    expect(app).toContain("onOpenAddMenu={openComposerAddMenu}");
     expect(app).toContain('querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")');
     expect(app).toContain('menuItem("composer.add.files", "Files and folders"');
     expect(app).toContain('menuItem("composer.add.parallel", "Parallel child chats"');
