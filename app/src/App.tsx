@@ -86,7 +86,6 @@ import {
   defaultLaunchProfile,
   defaultTerminalLaunchProfile,
   launchProfileById,
-  launchProfileCommandLine,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
 import {
@@ -211,7 +210,7 @@ import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu
 import { planPaneExit } from "./paneExitPlan";
 import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { executeProjectSessionDelete } from "./projectSessionDelete";
-import { replaceRestartedPane } from "./terminalPaneRestart";
+import { executeTerminalPaneRestart } from "./terminalPaneRestartWorkflow";
 import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
 import { planCheckpointRestore } from "./checkpointRestorePlan";
 import { buildCreatedTerminalPane } from "./terminalPaneCreate";
@@ -2175,39 +2174,25 @@ function App() {
     const root = workspacePathRef.current;
     const sessionId = activeSessionForProject(root);
     if (!root || !sessionId || !pane || launchProfileChanging) return false;
-    const label = terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot);
-    const audit = await gateAppAction(createAppAction({
-      kind: "restart-process",
-      label: "Restart process",
-      target: `${label} · ${launchProfileCommandLine(pane.profile)}`,
-      risk: "high",
-      requestedBy: "user",
-      undoHint: "The previous live process is terminated; pane label and slot are preserved.",
-    }), activeAgentSessionDescriptor);
-    if (audit.decision !== "approved") return false;
-    setLaunchProfileChanging(true);
-    try {
-      const result = await invoke<OpenPaneResponse>("restart_pane", { path: root, paneId: pane.id, profile: pane.profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) });
-      const nextPanes = replaceRestartedPane(terminalPanesForSession(root, sessionId), pane.id, result.paneId, Date.now());
-      delete terminalSnapshotsRef.current[pane.id];
-      latest.current = null;
-      setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
-      requestTerminalPaintRef.current();
-      setLaunchError(null);
-      setTimeout(sendTerminalResize, 0);
-      await updateOpenProjectStatus(root, projectStatusForRoot(root));
-      await updateActiveSessionStatus(root, terminalPaneProjectStatus(nextPanes));
-      const restarted = nextPanes.find((item) => item.id === result.paneId);
-      recordRestartedPaneActivity(restarted, pane, root, sessionId, label);
-      return true;
-    } catch (err) {
-      setLaunchError(String(err));
-      await updateOpenProjectStatus(root, "attention");
-      await updateActiveSessionStatus(root, "attention");
-      return false;
-    } finally {
-      setLaunchProfileChanging(false);
-    }
+    return executeTerminalPaneRestart({
+      clearLatestSnapshot: () => { latest.current = null; },
+      clearPaneSnapshot: (paneId) => { delete terminalSnapshotsRef.current[paneId]; },
+      currentPanes: () => terminalPanesForSession(root, sessionId),
+      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionDescriptor)).decision,
+      now: Date.now,
+      pane,
+      projectStatus: () => projectStatusForRoot(root),
+      recordRestarted: (restarted, label) => recordRestartedPaneActivity(restarted, pane, root, sessionId, label),
+      requestPaint: () => requestTerminalPaintRef.current(),
+      restartPane: async () => (await invoke<OpenPaneResponse>("restart_pane", { path: root, paneId: pane.id, profile: pane.profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) })).paneId,
+      scheduleResize: () => setTimeout(sendTerminalResize, 0),
+      sessionStatus: terminalPaneProjectStatus,
+      setChanging: setLaunchProfileChanging,
+      setError: setLaunchError,
+      setSessionPanes: (panes, paneId) => setSessionTerminalPanes(root, sessionId, panes, paneId),
+      updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
+      updateSessionStatus: (status) => updateActiveSessionStatus(root, status),
+    });
   };
 
   const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
