@@ -358,6 +358,12 @@ type PendingNavigation =
   | { kind: "close-project"; projectPath: string };
 type CommandPaletteCommand = SearchDialogCommand;
 type WorkspaceBootstrapSnapshot = Awaited<ReturnType<typeof loadWorkspaceBootstrap>>;
+type OpenedWorkspaceTarget = {
+  activePaneId: number | null;
+  panes: ManagedTerminalPane[];
+  requestedSessionId: string | null;
+  root: string;
+};
 
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 const dirname = (path: string) => path.replace(/[\\/][^\\/]*$/, "") || path;
@@ -1591,6 +1597,121 @@ function App() {
   useSyncRef(launchProfileRef, launchProfile);
   useSyncRef(terminalLaunchProfileRef, terminalLaunchProfile);
 
+  const prepareAndOpenWorkspaceTarget = async (path: string): Promise<OpenedWorkspaceTarget> => {
+    const prepared = prepareWorkspaceOpenSession({
+      activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
+      paneLayouts: paneLayoutsBySessionRef.current, path, now: Date.now(),
+      defaultProfileId: defaultTerminalLaunchProfile().id, savedLabel: savedPaneLabelForSlot(path, 0),
+    });
+    projectSessionsRef.current = prepared.sessions;
+    activeSessionByProjectRef.current = prepared.activeSessions;
+    const existingPanes = terminalPanesForSession(path, prepared.sessionId);
+    const opened = await resolveWorkspaceOpenTarget({
+      activePaneId: activePaneForSession(path, prepared.sessionId, existingPanes), existingPanes,
+      focusPane: (paneId) => invoke("focus_pane", { paneId }),
+      openTerminalPanes: () => openWorkspaceTerminalPanes({
+        createPane: (target, paneProfile) => invoke<OpenPaneResponse>("create_pane", {
+          path: target, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
+        }),
+        fallbackLayout: prepared.fallbackLayout, initialLayout: prepared.layout, now: Date.now,
+        openWorkspace: (target, firstProfile) => invoke<OpenWorkspaceResponse>("open_workspace", {
+          path: target, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
+        }),
+        paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId: prepared.sessionId,
+        resolveProfile: resolveLaunchProfile,
+        savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, prepared.sessionId),
+      }),
+      path, resolveWorkspace: (target) => invoke<ResolveWorkspaceResponse>("resolve_workspace", { path: target }),
+      surfaceMode: agentSurfaceMode,
+    });
+    return { ...opened, requestedSessionId: prepared.sessionId };
+  };
+
+  const applyOpenedWorkspaceTarget = (opened: OpenedWorkspaceTarget) => {
+    const { activePaneId, panes, requestedSessionId, root } = opened;
+    const contextKey = paneContextKey(root, requestedSessionId);
+    if (!contextKey || !requestedSessionId) throw new Error("Workspace session context is unavailable");
+    terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [contextKey]: panes };
+    if (activePaneId != null) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: activePaneId };
+    setManagedTerminalPanes(panes); setFocusedTerminalPane(activePaneId);
+    latest.current = activePaneId == null ? null : terminalSnapshotsRef.current[activePaneId] ?? null;
+    requestTerminalPaintRef.current(); setLaunchError(null);
+    restoredActiveFileWorkspaceRef.current = null; workspacePathRef.current = root; setWorkspacePath(root);
+    resetEditor(); setTimeout(sendTerminalResize, 0);
+  };
+
+  const completeOpenedWorkspace = async (
+    opened: OpenedWorkspaceTarget, profile: LaunchProfile, previousRoot: string | null,
+    store: Awaited<ReturnType<typeof load>> | null,
+  ) => executeWorkspaceOpenSuccess({
+    applyPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => {
+      applyWorkspaceCleanupRecord(recentProjectsRef, recentProjects, setRecentProjects);
+      applyWorkspaceCleanupRecord(openProjectsRef, openProjects, setOpenProjects);
+      applyWorkspaceCleanupRecord(projectSessionsRef, sessions, setProjectSessions);
+      applyWorkspaceCleanupRecord(activeSessionByProjectRef, activeSessions, setActiveSessionByProjectState);
+    },
+    now: Date.now(), panes: opened.panes, persistPaneLayout: persistPaneLayoutForSession,
+    persistPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => persistWorkspaceOpenSuccess({
+      activeSessions, launchProfile: profile, openProjects, recentProjects, root: opened.root, sessions, store,
+    }),
+    previousRoot, previousStatus: previousRoot ? projectStatusForRoot(previousRoot) : "exited",
+    projectStatus: projectStatusForRoot(opened.root), restoreBrowser: restoreBrowserPreview,
+    restoreEditor: restoreSessionEditorSnapshot, root: opened.root,
+    sessionStatus: terminalPaneProjectStatus(opened.panes),
+    state: {
+      activeSessions: activeSessionByProjectRef.current, openProjects: openProjectsRef.current,
+      recentProjects: recentProjectsRef.current, sessions: projectSessionsRef.current,
+    },
+  });
+
+  const handleWorkspaceOpenError = async (
+    error: unknown, path: string, previousPanes: ManagedTerminalPane[], previousActivePaneId: number | null,
+    store: Awaited<ReturnType<typeof load>> | null,
+  ) => {
+    const message = String(error);
+    setLaunchError(message); setManagedTerminalPanes(previousPanes); setFocusedTerminalPane(previousActivePaneId);
+    void invoke("log_health_event", { message: `open_workspace failed: ${message}` }).catch(() => {});
+    await executeWorkspaceOpenFailure({
+      applyFailure: ({ activeSessions, openProjects, sessions }) => {
+        applyWorkspaceCleanupRecord(openProjectsRef, openProjects, setOpenProjects);
+        applyWorkspaceCleanupRecord(projectSessionsRef, sessions, setProjectSessions);
+        applyWorkspaceCleanupRecord(activeSessionByProjectRef, activeSessions, setActiveSessionByProjectState);
+      },
+      applyMissingCleanup: (cleanup) => {
+        applyWorkspaceCleanupRecord(recentProjectsRef, cleanup.recentProjects, setRecentProjects);
+        applyWorkspaceCleanupRecord(openProjectsRef, cleanup.openProjects, setOpenProjects);
+        applyWorkspaceCleanupRecord(projectSessionsRef, cleanup.sessions, setProjectSessions);
+        applyWorkspaceCleanupRecord(activeSessionByProjectRef, cleanup.activeSessions, setActiveSessionByProjectState);
+        applyWorkspaceCleanupRecord(terminalPanesByContextRef, cleanup.projectPanes);
+        applyWorkspaceCleanupRecord(activeTerminalPaneByContextRef, cleanup.activePanes);
+        applyWorkspaceCleanupRecord(browserPreviewByProjectRef, cleanup.browserProjects, setBrowserPreviewByProject);
+        applyWorkspaceCleanupRecord(browserPreviewBySessionRef, cleanup.browserSessions, setBrowserPreviewBySession);
+        applyWorkspaceCleanupRecord(composerHarnessBySessionRef, cleanup.harnessRecords, setComposerHarnessBySession);
+        applyWorkspaceCleanupRecord(chatConversationsRef, cleanup.conversations, setChatConversations);
+        applyWorkspaceCleanupRecord(sessionEditorSnapshotsRef, cleanup.editorSnapshots);
+        applyWorkspaceCleanupRecord(paneLayoutsBySessionRef, cleanup.paneLayouts);
+      },
+      message, now: Date.now(), path,
+      persistFailure: ({ activeSessions, openProjects, sessions }) => persistWorkspaceOpenFailure({ activeSessions, openProjects, sessions, store }),
+      persistMissingCleanup: (cleanup) => persistMissingWorkspaceCleanup({
+        beforeDeleteFolder: () => {
+          if (workspacePathRef.current !== path) return;
+          setManagedTerminalPanes([]); setFocusedTerminalPane(null); setWorkspacePath(null); setFileTree([]); resetEditor();
+        },
+        cleanup, deleteProjectChats: deleteDurableProjectChats, path, store,
+        onDeleteError: (failure) => { void invoke("log_health_event", { message: `delete project chats failed: ${String(failure)}` }).catch(() => {}); },
+      }),
+      state: {
+        activePanes: activeTerminalPaneByContextRef.current, activeSessions: activeSessionByProjectRef.current,
+        browserProjects: browserPreviewByProjectRef.current, browserSessions: browserPreviewBySessionRef.current,
+        conversations: chatConversationsRef.current, editorSnapshots: sessionEditorSnapshotsRef.current,
+        harnessRecords: composerHarnessBySessionRef.current, openProjects: openProjectsRef.current,
+        paneLayouts: paneLayoutsBySessionRef.current, projectPanes: terminalPanesByContextRef.current,
+        recentProjects: recentProjectsRef.current, sessions: projectSessionsRef.current,
+      },
+    });
+  };
+
   const openWorkspaceDirect = async (
     path: string,
     profileOverride: LaunchProfile = launchProfileRef.current,
@@ -1605,121 +1726,12 @@ function App() {
     const previousActivePaneId = activeTerminalPaneIdRef.current;
     setFocusedTerminalPane(null);
     try {
-      const { activeSessions: preparedActiveSessions, fallbackLayout,
-        layout: initialLayout, sessionId: requestedSessionId, sessions: preparedSessions } = prepareWorkspaceOpenSession({
-        activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
-        paneLayouts: paneLayoutsBySessionRef.current, path, now: Date.now(),
-        defaultProfileId: defaultTerminalLaunchProfile().id, savedLabel: savedPaneLabelForSlot(path, 0),
-      });
-      projectSessionsRef.current = preparedSessions;
-      activeSessionByProjectRef.current = preparedActiveSessions;
-      const existingPanes = terminalPanesForSession(path, requestedSessionId);
-      const opened = await resolveWorkspaceOpenTarget({
-        activePaneId: activePaneForSession(path, requestedSessionId, existingPanes),
-        existingPanes,
-        focusPane: (paneId) => invoke("focus_pane", { paneId }),
-        openTerminalPanes: () => openWorkspaceTerminalPanes({
-          createPane: (target, paneProfile) => invoke<OpenPaneResponse>("create_pane", {
-            path: target, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
-          }),
-          fallbackLayout, initialLayout, now: Date.now,
-          openWorkspace: (target, firstProfile) => invoke<OpenWorkspaceResponse>("open_workspace", {
-            path: target, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
-          }),
-          paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId, resolveProfile: resolveLaunchProfile,
-          savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, requestedSessionId),
-        }),
-        path,
-        resolveWorkspace: (target) => invoke<ResolveWorkspaceResponse>("resolve_workspace", { path: target }),
-        surfaceMode: agentSurfaceMode,
-      });
-      const { activePaneId: nextActivePaneId, panes: nextProjectPanes, root } = opened;
-      const contextKey = paneContextKey(root, requestedSessionId);
-      if (!contextKey || !requestedSessionId) throw new Error("Workspace session context is unavailable");
-      terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [contextKey]: nextProjectPanes };
-      if (nextActivePaneId != null) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: nextActivePaneId };
-      setManagedTerminalPanes(nextProjectPanes);
-      setFocusedTerminalPane(nextActivePaneId);
-      const cached = nextActivePaneId == null ? null : terminalSnapshotsRef.current[nextActivePaneId];
-      latest.current = cached ?? null;
-      requestTerminalPaintRef.current();
-      setLaunchError(null);
-      restoredActiveFileWorkspaceRef.current = null;
-      workspacePathRef.current = root;
-      setWorkspacePath(root);
-      resetEditor();
-      setTimeout(sendTerminalResize, 0);
-      await executeWorkspaceOpenSuccess({
-        applyPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => {
-          applyWorkspaceCleanupRecord(recentProjectsRef, recentProjects, setRecentProjects);
-          applyWorkspaceCleanupRecord(openProjectsRef, openProjects, setOpenProjects);
-          applyWorkspaceCleanupRecord(projectSessionsRef, sessions, setProjectSessions);
-          applyWorkspaceCleanupRecord(activeSessionByProjectRef, activeSessions, setActiveSessionByProjectState);
-        },
-        now: Date.now(), panes: nextProjectPanes, persistPaneLayout: persistPaneLayoutForSession,
-        persistPlan: ({ activeSessions, openProjects, recentProjects, sessions }) => persistWorkspaceOpenSuccess({
-          activeSessions, launchProfile: profile, openProjects, recentProjects, root, sessions, store,
-        }),
-        previousRoot, previousStatus: previousRoot ? projectStatusForRoot(previousRoot) : "exited",
-        projectStatus: projectStatusForRoot(root), restoreBrowser: restoreBrowserPreview,
-        restoreEditor: restoreSessionEditorSnapshot, root,
-        sessionStatus: terminalPaneProjectStatus(nextProjectPanes),
-        state: {
-          activeSessions: activeSessionByProjectRef.current, openProjects: openProjectsRef.current,
-          recentProjects: recentProjectsRef.current, sessions: projectSessionsRef.current,
-        },
-      });
+      const opened = await prepareAndOpenWorkspaceTarget(path);
+      applyOpenedWorkspaceTarget(opened);
+      await completeOpenedWorkspace(opened, profile, previousRoot, store);
       return true;
     } catch (err) {
-      const message = String(err);
-      setLaunchError(message);
-      void invoke("log_health_event", { message: `open_workspace failed: ${message}` }).catch(() => {});
-      setManagedTerminalPanes(previousPanes);
-      setFocusedTerminalPane(previousActivePaneId);
-      await executeWorkspaceOpenFailure({
-        applyFailure: ({ activeSessions, openProjects, sessions }) => {
-          applyWorkspaceCleanupRecord(openProjectsRef, openProjects, setOpenProjects);
-          applyWorkspaceCleanupRecord(projectSessionsRef, sessions, setProjectSessions);
-          applyWorkspaceCleanupRecord(activeSessionByProjectRef, activeSessions, setActiveSessionByProjectState);
-        },
-        applyMissingCleanup: (cleanup) => {
-          applyWorkspaceCleanupRecord(recentProjectsRef, cleanup.recentProjects, setRecentProjects);
-          applyWorkspaceCleanupRecord(openProjectsRef, cleanup.openProjects, setOpenProjects);
-          applyWorkspaceCleanupRecord(projectSessionsRef, cleanup.sessions, setProjectSessions);
-          applyWorkspaceCleanupRecord(activeSessionByProjectRef, cleanup.activeSessions, setActiveSessionByProjectState);
-          applyWorkspaceCleanupRecord(terminalPanesByContextRef, cleanup.projectPanes);
-          applyWorkspaceCleanupRecord(activeTerminalPaneByContextRef, cleanup.activePanes);
-          applyWorkspaceCleanupRecord(browserPreviewByProjectRef, cleanup.browserProjects, setBrowserPreviewByProject);
-          applyWorkspaceCleanupRecord(browserPreviewBySessionRef, cleanup.browserSessions, setBrowserPreviewBySession);
-          applyWorkspaceCleanupRecord(composerHarnessBySessionRef, cleanup.harnessRecords, setComposerHarnessBySession);
-          applyWorkspaceCleanupRecord(chatConversationsRef, cleanup.conversations, setChatConversations);
-          applyWorkspaceCleanupRecord(sessionEditorSnapshotsRef, cleanup.editorSnapshots);
-          applyWorkspaceCleanupRecord(paneLayoutsBySessionRef, cleanup.paneLayouts);
-        },
-        message, now: Date.now(), path,
-        persistFailure: ({ activeSessions, openProjects, sessions }) => persistWorkspaceOpenFailure({
-          activeSessions, openProjects, sessions, store,
-        }),
-        persistMissingCleanup: (cleanup) => persistMissingWorkspaceCleanup({
-          beforeDeleteFolder: () => {
-            if (workspacePathRef.current !== path) return;
-            setManagedTerminalPanes([]); setFocusedTerminalPane(null); setWorkspacePath(null);
-            setFileTree([]); resetEditor();
-          },
-          cleanup, deleteProjectChats: deleteDurableProjectChats, path, store,
-          onDeleteError: (error) => {
-            void invoke("log_health_event", { message: `delete project chats failed: ${String(error)}` }).catch(() => {});
-          },
-        }),
-        state: {
-          activePanes: activeTerminalPaneByContextRef.current, activeSessions: activeSessionByProjectRef.current,
-          browserProjects: browserPreviewByProjectRef.current, browserSessions: browserPreviewBySessionRef.current,
-          conversations: chatConversationsRef.current, editorSnapshots: sessionEditorSnapshotsRef.current,
-          harnessRecords: composerHarnessBySessionRef.current, openProjects: openProjectsRef.current,
-          paneLayouts: paneLayoutsBySessionRef.current, projectPanes: terminalPanesByContextRef.current,
-          recentProjects: recentProjectsRef.current, sessions: projectSessionsRef.current,
-        },
-      });
+      await handleWorkspaceOpenError(err, path, previousPanes, previousActivePaneId, store);
       return false;
     }
   };
