@@ -213,6 +213,7 @@ import { planPaneExit } from "./paneExitPlan";
 import { planProjectSessionDelete } from "./deleteProjectSessionPlan";
 import { replaceRestartedPane } from "./terminalPaneRestart";
 import { planCheckpointRestore } from "./checkpointRestorePlan";
+import { buildCreatedTerminalPane } from "./terminalPaneCreate";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -2160,6 +2161,24 @@ function App() {
     );
   };
 
+  const recordCreatedPaneActivity = (pane: ManagedTerminalPane, projectId: string, projectSessionId: string) => {
+    recordAgentActivity(
+      buildAgentSessionHandleDescriptor({
+        pane,
+        projectId,
+        projectSessionId,
+        label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, pane.slot),
+        approvalMode: agentApprovalMode,
+      }),
+      {
+        kind: "process",
+        label: "Created pane",
+        detail: pane.profile.label,
+        status: "running",
+      },
+    );
+  };
+
   const deleteProjectSession = async (projectPath: string, session: ProjectSession) => {
     const plan = planProjectSessionDelete({
       activeSessionByProject: activeSessionByProjectRef.current,
@@ -2755,35 +2774,17 @@ function App() {
       const result = await invoke<OpenPaneResponse>("create_pane", { path: root, profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) });
       const existingPanes = terminalPanesForSession(root, sessionId);
       const slot = existingPanes.length;
-      const pane = {
-        id: result.paneId,
-        profile,
-        cwd: root,
-        slot,
-        label: savedPaneLabelForSlot(root, slot),
-        state: "running" as TerminalPaneState,
-        exitCode: null,
+      const pane = buildCreatedTerminalPane({
         createdAt: Date.now(),
-      };
+        existingPanes,
+        paneId: result.paneId,
+        profile,
+        root,
+        savedLabel: savedPaneLabelForSlot(root, slot),
+      });
       const nextPanes = [...existingPanes, pane];
       setSessionTerminalPanes(root, sessionId, nextPanes, result.paneId);
-      if (sessionId) {
-        recordAgentActivity(
-          buildAgentSessionHandleDescriptor({
-            pane,
-            projectId: root,
-            projectSessionId: sessionId,
-            label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, slot),
-            approvalMode: agentApprovalMode,
-          }),
-          {
-            kind: "process",
-            label: "Created pane",
-            detail: profile.label,
-            status: "running",
-          },
-        );
-      }
+      recordCreatedPaneActivity(pane, root, sessionId);
       terminalLaunchProfileRef.current = profile;
       setTerminalLaunchProfile(profile);
       await storeRef.current?.set("terminalLaunchProfile", profile);
