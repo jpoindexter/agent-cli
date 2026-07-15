@@ -1,4 +1,4 @@
-import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, type MouseEvent as ReactMouseEvent, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
@@ -26,12 +26,11 @@ import { EditorDiffView } from "./EditorDiffView";
 import { EditorCodeSurface } from "./EditorCodeSurface";
 import { AgentComposerSurface } from "./AgentComposerSurface";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
+import { DEFAULT_BROWSER_PREVIEW_URL, detectLocalDevServerUrl } from "./browserPreview";
 import {
-  DEFAULT_BROWSER_PREVIEW_URL,
-  detectLocalDevServerUrl,
-} from "./browserPreview";
-import { createBrowserPreviewActions } from "./browserPreviewActions";
-import { useBrowserPreviewState } from "./useBrowserPreviewState";
+  useBrowserPreviewController,
+  type DetectedLocalDevServer,
+} from "./useBrowserPreviewController";
 import { useFilesRailHeight } from "./useFilesRailHeight";
 import { useComposerLocalState } from "./useComposerLocalState";
 import { createComposerSettingsActions } from "./composerSettingsActions";
@@ -43,7 +42,6 @@ import {
   type ActiveTerminalPaneByContext,
   type TerminalPanesByContext,
 } from "./terminalPaneContexts";
-import type { BrowserPreviewRecords } from "./browserPreview";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
@@ -302,14 +300,6 @@ type ResolveWorkspaceResponse = { root: string };
 type OpenPaneResponse = { paneId: number };
 type WorktreeResponse = { path: string; branch: string };
 type SaveEditorFileOptions = { force?: boolean };
-type DetectedLocalDevServer = {
-  url: string;
-  paneId: number;
-  projectId: string;
-  projectSessionId: string;
-  paneLabel: string;
-  detectedAt: number;
-};
 type EditorBuffer = EditorFileBuffer;
 type ProjectEditorSnapshot = {
   tabs: FileTreeNode[];
@@ -358,13 +348,9 @@ function App() {
   const openProjectsRef = useRef<OpenProject[]>([]);
   const projectSessionsRef = useRef<ProjectSessionsByProject>({});
   const activeSessionByProjectRef = useRef<ActiveSessionByProject>({});
-  const browserPreviewByProjectRef = useRef<BrowserPreviewRecords>({});
-  const browserPreviewBySessionRef = useRef<BrowserPreviewRecords>({});
   const composerHarnessBySessionRef = useRef<ComposerHarnessRecords>({});
   const scopedSettingsRef = useRef<ScopedSettingsState>(defaultScopedSettings());
   const chatConversationsRef = useRef<ChatConversationRecords>({});
-  const browserUrlRef = useRef(DEFAULT_BROWSER_PREVIEW_URL);
-  const detectedLocalDevServerRef = useRef<DetectedLocalDevServer | null>(null);
   const launchProfileRef = useRef<LaunchProfile>(defaultLaunchProfile());
   const terminalLaunchProfileRef = useRef<LaunchProfile>(defaultTerminalLaunchProfile());
   const customLaunchProfilesRef = useRef<LaunchProfile[]>([]);
@@ -440,19 +426,9 @@ function App() {
   const [activeSessionByProject, setActiveSessionByProjectState] = useState<ActiveSessionByProject>({});
   const [expandedSessionProjects, setExpandedSessionProjects] = useState<Record<string, boolean>>({});
   const [showArchivedSessions, setShowArchivedSessions] = useState(false);
-  const [browserPreviewByProject, setBrowserPreviewByProject] = useState<BrowserPreviewRecords>({});
-  const [browserPreviewBySession, setBrowserPreviewBySession] = useState<BrowserPreviewRecords>({});
   const [composerHarnessBySession, setComposerHarnessBySession] = useState<ComposerHarnessRecords>({});
   const [scopedSettings, setScopedSettings] = useState<ScopedSettingsState>(defaultScopedSettings);
   const [chatConversations, setChatConversations] = useState<ChatConversationRecords>({});
-  const {
-    address: browserAddress, canGoBack: browserCanGoBack, canGoForward: browserCanGoForward,
-    error: browserError, goHistory: goBrowserHistory, reload: reloadBrowserPreview,
-    reloadNonce: browserReloadNonce, restore: restoreBrowserPreviewState,
-    setAddress: setBrowserAddress, setError: setBrowserError, setLocation: setBrowserLocation,
-    url: browserUrl,
-  } = useBrowserPreviewState((url) => { browserUrlRef.current = url; });
-  const [detectedLocalDevServer, setDetectedLocalDevServer] = useState<DetectedLocalDevServer | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const commandPalette = useCommandPalette(() => setContextMenu(null));
   const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
@@ -570,6 +546,26 @@ function App() {
     launchProfileId: launchProfile.id, projectSessions, resolveLaunchProfile,
     scopedSettings, workspacePath,
   });
+  const browser = useBrowserPreviewController({
+    activeRoot: workspacePath,
+    activeSessionId,
+    ensureVisible: () => {
+      if (workbenchLayout === "hidden") setWorkbenchLayout("right");
+      if (toolTrayMode === "editor") setToolTrayMode("browser");
+    },
+    gateAction: async (action) => (await gateAppAction(action)).decision,
+    getCurrentRoot: () => workspacePathRef.current,
+    getCurrentSessionId: () => activeProjectSessionId(
+      activeSessionByProjectRef.current, projectSessionsRef.current, workspacePathRef.current,
+    ),
+    saveStore: async () => { await storeRef.current?.save(); },
+    scopedSettings: scopedSettingsRef,
+    setScopedSettings: (settings) => {
+      scopedSettingsRef.current = settings;
+      setScopedSettings(settings);
+    },
+    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
+  });
   const {
     draft: composerDraft, flush: flushActiveComposerLocalState,
     history: composerHistory, historyIndex: composerHistoryIndex,
@@ -594,7 +590,7 @@ function App() {
     activeKey: activeComposerHarnessKey,
     draft: composerDraft,
     gateAction: (action) => gateAppAction(action),
-    getBrowserUrl: () => browserUrlRef.current,
+    getBrowserUrl: () => browser.urlRef.current,
     getRoot: () => workspacePathRef.current,
     logEvent: (label, detail) => logComposerHarnessEvent(label, detail),
     setError: setComposerError,
@@ -622,13 +618,6 @@ function App() {
   const primarySurfaceLabel = "Codex";
   const primarySurfaceStatusLabel = activeChatConversation.activeRunId ? "Working" : "Ready";
   const utilityTrayStatusLabel = utilityTrayMode.charAt(0).toUpperCase() + utilityTrayMode.slice(1);
-  const activeDetectedLocalDevServer =
-    detectedLocalDevServer &&
-    detectedLocalDevServer.projectId === workspacePath &&
-    detectedLocalDevServer.projectSessionId === activeSessionId
-      ? detectedLocalDevServer
-      : null;
-
   const focusEditorLine = (line: number) => {
     const targetLine = Math.max(1, line);
     window.setTimeout(() => {
@@ -682,11 +671,8 @@ function App() {
   useSyncRef(activeSessionByProjectRef, activeSessionByProject);
   useSyncRef(paneLabelsBySessionRef, paneLabelsBySession);
 
-  useSyncRef(browserPreviewByProjectRef, browserPreviewByProject);
-  useSyncRef(browserPreviewBySessionRef, browserPreviewBySession);
   useSyncRef(composerHarnessBySessionRef, composerHarnessBySession);
   useSyncRef(scopedSettingsRef, scopedSettings);
-  useSyncRef(browserUrlRef, browserUrl);
   useSyncRef(terminalPanesRef, terminalPanes);
   useSyncRef(activeTerminalPaneIdRef, activeTerminalPaneId);
   useSyncRef(selectedFileRef, selectedFile);
@@ -803,7 +789,7 @@ function App() {
         activeSessionByProjectRef.current, projectSessionsRef.current, projectPath,
       );
       return {
-        browserUrl: browserUrlRef.current,
+        browserUrl: browser.urlRef.current,
         projectPath,
         sessions: projectPath ? projectSessionsRef.current[projectPath] ?? [] : [],
         sessionsByProject: projectSessionsRef.current,
@@ -811,7 +797,7 @@ function App() {
       };
     },
     now: Date.now,
-    persistBrowserUrl: (root, sessionId, url) => persistBrowserPreviewUrl(root, sessionId, url),
+    persistBrowserUrl: browser.persistUrl,
     persistSessions: (sessions) => persistProjectSessions(sessions, activeSessionByProjectRef.current),
     refreshSearch: refreshChatSearch,
     reportPersistenceError: (message) => {
@@ -886,51 +872,6 @@ function App() {
       detail,
       status,
     });
-  };
-
-  const browserPreviewActions = createBrowserPreviewActions({
-    gateAction: async (action) => (await gateAppAction(action)).decision,
-    getState: () => ({
-      currentRoot: workspacePathRef.current,
-      currentSessionId: activeProjectSessionId(
-        activeSessionByProjectRef.current, projectSessionsRef.current, workspacePathRef.current,
-      ),
-      projects: browserPreviewByProjectRef.current,
-      scopedSettings: scopedSettingsRef.current,
-      sessions: browserPreviewBySessionRef.current,
-    }),
-    restoreLocation: restoreBrowserPreviewState,
-    saveStore: async () => { await storeRef.current?.save(); },
-    setError: setBrowserError,
-    setLocation: setBrowserLocation,
-    setProjects: (records) => {
-      browserPreviewByProjectRef.current = records;
-      setBrowserPreviewByProject(records);
-    },
-    setScopedSettings: (settings) => {
-      scopedSettingsRef.current = settings;
-      setScopedSettings(settings);
-    },
-    setSessions: (records) => {
-      browserPreviewBySessionRef.current = records;
-      setBrowserPreviewBySession(records);
-    },
-    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
-  });
-  const persistBrowserPreviewUrl = browserPreviewActions.persistUrl;
-  const restoreBrowserPreview = browserPreviewActions.restoreUrl;
-  const navigateBrowserPreview = browserPreviewActions.navigate;
-
-  const submitBrowserAddress = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    void navigateBrowserPreview(browserAddress);
-  };
-
-  const openDetectedLocalDevServer = async () => {
-    if (!activeDetectedLocalDevServer) return;
-    if (workbenchLayout === "hidden") setWorkbenchLayout("right");
-    if (toolTrayMode === "editor") setToolTrayMode("browser");
-    await navigateBrowserPreview(activeDetectedLocalDevServer.url);
   };
 
   const updateOpenProjectStatus = async (path: string | null, status: ProjectRailStatus) => {
@@ -1027,7 +968,7 @@ function App() {
     const pane = paneIndex >= 0 ? panes[paneIndex] : null;
     const sessionId = context?.sessionId ?? activeSessionForProject(root);
     if (!root || !sessionId || !pane) return;
-    const previous = detectedLocalDevServerRef.current;
+    const previous = browser.detectedServerRef.current;
     if (previous?.url === url && previous.paneId === paneId && previous.projectId === root && previous.projectSessionId === sessionId) return;
     const paneLabel = terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex >= 0 ? paneIndex : pane.slot);
     const next: DetectedLocalDevServer = {
@@ -1038,8 +979,7 @@ function App() {
       paneLabel,
       detectedAt: Date.now(),
     };
-    detectedLocalDevServerRef.current = next;
-    setDetectedLocalDevServer(next);
+    browser.setDetectedServer(next);
     const harnessKey = composerHarnessSessionKey(root, sessionId);
     const approvalMode = composerHarnessBySessionRef.current[harnessKey]?.approvalMode ?? "ask";
     recordAgentActivity(
@@ -1175,7 +1115,7 @@ function App() {
       activeSessions, launchProfile: profile, openProjects, recentProjects, root: opened.root, sessions, store,
     }),
     previousRoot, previousStatus: previousRoot ? projectStatusForRoot(previousRoot) : "exited",
-    projectStatus: projectStatusForRoot(opened.root), restoreBrowser: restoreBrowserPreview,
+    projectStatus: projectStatusForRoot(opened.root), restoreBrowser: browser.restoreScopedUrl,
     restoreEditor: restoreSessionEditorSnapshot, root: opened.root,
     sessionStatus: terminalPaneProjectStatus(opened.panes),
     state: {
@@ -1204,8 +1144,8 @@ function App() {
         applyWorkspaceCleanupRecord(activeSessionByProjectRef, cleanup.activeSessions, setActiveSessionByProjectState);
         applyWorkspaceCleanupRecord(terminalPanesByContextRef, cleanup.projectPanes);
         applyWorkspaceCleanupRecord(activeTerminalPaneByContextRef, cleanup.activePanes);
-        applyWorkspaceCleanupRecord(browserPreviewByProjectRef, cleanup.browserProjects, setBrowserPreviewByProject);
-        applyWorkspaceCleanupRecord(browserPreviewBySessionRef, cleanup.browserSessions, setBrowserPreviewBySession);
+        applyWorkspaceCleanupRecord(browser.projectRecordsRef, cleanup.browserProjects, browser.setProjectRecords);
+        applyWorkspaceCleanupRecord(browser.sessionRecordsRef, cleanup.browserSessions, browser.setSessionRecords);
         applyWorkspaceCleanupRecord(composerHarnessBySessionRef, cleanup.harnessRecords, setComposerHarnessBySession);
         applyWorkspaceCleanupRecord(chatConversationsRef, cleanup.conversations, setChatConversations);
         applyWorkspaceCleanupRecord(sessionEditorSnapshotsRef, cleanup.editorSnapshots);
@@ -1223,7 +1163,8 @@ function App() {
       }),
       state: {
         activePanes: activeTerminalPaneByContextRef.current, activeSessions: activeSessionByProjectRef.current,
-        browserProjects: browserPreviewByProjectRef.current, browserSessions: browserPreviewBySessionRef.current,
+        browserProjects: browser.projectRecordsRef.current,
+        browserSessions: browser.sessionRecordsRef.current,
         conversations: chatConversationsRef.current, editorSnapshots: sessionEditorSnapshotsRef.current,
         harnessRecords: composerHarnessBySessionRef.current, openProjects: openProjectsRef.current,
         paneLayouts: paneLayoutsBySessionRef.current, projectPanes: terminalPanesByContextRef.current,
@@ -1330,8 +1271,8 @@ function App() {
     getPreviousStatus: activeSessionStatus,
     getState: () => ({
       activeSessions: activeSessionByProjectRef.current,
-      browserUrl: browserUrlRef.current,
-      browserUrlsByProject: browserPreviewByProjectRef.current,
+      browserUrl: browser.urlRef.current,
+      browserUrlsByProject: browser.projectRecordsRef.current,
       currentRoot: workspacePathRef.current,
       sessions: projectSessionsRef.current,
     }),
@@ -1345,7 +1286,7 @@ function App() {
         await requestOpenWorkspace(projectPath);
       }
     },
-    persistBrowserUrl: persistBrowserPreviewUrl,
+    persistBrowserUrl: browser.persistUrl,
     persistSessions: persistProjectSessions,
     promptTitle: (title) => window.prompt("Chat name", title),
     setFocusedMessage: setFocusedChatMessageId,
@@ -1383,14 +1324,16 @@ function App() {
   const removeSessionScopedRecords = async (plan: Extract<ReturnType<typeof planProjectSessionDelete>, { canDelete: true }>) => {
     const removed = planSessionScopedRecordRemoval({
       activePanes: activeTerminalPaneByContextRef.current,
-      browserSessionKey: plan.browserSessionKey, browserSessions: browserPreviewBySessionRef.current,
+      browserSessionKey: plan.browserSessionKey, browserSessions: browser.sessionRecordsRef.current,
       chatSessionKey: plan.chatSessionKey, composerHarness: composerHarnessBySessionRef.current,
       contextKey: plan.contextKey, conversations: chatConversationsRef.current,
       projectPanes: terminalPanesByContextRef.current,
     });
     applyWorkspaceCleanupRecord(activeTerminalPaneByContextRef, removed.activePanes);
     applyWorkspaceCleanupRecord(terminalPanesByContextRef, removed.projectPanes);
-    applyWorkspaceCleanupRecord(browserPreviewBySessionRef, removed.browserSessions, setBrowserPreviewBySession);
+    applyWorkspaceCleanupRecord(
+      browser.sessionRecordsRef, removed.browserSessions, browser.setSessionRecords,
+    );
     applyWorkspaceCleanupRecord(chatConversationsRef, removed.conversations, setChatConversations);
     await storeRef.current?.set("browserPreviewBySession", removed.browserSessions);
     await persistComposerHarnessRecords(removed.composerHarness);
@@ -2618,14 +2561,14 @@ function App() {
   };
 
   const browserContextMenuItems = (): ContextMenuItem[] => buildBrowserContextMenuItems({
-    canGoBack: browserCanGoBack,
-    canGoForward: browserCanGoForward,
+    canGoBack: browser.canGoBack,
+    canGoForward: browser.canGoForward,
     actions: {
-      back: () => goBrowserHistory(-1),
-      copyUrl: async () => { await writeText(browserUrl); setActionNotice("Copied browser URL"); },
-      forward: () => goBrowserHistory(1),
-      openExternal: () => openUrl(browserUrl),
-      reload: reloadBrowserPreview,
+      back: () => browser.goHistory(-1),
+      copyUrl: async () => { await writeText(browser.url); setActionNotice("Copied browser URL"); },
+      forward: () => browser.goHistory(1),
+      openExternal: () => openUrl(browser.url),
+      reload: browser.reload,
     },
   });
 
@@ -2705,8 +2648,8 @@ function App() {
   };
   const commandPaletteWorkbench = {
     activeComposerHarnessKey,
-    browserUrl,
-    detectedBrowserUrl: activeDetectedLocalDevServer?.url ?? null,
+    browserUrl: browser.url,
+    detectedBrowserUrl: browser.activeDetectedServer?.url ?? null,
     editorDirty,
     editorLoading,
     editorSaving,
@@ -2715,12 +2658,12 @@ function App() {
     onCloseEditorTab: () => { if (selectedFile) void closeEditorTab(selectedFile); },
     onExportPerformance: () => void exportRenderPerfSnapshot(),
     onFindEditor: openEditorSearch,
-    onOpenDetectedBrowser: () => void openDetectedLocalDevServer(),
+    onOpenDetectedBrowser: () => void browser.openDetectedServer(),
     onOpenSettings: () => setSettingsOpen(true),
     onOpenTranscripts: () => setTranscriptsOpen(true),
     onOpenWorkspace: () => void pickWorkspace(),
     onQuickOpen: quickOpen.openDialog,
-    onReloadBrowser: reloadBrowserPreview,
+    onReloadBrowser: browser.reload,
     onResetLayout: resetInterface,
     onSaveEditor: () => void saveEditorFile(),
     selectedFile,
@@ -2911,8 +2854,8 @@ function App() {
     openProjectsRef.current = data.openProjects;
     projectSessionsRef.current = data.projectSessions;
     activeSessionByProjectRef.current = data.activeSessions;
-    browserPreviewByProjectRef.current = data.browserProjects;
-    browserPreviewBySessionRef.current = data.browserSessions;
+    browser.projectRecordsRef.current = data.browserProjects;
+    browser.sessionRecordsRef.current = data.browserSessions;
     composerHarnessBySessionRef.current = data.composerHarness;
     scopedSettingsRef.current = data.scopedSettings;
     chatConversationsRef.current = data.chatConversations;
@@ -2936,8 +2879,8 @@ function App() {
     setOpenProjects(data.openProjects);
     setProjectSessions(data.projectSessions);
     setActiveSessionByProjectState(data.activeSessions);
-    setBrowserPreviewByProject(data.browserProjects);
-    setBrowserPreviewBySession(data.browserSessions);
+    browser.setProjectRecords(data.browserProjects);
+    browser.setSessionRecords(data.browserSessions);
     setComposerHarnessBySession(data.composerHarness);
     setScopedSettings(data.scopedSettings);
     setChatConversations(data.chatConversations);
@@ -3085,10 +3028,10 @@ function App() {
       activeSessionForProject(workspacePathRef.current),
     ).value,
     resolveLaunchProfile,
-    restoreBrowserPreview: () => restoreBrowserPreview(
+    restoreBrowserPreview: () => browser.restoreScopedUrl(
       workspacePathRef.current, activeSessionForProject(workspacePathRef.current),
     ),
-    setBrowserLocation,
+    setBrowserLocation: browser.setLocation,
     setComposerApprovalMode,
     switchLaunchProfile,
     updateScopedSetting,
@@ -3175,21 +3118,21 @@ function App() {
         ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "browser" ? (
           <BrowserToolsDrawer
-            address={browserAddress}
-            canGoBack={browserCanGoBack}
-            canGoForward={browserCanGoForward}
-            detectedPaneLabel={activeDetectedLocalDevServer?.paneLabel ?? null}
-            detectedUrl={activeDetectedLocalDevServer?.url ?? null}
-            error={browserError}
-            url={browserUrl}
-            onAddressChange={(address) => { setBrowserAddress(address); setBrowserError(null); }}
-            onBack={() => goBrowserHistory(-1)}
-            onForward={() => goBrowserHistory(1)}
-            onOpenDetected={() => void openDetectedLocalDevServer()}
-            onOpenExternal={() => void openUrl(browserUrl)}
-            onReload={reloadBrowserPreview}
+            address={browser.address}
+            canGoBack={browser.canGoBack}
+            canGoForward={browser.canGoForward}
+            detectedPaneLabel={browser.activeDetectedServer?.paneLabel ?? null}
+            detectedUrl={browser.activeDetectedServer?.url ?? null}
+            error={browser.error}
+            url={browser.url}
+            onAddressChange={(address) => { browser.setAddress(address); browser.setError(null); }}
+            onBack={() => browser.goHistory(-1)}
+            onForward={() => browser.goHistory(1)}
+            onOpenDetected={() => void browser.openDetectedServer()}
+            onOpenExternal={() => void openUrl(browser.url)}
+            onReload={browser.reload}
             onShow={() => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout)}
-            onSubmit={submitBrowserAddress}
+            onSubmit={browser.submitAddress}
           />
         ) : null}
         {!sideDrawerCollapsed && sideDrawerMode === "settings" ? (
@@ -3371,22 +3314,22 @@ function App() {
         />
 
         <BrowserPreviewPanel
-          address={browserAddress}
-          canGoBack={browserCanGoBack}
-          canGoForward={browserCanGoForward}
-          detectedPaneLabel={activeDetectedLocalDevServer?.paneLabel ?? null}
-          detectedUrl={activeDetectedLocalDevServer?.url ?? null}
-          error={browserError}
-          onAddressChange={(address) => { setBrowserAddress(address); setBrowserError(null); }}
-          onBack={() => goBrowserHistory(-1)}
+          address={browser.address}
+          canGoBack={browser.canGoBack}
+          canGoForward={browser.canGoForward}
+          detectedPaneLabel={browser.activeDetectedServer?.paneLabel ?? null}
+          detectedUrl={browser.activeDetectedServer?.url ?? null}
+          error={browser.error}
+          onAddressChange={(address) => { browser.setAddress(address); browser.setError(null); }}
+          onBack={() => browser.goHistory(-1)}
           onContextMenu={(event) => openContextMenu(event, browserContextMenuItems())}
-          onForward={() => goBrowserHistory(1)}
-          onOpenDetected={() => void openDetectedLocalDevServer()}
-          onOpenExternal={() => void openUrl(browserUrl)}
-          onReload={reloadBrowserPreview}
-          onSubmit={submitBrowserAddress}
-          reloadNonce={browserReloadNonce}
-          url={browserUrl}
+          onForward={() => browser.goHistory(1)}
+          onOpenDetected={() => void browser.openDetectedServer()}
+          onOpenExternal={() => void openUrl(browser.url)}
+          onReload={browser.reload}
+          onSubmit={browser.submitAddress}
+          reloadNonce={browser.reloadNonce}
+          url={browser.url}
         />
 
         <section className={`terminal-panel terminal-panel--${agentSurfaceMode}`} aria-label="Agent conversation">
