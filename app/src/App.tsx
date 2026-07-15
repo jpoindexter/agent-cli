@@ -251,10 +251,9 @@ import {
   addPaneTranscript,
   buildPaneTranscript,
   normalizePaneTranscripts,
-  transcriptsForSession,
-  transcriptTimeLabel,
   type PaneTranscript,
 } from "./paneTranscripts";
+import { TranscriptsModal } from "./TranscriptsModal";
 import { TerminalFindBar } from "./TerminalFindBar";
 import { useTerminalFind } from "./useTerminalFind";
 import { ChatThreadSurface } from "./ChatThreadSurface";
@@ -7089,58 +7088,15 @@ function App() {
           onTrayModeChange={setToolTrayMode}
         />
       ) : null}
-      {transcriptsOpen ? (() => {
-        const sessionTranscripts = workspacePath && activeSessionId
-          ? transcriptsForSession(paneTranscripts, workspacePath, activeSessionId)
-          : [];
-        const open = sessionTranscripts.find((t) => t.id === openTranscriptId) ?? sessionTranscripts[0] ?? null;
-        return (
-          <div
-            className="command-palette-backdrop"
-            role="presentation"
-            onPointerDown={(event) => {
-              if (event.target === event.currentTarget) setTranscriptsOpen(false);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                event.preventDefault();
-                setTranscriptsOpen(false);
-              }
-            }}
-          >
-            <div className="transcripts-modal" role="dialog" aria-modal="true" aria-label="Saved transcripts">
-              <header className="settings-modal__head">
-                <strong>Transcripts</strong>
-                <button className="settings-modal__close" type="button" aria-label="Close transcripts" onClick={() => setTranscriptsOpen(false)}>
-                  <AppIcon name="close" />
-                </button>
-              </header>
-              <div className="settings-modal__grid">
-                <nav className="settings-modal__nav" aria-label="Saved transcripts">
-                  {sessionTranscripts.length === 0 ? (
-                    <div className="settings-modal__empty">No saved terminal transcripts for this chat yet.</div>
-                  ) : (
-                    sessionTranscripts.map((transcript) => (
-                      <button
-                        key={transcript.id}
-                        className={`settings-modal__nav-row ${open?.id === transcript.id ? "settings-modal__nav-row--active" : ""}`}
-                        type="button"
-                        onClick={() => setOpenTranscriptId(transcript.id)}
-                      >
-                        <AppIcon name="file" />
-                        <span>{`${transcript.paneLabel} · ${transcriptTimeLabel(transcript.savedAt, Date.now())}`}</span>
-                      </button>
-                    ))
-                  )}
-                </nav>
-                <div className="settings-modal__content">
-                  {open ? <pre className="transcripts-modal__body" aria-label={`Transcript from ${open.paneLabel}`}>{open.text}</pre> : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })() : null}
+      <TranscriptsModal
+        activeTranscriptId={openTranscriptId}
+        onClose={() => setTranscriptsOpen(false)}
+        onSelect={setOpenTranscriptId}
+        open={transcriptsOpen}
+        projectId={workspacePath}
+        projectSessionId={activeSessionId}
+        transcripts={paneTranscripts}
+      />
       {crashNotice ? (
         <div className="crash-notice" role="status">
           <AppIcon name="reload" />
