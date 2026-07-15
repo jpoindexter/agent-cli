@@ -86,6 +86,7 @@ const connectionSecrets = read("app/src-tauri/src/connection_secrets.rs");
 const mcpProbe = read("app/src-tauri/src/mcp_probe.rs");
 const mcpOAuth = read("app/src-tauri/src/mcp_oauth.rs");
 const workbenchLayout = read("app/src/workbenchLayout.ts");
+const workbenchResizers = read("app/src/WorkbenchResizers.tsx");
 const tauriBackend = read("app/src-tauri/src/lib.rs");
 const editorQaFixture = read("docs/qa/editor-parity.html");
 const demo = read("demo/keelhouse-chrome-demo.html");
@@ -246,7 +247,7 @@ assert(toolTrayTabs.includes("new ResizeObserver"), "Tool tray labels must react
 assert(toolTrayTabs.includes('if (width < 480) return "icons";'), "The narrowest tool tray must collapse to icon-only controls before labels collide");
 assert(toolTrayTabs.includes('if (width < 720) return "compact";'), "Medium tool trays must keep only the active label before the full tab strip can collide");
 assert(appTsx.includes("workbench--tools-${toolTrayMode}"), "Workbench must render the active tool tray mode class");
-assert(appTsx.includes("toolTrayMode === \"split\" ? ("), "Editor/browser splitter must render only in split tray mode");
+assert(workbenchResizers.includes('props.trayMode === "split" ? ('), "Editor/browser splitter must render only in split tray mode");
 assert(toolDockMenu.includes("Hide tools"), "Tool dock menu must expose a direct way to return to the agent-only layout");
 assert(toolDockMenu.includes('aria-label="Tools and dock position"'), "Tool dock controls must use one compact, labelled menu");
 assert(commandPaletteController.includes("const [open, setOpen] = useState(false)"), "App chrome must expose a command palette state");

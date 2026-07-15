@@ -21,6 +21,7 @@ import { QuickSettingsDrawer } from "./QuickSettingsDrawer";
 import { FilesSideDrawer } from "./FilesSideDrawer";
 import { ProjectThreadsDrawer } from "./ProjectThreadsDrawer";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
+import { WorkbenchResizers } from "./WorkbenchResizers";
 import { EditorChrome } from "./EditorChrome";
 import { EditorDiffView } from "./EditorDiffView";
 import { EditorCodeSurface } from "./EditorCodeSurface";
@@ -4562,38 +4563,13 @@ function App() {
           )}
         </section>
 
-        {renderedWorkbenchLayout !== "hidden" ? (
-          <>
-            <button
-              className={`workbench-resizer workbench-resizer--tray workbench-resizer--${renderedWorkbenchLayout}`}
-              type="button"
-              role="separator"
-              aria-label="Resize tool tray"
-              aria-orientation={renderedWorkbenchLayout === "bottom" ? "horizontal" : "vertical"}
-              aria-valuemin={18}
-              aria-valuemax={54}
-              aria-valuenow={Math.round(workbenchSizing.trayPercent)}
-              title="Drag to resize tool tray"
-              onPointerDown={(event) => beginWorkbenchResize("tray", event)}
-              onKeyDown={(event) => nudgeWorkbenchResize("tray", event)}
-            />
-            {toolTrayMode === "split" ? (
-              <button
-                className={`workbench-resizer workbench-resizer--tools workbench-resizer--${renderedWorkbenchLayout}`}
-                type="button"
-                role="separator"
-                aria-label="Resize editor and browser trays"
-                aria-orientation={renderedWorkbenchLayout === "bottom" ? "vertical" : "horizontal"}
-                aria-valuemin={25}
-                aria-valuemax={75}
-                aria-valuenow={Math.round(workbenchSizing.toolSplitPercent)}
-                title="Drag to resize editor and browser trays"
-                onPointerDown={(event) => beginWorkbenchResize("tools", event)}
-                onKeyDown={(event) => nudgeWorkbenchResize("tools", event)}
-              />
-            ) : null}
-          </>
-        ) : null}
+        <WorkbenchResizers
+          layout={renderedWorkbenchLayout}
+          onKeyDown={nudgeWorkbenchResize}
+          onPointerDown={beginWorkbenchResize}
+          sizing={workbenchSizing}
+          trayMode={toolTrayMode}
+        />
 
         <BrowserPreviewPanel
           address={browserAddress}
