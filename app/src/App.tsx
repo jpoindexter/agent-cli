@@ -252,8 +252,8 @@ import {
   transcriptTimeLabel,
   type PaneTranscript,
 } from "./paneTranscripts";
-import { nextTerminalFindIndex, terminalFindCountLabel, terminalFindHitLabel } from "./terminalFind";
-import type { TerminalFindHit } from "./terminalFind";
+import { TerminalFindBar } from "./TerminalFindBar";
+import { useTerminalFind } from "./useTerminalFind";
 import { ChatThreadSurface } from "./ChatThreadSurface";
 import {
   appendUserChatMessage,
@@ -571,13 +571,6 @@ function App() {
   const [orchestrationOpen, setOrchestrationOpen] = useState(false);
   const [orchestrationLaunching, setOrchestrationLaunching] = useState(false);
   const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
-  const [terminalFindOpen, setTerminalFindOpen] = useState(false);
-  const [terminalFindQuery, setTerminalFindQuery] = useState("");
-  const [terminalFindHits, setTerminalFindHits] = useState<TerminalFindHit[]>([]);
-  const [terminalFindIndex, setTerminalFindIndex] = useState<number | null>(null);
-  const [terminalFindBusy, setTerminalFindBusy] = useState(false);
-  const [terminalFindError, setTerminalFindError] = useState<string | null>(null);
-  const [terminalFindLastQuery, setTerminalFindLastQuery] = useState("");
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -854,6 +847,7 @@ function App() {
     () => terminalPanes.find((pane) => pane.id === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, terminalPanes],
   );
+  const terminalFind = useTerminalFind(activeTerminalPane != null);
   const agentApprovalMode: AgentApprovalMode = activeComposerHarness.approvalMode;
   const agentSessionDescriptors = useMemo<AgentSessionHandleDescriptor[]>(() => {
     if (!workspacePath || !activeSessionId) return [];
@@ -3968,45 +3962,6 @@ function App() {
   };
 
 
-  const jumpToTerminalFindHit = (hits: TerminalFindHit[], index: number | null) => {
-    if (index == null || !hits[index]) return;
-    void invoke("scroll_terminal_to_row", { row: hits[index].row });
-  };
-
-  const runTerminalFind = async () => {
-    const query = terminalFindQuery.trim();
-    if (!query || !activeTerminalPane || terminalFindBusy) return;
-    setTerminalFindBusy(true);
-    setTerminalFindError(null);
-    try {
-      const hits = await invoke<TerminalFindHit[]>("search_terminal_scrollback", { query });
-      setTerminalFindHits(hits);
-      setTerminalFindLastQuery(query);
-      const first = hits.length > 0 ? 0 : null;
-      setTerminalFindIndex(first);
-      jumpToTerminalFindHit(hits, first);
-    } catch (error) {
-      setTerminalFindHits([]);
-      setTerminalFindIndex(null);
-      setTerminalFindError(String(error));
-    } finally {
-      setTerminalFindBusy(false);
-    }
-  };
-
-  const stepTerminalFind = (direction: 1 | -1) => {
-    const next = nextTerminalFindIndex(terminalFindIndex, terminalFindHits.length, direction);
-    setTerminalFindIndex(next);
-    jumpToTerminalFindHit(terminalFindHits, next);
-  };
-
-  const closeTerminalFind = () => {
-    setTerminalFindOpen(false);
-    setTerminalFindError(null);
-    // Ghostty clamps at the live bottom; a large delta snaps back to the tail.
-    void invoke("scroll_pty", { delta: 10_000_000 });
-  };
-
   const openCommandPalette = () => {
     setContextMenu(null);
     setCommandPaletteQuery("");
@@ -4680,7 +4635,7 @@ function App() {
       icon: "search",
       disabled: !activeTerminalPane,
       keywords: ["scrollback", "search", "output", "terminal"],
-      run: () => setTerminalFindOpen(true),
+      run: () => terminalFind.setOpen(true),
     },
     {
       id: "perf.snapshot-render-stats",
@@ -6994,7 +6949,7 @@ function App() {
               <button className="terminal-new-pane" type="button" title={`New ${terminalLaunchProfile.label} pane`} aria-label={`New ${terminalLaunchProfile.label} pane`} disabled={!workspacePath || launchProfileChanging} onClick={() => void createTerminalPane(terminalLaunchProfile)}>
                 <AppIcon name="plus" />
               </button>
-              <button className="terminal-new-pane" type="button" title="Find in terminal scrollback" aria-label="Find in terminal scrollback" disabled={!activeTerminalPane} onClick={() => setTerminalFindOpen((open) => !open)}>
+              <button className="terminal-new-pane" type="button" title="Find in terminal scrollback" aria-label="Find in terminal scrollback" disabled={!activeTerminalPane} onClick={terminalFind.toggle}>
                 <AppIcon name="search" />
               </button>
               <button className="terminal-new-pane" type="button" title="Restart selected process" aria-label="Restart selected process" disabled={!activeTerminalPane || launchProfileChanging} onClick={() => void restartTerminalPane(activeTerminalPane)}>
@@ -7007,36 +6962,7 @@ function App() {
                 <AppIcon name="close" />
               </button>
             </div>
-            {terminalFindOpen ? (
-              <div className="terminal-find" role="search" aria-label="Find in terminal scrollback">
-                <AppIcon name="search" />
-                <input
-                  value={terminalFindQuery}
-                  placeholder="Find in scrollback"
-                  aria-label="Terminal search query"
-                  disabled={terminalFindBusy}
-                  onChange={(event) => setTerminalFindQuery(event.currentTarget.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" && event.shiftKey) {
-                      event.preventDefault();
-                      stepTerminalFind(-1);
-                    } else if (event.key === "Enter") {
-                      event.preventDefault();
-                      if (terminalFindQuery.trim() === terminalFindLastQuery && terminalFindHits.length > 0) stepTerminalFind(1);
-                      else void runTerminalFind();
-                    } else if (event.key === "Escape") {
-                      event.preventDefault();
-                      closeTerminalFind();
-                    }
-                  }}
-                />
-                <span className="terminal-find__count">{terminalFindError ?? terminalFindCountLabel(terminalFindIndex, terminalFindHits.length)}</span>
-                <button className="terminal-new-pane" type="button" aria-label="Previous match" title="Previous match" disabled={terminalFindHits.length === 0} onClick={() => stepTerminalFind(-1)}><AppIcon name="chevronUp" /></button>
-                <button className="terminal-new-pane" type="button" aria-label="Next match" title="Next match" disabled={terminalFindHits.length === 0} onClick={() => stepTerminalFind(1)}><AppIcon name="chevronDown" /></button>
-                {terminalFindIndex != null && terminalFindHits[terminalFindIndex] ? <span className="terminal-find__preview" title={terminalFindHits[terminalFindIndex].text}>{terminalFindHitLabel(terminalFindHits[terminalFindIndex])}</span> : null}
-                <button className="terminal-new-pane" type="button" aria-label="Close terminal find" title="Close" onClick={closeTerminalFind}><AppIcon name="close" /></button>
-              </div>
-            ) : null}
+            <TerminalFindBar controller={terminalFind} />
             <div ref={terminalHostRef} className="terminal-host utility-tray__terminal" onPointerDown={() => imeInputRef.current?.focus()} onContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}>
               <canvas ref={canvasRef} className="term" aria-hidden="true" />
               {!workspacePath ? (

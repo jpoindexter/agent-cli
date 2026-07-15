@@ -5,7 +5,7 @@
     "function": 50
   },
   "violations": {
-    "app/src/App.css": { "lines": 7801, "longFunctions": 0, "maxFunctionLines": 0 },
-    "app/src/App.tsx": { "lines": 7733, "longFunctions": 24, "maxFunctionLines": 7194 }
+    "app/src/App.css": { "lines": 7707, "longFunctions": 0, "maxFunctionLines": 0 },
+    "app/src/App.tsx": { "lines": 7395, "longFunctions": 23, "maxFunctionLines": 6934 }
   }
 }
