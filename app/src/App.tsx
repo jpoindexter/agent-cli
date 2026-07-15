@@ -94,7 +94,6 @@ import {
   defaultScopedSettings,
   resetScopedSetting,
   resolveScopedSetting,
-  scopedSettingView,
   setScopedSetting,
 } from "./scopedSettings";
 import type { ScopedSettingKey, ScopedSettingsState, SettingsScope } from "./scopedSettings";
@@ -202,9 +201,6 @@ import {
 } from "./worktrees";
 import { formatCliToolStatus, type SourceControlStatus } from "./sourceControl";
 import {
-  structuredChatProviderId,
-} from "./agentConnections";
-import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
   mcpOauthTokenKey,
@@ -246,6 +242,7 @@ import {
 import { requestPermission } from "@tauri-apps/plugin-notification";
 import { createSettingsPreferenceActions } from "./settingsPreferenceActions";
 import { createSettingsScopedActions } from "./settingsScopedActions";
+import { deriveActiveChatState } from "./activeChatState";
 import {
   addPaneTranscript,
   buildPaneTranscript,
@@ -620,50 +617,15 @@ function App() {
     () => composerMentionQuery == null ? [] : filterWorkspaceFiles(searchableFiles, composerMentionQuery, 8),
     [composerMentionQuery, searchableFiles],
   );
-  const activeSessionId = useMemo(
-    () => activeProjectSessionId(activeSessionByProject, projectSessions, workspacePath),
-    [activeSessionByProject, projectSessions, workspacePath],
-  );
-  const activeComposerHarnessKey = useMemo(
-    () => (workspacePath && activeSessionId ? `${workspacePath}\n${activeSessionId}` : null),
-    [activeSessionId, workspacePath],
-  );
-  const activeAgentProfileSetting = useMemo(
-    () => scopedSettingView(scopedSettings, "agentProfileId", workspacePath, activeSessionId),
-    [activeSessionId, scopedSettings, workspacePath],
-  );
-  const activeApprovalSetting = useMemo(
-    () => scopedSettingView(scopedSettings, "approvalMode", workspacePath, activeSessionId),
-    [activeSessionId, scopedSettings, workspacePath],
-  );
-  const activeBrowserSetting = useMemo(
-    () => scopedSettingView(scopedSettings, "browserUrl", workspacePath, activeSessionId),
-    [activeSessionId, scopedSettings, workspacePath],
-  );
-  const activeComposerHarness = useMemo<ComposerHarnessState>(
-    () => {
-      const stored = activeComposerHarnessKey
-        ? composerHarnessBySession[activeComposerHarnessKey] ?? defaultComposerHarnessState(activeAgentProfileSetting.chat?.value ?? launchProfile.id)
-        : defaultComposerHarnessState(activeAgentProfileSetting.global.value);
-      return {
-        ...stored,
-        approvalMode: activeApprovalSetting.chat?.value ?? activeApprovalSetting.global.value,
-        selectedProfileId: activeAgentProfileSetting.chat?.value ?? activeAgentProfileSetting.global.value,
-      };
-    },
-    [activeAgentProfileSetting, activeApprovalSetting, activeComposerHarnessKey, composerHarnessBySession, launchProfile.id],
-  );
-  const activeChatConversation = useMemo<ChatConversation>(
-    () => activeComposerHarnessKey
-      ? chatConversations[activeComposerHarnessKey] ?? emptyChatConversation(0)
-      : emptyChatConversation(0),
-    [activeComposerHarnessKey, chatConversations],
-  );
-  const activeComposerProfile = resolveLaunchProfile(activeComposerHarness.selectedProfileId);
-  const activeComposerProvider = structuredChatProviderId(activeComposerHarness.selectedProfileId);
-  const activeComposerProviderLabel = activeComposerProvider
-    ? chatProviderLabel(activeComposerProvider)
-    : activeComposerProfile.label;
+  const {
+    activeAgentProfileSetting, activeApprovalSetting, activeBrowserSetting,
+    activeChatConversation, activeComposerHarness, activeComposerHarnessKey,
+    activeComposerProvider, activeComposerProviderLabel, activeSessionId,
+  } = deriveActiveChatState({
+    activeSessionByProject, chatConversations, composerHarnessBySession,
+    launchProfileId: launchProfile.id, projectSessions, resolveLaunchProfile,
+    scopedSettings, workspacePath,
+  });
   const activeTerminalPane = useMemo(
     () => terminalPanes.find((pane) => pane.id === activeTerminalPaneId) ?? null,
     [activeTerminalPaneId, terminalPanes],
