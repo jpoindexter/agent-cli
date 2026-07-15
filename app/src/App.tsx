@@ -274,8 +274,7 @@ import { paneContextKey } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { closeProjectResources as closeProjectResourcesWithContext } from "./projectResourceClose";
 import { requestProjectClose } from "./projectCloseRequest";
-import { planProjectSessionSwitch } from "./projectSessionSwitch";
-import { planProjectSessionCreate } from "./projectSessionCreate";
+import { createProjectSessionNavigationActions } from "./projectSessionNavigationActions";
 import { planSessionScopedRecordRemoval } from "./sessionScopedRecords";
 import {
   buildCreatedPaneActivity,
@@ -1335,24 +1334,34 @@ function App() {
     });
   };
 
-  const switchProjectSession = async (projectPath: string, sessionId: string) => {
-    setFocusedChatMessageId(null);
-    const currentRoot = workspacePathRef.current;
-    await flushActiveComposerLocalState();
-    captureCurrentSessionSnapshot();
-    const targetStatus = terminalPaneProjectStatus(terminalPanesForSession(projectPath, sessionId));
-    const planned = planProjectSessionSwitch({
-      activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
-      currentRoot, projectPath, sessionId, targetStatus, now: Date.now(),
-      previousStatus: activeSessionStatus(),
-    });
-    await persistProjectSessions(planned.sessions, planned.activeSessions);
-    if (planned.sameProject) {
-      await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
-    } else {
-      await requestOpenWorkspace(projectPath);
-    }
-  };
+  const projectSessionNavigationActions = createProjectSessionNavigationActions({
+    captureCurrentSession: captureCurrentSessionSnapshot,
+    defaultBrowserUrl: DEFAULT_BROWSER_PREVIEW_URL,
+    flushComposer: flushActiveComposerLocalState,
+    getPreviousStatus: activeSessionStatus,
+    getState: () => ({
+      activeSessions: activeSessionByProjectRef.current,
+      browserUrl: browserUrlRef.current,
+      browserUrlsByProject: browserPreviewByProjectRef.current,
+      currentRoot: workspacePathRef.current,
+      sessions: projectSessionsRef.current,
+    }),
+    getTargetStatus: (projectPath, sessionId) =>
+      terminalPaneProjectStatus(terminalPanesForSession(projectPath, sessionId)),
+    now: Date.now,
+    openProject: async (projectPath, sameProject) => {
+      if (sameProject) {
+        await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
+      } else {
+        await requestOpenWorkspace(projectPath);
+      }
+    },
+    persistBrowserUrl: persistBrowserPreviewUrl,
+    persistSessions: persistProjectSessions,
+    promptTitle: (title) => window.prompt("Chat name", title),
+    setFocusedMessage: setFocusedChatMessageId,
+  });
+  const switchProjectSession = projectSessionNavigationActions.switchSession;
 
   const openChatSearchResult = async (result: ChatSearchViewResult) => {
     const session = projectSessionsRef.current[result.projectPath]?.find((item) => item.id === result.sessionId);
@@ -1366,33 +1375,8 @@ function App() {
     setSideDrawerMode("projects");
   };
 
-  const createProjectSession = async (projectPath: string) => {
-    const sameProject = workspacePathRef.current === projectPath;
-    captureCurrentSessionSnapshot();
-    const planned = planProjectSessionCreate({
-      activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
-      projectPath, now: Date.now(),
-    });
-    await persistProjectSessions(planned.sessions, planned.activeSessions);
-    await persistBrowserPreviewUrl(projectPath, planned.session.id, sameProject ? browserUrlRef.current : browserPreviewByProjectRef.current[projectPath] ?? DEFAULT_BROWSER_PREVIEW_URL);
-    if (sameProject) {
-      await openWorkspaceDirect(projectPath, launchProfileRef.current, { captureCurrentSession: false });
-    } else {
-      await requestOpenWorkspace(projectPath);
-    }
-  };
-
-  const renameProjectSession = async (projectPath: string, session: ProjectSession) => {
-    const title = window.prompt("Chat name", session.title)?.trim();
-    if (!title || title === session.title) return;
-    const nextSessions = {
-      ...projectSessionsRef.current,
-      [projectPath]: (projectSessionsRef.current[projectPath] ?? []).map((item) =>
-        item.id === session.id ? { ...item, title, updatedAt: Date.now() } : item,
-      ),
-    };
-    await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
-  };
+  const createProjectSession = projectSessionNavigationActions.createSession;
+  const renameProjectSession = projectSessionNavigationActions.renameSession;
 
   const closeSessionTerminalPanes = async (projectPath: string, sessionId: string) => {
     for (const pane of terminalPanesForSession(projectPath, sessionId)) {
