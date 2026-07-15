@@ -1,6 +1,5 @@
 import { type CSSProperties, type FormEvent, type MouseEvent as ReactMouseEvent, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { readImage, readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
@@ -253,6 +252,7 @@ import {
 } from "./chatConversation";
 import type { ChatConversation, ChatConversationRecords, ChatMessage, ChatProvider } from "./chatConversation";
 import { useChatRunEvents } from "./useChatRunEvents";
+import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
 import { createChatForkPlan } from "./chatForkPlan";
 import {
   deleteDurableChatConversation,
@@ -314,7 +314,6 @@ type ClosePaneResponse = { activePaneId: number | null };
 type WorktreeResponse = { path: string; branch: string };
 type TerminalPanesByContext = Record<string, ManagedTerminalPane[]>;
 type ActiveTerminalPaneByContext = Record<string, number>;
-type WorkspaceTreeChanged = { root: string; count: number };
 type TextFileResponse = { path: string; content: string; bytes: number; modifiedMs: number | null };
 type ChatImageResponse = { path: string; bytes: number; mimeType: string };
 type FileOpResponse = { path: string };
@@ -3830,27 +3829,12 @@ function App() {
     });
   };
 
-  useEffect(() => {
-    if (!workspacePath) return;
-    let cancelled = false;
-    invoke("watch_workspace_tree", { path: workspacePath }).catch((err) => {
-      if (!cancelled) setFileTreeError(`Live file watcher unavailable: ${err}`);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [workspacePath]);
-
-  useEffect(() => {
-    const unlisten = listen<WorkspaceTreeChanged>("workspace-tree-changed", (event) => {
-      if (workspacePathRef.current && event.payload.root === workspacePathRef.current) {
-        setTreeRefreshNonce((value) => value + 1);
-      }
-    });
-    return () => {
-      unlisten.then((stop) => stop());
-    };
-  }, []);
+  useWorkspaceTreeWatcher({
+    getActiveRoot: () => workspacePathRef.current,
+    onChange: refreshFileTree,
+    onError: (error) => setFileTreeError(`Live file watcher unavailable: ${error}`),
+    workspacePath,
+  });
 
   const applyBootstrapRefs = (data: WorkspaceBootstrapSnapshot) => {
     storeRef.current = data.store;
