@@ -72,6 +72,7 @@ import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
 import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
 import { composerMentionQuery as composerMentionQueryFrom } from "./agentComposer";
+import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -1103,11 +1104,7 @@ function App() {
   const projectSessionStatus = (projectPath: string, session: ProjectSession): ProjectRailStatus =>
     projectSessionStatusFromConversations(chatConversations, projectPath, session.id);
 
-  const visibleOpenProjects = openProjects.length > 0
-    ? openProjects
-    : workspacePath
-      ? [{ path: workspacePath, status: activeProjectStatus() }]
-      : [];
+  const visibleOpenProjects = visibleProjectsFrom(openProjects, workspacePath, activeProjectStatus);
 
   const {
     openDirect: openEditorFileDirect,
@@ -1800,7 +1797,7 @@ function App() {
           onSelectSession: (path, sessionId) => void switchProjectSession(path, sessionId),
           onSessionContextMenu: (event, path, session) => openContextMenu(event, projectSessionContextMenuItems(path, session)),
           onToggleArchived: () => setShowArchivedSessions((show) => !show),
-          onToggleExpanded: (path) => setExpandedSessionProjects((expanded) => ({ ...expanded, [path]: !(expanded[path] ?? false) })),
+          onToggleExpanded: (path) => setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
         }}
         git={{
           error: gitStatusError, hasWorkspace: Boolean(workspacePath), loading: gitStatusLoading,
