@@ -53,6 +53,7 @@ import {
   visibleCommandPaletteCommands,
 } from "./commandPaletteAssembly";
 import { createSettingsConnectionActionsController } from "./settingsConnectionActionsController";
+import { createEditorFileUtilityActions } from "./editorFileUtilityActions";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -1373,46 +1374,25 @@ function App() {
   });
   const saveEditorFile = (options: SaveEditorFileOptions = {}) => saveEditorFileWithForce(options.force ?? false);
 
-  const reloadSelectedFileFromDisk = async () => {
-    if (!selectedFile) return;
-    await openEditorFileDirect(selectedFile, { focusEditor: true });
-  };
-
-  const overwriteSelectedFile = async () => {
-    await saveEditorFile({ force: true });
-  };
-
-  const openSelectedFileExternally = async () => {
-    if (!selectedFile) return;
-    setEditorRecoveryError(null);
-    try {
-      await openPath(selectedFile.path);
-    } catch (err) {
-      setEditorRecoveryError(`Could not open ${selectedFile.name} externally: ${err}`);
-    }
-  };
-
-  const revealSelectedFile = async () => {
-    if (!selectedFile) return;
-    setEditorRecoveryError(null);
-    try {
-      await revealItemInDir(selectedFile.path);
-    } catch (err) {
-      setEditorRecoveryError(`Could not reveal ${selectedFile.name}: ${err}`);
-    }
-  };
-
-  const copyPathToClipboard = async (path: string) => {
-    await writeText(path);
-    setActionNotice(`Copied ${basename(path)} path`);
-  };
-
-  const openEditorSearch = () => {
-    const view = editorViewRef.current;
-    if (!view) return;
-    openSearchPanel(view);
-    requestAnimationFrame(() => view.focus());
-  };
+  const editorFileUtilityActions = createEditorFileUtilityActions<FileTreeNode, EditorView>({
+    copyText: writeText,
+    getSelectedFile: () => selectedFile,
+    getView: () => editorViewRef.current,
+    notify: setActionNotice,
+    openExternal: openPath,
+    openFileDirect: (file, fileOptions) => openEditorFileDirect(file, fileOptions),
+    openSearchPanel,
+    revealInDir: revealItemInDir,
+    saveFile: (saveOptions) => saveEditorFile(saveOptions),
+    scheduleFrame: (callback) => requestAnimationFrame(callback),
+    setRecoveryError: setEditorRecoveryError,
+  });
+  const reloadSelectedFileFromDisk = editorFileUtilityActions.reloadFromDisk;
+  const overwriteSelectedFile = editorFileUtilityActions.overwrite;
+  const openSelectedFileExternally = editorFileUtilityActions.openExternally;
+  const revealSelectedFile = editorFileUtilityActions.reveal;
+  const copyPathToClipboard = editorFileUtilityActions.copyPath;
+  const openEditorSearch = editorFileUtilityActions.openSearch;
 
   const {
     createFile: createFileInRail,
