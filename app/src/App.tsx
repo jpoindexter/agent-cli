@@ -59,18 +59,16 @@ import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import { createUtilityTrayControls } from "./utilityTrayControls";
 import { createTerminalPaneRename } from "./terminalPaneRename";
+import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
 } from "./projectChatStatus";
-import type { EditorFileLoadState } from "./editorFileLoadState";
-import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
   removeEditorBuffersWithin,
   removeEditorTabsWithin,
   retargetEditorBuffers,
   retargetEditorTabs,
-  upsertEditorTab,
 } from "./editorTabs";
 import {
   LAUNCH_PROFILES,
@@ -259,20 +257,21 @@ function App() {
     saveStore: async () => { await storeRef.current?.save(); },
     setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
   });
+  const editorSession = useEditorSessionController();
   const {
     activeFilesByWorkspaceRef, captureCurrentEditorBuffer, captureCurrentEditorViewState,
     captureSessionSnapshot: captureEditorSessionSnapshot,
     closeActiveEditorTabRef, editorBuffersRef, editorBytes, editorCursor, editorError,
-    editorLoadSeq, editorLoading, editorModifiedMs, editorRecoveryError, editorSaving,
+    editorLoading, editorRecoveryError, editorSaving,
     editorTabs, editorText, editorViewRef, editorViewStatesRef, fileOpError,
     openEditorSearchRef, pendingEditorFocusRef, resetEditor, restoredActiveFileWorkspaceRef,
     restoreSessionSnapshot: restoreEditorSessionSnapshot, saveEditorFileRef,
     savedEditorText, selectedFile, selectedFileRef,
-    sessionEditorSnapshotsRef, setEditorBufferRevision, setEditorBytes, setEditorCursor,
-    setEditorError, setEditorLoading, setEditorModifiedMs, setEditorRecoveryError,
-    setEditorSaving, setEditorTabs, setEditorText, setFileOpError, setSavedEditorText,
+    sessionEditorSnapshotsRef, setEditorBufferRevision, setEditorCursor,
+    setEditorRecoveryError,
+    setEditorTabs, setEditorText, setFileOpError, setSavedEditorText,
     setSelectedFile,
-  } = useEditorSessionController();
+  } = editorSession;
   const terminal = useTerminalPaneController<Snapshot>({
     activeSessionForProject: (root) => activeSessionLookupRef.current(root),
     activeWorkspace: workspacePathRef,
@@ -1126,68 +1125,15 @@ function App() {
     openDirect: openEditorFileDirect,
     requestOpen: requestOpenEditorFile,
     save: saveEditorFileWithForce,
-  } = createEditorFileWorkflow({
-    applyState: (state: EditorFileLoadState) => {
-      setEditorText(state.text);
-      setSavedEditorText(state.savedText);
-      setEditorBytes(state.bytes);
-      setEditorModifiedMs(state.modifiedMs);
-      setEditorError(state.error);
-      setEditorRecoveryError(state.recoveryError);
-      setEditorCursor(state.cursor);
-    },
-    beginOpen: (file, focusEditor) => {
-      closeDiffReview();
-      captureCurrentEditorViewState();
-      captureCurrentEditorBuffer();
-      pendingEditorFocusRef.current = focusEditor;
-      setEditorTabs((tabs) => upsertEditorTab(tabs, file));
-      setSelectedFile(file);
-      setEditorSaving(false);
-    },
-    buffers: editorBuffersRef,
-    bumpBufferRevision: () => setEditorBufferRevision((value) => value + 1),
-    focusEditor: () => editorViewRef.current?.focus(),
+  } = wireEditorFileWorkflow(editorSession, {
+    closeDiffReview: () => closeDiffReview(),
     gateAction: (action) => gateAppAction(action),
-    getActiveFilePath: () => selectedFileRef.current?.path ?? null,
+    getDirty: () => editorDirty,
     getRoot: () => workspacePathRef.current ?? workspacePath,
-    getSaveState: () => ({
-      bytes: editorBytes,
-      dirty: editorDirty,
-      file: selectedFile,
-      modifiedMs: editorModifiedMs,
-      recoveryError: editorRecoveryError,
-      root: workspacePathRef.current ?? workspacePath,
-      savedText: savedEditorText,
-      saving: editorSaving,
-      text: editorText,
-    }),
-    loadSequence: editorLoadSeq,
-    onCurrentFile: (focusEditor) => {
-      closeDiffReview();
-      if (focusEditor) requestAnimationFrame(() => editorViewRef.current?.focus());
-    },
-    onSaveError: setEditorError,
-    onSaveSuccess: (result) => {
-      setSavedEditorText(result.content);
-      setEditorBytes(result.bytes);
-      setEditorModifiedMs(result.modifiedMs);
-    },
     persistActiveFile,
-    prepareSave: () => { setEditorError(null); setEditorRecoveryError(null); },
-    prepareRead: () => {
-      setEditorError(null);
-      setEditorRecoveryError(null);
-      setEditorBytes(null);
-      setEditorModifiedMs(null);
-      setEditorCursor({ line: 1, column: 1 });
-    },
     recordEdit: (file) => recordAgentActivity(activeAgentSessionDescriptor, {
       kind: "file", label: "Edited a file", detail: file.name, status: "complete",
     }),
-    setLoading: setEditorLoading,
-    setSaving: setEditorSaving,
-    viewStates: editorViewStatesRef,
   });
   const saveEditorFile = (options: SaveEditorFileOptions = {}) => saveEditorFileWithForce(options.force ?? false);
 
