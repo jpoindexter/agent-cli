@@ -896,12 +896,7 @@ function App() {
   const showPreviousComposerHistory = composerHistoryNavigation.showPrevious;
   const showNextComposerHistory = composerHistoryNavigation.showNext;
 
-  const saveAiConnectionSettings = async (next: AiConnectionSettings) => {
-    aiConnectionSettingsRef.current = next;
-    setAiConnectionSettings(next);
-    await storeRef.current?.set("aiConnectionSettings", next);
-    await storeRef.current?.save();
-  };
+
 
   const composerSettingsActions = createComposerSettingsActions({
     getRuntimeState: () => ({
@@ -1685,6 +1680,14 @@ function App() {
   });
 
   const settingsConnectionActions = createSettingsConnectionActionsController({
+    applySettings: (next) => {
+      aiConnectionSettingsRef.current = next;
+      setAiConnectionSettings(next);
+    },
+    persistSettings: async (next) => {
+      await storeRef.current?.set("aiConnectionSettings", next);
+      await storeRef.current?.save();
+    },
     clearSecretPresence: (keys) => setConnectionSecretPresence((current) => ({
       ...current, ...Object.fromEntries(keys.map((key) => [key, false])),
     })),
@@ -1977,7 +1980,7 @@ function App() {
           refreshAgentConnections,
           resetLayout: resetInterface,
           saveConnectionSecret,
-          saveConnectionSettings: saveAiConnectionSettings,
+          saveConnectionSettings: settingsConnectionActions.saveSettings,
           setLayout: setWorkbenchLayout,
           setTrayMode: setToolTrayMode,
         }}

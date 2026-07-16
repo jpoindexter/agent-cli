@@ -14,6 +14,7 @@ import {
 } from "./settingsMcpActions";
 
 type SettingsConnectionActionsControllerOptions = {
+  applySettings: (settings: AiConnectionSettings) => void;
   clearSecretPresence: (keys: string[]) => void;
   clearStore: () => Promise<unknown>;
   confirmReset: (message: string) => Promise<boolean>;
@@ -24,6 +25,7 @@ type SettingsConnectionActionsControllerOptions = {
   probe: (input: {
     request: McpServerConfig & { environment: ConnectionEnvironmentInput[] };
   }) => Promise<ConnectionTargetStatus>;
+  persistSettings: (settings: AiConnectionSettings) => Promise<unknown>;
   recordOAuthStatus: (serverId: string, status: McpOAuthStatus) => void;
   reload: () => void;
   resetDurableChats: () => Promise<unknown>;
@@ -47,6 +49,10 @@ export const createSettingsConnectionActionsController = (
     recordStatus: options.recordOAuthStatus,
     server,
   }),
+  saveSettings: async (settings: AiConnectionSettings) => {
+    options.applySettings(settings);
+    await options.persistSettings(settings);
+  },
   resetLocalData: () => resetSettingsLocalData({
     clearStore: options.clearStore,
     confirmReset: options.confirmReset,

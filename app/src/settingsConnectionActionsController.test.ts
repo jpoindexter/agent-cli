@@ -9,6 +9,8 @@ const server: McpServerConfig = {
 };
 
 const createOptions = () => ({
+  applySettings: vi.fn(),
+  persistSettings: vi.fn(async () => {}),
   clearSecretPresence: vi.fn(),
   clearStore: vi.fn(async () => {}),
   confirmReset: vi.fn(async () => true),
@@ -63,6 +65,20 @@ describe("createSettingsConnectionActionsController", () => {
     expect(options.clearSecretPresence).toHaveBeenCalledWith([
       "mcp:linear:oauth-tokens", "mcp:linear:oauth-client-secret",
     ]);
+  });
+
+
+  it("applies and persists updated connection settings in order", async () => {
+    const options = createOptions();
+    const actions = createSettingsConnectionActionsController(options);
+    const next = structuredClone(DEFAULT_AI_CONNECTION_SETTINGS);
+
+    await actions.saveSettings(next);
+
+    expect(options.applySettings).toHaveBeenCalledWith(next);
+    expect(options.persistSettings).toHaveBeenCalledWith(next);
+    expect(options.applySettings.mock.invocationCallOrder[0])
+      .toBeLessThan(options.persistSettings.mock.invocationCallOrder[0]);
   });
 
   it("resets local data through the confirmed reset workflow", async () => {
