@@ -83,3 +83,37 @@ export const createWorkspaceOpenSurface = <
     openTarget: target.prepareAndOpenWorkspaceTarget,
   });
 };
+
+type Ref2<T> = { current: T };
+
+type WorkspaceOpenHookBundle<TSnapshot> = {
+  activePaneForSession: TargetInput<TSnapshot>["activePaneForSession"];
+  activePaneIdsRef: TargetInput<TSnapshot>["activePaneIds"];
+  paneLayoutsRef: TargetInput<TSnapshot>["paneLayouts"];
+  panesByContextRef: TargetInput<TSnapshot>["panesByContext"];
+  panesForSession: TargetInput<TSnapshot>["panesForSession"];
+  requestPaintRef: Ref2<() => void>;
+  setFocusedPane: TargetInput<TSnapshot>["setFocusedPane"];
+  setManagedPanes: TargetInput<TSnapshot>["setManagedPanes"];
+  snapshotsRef: TargetInput<TSnapshot>["snapshots"];
+};
+
+type HookDerivedTargetKeys =
+  | "activePaneForSession" | "activePaneIds" | "paneLayouts" | "panesByContext"
+  | "panesForSession" | "requestPaint" | "setFocusedPane" | "setManagedPanes" | "snapshots";
+
+export const workspaceOpenTargetFromHook = <TSnapshot,>(
+  hook: WorkspaceOpenHookBundle<TSnapshot>,
+  rest: Omit<TargetInput<TSnapshot>, HookDerivedTargetKeys>,
+): TargetInput<TSnapshot> => ({
+  ...rest,
+  activePaneForSession: hook.activePaneForSession,
+  activePaneIds: hook.activePaneIdsRef,
+  paneLayouts: hook.paneLayoutsRef,
+  panesByContext: hook.panesByContextRef,
+  panesForSession: hook.panesForSession,
+  requestPaint: () => hook.requestPaintRef.current(),
+  setFocusedPane: hook.setFocusedPane,
+  setManagedPanes: hook.setManagedPanes,
+  snapshots: hook.snapshotsRef,
+});

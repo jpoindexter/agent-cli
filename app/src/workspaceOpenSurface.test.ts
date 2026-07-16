@@ -8,7 +8,7 @@ import { confirm } from "@tauri-apps/plugin-dialog";
 import { DEFAULT_AI_CONNECTION_SETTINGS } from "./connectionSettings";
 import type { LaunchProfile } from "./launchProfiles";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
-import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
+import { createWorkspaceOpenSurface, workspaceOpenTargetFromHook } from "./workspaceOpenSurface";
 
 const profile: LaunchProfile = {
   id: "codex", label: "Codex", command: "codex", args: [], useLoginShell: false,
@@ -112,5 +112,45 @@ describe("createWorkspaceOpenSurface", () => {
     await surface.requestOpenWorkspace("/next", vi.fn());
 
     expect(input.actions.clearBackgroundExits).toHaveBeenCalledWith("/next");
+  });
+});
+
+describe("workspaceOpenTargetFromHook", () => {
+  it("maps pane-hook refs onto the target controller names", () => {
+    const input = createInput();
+    const requestPaintRef = { current: vi.fn() };
+    const hook = {
+      activePaneForSession: input.target.activePaneForSession,
+      activePaneIdsRef: input.target.activePaneIds,
+      paneLayoutsRef: input.target.paneLayouts,
+      panesByContextRef: input.target.panesByContext,
+      panesForSession: input.target.panesForSession,
+      requestPaintRef,
+      setFocusedPane: input.target.setFocusedPane,
+      setManagedPanes: input.target.setManagedPanes,
+      snapshotsRef: input.target.snapshots,
+    };
+
+    const mapped = workspaceOpenTargetFromHook(hook, {
+      activeSessions: input.target.activeSessions,
+      getSurfaceMode: input.target.getSurfaceMode,
+      latest: input.target.latest,
+      now: input.target.now,
+      resetEditor: input.target.resetEditor,
+      resolveProfile: input.target.resolveProfile,
+      restoredActiveFileWorkspace: input.target.restoredActiveFileWorkspace,
+      savedLabelForSlot: input.target.savedLabelForSlot,
+      scheduleResize: input.target.scheduleResize,
+      sessions: input.target.sessions,
+      setLaunchError: input.target.setLaunchError,
+      setWorkspacePath: input.target.setWorkspacePath,
+      workspacePath: input.target.workspacePath,
+    });
+
+    expect(mapped.activePaneIds).toBe(input.target.activePaneIds);
+    expect(mapped.panesForSession).toBe(input.target.panesForSession);
+    expect(mapped.snapshots).toBe(input.target.snapshots);
+    mapped.requestPaint();
+    expect(requestPaintRef.current).toHaveBeenCalled();
   });
 });

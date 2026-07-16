@@ -48,7 +48,7 @@ import { buildAgentHookSnapshot, hookReportToActivity } from "./agentHookIntegra
 import { AgentConversationPanel } from "./AgentConversationPanel";
 import { useContextMenuHost } from "./useContextMenuHost";
 import { createTerminalSurfaceActions, terminalSurfaceDepsFromHook } from "./terminalSurfaceController";
-import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
+import { createWorkspaceOpenSurface, workspaceOpenTargetFromHook } from "./workspaceOpenSurface";
 import { createChatRunControls } from "./chatRunControls";
 import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
@@ -282,7 +282,7 @@ function App() {
     },
   });
   const {
-    activePaneForSession, activePaneId: activeTerminalPaneId,
+    activePaneId: activeTerminalPaneId,
     activePaneIdRef: activeTerminalPaneIdRef, activePaneIdsRef: activeTerminalPaneByContextRef,
     activeProjectStatus, activeSessionStatus, contextForPaneId: paneContextForPaneId,
     intentionallyTerminatedPaneIdsRef, paneLabelsRef: paneLabelsBySessionRef,
@@ -683,20 +683,17 @@ function App() {
       sessionStatus: terminalPaneProjectStatus, setFocusedPane: setFocusedTerminalPane,
       setLaunchError, setManagedPanes: setManagedTerminalPanes,
     },
-    target: {
-      activePaneForSession, activePaneIds: activeTerminalPaneByContextRef,
+    target: workspaceOpenTargetFromHook(terminal, {
       activeSessions: activeSessionByProjectRef,
       getSurfaceMode: () => agentSurfaceMode, latest, now: Date.now,
-      paneLayouts: paneLayoutsBySessionRef, panesByContext: terminalPanesByContextRef,
-      panesForSession: terminalPanesForSession,
-      requestPaint: () => requestTerminalPaintRef.current(), resetEditor,
+      resetEditor,
       resolveProfile: profiles.resolveProfile,
       restoredActiveFileWorkspace: restoredActiveFileWorkspaceRef,
       savedLabelForSlot: savedPaneLabelForSlot,
       scheduleResize: () => setTimeout(sendTerminalResize, 0), sessions: projectSessionsRef,
-      setFocusedPane: setFocusedTerminalPane, setLaunchError, setManagedPanes: setManagedTerminalPanes,
-      setWorkspacePath, snapshots: terminalSnapshotsRef, workspacePath: workspacePathRef,
-    },
+      setLaunchError,
+      setWorkspacePath, workspacePath: workspacePathRef,
+    }),
   });
   const openWorkspaceDirect = workspaceOpenActions.openWorkspaceDirect;
 
