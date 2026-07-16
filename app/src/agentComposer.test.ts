@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  composerMentionQuery,
   COMPOSER_APP_COMMANDS,
   composerHelpText,
   composerHistoryAfterSubmit,
@@ -62,5 +63,18 @@ describe("app command discoverability", () => {
       expect(help).toContain(info.aliases[0]);
       expect(help).toContain(info.detail);
     }
+  });
+});
+
+describe("composerMentionQuery", () => {
+  it("captures the trailing @mention fragment", () => {
+    expect(composerMentionQuery("fix @src/ma")).toBe("src/ma");
+    expect(composerMentionQuery("@")).toBe("");
+  });
+
+  it("ignores completed mentions and mid-word at-signs", () => {
+    expect(composerMentionQuery("fix @src/main.ts ")).toBeNull();
+    expect(composerMentionQuery("email me@example.com")).toBeNull();
+    expect(composerMentionQuery("no mention")).toBeNull();
   });
 });

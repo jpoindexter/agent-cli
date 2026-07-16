@@ -62,3 +62,8 @@ export const nextComposerHistoryIndex = (history: string[], index: number | null
   const next = index + 1;
   return next >= history.length ? null : next;
 };
+
+const MENTION_PATTERN = /(?:^|\s)@([^\s@]*)$/;
+
+export const composerMentionQuery = (draft: string): string | null =>
+  draft.match(MENTION_PATTERN)?.[1] ?? null;

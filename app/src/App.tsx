@@ -71,6 +71,7 @@ import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
 import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
+import { composerMentionQuery as composerMentionQueryFrom } from "./agentComposer";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -531,7 +532,7 @@ function App() {
     updateHarness: updateActiveComposerHarness,
   });
   const attachSelectedFileToComposer = async () => attachWorkspaceFileToComposer(selectedFile);
-  const composerMentionQuery = composerDraft.match(/(?:^|\s)@([^\s@]*)$/)?.[1] ?? null;
+  const composerMentionQuery = composerMentionQueryFrom(composerDraft);
   const composerMentionResults = useMemo(
     () => composerMentionQuery == null ? [] : filterWorkspaceFiles(searchableFiles, composerMentionQuery, 8),
     [composerMentionQuery, searchableFiles],
