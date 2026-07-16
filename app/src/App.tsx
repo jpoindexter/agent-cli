@@ -85,6 +85,7 @@ import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
 import { sourceRepoStatusTitleFrom, statusBarRepoPropsFrom } from "./statusBarHost";
 import { nextToolsLayout } from "./appTitlebarHost";
 import { appNoticesPropsFrom } from "./appNoticesHost";
+import { draftNavigationPropsFrom } from "./draftNavigationHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2053,16 +2054,18 @@ function App() {
         workspacePath={workspacePath}
         onOpenFile={(file) => void requestOpenEditorFile(file, { focusEditor: true })}
       />
-      {pendingNavigation && selectedFile ? (
-        <DraftNavigationDialog
-          fileName={selectedFile.name}
-          error={draftDialogError}
-          saving={editorSaving}
-          onCancel={cancelPendingNavigation}
-          onDiscard={() => void discardDraftAndContinue()}
-          onSave={() => void saveDraftAndContinue()}
-        />
-      ) : null}
+      {(() => {
+        const draftProps = draftNavigationPropsFrom({
+          cancel: cancelPendingNavigation,
+          discard: discardDraftAndContinue,
+          error: draftDialogError,
+          hasPendingNavigation: Boolean(pendingNavigation),
+          save: saveDraftAndContinue,
+          saving: editorSaving,
+          selectedFile,
+        });
+        return draftProps ? <DraftNavigationDialog {...draftProps} /> : null;
+      })()}
       <StatusBar
         workspaceName={activeWorkspaceName}
         primarySurfaceState={primarySurfaceState}
