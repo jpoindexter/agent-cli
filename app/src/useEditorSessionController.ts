@@ -98,12 +98,54 @@ const captureEditorBuffer = (state: EditorSessionState) => {
   state.setEditorBufferRevision((value) => value + 1);
 };
 
+type CaptureSessionSnapshotInput = {
+  key: string;
+  persistPaneLayout: (root: string, sessionId: string) => void;
+  persistSnapshots: (snapshots: Record<string, ProjectEditorSnapshot>) => void;
+  root: string;
+  sessionId: string;
+};
+
+const captureSessionSnapshot = (state: EditorSessionState, input: CaptureSessionSnapshotInput) => {
+  captureEditorViewState(state);
+  captureEditorBuffer(state);
+  input.persistSnapshots({
+    ...state.sessionEditorSnapshotsRef.current,
+    [input.key]: {
+      tabs: state.editorTabs,
+      activePath: state.selectedFileRef.current?.path ?? null,
+      buffers: { ...state.editorBuffersRef.current },
+      viewStates: { ...state.editorViewStatesRef.current },
+    },
+  });
+  input.persistPaneLayout(input.root, input.sessionId);
+};
+
+type RestoreSessionSnapshotInput = {
+  key: string | null;
+  openFile: (file: FileTreeNode) => unknown;
+};
+
+const restoreSessionSnapshot = (state: EditorSessionState, input: RestoreSessionSnapshotInput) => {
+  const snapshot = input.key ? state.sessionEditorSnapshotsRef.current[input.key] : null;
+  resetEditorState(state);
+  if (!snapshot) return;
+  state.editorBuffersRef.current = { ...snapshot.buffers };
+  state.editorViewStatesRef.current = { ...snapshot.viewStates };
+  state.setEditorTabs(snapshot.tabs);
+  state.setEditorBufferRevision((value) => value + 1);
+  const active = snapshot.tabs.find((tab) => tab.path === snapshot.activePath) ?? snapshot.tabs[0] ?? null;
+  if (active) void input.openFile(active);
+};
+
 export function useEditorSessionController() {
   const state = useEditorSessionState();
   return {
     ...state,
     captureCurrentEditorBuffer: () => captureEditorBuffer(state),
     captureCurrentEditorViewState: () => captureEditorViewState(state),
+    captureSessionSnapshot: (input: CaptureSessionSnapshotInput) => captureSessionSnapshot(state, input),
     resetEditor: () => resetEditorState(state),
+    restoreSessionSnapshot: (input: RestoreSessionSnapshotInput) => restoreSessionSnapshot(state, input),
   };
 }

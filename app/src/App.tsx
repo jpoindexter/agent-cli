@@ -345,11 +345,13 @@ function App() {
   });
   const {
     activeFilesByWorkspaceRef, captureCurrentEditorBuffer, captureCurrentEditorViewState,
+    captureSessionSnapshot: captureEditorSessionSnapshot,
     closeActiveEditorTabRef, editorBuffersRef, editorBytes, editorCursor, editorError,
     editorLoadSeq, editorLoading, editorModifiedMs, editorRecoveryError, editorSaving,
     editorTabs, editorText, editorViewRef, editorViewStatesRef, fileOpError,
     openEditorSearchRef, pendingEditorFocusRef, resetEditor, restoredActiveFileWorkspaceRef,
-    saveEditorFileRef, savedEditorText, selectedFile, selectedFileRef,
+    restoreSessionSnapshot: restoreEditorSessionSnapshot, saveEditorFileRef,
+    savedEditorText, selectedFile, selectedFileRef,
     sessionEditorSnapshotsRef, setEditorBufferRevision, setEditorBytes, setEditorCursor,
     setEditorError, setEditorLoading, setEditorModifiedMs, setEditorRecoveryError,
     setEditorSaving, setEditorTabs, setEditorText, setFileOpError, setSavedEditorText,
@@ -786,30 +788,20 @@ function App() {
     const root = workspacePathRef.current;
     const sessionId = activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
     if (!root || !sessionId) return;
-    captureCurrentEditorViewState();
-    captureCurrentEditorBuffer();
-    persistSessionEditorSnapshots({
-      ...sessionEditorSnapshotsRef.current,
-      [sessionSnapshotKey(root, sessionId)]: {
-        tabs: editorTabs,
-        activePath: selectedFileRef.current?.path ?? null,
-        buffers: { ...editorBuffersRef.current },
-        viewStates: { ...editorViewStatesRef.current },
-      },
+    captureEditorSessionSnapshot({
+      key: sessionSnapshotKey(root, sessionId),
+      persistPaneLayout: persistPaneLayoutForSession,
+      persistSnapshots: persistSessionEditorSnapshots,
+      root,
+      sessionId,
     });
-    persistPaneLayoutForSession(root, sessionId);
   };
 
   const restoreSessionEditorSnapshot = (root: string, sessionId: string | null) => {
-    const snapshot = sessionId ? sessionEditorSnapshotsRef.current[sessionSnapshotKey(root, sessionId)] : null;
-    resetEditor();
-    if (!snapshot) return;
-    editorBuffersRef.current = { ...snapshot.buffers };
-    editorViewStatesRef.current = { ...snapshot.viewStates };
-    setEditorTabs(snapshot.tabs);
-    setEditorBufferRevision((value) => value + 1);
-    const nextActive = snapshot.tabs.find((tab) => tab.path === snapshot.activePath) ?? snapshot.tabs[0] ?? null;
-    if (nextActive) void openEditorFileDirect(nextActive);
+    restoreEditorSessionSnapshot({
+      key: sessionId ? sessionSnapshotKey(root, sessionId) : null,
+      openFile: openEditorFileDirect,
+    });
   };
 
   const prepareAndOpenWorkspaceTarget = async (path: string): Promise<OpenedWorkspaceTarget> => {
