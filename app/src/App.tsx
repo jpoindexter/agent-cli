@@ -31,6 +31,7 @@ import {
   bootstrapRefsFromHooks, bootstrapSettersFromHooks, createWorkspaceBootstrapController,
 } from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
+import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { createAppMenuAssembly } from "./appMenuAssembly";
 import {
   assembleCommandPaletteCommands,
@@ -65,11 +66,10 @@ import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
 import { WorkbenchShell } from "./WorkbenchShell";
-import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
-import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
+import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
-import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
-import { fileTreeNodeFromPath, pathBasename } from "./fileTreeTypes";
+import { visibleProjectsFrom } from "./projectRailView";
+import { fileTreeNodeFromPath } from "./fileTreeTypes";
 import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
 import { createChatSearchNavigation } from "./chatSearchNavigation";
 import { createSessionSnapshotCapture, createSessionSnapshotRestore } from "./sessionSnapshotCapture";
@@ -1317,64 +1317,15 @@ function App() {
         toolMode: shellLayout.toolTrayMode,
         workspacePath,
       })} />,
-        rail: <WorkspaceSideRail
-        activeTitle={drawerActiveTitle}
-        collapsed={shellLayout.sideDrawerCollapsed}
-        mode={shellLayout.sideDrawerMode}
-        onOpenSettings={() => setSettingsOpen(true)}
-        onSelectMode={shellLayout.setSideDrawerMode}
-        projects={{
-          activeProjectPath: workspacePath, activeSessionId: activeChat.activeSessionId, backgroundExits,
-          expandedProjects: persistence.expandedSessionProjects, projects: visibleOpenProjects,
-          sessionsByProject: persistence.projectSessions, showArchived: persistence.showArchivedSessions,
-          projectStatus: projectRailStatus, sessionStatus: projectSessionStatus,
-          onProjectContextMenu: (event, project) => contextMenuHost.openContextMenu(event, projectRailContextMenuItems(project)),
-          onSelectProject: (path) => void requestOpenWorkspace(path),
-          onSelectSession: (path, sessionId) => void projectSessionNavigationActions.switchSession(path, sessionId),
-          onSessionContextMenu: (event, path, session) => contextMenuHost.openContextMenu(event, projectSessionContextMenuItems(path, session)),
-          onToggleArchived: () => persistence.setShowArchivedSessions((show) => !show),
-          onToggleExpanded: (path) => persistence.setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
-        }}
-        git={{
-          error: gitStatusHook.error, hasWorkspace: Boolean(workspacePath), loading: gitStatusHook.loading,
-          status: gitStatusHook.status,
-          onOpenDiff: (file) => void diffReviewHook.open(file), onRefresh: () => void gitStatusHook.refresh(),
-        }}
-        browser={browserToolsDrawerPropsFrom(browser, {
-          openExternal: openUrl,
-          show: () => shellLayout.setWorkbenchLayout(shellLayout.workbenchLayout === "hidden" ? "right" : shellLayout.workbenchLayout),
-        })}
-        settings={quickSettingsDrawerPropsFrom({
-          composer: {
-            approvalMode: activeChat.activeComposerHarness.approvalMode,
-            canSetApproval: Boolean(activeChat.activeComposerHarnessKey),
-          },
-          handlers: {
-            approvalChange: composerSettingsActions.setApprovalMode,
-            layoutChange: shellLayout.setWorkbenchLayout,
-            openFolder: () => pickWorkspace(),
-            refreshFiles: workspaceTree.refresh,
-            setSurfaceMode: shellLayout.setAgentSurfaceMode,
-            toggleRawTerminal: utilityTrayControls.toggleRawTerminal,
-            toolModeChange: shellLayout.setToolTrayMode,
-          },
-          layout: {
-            surfaceMode: shellLayout.agentSurfaceMode, toolMode: shellLayout.toolTrayMode,
-            workbenchLayout: shellLayout.renderedWorkbenchLayout,
-          },
-          profiles,
-          workspacePath,
-        })}
-        files={{
-          fileOpError: editorSession.fileOpError, fileTree: workspaceTree.tree, fileTreeError: workspaceTree.error, fileTreeLoading: workspaceTree.loading, fileTreeTruncated: workspaceTree.truncated,
-          railBodyRef, railHeight, selectedFileId: editorSession.selectedFile?.id, treeRef, visibleFileTree: editorWorkspace.visibleFileTree,
-          workspaceName: workspacePath ? pathBasename(workspacePath) : null, workspacePath,
-          onCreateFile: () => void workspaceFileActions.createFile(), onCreateFolder: () => void workspaceFileActions.createFolder(),
-          onOpenFile: (file) => void editorFileWorkflow.requestOpen(file, { focusEditor: true }),
-          onOpenFolder: () => void pickWorkspace(),
-          onWorkspaceContextMenu: (event) => contextMenuHost.openContextMenu(event, workspaceContextMenuItems()),
-        }}
-      />,
+        rail: <WorkspaceSideRail {...workspaceSideRailPropsFrom({
+          activeChat, backgroundExits, browser, composerSettingsActions, contextMenuHost,
+          diffReviewHook, drawerActiveTitle, editorFileWorkflow, editorSession, editorWorkspace,
+          gitStatusHook, openUrl, persistence, pickWorkspace, profiles, projectRailContextMenuItems,
+          projectRailStatus, projectSessionContextMenuItems, projectSessionNavigationActions,
+          projectSessionStatus, railBodyRef, railHeight, requestOpenWorkspace, setSettingsOpen,
+          shellLayout, treeRef, utilityTrayControls, visibleOpenProjects, workspaceContextMenuItems,
+          workspaceFileActions, workspacePath, workspaceTree,
+        })} />,
         main: <>
         <WorkbenchDockPanels
           files={{

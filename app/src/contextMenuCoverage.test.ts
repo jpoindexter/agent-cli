@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
+const sideRailHost = readFileSync(new URL("./workspaceSideRailHost.ts", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const browserComposerContextMenu = readFileSync(new URL("./browserComposerContextMenu.ts", import.meta.url), "utf8");
 const editorContextMenus = readFileSync(new URL("./editorContextMenus.ts", import.meta.url), "utf8");
@@ -38,7 +39,7 @@ describe("production context-menu coverage", () => {
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
     ]) {
-      expect(app).toContain(marker);
+      expect(`${app}\n${sideRailHost}`).toContain(marker);
     }
     expect(appMenuAssembly).toContain("buildComposerAddMenuItems(composerMenuInput(options))");
     const contextMenuHost = readFileSync(new URL("./useContextMenuHost.tsx", import.meta.url), "utf8");
