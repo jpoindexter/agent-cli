@@ -49,7 +49,7 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
   const chatSearch = useChatSearch({ open: options.commandPalette.open, query: options.commandPalette.query });
   const [focusedChatMessageId, setFocusedChatMessageId] = useState<string | null>(null);
   const gitStatusHook = useGitStatus({
-    active: shellLayout.sideDrawerMode === "files" || shellLayout.sideDrawerMode === "git",
+    active: Boolean(workspacePath),
     refreshKey: options.treeRefreshKey,
     resolveRoot: () => workspacePathRef.current ?? workspacePath, workspacePath,
   });

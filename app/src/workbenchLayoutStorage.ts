@@ -41,7 +41,7 @@ export const readStoredWorkbenchSizing = (): WorkbenchSizing => {
 export const readStoredToolTrayMode = (): ToolTrayMode => {
   try {
     const value = window.localStorage.getItem(TOOL_TRAY_MODE_STORAGE_KEY);
-    return value === "files" || value === "editor" || value === "browser" || value === "git" || value === "split" ? value : DEFAULT_TOOL_TRAY_MODE;
+    return value === "files" || value === "editor" || value === "browser" || value === "git" || value === "context" || value === "split" ? value : DEFAULT_TOOL_TRAY_MODE;
   } catch {
     return DEFAULT_TOOL_TRAY_MODE;
   }

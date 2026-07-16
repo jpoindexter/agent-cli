@@ -1,5 +1,5 @@
 export type WorkbenchLayoutMode = "left" | "right" | "bottom" | "hidden";
-export type ToolTrayMode = "files" | "editor" | "browser" | "git" | "split";
+export type ToolTrayMode = "files" | "editor" | "browser" | "git" | "context" | "split";
 
 export type WorkbenchSizing = {
   trayPercent: number;

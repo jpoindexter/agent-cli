@@ -1264,9 +1264,9 @@ function App() {
         })} />,
         main: <>
         <WorkbenchDockPanels {...workbenchDockPanelsPropsFrom({
-          contextMenuHost, diffReviewHook, drawerSearchQuery, drawerSearchResults, editorFileWorkflow,
+          activeChat, browser, contextMenuHost, diffReviewHook, drawerSearchQuery, drawerSearchResults, editorFileWorkflow,
           editorSession, editorWorkspace, gitStatusHook, setDrawerSearchQuery, workspaceContextMenuActions,
-          workspaceFileActions, workspacePath, workspaceTree,
+          surfaceLabels, workspaceFileActions, workspacePath, workspaceTree,
         })} />
         <WorkbenchEditorSection {...workbenchEditorSectionPropsFrom({
           contextMenuHost, diffContextMenuItems, diffReviewHook, editorContextMenuItems,

@@ -3,8 +3,10 @@ import type { GitStatusFile } from "./fileGitStatus";
 import type { FileTreeNode } from "./fileTreeTypes";
 import type { SourceControlSummary } from "./SourceControlDrawer";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
+import { WorkspaceContextDock, type WorkspaceContextDockProps } from "./WorkspaceContextDock";
 
 export type WorkbenchDockPanelsProps = {
+  context: WorkspaceContextDockProps;
   files: {
     error: string | null;
     loading: boolean;
@@ -59,5 +61,6 @@ export const WorkbenchDockPanels = (props: WorkbenchDockPanelsProps) => (
       onOpenDiff={props.handlers.openDiff}
       onRefresh={props.handlers.refreshGit}
     />
+    <WorkspaceContextDock {...props.context} />
   </>
 );

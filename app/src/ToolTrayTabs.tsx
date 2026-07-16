@@ -46,6 +46,7 @@ const toolTabs = [
   { mode: "editor", label: "Editor", icon: "file", selected: showsEditor },
   { mode: "browser", label: "Browser", icon: "browser", selected: showsBrowser },
   { mode: "git", label: "Git", icon: "git", selected: (mode: ToolTrayMode) => mode === "git" },
+  { mode: "context", label: "Context", icon: "context", selected: (mode: ToolTrayMode) => mode === "context" },
 ] as const;
 
 const ToolTrayTab = ({ current, tab, onChoose }: { current: ToolTrayMode; tab: typeof toolTabs[number]; onChoose: (mode: ToolTrayMode) => void }) => {

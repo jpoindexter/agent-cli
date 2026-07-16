@@ -35,4 +35,12 @@ describe("responsive shell CSS contract", () => {
     expect(convergence).toMatch(/\.workbench--drawer-right \.workbench-resizer--tray\.workbench-resizer--right\s*\{[^}]*width:\s*9px;[^}]*margin-left:\s*-4px;[^}]*border:\s*0;/s);
     expect(convergence).toMatch(/\.workbench--drawer-right \.workbench-resizer--tray\.workbench-resizer--right::before\s*\{[^}]*inset:\s*0 4px;[^}]*background:\s*#2b2d36;/s);
   });
+
+  it("places the Context surface in every supported dock position", () => {
+    expect(css).toMatch(/\.workspace-context-dock\s*\{[^}]*grid-area:\s*context;/s);
+    expect(css).toMatch(/\.workbench\.workbench--tools-context\.workbench--drawer-right\s*\{[^}]*"terminal rightsplit context"/s);
+    expect(css).toMatch(/\.workbench\.workbench--tools-context\.workbench--drawer-left\s*\{[^}]*"context rightsplit terminal"/s);
+    expect(css).toMatch(/\.workbench\.workbench--tools-context\.workbench--drawer-bottom\s*\{[^}]*"context"/s);
+    expect(css).toMatch(/\.workbench--tools-context \.workspace-context-dock\s*\{[^}]*display:\s*flex;/s);
+  });
 });

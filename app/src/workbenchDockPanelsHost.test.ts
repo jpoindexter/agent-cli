@@ -5,6 +5,14 @@ const file = { id: "a", name: "a.ts", path: "src/a.ts", kind: "file" as const };
 
 const createOptions = () =>
   ({
+    activeChat: {
+      activeChatConversation: {
+        messages: [{ id: "m1" }], runStatus: "running",
+        usage: { inputTokens: 800, cachedInputTokens: 0, outputTokens: 100 },
+      },
+      activeComposerProviderLabel: "Codex",
+    },
+    browser: { url: "http://localhost:4173" },
     contextMenuHost: { openContextMenu: vi.fn() },
     diffReviewHook: { open: vi.fn() },
     drawerSearchQuery: "term",
@@ -14,6 +22,7 @@ const createOptions = () =>
     editorSession: { selectedFile: file },
     gitStatusHook: { error: null, loading: false, refresh: vi.fn(), status: null },
     setDrawerSearchQuery: vi.fn(),
+    surfaceLabels: { activeSessionTitle: "Implement demo" },
     workspaceContextMenuActions: {},
     workspaceFileActions: { createFile: vi.fn(), createFolder: vi.fn() },
     workspacePath: "/repo",
@@ -28,6 +37,11 @@ describe("workbenchDockPanelsPropsFrom", () => {
     expect(props.files.selectedFilePath).toBe("src/a.ts");
     expect(props.git.status).toBeNull();
     expect(props.workspacePath).toBe("/repo");
+    expect(props.context).toEqual({
+      session: { title: "Implement demo", provider: "Codex", status: "running", messages: 1, usageTokens: 900 },
+      workspace: { path: "/repo", branch: null, changedFiles: 0 },
+      tools: { activeFile: "src/a.ts", browserUrl: "http://localhost:4173" },
+    });
   });
 
   it("routes dock handlers to file and git controllers", () => {

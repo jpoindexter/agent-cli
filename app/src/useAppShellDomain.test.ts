@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
+import { invoke } from "@tauri-apps/api/core";
 import { describe, expect, it, vi } from "vitest";
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { useAppShellDomain } from "./useAppShellDomain";
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: vi.fn(async () => null) }));
@@ -36,5 +37,16 @@ describe("useAppShellDomain", () => {
     expect(result.current.settingsOpen).toBe(true);
     act(() => result.current.setSettingsOpen(false));
     expect(result.current.settingsOpen).toBe(false);
+  });
+
+  it("keeps git metadata live while the project threads drawer is active", async () => {
+    const options = createOptions();
+    options.workspacePath = "/repo";
+    options.workspacePathRef.current = "/repo";
+    vi.mocked(invoke).mockClear();
+
+    renderHook(() => useAppShellDomain(options));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith("git_status", { root: "/repo" }));
   });
 });

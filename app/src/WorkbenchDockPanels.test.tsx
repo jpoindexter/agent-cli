@@ -9,6 +9,11 @@ const file = (path: string): FileTreeNode => ({
 });
 
 const props = (overrides: Partial<WorkbenchDockPanelsProps> = {}): WorkbenchDockPanelsProps => ({
+  context: {
+    session: { title: "Implement demo", provider: "Codex", status: "running", messages: 4, usageTokens: 900 },
+    workspace: { path: "/repo", branch: "main", changedFiles: 2 },
+    tools: { activeFile: "/repo/App.tsx", browserUrl: "http://localhost:4173" },
+  },
   files: {
     error: null, loading: false, query: "",
     results: [file("/repo/match.ts")], searchable: [file("/repo/all.ts")],
@@ -25,6 +30,13 @@ const props = (overrides: Partial<WorkbenchDockPanelsProps> = {}): WorkbenchDock
 });
 
 describe("WorkbenchDockPanels", () => {
+  it("includes the on-demand workspace context surface", () => {
+    const html = renderToStaticMarkup(<WorkbenchDockPanels {...props()} />);
+
+    expect(html).toContain('aria-label="Workspace context"');
+    expect(html).toContain("Implement demo");
+  });
+
   it("lists all searchable files while the query is empty", () => {
     const html = renderToStaticMarkup(<WorkbenchDockPanels {...props()} />);
 

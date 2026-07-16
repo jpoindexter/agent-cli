@@ -19,13 +19,14 @@ describe("ToolTrayTabs", () => {
     expect(toolTrayDensity(360)).toBe("icons");
   });
 
-  it("provides the approved four-surface dock and marks one active tab", () => {
+  it("provides the approved five-surface dock and marks one active tab", () => {
     const html = renderToStaticMarkup(<ToolTrayTabs mode="files" onModeChange={noop} onClose={noop} />);
 
     expect(html).toContain("Files");
     expect(html).toContain("Editor");
     expect(html).toContain("Browser");
     expect(html).toContain("Git");
+    expect(html).toContain("Context");
     expect(html.match(/tool-tray-tabs__tab--active/g)).toHaveLength(1);
   });
 

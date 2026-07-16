@@ -1,0 +1,133 @@
+.workspace-context-dock {
+  grid-area: context;
+  display: none;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: auto;
+  background: #171820;
+  color: var(--color-text);
+}
+
+.workbench--tools-context .workspace-context-dock {
+  display: flex;
+}
+
+.workbench--tools-context .files-dock,
+.workbench--tools-context .git-dock,
+.workbench--tools-context .editor-area,
+.workbench--tools-context .browser-preview,
+.workbench--drawer-hidden .workspace-context-dock {
+  display: none;
+}
+
+.workspace-context-dock > header {
+  display: grid;
+  gap: 3px;
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.workspace-context-dock h2,
+.workspace-context-dock h3,
+.workspace-context-dock p {
+  margin: 0;
+}
+
+.workspace-context-dock h2 {
+  color: var(--color-text-strong);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.workspace-context-dock header p {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+}
+
+.workspace-context-dock__section {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.workspace-context-dock__section h3 {
+  margin-bottom: 8px;
+  color: var(--color-text-subtle);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.workspace-context-dock__section dl {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.workspace-context-dock__section dl > div {
+  display: grid;
+  min-height: 29px;
+  grid-template-columns: minmax(80px, 0.42fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.workspace-context-dock__section dl > div:last-child {
+  border-bottom: 0;
+}
+
+.workspace-context-dock dt,
+.workspace-context-dock dd {
+  min-width: 0;
+  margin: 0;
+  font-size: 11px;
+}
+
+.workspace-context-dock dt {
+  color: var(--color-text-subtle);
+}
+
+.workspace-context-dock dd {
+  overflow: hidden;
+  color: var(--color-text);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench.workbench--tools-context.workbench--drawer-right {
+  grid-template-areas:
+    "terminal rightsplit traytabs"
+    "terminal rightsplit context"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-context.workbench--drawer-left {
+  grid-template-areas:
+    "traytabs rightsplit terminal"
+    "context rightsplit terminal"
+    "utilitysplit utilitysplit utilitysplit"
+    "utility utility utility";
+}
+
+.workbench.workbench--tools-context.workbench--drawer-bottom {
+  grid-template-areas:
+    "terminal"
+    "rightsplit"
+    "traytabs"
+    "context"
+    "utilitysplit"
+    "utility";
+}
+
+@media (max-width: 1120px) and (min-width: 721px) {
+  .workbench.workbench--tools-context.workbench--drawer-right,
+  .workbench.workbench--tools-context.workbench--drawer-left {
+    grid-template-areas:
+      "traytabs"
+      "context";
+  }
+}

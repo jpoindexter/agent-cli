@@ -61,6 +61,7 @@ export type AppIconName =
   | "close"
   | "complete"
   | "connection"
+  | "context"
   | "copy"
   | "error"
   | "file"
@@ -109,6 +110,7 @@ export const ICONS: Record<AppIconName, IconComponent> = {
   close: X,
   complete: CheckCircle2,
   connection: Plug,
+  context: SlidersHorizontal,
   copy: Copy,
   error: AlertCircle,
   file: FileText,
