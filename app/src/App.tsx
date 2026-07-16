@@ -52,6 +52,7 @@ import {
   assembleCommandPaletteCommands,
   visibleCommandPaletteCommands,
 } from "./commandPaletteAssembly";
+import { createSettingsConnectionActionsController } from "./settingsConnectionActionsController";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -123,7 +124,6 @@ import {
   connectionEnvironmentInputs,
   type AiConnectionSettings,
   type ConnectionTargetStatus,
-  type McpServerConfig,
   type McpOAuthStart,
   type McpOAuthStatus,
 } from "./connectionSettings";
@@ -196,12 +196,6 @@ import {
 } from "./chatOrchestration";
 import { launchOrchestration as launchOrchestrationWithContext } from "./orchestrationLaunch";
 import { createOrchestrationChildActions } from "./orchestrationChildActions";
-import {
-  beginSettingsMcpOAuth,
-  disconnectSettingsMcpOAuth,
-  probeSettingsMcpServer,
-} from "./settingsMcpActions";
-import { resetSettingsLocalData } from "./settingsLocalReset";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { createProjectCloseController } from "./projectCloseController";
@@ -2107,6 +2101,27 @@ function App() {
     updateScopedSetting,
   });
 
+  const settingsConnectionActions = createSettingsConnectionActionsController({
+    clearSecretPresence: (keys) => setConnectionSecretPresence((current) => ({
+      ...current, ...Object.fromEntries(keys.map((key) => [key, false])),
+    })),
+    clearStore: async () => {
+      const store = storeRef.current;
+      if (store) { await store.clear(); await store.save(); }
+    },
+    confirmReset: (message) => confirmDialog(message),
+    deleteSecret: (key) => invoke("delete_connection_secret", { key }),
+    disconnectOAuth: (input) => invoke<McpOAuthStatus>("disconnect_mcp_oauth", input),
+    getSettings: () => aiConnectionSettingsRef.current,
+    getWorkspacePath: () => workspacePath,
+    probe: (input) => invoke<ConnectionTargetStatus>("probe_mcp_server", input),
+    recordOAuthStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
+    reload: () => window.location.reload(),
+    resetDurableChats: resetDurableChatStore,
+    resetNativeState: () => invoke("reset_local_state"),
+    startOAuth: (input) => invoke<McpOAuthStart>("begin_mcp_oauth", input),
+  });
+
   return (
     <div className={`app-shell ${sideDrawerCollapsed ? "app-shell--side-drawer-collapsed" : ""} ${renderedWorkbenchLayout === "hidden" ? "app-shell--tools-hidden" : ""} ${settingsOpen ? "app-shell--settings-open" : ""}`} style={appShellStyle}>
       <AppTitlebar
@@ -2470,40 +2485,15 @@ function App() {
           onAiConnectionSettingsChange={(next) => void saveAiConnectionSettings(next)}
           onDeleteConnectionSecret={deleteConnectionSecret}
           onSaveConnectionSecret={saveConnectionSecret}
-          onValidateConnectionTarget={(server: McpServerConfig) => probeSettingsMcpServer({
-            probe: (input) => invoke<ConnectionTargetStatus>("probe_mcp_server", input),
-            server, settings: aiConnectionSettingsRef.current, workspacePath: workspacePath ?? "",
-          })}
-          onBeginMcpOAuth={(server: McpServerConfig) => beginSettingsMcpOAuth({
-            recordStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
-            server,
-            start: (input) => invoke<McpOAuthStart>("begin_mcp_oauth", input),
-          })}
-          onDisconnectMcpOAuth={(server: McpServerConfig) => disconnectSettingsMcpOAuth({
-            clearSecretPresence: (keys) => setConnectionSecretPresence((current) => ({
-              ...current, ...Object.fromEntries(keys.map((key) => [key, false])),
-            })),
-            disconnect: (input) => invoke<McpOAuthStatus>("disconnect_mcp_oauth", input),
-            recordStatus: (id, status) => setMcpOAuthStatuses((current) => ({ ...current, [id]: status })),
-            server,
-          })}
+          onValidateConnectionTarget={settingsConnectionActions.validateConnectionTarget}
+          onBeginMcpOAuth={settingsConnectionActions.beginMcpOAuth}
+          onDisconnectMcpOAuth={settingsConnectionActions.disconnectMcpOAuth}
           onCommandPaletteSourceChange={settingsPreferenceActions.onCommandPaletteSourceChange}
           onAddCustomTerminalProfile={(label, command) => {
             void profiles.addCustomProfile(label, command);
           }}
           keybindingOverrides={keybindingOverrides}
-          onResetLocalData={() => void resetSettingsLocalData({
-            clearStore: async () => {
-              const store = storeRef.current;
-              if (store) { await store.clear(); await store.save(); }
-            },
-            confirmReset: (message) => confirmDialog(message),
-            deleteSecret: (key) => invoke("delete_connection_secret", { key }),
-            reload: () => window.location.reload(),
-            resetDurableChats: resetDurableChatStore,
-            resetNativeState: () => invoke("reset_local_state"),
-            settings: aiConnectionSettings,
-          })}
+          onResetLocalData={() => void settingsConnectionActions.resetLocalData()}
           notificationsEnabled={notificationsEnabled}
           onNotificationsChange={settingsPreferenceActions.onNotificationsChange}
           onRemoveCustomTerminalProfile={(profileId) => {
