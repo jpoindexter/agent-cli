@@ -41,8 +41,6 @@ import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
   activeProjectSessionId,
-  planProjectClose,
-  removeOpenProject,
   setProjectSessionArchived,
   setProjectSessionPinned,
 } from "./workspaceState";
@@ -248,8 +246,7 @@ import { resetSettingsLocalData } from "./settingsLocalReset";
 import { ContextMenu, type ContextMenuItem, type ContextMenuState } from "./ContextMenu";
 import { paneContextKey } from "./paneOwnership";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
-import { closeProjectResources as closeProjectResourcesWithContext } from "./projectResourceClose";
-import { requestProjectClose } from "./projectCloseRequest";
+import { createProjectCloseController } from "./projectCloseController";
 import { createProjectSessionNavigationActions } from "./projectSessionNavigationActions";
 import { planSessionScopedRecordRemoval } from "./sessionScopedRecords";
 import {
@@ -878,64 +875,30 @@ function App() {
     path, () => requestPendingNavigation({ kind: "workspace", path }),
   );
 
-  const closeProjectResources = async (projectPath: string) => {
-    const closed = await closeProjectResourcesWithContext({
-      activePanes: activeTerminalPaneByContextRef.current,
-      closePane: (paneId) => invoke("close_pane", { paneId }),
-      conversations: chatConversationsRef.current,
-      intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
-      panes: terminalPanesForProject(projectPath),
-      projectPanes: terminalPanesByContextRef.current,
-      projectPath,
-      snapshots: terminalSnapshotsRef.current,
-      stopChatRun: (runId) => invoke("stop_chat_run", { runId }),
-    });
-    activeTerminalPaneByContextRef.current = closed.activePanes;
-    terminalPanesByContextRef.current = closed.projectPanes;
-  };
-
-  const closeProjectDirect = async (projectPath: string) => {
-    const plan = planProjectClose(openProjectsRef.current, workspacePathRef.current, projectPath);
-    if (plan.remaining.length === openProjectsRef.current.length) return false;
-
-    try {
-      if (plan.wasActive && plan.fallbackPath) {
-        const switched = await openWorkspaceDirect(plan.fallbackPath);
-        if (!switched) return false;
-      }
-      await closeProjectResources(projectPath);
-      if (plan.wasActive && !plan.fallbackPath) {
-        await invoke("stop_workspace_watcher");
-        workspacePathRef.current = null;
-        setWorkspacePath(null);
-        setManagedTerminalPanes([]);
-        setFocusedTerminalPane(null);
-        latest.current = null;
-        setFileTree([]);
-        resetEditor();
-        await storeRef.current?.delete("folder");
-      }
-      await persistOpenProjects(removeOpenProject(openProjectsRef.current, projectPath));
-      await storeRef.current?.save();
-      setActionNotice(`Closed ${basename(projectPath)}`);
-      return true;
-    } catch (error) {
-      setLaunchError(`Could not close ${basename(projectPath)}: ${String(error)}`);
-      return false;
-    }
-  };
-
-  const requestCloseProject = async (project: OpenProject) => {
-    return requestProjectClose({
-      activeProjectPath: workspacePathRef.current, closeProject: closeProjectDirect,
-      confirmDirtyTabs: (count) => confirmDialog(`Close ${basename(project.path)} with ${count} unsaved editor tabs?`),
-      confirmRunningTasks: (count) => confirmDialog(`Close ${basename(project.path)} and stop ${count} running task${count === 1 ? "" : "s"}?`),
-      conversations: chatConversationsRef.current,
-      deferNavigation: () => requestPendingNavigation({ kind: "close-project", projectPath: project.path }),
-      dirtyTabCount: dirtyTabPaths.length, hasSelectedFile: selectedFileRef.current != null,
-      panes: terminalPanesForProject(project.path), projectPath: project.path,
-    });
-  };
+  const projectCloseController = createProjectCloseController({
+    activePanes: activeTerminalPaneByContextRef,
+    clearActiveWorkspace: () => {
+      setWorkspacePath(null); setManagedTerminalPanes([]); setFocusedTerminalPane(null);
+      latest.current = null; setFileTree([]); resetEditor();
+    },
+    closePane: (paneId) => invoke("close_pane", { paneId }),
+    confirmClose: (message) => confirmDialog(message), conversations: chatConversationsRef,
+    deleteStoredFolder: async () => { await storeRef.current?.delete("folder"); },
+    dirtyTabCount: dirtyTabPaths.length, getPanes: terminalPanesForProject,
+    hasSelectedFile: () => selectedFileRef.current != null,
+    intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
+    openProjects: openProjectsRef, openWorkspace: openWorkspaceDirect,
+    persistOpenProjects, projectPanes: terminalPanesByContextRef,
+    saveStore: async () => { await storeRef.current?.save(); },
+    setActionNotice, setLaunchError, snapshots: terminalSnapshotsRef,
+    stopChatRun: (runId) => invoke("stop_chat_run", { runId }),
+    stopWorkspaceWatcher: () => invoke("stop_workspace_watcher"),
+    workspacePath: workspacePathRef,
+  });
+  const closeProjectDirect = projectCloseController.closeProjectDirect;
+  const requestCloseProject = (project: OpenProject) => projectCloseController.requestCloseProject(
+    project, () => requestPendingNavigation({ kind: "close-project", projectPath: project.path }),
+  );
 
   const projectSessionNavigationActions = createProjectSessionNavigationActions({
     captureCurrentSession: captureCurrentSessionSnapshot,
