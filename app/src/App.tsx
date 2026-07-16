@@ -56,6 +56,7 @@ import { useContextMenuHost } from "./useContextMenuHost";
 import { createTerminalSurfaceActions } from "./terminalSurfaceController";
 import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
 import { createChatRunControls } from "./chatRunControls";
+import { createComposerSurface } from "./composerSurfaceController";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -77,9 +78,6 @@ import {
   nextComposerHistoryIndex,
   previousComposerHistoryIndex,
 } from "./agentComposer";
-import type { ComposerAppCommand } from "./agentComposer";
-import { runComposerAppCommand as runComposerAppCommandWithContext } from "./composerAppCommands";
-import { submitComposerDraft as submitComposerDraftWithContext } from "./composerSubmission";
 import {
   createActiveAgentSessionHandle,
 } from "./agentSessionHandle";
@@ -187,11 +185,6 @@ import { ToolTrayTabs } from "./ToolTrayTabs";
 import type { FileTreeNode } from "./fileTreeTypes";
 import { createWorkspaceFileActions } from "./workspaceFileActions";
 import { StatusBar } from "./StatusBar";
-import {
-  type OrchestrationChildDraft,
-} from "./chatOrchestration";
-import { launchOrchestration as launchOrchestrationWithContext } from "./orchestrationLaunch";
-import { createOrchestrationChildActions } from "./orchestrationChildActions";
 import type { ContextMenuItem } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { createProjectCloseController } from "./projectCloseController";
@@ -869,49 +862,58 @@ function App() {
     return true;
   };
 
-  const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
-    return runComposerAppCommandWithContext(command, {
-      selectedFilePath: selectedFile?.path ?? null,
-      terminalLabel: activeTerminalPaneLabel,
-      gateAction: (action) => gateAppAction(action, activeAgentSessionHandle),
-      saveFile: saveEditorFile,
-      openSearch: openEditorSearch,
-      pickWorkspace,
-      clearTerminal: clearActiveTerminal,
-      setError: setComposerError,
-      setNotice: setComposerNotice,
-    });
-  };
-
-  const submitComposerDraft = async (draftOverride?: string) => {
-    await submitComposerDraftWithContext({
-      sending: composerSending,
-      activeRunId: activeChatConversation.activeRunId,
-      draft: composerDraft,
-      history: composerHistory,
-      workspacePath: workspacePathRef.current,
-      chatId: activeComposerHarnessKey,
-      activeSessionId,
-      harness: activeComposerHarness,
-      settings: aiConnectionSettingsRef.current,
-      activeProvider: activeComposerProvider,
-      activeConversation: activeChatConversation,
-      conversations: chatConversationsRef.current,
-      sessions: projectSessionsRef.current,
-      activeSessions: activeSessionByProjectRef.current,
-      resolveProfileLabel: (id) => profiles.resolveProfile(id).label,
-      runAppCommand: runComposerAppCommand,
-      updateConversation: updateChatConversation,
-      persistSessions: persistProjectSessions,
-      recordActivity: (event) => recordAgentActivity(activeAgentSessionHandle, event),
-      setError: setComposerError,
-      setNotice: setComposerNotice,
-      setSending: setComposerSending,
-      setLocalState: setComposerLocalState,
-      setHistoryIndex: setComposerHistoryIndex,
-      updateHarness: updateActiveComposerHarness,
-    }, draftOverride);
-  };
+  const composerSurface = createComposerSurface({
+    chatIdForSession: composerHarnessSessionKey,
+    clearTerminal: () => clearActiveTerminal(),
+    gateAction: (action) => gateAppAction(action, activeAgentSessionHandle),
+    getActiveConversation: () => activeChatConversation,
+    getActiveProvider: () => activeComposerProvider,
+    getActiveSessionId: () => activeSessionId,
+    getActiveSessions: () => activeSessionByProjectRef.current,
+    getChatId: () => activeComposerHarnessKey,
+    getComposerDraft: () => composerDraft,
+    getComposerHistory: () => composerHistory,
+    getComposerSending: () => composerSending,
+    getConversations: () => chatConversationsRef.current,
+    getHarness: () => activeComposerHarness,
+    getHarnessRecords: () => composerHarnessBySessionRef.current,
+    getSelectedFilePath: () => selectedFile?.path ?? null,
+    getSessions: () => projectSessionsRef.current,
+    getSettings: () => aiConnectionSettingsRef.current,
+    getTerminalLabel: () => activeTerminalPaneLabel,
+    getWorkspacePath: () => workspacePathRef.current,
+    now: Date.now,
+    openSearch: () => openEditorSearch(),
+    orchestrationGateAction: (action) => gateAppAction(action),
+    persistHarnessRecords: (records) => persistComposerHarnessRecords(records),
+    persistSessions: (sessions, activeSessions) => persistProjectSessions(sessions, activeSessions),
+    pickWorkspace: () => pickWorkspace(),
+    recordActivity: (event) => recordAgentActivity(activeAgentSessionHandle, event),
+    removeWorktree: (input) => invoke("remove_project_worktree", input),
+    replaceConversations: setChatConversations,
+    resolveProfileLabel: (id) => profiles.resolveProfile(id).label,
+    saveFile: () => saveEditorFile(),
+    setActionNotice,
+    setComposerError,
+    setComposerHistoryIndex,
+    setComposerLocalState,
+    setComposerNotice,
+    setComposerSending,
+    setOrchestrationError,
+    setOrchestrationLaunching,
+    setOrchestrationOpen,
+    stopRun: (runId) => invoke("stop_chat_run", { runId }),
+    updateConversation: updateChatConversation,
+    updateHarness: (update) => updateActiveComposerHarness(update),
+    updateSessionMetadata: (projectPath, sessionId, orchestration) =>
+      updateProjectSessionMetadata(projectPath, sessionId, { orchestration }),
+  });
+  const runComposerAppCommand = composerSurface.runComposerAppCommand;
+  const submitComposerDraft = composerSurface.submitComposerDraft;
+  const launchOrchestration = composerSurface.launchOrchestration;
+  const removeChildWorktree = composerSurface.removeChildWorktree;
+  const returnChildResult = composerSurface.returnChildResult;
+  const stopChildChatRun = composerSurface.stopChildChatRun;
 
   const chatRunControls = createChatRunControls({
     getActiveRunId: () => activeChatConversation.activeRunId,
@@ -922,39 +924,6 @@ function App() {
   });
   const stopActiveChatRun = chatRunControls.stopActiveChatRun;
   const resolveChatApproval = chatRunControls.resolveChatApproval;
-
-  const launchOrchestration = async (drafts: OrchestrationChildDraft[]) => {
-    await launchOrchestrationWithContext(drafts, {
-      projectPath: workspacePathRef.current,
-      sessions: projectSessionsRef.current,
-      activeSessions: activeSessionByProjectRef.current,
-      conversations: chatConversationsRef.current,
-      harnessRecords: composerHarnessBySessionRef.current,
-      settings: aiConnectionSettingsRef.current,
-      chatIdForSession: composerHarnessSessionKey,
-      gateAction: (action) => gateAppAction(action),
-      updateConversation: updateChatConversation,
-      replaceConversations: setChatConversations,
-      persistHarnessRecords: persistComposerHarnessRecords,
-      persistSessions: persistProjectSessions,
-      setLaunching: setOrchestrationLaunching,
-      setError: setOrchestrationError,
-      setOpen: setOrchestrationOpen,
-      setNotice: setActionNotice,
-    });
-  };
-
-  const orchestrationChildActions = createOrchestrationChildActions({
-    conversations: chatConversationsRef, now: Date.now,
-    removeWorktree: (input) => invoke("remove_project_worktree", input),
-    setNotice: setActionNotice, stopRun: (runId) => invoke("stop_chat_run", { runId }),
-    updateConversation: updateChatConversation,
-    updateSessionMetadata: (projectPath, sessionId, orchestration) =>
-      updateProjectSessionMetadata(projectPath, sessionId, { orchestration }),
-  });
-  const removeChildWorktree = orchestrationChildActions.removeChildWorktree;
-  const returnChildResult = orchestrationChildActions.returnChildResult;
-  const stopChildChatRun = orchestrationChildActions.stopChildRun;
 
   const showPreviousComposerHistory = () => {
     const nextIndex = previousComposerHistoryIndex(composerHistory, composerHistoryIndex);
