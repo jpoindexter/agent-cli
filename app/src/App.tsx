@@ -70,6 +70,7 @@ import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
 import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
+import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -1809,18 +1810,27 @@ function App() {
           openExternal: openUrl,
           show: () => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout),
         })}
-        settings={{
-          approvalMode: activeComposerHarness.approvalMode,
-          canSetApproval: Boolean(activeComposerHarnessKey), hasWorkspace: Boolean(workspacePath),
-          launchProfile: profiles.terminalProfile, launchProfileChanging: profiles.changing,
-          launchProfiles: profiles.allProfiles, terminalOpen: agentSurfaceMode === "terminal",
-          toolMode: toolTrayMode, workbenchLayout: renderedWorkbenchLayout,
-          onApprovalChange: (mode) => void setComposerApprovalMode(mode),
-          onBottomTrayChange: (open) => open ? void toggleRawTerminal() : setAgentSurfaceMode("chat"),
-          onLayoutChange: setWorkbenchLayout, onOpenFolder: () => void pickWorkspace(),
-          onProfileChange: (profileId) => { void profiles.switchTerminalProfile(profiles.resolveProfile(profileId)); },
-          onRefreshFiles: refreshFileTree, onToolModeChange: setToolTrayMode,
-        }}
+        settings={quickSettingsDrawerPropsFrom({
+          composer: {
+            approvalMode: activeComposerHarness.approvalMode,
+            canSetApproval: Boolean(activeComposerHarnessKey),
+          },
+          handlers: {
+            approvalChange: setComposerApprovalMode,
+            layoutChange: setWorkbenchLayout,
+            openFolder: () => pickWorkspace(),
+            refreshFiles: refreshFileTree,
+            setSurfaceMode: setAgentSurfaceMode,
+            toggleRawTerminal,
+            toolModeChange: setToolTrayMode,
+          },
+          layout: {
+            surfaceMode: agentSurfaceMode, toolMode: toolTrayMode,
+            workbenchLayout: renderedWorkbenchLayout,
+          },
+          profiles,
+          workspacePath,
+        })}
         files={{
           fileOpError, fileTree, fileTreeError, fileTreeLoading, fileTreeTruncated,
           railBodyRef, railHeight, selectedFileId: selectedFile?.id, treeRef, visibleFileTree,
