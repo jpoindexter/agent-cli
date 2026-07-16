@@ -22,9 +22,6 @@ import { useComposerLocalState } from "./useComposerLocalState";
 import { createComposerSettingsActions } from "./composerSettingsActions";
 import { useComposerAttachments } from "./useComposerAttachments";
 import { useEditorNavigationLifecycle } from "./useEditorNavigationLifecycle";
-import { useTerminalPaneController } from "./useTerminalPaneController";
-import { useEditorSessionController } from "./useEditorSessionController";
-import { useWorkspacePersistenceController } from "./useWorkspacePersistenceController";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import { activeProjectSessionId } from "./workspaceState";
@@ -99,7 +96,6 @@ import {
   defaultTerminalLaunchProfile,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
-import { useLaunchProfileController } from "./useLaunchProfileController";
 import { resolveScopedSetting } from "./scopedSettings";
 import {
   createActiveAgentSessionHandle,
@@ -119,7 +115,7 @@ import {
 } from "./commandPaletteSources";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useAgentActivityController } from "./useAgentActivityController";
-import { useComposerWorkspaceState } from "./useComposerWorkspaceState";
+import { useWorkspaceDomain } from "./useWorkspaceDomain";
 import { usePaneTranscriptController } from "./usePaneTranscriptController";
 import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitStatus } from "./useGitStatus";
@@ -182,7 +178,6 @@ import type { ChatProvider } from "./chatConversation";
 import { createChatConversationActions } from "./chatConversationActions";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
-import { useWorkspaceTree } from "./useWorkspaceTree";
 import {
   deleteDurableChatConversation,
   deleteDurableProjectChats,
@@ -249,48 +244,12 @@ function App() {
   const selecting = useRef(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
-  const composerWorkspace = useComposerWorkspaceState({
-    getRoot: () => workspacePathRef.current,
-    getSessionId: (root) => activeProjectSessionId(
-      persistence.activeSessionByProjectRef.current, persistence.projectSessionsRef.current, root,
-    ),
-    saveStore: async () => { await storeRef.current?.save(); },
-    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
+  const {
+    composerWorkspace, editorSession, persistence, profiles, terminal, workspaceTree,
+  } = useWorkspaceDomain<Snapshot>({
+    activeSessionLookupRef, persistPaneLayoutRef, storeRef, workspacePath, workspacePathRef,
   });
-  const editorSession = useEditorSessionController();
-  const terminal = useTerminalPaneController<Snapshot>({
-    activeSessionForProject: (root) => activeSessionLookupRef.current(root),
-    activeWorkspace: workspacePathRef,
-    persistPaneLayout: (root, sessionId, panes) => {
-      persistPaneLayoutRef.current(root, sessionId, panes);
-    },
-  });
-  const workspaceTree = useWorkspaceTree({
-    onClearWorkspace: () => editorSession.resetEditor(),
-    onRootResolved: (root) => { workspacePathRef.current = root; },
-    workspacePath,
-  });
-  const persistence = useWorkspacePersistenceController({
-    activeFiles: editorSession.activeFilesByWorkspaceRef,
-    getPanes: (root, sessionId) => terminal.panesForSession(root, sessionId),
-    paneLabels: terminal.paneLabelsRef,
-    paneLayouts: terminal.paneLayoutsRef,
-    sessionSnapshots: editorSession.sessionEditorSnapshotsRef,
-    setPaneLabels: terminal.setPaneLabels,
-    store: storeRef,
-  });
-  activeSessionLookupRef.current = persistence.activeSessionForProject;
-  persistPaneLayoutRef.current = persistence.persistPaneLayout;
   const [agentHookStatus, setAgentHookStatus] = useState<AgentHookStatus | null>(null);
-  const profiles = useLaunchProfileController({
-    getCurrentRoot: () => workspacePathRef.current,
-    getCurrentSessionId: () => persistence.activeSessionForProject(workspacePathRef.current),
-    randomId: () => crypto.randomUUID(),
-    saveStore: async () => { await storeRef.current?.save(); },
-    scopedSettings: composerWorkspace.scopedSettingsRef,
-    setScopedSettings: composerWorkspace.setScopedSettings,
-    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
-  });
   const contextMenuHost = useContextMenuHost({
     buildFileNodeItems: (node) => fileNodeContextMenuItemsRef.current(node),
     onActionError: (item, error) => setLaunchError(`${item.label} failed: ${String(error)}`),
