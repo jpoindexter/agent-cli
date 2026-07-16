@@ -10,7 +10,6 @@ import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
 import { AppTitlebar } from "./AppTitlebar";
-import type { UtilityTrayMode } from "./BottomUtilityTabs";
 import { BottomUtilityTray } from "./BottomUtilityTray";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
@@ -58,6 +57,7 @@ import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
 import { createChatRunControls } from "./chatRunControls";
 import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
+import { createUtilityTrayControls } from "./utilityTrayControls";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -1041,49 +1041,24 @@ function App() {
   const pasteIntoTerminal = terminalSurface.pasteIntoTerminal;
   const clearActiveTerminal = terminalSurface.clearActiveTerminal;
 
-  const toggleRawTerminal = async () => {
-    if (agentSurfaceMode === "terminal" && utilityTrayMode === "terminal") {
-      setAgentSurfaceMode("chat");
-      return;
-    }
-    const root = workspacePathRef.current ?? workspacePath;
-    if (!root) {
-      setUtilityTrayMode("terminal");
-      setAgentSurfaceMode("terminal");
-      await pickWorkspace({ openTerminal: true });
-      return;
-    }
-    const sessionId = activeSessionForProject(root);
-    const hasTerminal = Boolean(root && sessionId && terminalPanesForSession(root, sessionId).length > 0);
-    if (!hasTerminal && !await createTerminalPane(defaultTerminalLaunchProfile())) return;
-    setUtilityTrayMode("terminal");
-    setAgentSurfaceMode("terminal");
-  };
-
-  const openUtilityTray = async (mode: UtilityTrayMode) => {
-    if (agentSurfaceMode === "terminal" && utilityTrayMode === mode) {
-      setAgentSurfaceMode("chat");
-      return;
-    }
-    if (mode === "terminal") {
-      await toggleRawTerminal();
-      return;
-    }
-    setUtilityTrayMode(mode);
-    setAgentSurfaceMode("terminal");
-  };
-
-  const toggleUtilityTrayVisibility = () => {
-    setAgentSurfaceMode((current) => current === "terminal" ? "chat" : "terminal");
-  };
-
-  const openAgentConnection = async (providerId: "codex" | "gemini" | "claude") => {
-    setSettingsOpen(false);
-    const created = await createTerminalPane(profiles.resolveProfile(providerId));
-    if (!created) return;
-    setUtilityTrayMode("terminal");
-    setAgentSurfaceMode("terminal");
-  };
+  const utilityTrayControls = createUtilityTrayControls({
+    closeSettings: () => setSettingsOpen(false),
+    createTerminalPane: (profile) => createTerminalPane(profile),
+    defaultProfile: defaultTerminalLaunchProfile,
+    getRoot: () => workspacePathRef.current ?? workspacePath,
+    getSessionId: activeSessionForProject,
+    getSurfaceMode: () => agentSurfaceMode,
+    getTrayMode: () => utilityTrayMode,
+    hasTerminalPanes: (root, sessionId) => terminalPanesForSession(root, sessionId).length > 0,
+    pickWorkspace: (pickOptions) => pickWorkspace(pickOptions),
+    resolveProfile: profiles.resolveProfile,
+    setSurfaceMode: setAgentSurfaceMode,
+    setTrayMode: setUtilityTrayMode,
+  });
+  const toggleRawTerminal = utilityTrayControls.toggleRawTerminal;
+  const openUtilityTray = utilityTrayControls.openUtilityTray;
+  const toggleUtilityTrayVisibility = utilityTrayControls.toggleUtilityTrayVisibility;
+  const openAgentConnection = utilityTrayControls.openAgentConnection;
 
   const activeAgentSessionHandle: AgentSessionHandle | null = activeAgentSessionDescriptor
     ? createActiveAgentSessionHandle({
