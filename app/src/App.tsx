@@ -40,7 +40,6 @@ import {
   findFileTreeNode,
   reconcileActiveFileNode,
 } from "./editorState";
-import { createEditorViewLifecycle } from "./editorViewLifecycle";
 import { createWorkspaceBootstrapController } from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { createAppMenuAssembly } from "./appMenuAssembly";
@@ -49,9 +48,9 @@ import {
   visibleCommandPaletteCommands,
 } from "./commandPaletteAssembly";
 import { createSettingsConnectionActionsController } from "./settingsConnectionActionsController";
-import { createEditorFileUtilityActions } from "./editorFileUtilityActions";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
-import { createEditorReviewNavigation } from "./editorReviewNavigation";
+import { createEditorSurfaceActions } from "./editorSurfaceActions";
+import type { GitStatusFile } from "./fileGitStatus";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -559,28 +558,6 @@ function App() {
   const primarySurfaceLabel = "Codex";
   const primarySurfaceStatusLabel = activeChatConversation.activeRunId ? "Working" : "Ready";
   const utilityTrayStatusLabel = utilityTrayMode.charAt(0).toUpperCase() + utilityTrayMode.slice(1);
-  const editorReviewNavigation = createEditorReviewNavigation({
-    buffers: editorBuffersRef,
-    getDiffReviewPath: () => diffReview?.absolutePath ?? null,
-    getEditorText: () => editorText,
-    getGitFiles: () => gitStatus?.files ?? [],
-    getRoot: () => workspacePathRef.current,
-    getSavedText: () => savedEditorText,
-    getSelectedPath: () => selectedFileRef.current?.path ?? null,
-    getView: () => editorViewRef.current,
-    makeFileNode: (path) => fileNodeFromPath(path, "file"),
-    openGitDiff: async (file) => Boolean(await openGitDiff(file)),
-    requestOpenFile: async (file, fileOptions) => Boolean(await requestOpenEditorFile(file, fileOptions)),
-    revealEditorTools: () => {
-      if (workbenchLayout === "hidden") setWorkbenchLayout("right");
-      setToolTrayMode("editor");
-    },
-    schedule: (callback, delayMs) => { window.setTimeout(callback, delayMs); },
-    scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
-  });
-  const reviewRunCardFile = editorReviewNavigation.reviewRunCardFile;
-  const editorHasUnsavedBufferForPath = editorReviewNavigation.hasUnsavedBufferForPath;
-  const openDiffFile = editorReviewNavigation.openDiffFile;
 
 
   useEffect(() => {
@@ -1348,25 +1325,48 @@ function App() {
   });
   const saveEditorFile = (options: SaveEditorFileOptions = {}) => saveEditorFileWithForce(options.force ?? false);
 
-  const editorFileUtilityActions = createEditorFileUtilityActions<FileTreeNode, EditorView>({
-    copyText: writeText,
-    getSelectedFile: () => selectedFile,
-    getView: () => editorViewRef.current,
-    notify: setActionNotice,
-    openExternal: openPath,
-    openFileDirect: (file, fileOptions) => openEditorFileDirect(file, fileOptions),
-    openSearchPanel,
-    revealInDir: revealItemInDir,
-    saveFile: (saveOptions) => saveEditorFile(saveOptions),
-    scheduleFrame: (callback) => requestAnimationFrame(callback),
-    setRecoveryError: setEditorRecoveryError,
-  });
-  const reloadSelectedFileFromDisk = editorFileUtilityActions.reloadFromDisk;
-  const overwriteSelectedFile = editorFileUtilityActions.overwrite;
-  const openSelectedFileExternally = editorFileUtilityActions.openExternally;
-  const revealSelectedFile = editorFileUtilityActions.reveal;
-  const copyPathToClipboard = editorFileUtilityActions.copyPath;
-  const openEditorSearch = editorFileUtilityActions.openSearch;
+  const editorSurface = createEditorSurfaceActions<
+    FileTreeNode, EditorView, GitStatusFile, ReturnType<typeof EditorView.scrollIntoView>
+  >(
+    {
+      editorBuffersRef, editorText, editorViewRef, editorViewStatesRef,
+      pendingEditorFocusRef, savedEditorText, selectedFileRef,
+      setEditorCursor, setEditorRecoveryError,
+    },
+    {
+      copyText: writeText,
+      getDiffReviewPath: () => diffReview?.absolutePath ?? null,
+      getGitFiles: () => gitStatus?.files ?? [],
+      getRoot: () => workspacePathRef.current,
+      makeFileNode: (path) => fileNodeFromPath(path, "file"),
+      notify: setActionNotice,
+      openExternal: openPath,
+      openFileDirect: (file, fileOptions) => openEditorFileDirect(file, fileOptions),
+      openGitDiff: async (file) => Boolean(await openGitDiff(file)),
+      openSearchPanel,
+      requestOpenFile: async (file, fileOptions) => Boolean(await requestOpenEditorFile(file, fileOptions)),
+      revealEditorTools: () => {
+        if (workbenchLayout === "hidden") setWorkbenchLayout("right");
+        setToolTrayMode("editor");
+      },
+      revealInDir: revealItemInDir,
+      saveFile: (saveOptions) => saveEditorFile(saveOptions),
+      schedule: (callback, delayMs) => { window.setTimeout(callback, delayMs); },
+      scheduleFrame: (callback) => requestAnimationFrame(callback),
+      scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
+    },
+  );
+  const reviewRunCardFile = editorSurface.reviewRunCardFile;
+  const editorHasUnsavedBufferForPath = editorSurface.editorHasUnsavedBufferForPath;
+  const openDiffFile = editorSurface.openDiffFile;
+  const reloadSelectedFileFromDisk = editorSurface.reloadFromDisk;
+  const overwriteSelectedFile = editorSurface.overwrite;
+  const openSelectedFileExternally = editorSurface.openExternally;
+  const revealSelectedFile = editorSurface.reveal;
+  const copyPathToClipboard = editorSurface.copyPath;
+  const openEditorSearch = editorSurface.openEditorSearch;
+  const handleEditorUpdate = (update: ViewUpdate) => editorSurface.handleEditorUpdate(update);
+  const restoreEditorView = editorSurface.restoreEditorView;
 
   const {
     createFile: createFileInRail,
@@ -1885,16 +1885,6 @@ function App() {
     void clearPersistedActiveFile(workspacePath);
   }, [fileTree, fileTreeError, fileTreeLoading, selectedFile, workspacePath]);
 
-  const editorViewLifecycle = createEditorViewLifecycle<EditorView>({
-    getSelectedFilePath: () => selectedFileRef.current?.path ?? null,
-    pendingFocus: pendingEditorFocusRef,
-    scheduleFrame: (callback) => requestAnimationFrame(callback),
-    setCursor: setEditorCursor,
-    setView: (view) => { editorViewRef.current = view; },
-    viewStates: editorViewStatesRef,
-  });
-  const handleEditorUpdate = (update: ViewUpdate) => editorViewLifecycle.handleEditorUpdate(update);
-  const restoreEditorView = editorViewLifecycle.restoreEditorView;
 
   useWorkspaceTreeWatcher({
     getActiveRoot: () => workspacePathRef.current,
