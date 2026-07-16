@@ -189,7 +189,6 @@ import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import { executeTerminalWorktreePaneCreate } from "./terminalWorktreePaneCreateWorkflow";
 import { executeTerminalWorktreePaneClose } from "./terminalWorktreePaneCloseWorkflow";
-import { requestWorkspaceOpen } from "./workspaceOpenRequest";
 import {
   addBackgroundExit,
   clearBackgroundExitsForProject,
@@ -202,7 +201,7 @@ import { createSettingsScopedActions } from "./settingsScopedActions";
 import { deriveActiveChatState } from "./activeChatState";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
-import { executeWorkspaceOpenDirect } from "./workspaceOpenDirectWorkflow";
+import { createWorkspaceOpenActions } from "./workspaceOpenActions";
 import { createWorkspaceOpenLifecycleController } from "./workspaceOpenLifecycleController";
 import {
   createWorkspaceOpenTargetController,
@@ -850,37 +849,34 @@ function App() {
     setLaunchError, setManagedPanes: setManagedTerminalPanes,
   });
 
-  const openWorkspaceDirect = (
-    path: string,
-    profileOverride: LaunchProfile = profiles.launchProfileRef.current,
-    options: { captureCurrentSession?: boolean } = {},
-  ) => executeWorkspaceOpenDirect({
+  const workspaceOpenActions = createWorkspaceOpenActions({
     applyOpened: applyOpenedWorkspaceTarget,
     captureCurrentSession: captureCurrentSessionSnapshot,
-    captureCurrentSessionBeforeOpen: options.captureCurrentSession,
+    clearBackgroundExits: (path) => {
+      setBackgroundExits((exits) => clearBackgroundExitsForProject(exits, path));
+    },
     completeOpened: completeOpenedWorkspace,
+    confirmDiscard: (count) => confirmDialog(
+      `Switch workspace and discard ${count} unsaved editor tabs?`,
+    ),
+    dirtyTabPaths, editorDirty, editorTabs,
     flushComposer: flushActiveComposerLocalState,
+    getDefaultProfile: () => profiles.launchProfileRef.current,
     getPreviousActivePaneId: () => activeTerminalPaneIdRef.current,
     getPreviousPanes: () => terminalPanesRef.current,
     getPreviousRoot: () => workspacePathRef.current,
+    getSelectedFilePath: () => selectedFileRef.current?.path ?? null,
     getStore: () => storeRef.current,
     handleError: handleWorkspaceOpenError,
+    openEditorFile: (file) => openEditorFileDirect(file),
     openTarget: prepareAndOpenWorkspaceTarget,
-    path,
-    profile: profileOverride,
     setFocusedPane: setFocusedTerminalPane,
   });
+  const openWorkspaceDirect = workspaceOpenActions.openWorkspaceDirect;
 
-  const requestOpenWorkspace = async (path: string) => {
-    setBackgroundExits((exits) => clearBackgroundExitsForProject(exits, path));
-    return requestWorkspaceOpen({
-      confirmDiscard: (count) => confirmDialog(`Switch workspace and discard ${count} unsaved editor tabs?`),
-      deferNavigation: () => requestPendingNavigation({ kind: "workspace", path }),
-      dirtyTabPaths, editorDirty, editorTabs, path,
-      openEditorFile: openEditorFileDirect, openWorkspace: openWorkspaceDirect,
-      selectedFilePath: selectedFileRef.current?.path ?? null,
-    });
-  };
+  const requestOpenWorkspace = (path: string) => workspaceOpenActions.requestOpenWorkspace(
+    path, () => requestPendingNavigation({ kind: "workspace", path }),
+  );
 
   const closeProjectResources = async (projectPath: string) => {
     const closed = await closeProjectResourcesWithContext({
