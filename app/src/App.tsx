@@ -189,8 +189,6 @@ import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import { executeTerminalWorktreePaneCreate } from "./terminalWorktreePaneCreateWorkflow";
 import { executeTerminalWorktreePaneClose } from "./terminalWorktreePaneCloseWorkflow";
-import { openWorkspaceTerminalPanes } from "./workspaceOpenPanes";
-import { prepareWorkspaceOpenSession } from "./workspaceOpenSession";
 import { persistMissingWorkspaceCleanup } from "./workspaceOpenRecoveryPersistence";
 import { persistWorkspaceOpenFailure, persistWorkspaceOpenSuccess } from "./workspaceOpenPersistence";
 import { requestWorkspaceOpen } from "./workspaceOpenRequest";
@@ -208,8 +206,11 @@ import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
 import { executeWorkspaceOpenFailure } from "./workspaceOpenFailureWorkflow";
 import { executeWorkspaceOpenDirect } from "./workspaceOpenDirectWorkflow";
-import { resolveWorkspaceOpenTarget } from "./workspaceOpenTarget";
 import { executeWorkspaceOpenSuccess } from "./workspaceOpenSuccessWorkflow";
+import {
+  createWorkspaceOpenTargetController,
+  type OpenedWorkspaceTarget,
+} from "./workspaceOpenTargetController";
 import { TranscriptsModal } from "./TranscriptsModal";
 import { useTerminalFind } from "./useTerminalFind";
 import { ChatThreadSurface } from "./ChatThreadSurface";
@@ -273,19 +274,10 @@ type Cell = { t: string; f: [number, number, number]; b: [number, number, number
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
 type GridPayload = { paneId: number; snapshot: Snapshot };
 type PaneExit = { paneId: number; command: string; code: number; message: string };
-type OpenWorkspaceResponse = { root: string; paneId: number };
-type ResolveWorkspaceResponse = { root: string };
 type OpenPaneResponse = { paneId: number };
 type SaveEditorFileOptions = { force?: boolean };
 type CommandPaletteCommand = SearchDialogCommand;
 type WorkspaceBootstrapSnapshot = Awaited<ReturnType<typeof loadWorkspaceBootstrap>>;
-type OpenedWorkspaceTarget = {
-  activePaneId: number | null;
-  panes: ManagedTerminalPane[];
-  requestedSessionId: string | null;
-  root: string;
-};
-
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
 const fileNodeFromPath = (path: string, kind: FileTreeNode["kind"]): FileTreeNode => ({
   id: path, kind, name: basename(path), path,
@@ -804,48 +796,32 @@ function App() {
     });
   };
 
-  const prepareAndOpenWorkspaceTarget = async (path: string): Promise<OpenedWorkspaceTarget> => {
-    const prepared = prepareWorkspaceOpenSession({
-      activeSessions: activeSessionByProjectRef.current, sessions: projectSessionsRef.current,
-      paneLayouts: paneLayoutsBySessionRef.current, path, now: Date.now(),
-      defaultProfileId: defaultTerminalLaunchProfile().id, savedLabel: savedPaneLabelForSlot(path, 0),
-    });
-    projectSessionsRef.current = prepared.sessions;
-    activeSessionByProjectRef.current = prepared.activeSessions;
-    const existingPanes = terminalPanesForSession(path, prepared.sessionId);
-    const opened = await resolveWorkspaceOpenTarget({
-      activePaneId: activePaneForSession(path, prepared.sessionId, existingPanes), existingPanes,
-      focusPane: (paneId) => invoke("focus_pane", { paneId }),
-      openTerminalPanes: () => openWorkspaceTerminalPanes({
-        createPane: (target, paneProfile) => invoke<OpenPaneResponse>("create_pane", {
-          path: target, profile: paneProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
-        }),
-        fallbackLayout: prepared.fallbackLayout, initialLayout: prepared.layout, now: Date.now,
-        openWorkspace: (target, firstProfile) => invoke<OpenWorkspaceResponse>("open_workspace", {
-          path: target, profile: firstProfile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
-        }),
-        paneLayouts: paneLayoutsBySessionRef.current, path, requestedSessionId: prepared.sessionId,
-        resolveProfile: profiles.resolveProfile,
-        savedLabelForSlot: (target, slot) => savedPaneLabelForSlot(target, slot, prepared.sessionId),
-      }),
-      path, resolveWorkspace: (target) => invoke<ResolveWorkspaceResponse>("resolve_workspace", { path: target }),
-      surfaceMode: agentSurfaceMode,
-    });
-    return { ...opened, requestedSessionId: prepared.sessionId };
-  };
-
-  const applyOpenedWorkspaceTarget = (opened: OpenedWorkspaceTarget) => {
-    const { activePaneId, panes, requestedSessionId, root } = opened;
-    const contextKey = paneContextKey(root, requestedSessionId);
-    if (!contextKey || !requestedSessionId) throw new Error("Workspace session context is unavailable");
-    terminalPanesByContextRef.current = { ...terminalPanesByContextRef.current, [contextKey]: panes };
-    if (activePaneId != null) activeTerminalPaneByContextRef.current = { ...activeTerminalPaneByContextRef.current, [contextKey]: activePaneId };
-    setManagedTerminalPanes(panes); setFocusedTerminalPane(activePaneId);
-    latest.current = activePaneId == null ? null : terminalSnapshotsRef.current[activePaneId] ?? null;
-    requestTerminalPaintRef.current(); setLaunchError(null);
-    restoredActiveFileWorkspaceRef.current = null; workspacePathRef.current = root; setWorkspacePath(root);
-    resetEditor(); setTimeout(sendTerminalResize, 0);
-  };
+  const {
+    applyOpenedWorkspaceTarget, prepareAndOpenWorkspaceTarget,
+  } = createWorkspaceOpenTargetController({
+    activePaneForSession, activePaneIds: activeTerminalPaneByContextRef,
+    activeSessions: activeSessionByProjectRef,
+    createPane: (target, paneProfile, environment) => invoke<OpenPaneResponse>("create_pane", {
+      path: target, profile: paneProfile, environment,
+    }),
+    defaultProfileId: defaultTerminalLaunchProfile().id,
+    focusPane: (paneId) => invoke("focus_pane", { paneId }),
+    getEnvironment: (target) => connectionEnvironmentInputs(aiConnectionSettingsRef.current, target),
+    getSurfaceMode: () => agentSurfaceMode, latest, now: Date.now,
+    openWorkspace: (target, firstProfile, environment) => invoke("open_workspace", {
+      path: target, profile: firstProfile, environment,
+    }),
+    paneLayouts: paneLayoutsBySessionRef, panesByContext: terminalPanesByContextRef,
+    panesForSession: terminalPanesForSession,
+    requestPaint: () => requestTerminalPaintRef.current(), resetEditor,
+    resolveProfile: profiles.resolveProfile,
+    resolveWorkspace: (target) => invoke("resolve_workspace", { path: target }),
+    restoredActiveFileWorkspace: restoredActiveFileWorkspaceRef,
+    savedLabelForSlot: savedPaneLabelForSlot,
+    scheduleResize: () => setTimeout(sendTerminalResize, 0), sessions: projectSessionsRef,
+    setFocusedPane: setFocusedTerminalPane, setLaunchError, setManagedPanes: setManagedTerminalPanes,
+    setWorkspacePath, snapshots: terminalSnapshotsRef, workspacePath: workspacePathRef,
+  });
 
   const completeOpenedWorkspace = async (
     opened: OpenedWorkspaceTarget, profile: LaunchProfile, previousRoot: string | null,

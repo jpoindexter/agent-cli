@@ -20,6 +20,7 @@ const assert = (condition, message) => {
 
 const appCss = `${readCss("app/src/App.css")}\n${readCss("app/src/composerModelPicker.css")}\n${readCss("app/src/responsive-shell.css")}\n${readCss("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
+const workspaceOpenTargetController = read("app/src/workspaceOpenTargetController.ts");
 const composerSubmission = read("app/src/composerSubmission.ts");
 const appTitlebar = read("app/src/AppTitlebar.tsx");
 const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");
@@ -172,7 +173,11 @@ assert(chatHarness.includes("codex app-server --stdio"), "Structured Codex chat 
 assert(chatHarness.includes('(\"thread/resume\", 2)'), "Structured Codex chat must resume the selected chat's provider thread");
 assert(chatConversation.includes('eventType === "item/agentMessage/delta"'), "Structured Codex chat must render provider-native response deltas");
 assert(composerSubmission.includes('route.kind === "chat"'), "Normal composer prompts must route to structured chat, not a pty paste path");
-assert(appTsx.includes('invoke<ResolveWorkspaceResponse>("resolve_workspace"'), "Opening a chat must resolve its project without spawning a hidden terminal");
+assert(
+  appTsx.includes('resolveWorkspace: (target) => invoke("resolve_workspace"')
+    && workspaceOpenTargetController.includes("resolveWorkspace: options.resolveWorkspace"),
+  "Opening a chat must resolve its project without spawning a hidden terminal",
+);
 assert(tauriBackend.includes("fn resolve_workspace"), "The backend must expose a no-pty project open path for chat mode");
 assert(bottomUtilityTray.includes('className={`utility-tray ${props.open ?') && appTsx.includes('open={agentSurfaceMode === "terminal"}'), "Raw terminal must live in the approved bottom utility tray");
 assert(appTsx.includes('hidden={false}'), "Opening the bottom tray must keep the chat timeline visible");
