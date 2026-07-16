@@ -57,6 +57,7 @@ import { createTerminalSurfaceActions } from "./terminalSurfaceController";
 import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
 import { createChatRunControls } from "./chatRunControls";
 import { createComposerSurface } from "./composerSurfaceController";
+import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -73,11 +74,6 @@ import {
 import type { LaunchProfile } from "./launchProfiles";
 import { useLaunchProfileController } from "./useLaunchProfileController";
 import { resolveScopedSetting } from "./scopedSettings";
-import {
-  composerHistoryAt,
-  nextComposerHistoryIndex,
-  previousComposerHistoryIndex,
-} from "./agentComposer";
 import {
   createActiveAgentSessionHandle,
 } from "./agentSessionHandle";
@@ -925,18 +921,15 @@ function App() {
   const stopActiveChatRun = chatRunControls.stopActiveChatRun;
   const resolveChatApproval = chatRunControls.resolveChatApproval;
 
-  const showPreviousComposerHistory = () => {
-    const nextIndex = previousComposerHistoryIndex(composerHistory, composerHistoryIndex);
-    if (nextIndex == null) return;
-    setComposerHistoryIndex(nextIndex);
-    setComposerLocalState(activeComposerHarnessKey, composerHistoryAt(composerHistory, nextIndex), composerHistory);
-  };
-
-  const showNextComposerHistory = () => {
-    const nextIndex = nextComposerHistoryIndex(composerHistory, composerHistoryIndex);
-    setComposerHistoryIndex(nextIndex);
-    setComposerLocalState(activeComposerHarnessKey, nextIndex == null ? "" : composerHistoryAt(composerHistory, nextIndex), composerHistory);
-  };
+  const composerHistoryNavigation = createComposerHistoryNavigation({
+    getChatId: () => activeComposerHarnessKey,
+    getHistory: () => composerHistory,
+    getHistoryIndex: () => composerHistoryIndex,
+    setHistoryIndex: setComposerHistoryIndex,
+    setLocalState: setComposerLocalState,
+  });
+  const showPreviousComposerHistory = composerHistoryNavigation.showPrevious;
+  const showNextComposerHistory = composerHistoryNavigation.showNext;
 
   const saveAiConnectionSettings = async (next: AiConnectionSettings) => {
     aiConnectionSettingsRef.current = next;
