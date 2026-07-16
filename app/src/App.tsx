@@ -342,9 +342,7 @@ function App() {
     buildFileNodeItems: (node) => fileNodeContextMenuItemsRef.current(node),
     onActionError: (item, error) => setLaunchError(`${item.label} failed: ${String(error)}`),
   });
-  const setContextMenu = contextMenuHost.setContextMenu;
-  const openContextMenu = contextMenuHost.openContextMenu;
-  const commandPalette = useCommandPalette(() => setContextMenu(null));
+  const commandPalette = useCommandPalette(() => contextMenuHost.setContextMenu(null));
   const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
   const [orchestrationOpen, setOrchestrationOpen] = useState(false);
   const [orchestrationLaunching, setOrchestrationLaunching] = useState(false);
@@ -426,7 +424,7 @@ function App() {
   } = useGitDiffReview({
     gateAction: (action) => gateAppAction(action),
     getRoot: () => workspacePathRef.current ?? workspacePath,
-    hasUnsaved: (path) => editorHasUnsavedBufferForPath(path),
+    hasUnsaved: (path) => editorSurface.editorHasUnsavedBufferForPath(path),
     onRefreshFiles: refreshFileTree,
     onStatus: (status, root) => { setGitStatus(status); setGitStatusRoot(root); },
   });
@@ -453,7 +451,7 @@ function App() {
     ),
     [chatConversations, chatSearchResults, commandPalette.query, projectSessions],
   );
-  const quickOpen = useQuickOpen(searchableFiles, () => setContextMenu(null));
+  const quickOpen = useQuickOpen(searchableFiles, () => contextMenuHost.setContextMenu(null));
   const {
     activeAgentProfileSetting, activeApprovalSetting, activeBrowserSetting,
     activeChatConversation, activeComposerHarness, activeComposerHarnessKey,
@@ -593,14 +591,11 @@ function App() {
     setConversations: setChatConversations,
     setError: setLaunchError,
     setNotice: setActionNotice,
-    switchSession: (root, sessionId) => switchProjectSession(root, sessionId),
+    switchSession: (root, sessionId) => projectSessionNavigationActions.switchSession(root, sessionId),
   });
-  const updateChatConversation = chatConversationActions.updateConversation;
-  const toggleChatMessageBookmark = chatConversationActions.toggleBookmark;
-  const forkChatFromMessage = chatConversationActions.forkFromMessage;
 
   useChatRunEvents((envelope) => {
-    updateChatConversation(envelope.chatId, (conversation) =>
+    chatConversationActions.updateConversation(envelope.chatId, (conversation) =>
       applyChatRunEnvelope(conversation, envelope));
   });
 
@@ -685,7 +680,6 @@ function App() {
       setWorkspacePath, workspacePath: workspacePathRef,
     }),
   });
-  const openWorkspaceDirect = workspaceOpenActions.openWorkspaceDirect;
 
   const requestOpenWorkspace = (path: string) => workspaceOpenActions.requestOpenWorkspace(
     path, () => requestPendingNavigation({ kind: "workspace", path }),
@@ -701,7 +695,7 @@ function App() {
     deleteStoredFolder: async () => { await storeRef.current?.delete("folder"); },
     dirtyTabCount: dirtyTabPaths.length,
     hasSelectedFile: () => selectedFileRef.current != null,
-    openProjects: openProjectsRef, openWorkspace: openWorkspaceDirect,
+    openProjects: openProjectsRef, openWorkspace: workspaceOpenActions.openWorkspaceDirect,
     persistOpenProjects,
     saveStore: async () => { await storeRef.current?.save(); },
     setActionNotice, setLaunchError,
@@ -709,7 +703,6 @@ function App() {
     stopWorkspaceWatcher: () => invoke("stop_workspace_watcher"),
     workspacePath: workspacePathRef,
   }));
-  const closeProjectDirect = projectCloseController.closeProjectDirect;
   const requestCloseProject = (project: OpenProject) => projectCloseController.requestCloseProject(
     project, () => requestPendingNavigation({ kind: "close-project", projectPath: project.path }),
   );
@@ -731,7 +724,7 @@ function App() {
     now: Date.now,
     openProject: async (projectPath, sameProject) => {
       if (sameProject) {
-        await openWorkspaceDirect(
+        await workspaceOpenActions.openWorkspaceDirect(
           projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
         );
       } else {
@@ -743,7 +736,6 @@ function App() {
     promptTitle: (title) => window.prompt("Chat name", title),
     setFocusedMessage: setFocusedChatMessageId,
   });
-  const switchProjectSession = projectSessionNavigationActions.switchSession;
 
   const openChatSearchResult = createChatSearchNavigation({
     focusMessage: setFocusedChatMessageId,
@@ -751,11 +743,9 @@ function App() {
     setError: setChatSearchError,
     showArchived: () => setShowArchivedSessions(true),
     showProjectsDrawer: () => setSideDrawerMode("projects"),
-    switchSession: switchProjectSession,
+    switchSession: projectSessionNavigationActions.switchSession,
   });
 
-  const createProjectSession = projectSessionNavigationActions.createSession;
-  const renameProjectSession = projectSessionNavigationActions.renameSession;
 
   const projectSessionDeletionController = createProjectSessionDeletionController(projectSessionDeletionFromHook(terminal, {
     activeSessionId,
@@ -768,21 +758,18 @@ function App() {
     },
     persistComposerHarness: persistComposerHarnessRecords, persistSessions: persistProjectSessions,
     removePersistedRestore: removePersistedSessionRestore,
-    reopenActiveWorkspace: (projectPath) => openWorkspaceDirect(
+    reopenActiveWorkspace: (projectPath) => workspaceOpenActions.openWorkspaceDirect(
       projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
     ),
     sessions: projectSessionsRef, setBrowserSessions: browser.setSessionRecords,
     setConversations: setChatConversations, setError: setLaunchError,
     workspacePath: workspacePathRef,
   }));
-  const deleteProjectSession = projectSessionDeletionController.deleteProjectSession;
 
   const paneActivityLog = createPaneActivityLog({
     approvalMode: () => agentApprovalMode,
     recordActivity: recordAgentActivity,
   });
-  const recordCreatedPaneActivity = paneActivityLog.recordCreated;
-  const recordCreatedWorktreePaneActivity = paneActivityLog.recordCreatedWorktree;
 
   const finalizeCreatedTerminalPane = createTerminalPaneFinalize({
     getProjectStatus: projectStatusForRoot,
@@ -799,7 +786,7 @@ function App() {
   });
 
   const pickWorkspace = createWorkspacePicker({
-    createTerminalPane: (profile) => createTerminalPane(profile),
+    createTerminalPane: (profile) => terminalSurface.createTerminalPane(profile),
     defaultProfile: defaultTerminalLaunchProfile,
     openDirectoryDialog: () => open({ directory: true }),
     requestOpenWorkspace: (path) => requestOpenWorkspace(path),
@@ -807,7 +794,7 @@ function App() {
 
   const composerSurface = createComposerSurface({
     chatIdForSession: composerHarnessSessionKey,
-    clearTerminal: () => clearActiveTerminal(),
+    clearTerminal: () => terminalSurface.clearActiveTerminal(),
     gateAction: (action) => gateAppAction(action, activeAgentSessionHandle),
     getActiveConversation: () => activeChatConversation,
     getActiveProvider: () => activeComposerProvider,
@@ -826,7 +813,7 @@ function App() {
     getTerminalLabel: () => activeTerminalPaneLabel,
     getWorkspacePath: () => workspacePathRef.current,
     now: Date.now,
-    openSearch: () => openEditorSearch(),
+    openSearch: () => editorSurface.openEditorSearch(),
     orchestrationGateAction: (action) => gateAppAction(action),
     persistHarnessRecords: (records) => persistComposerHarnessRecords(records),
     persistSessions: (sessions, activeSessions) => persistProjectSessions(sessions, activeSessions),
@@ -846,17 +833,11 @@ function App() {
     setOrchestrationLaunching,
     setOrchestrationOpen,
     stopRun: (runId) => invoke("stop_chat_run", { runId }),
-    updateConversation: updateChatConversation,
+    updateConversation: chatConversationActions.updateConversation,
     updateHarness: (update) => updateActiveComposerHarness(update),
     updateSessionMetadata: (projectPath, sessionId, orchestration) =>
-      updateProjectSessionMetadata(projectPath, sessionId, { orchestration }),
+      projectSessionMetadataActions.updateSessionMetadata(projectPath, sessionId, { orchestration }),
   });
-  const runComposerAppCommand = composerSurface.runComposerAppCommand;
-  const submitComposerDraft = composerSurface.submitComposerDraft;
-  const launchOrchestration = composerSurface.launchOrchestration;
-  const removeChildWorktree = composerSurface.removeChildWorktree;
-  const returnChildResult = composerSurface.returnChildResult;
-  const stopChildChatRun = composerSurface.stopChildChatRun;
 
   const chatRunControls = createChatRunControls({
     getActiveRunId: () => activeChatConversation.activeRunId,
@@ -865,8 +846,6 @@ function App() {
     setError: setComposerError,
     stopRun: (runId) => invoke("stop_chat_run", { runId }),
   });
-  const stopActiveChatRun = chatRunControls.stopActiveChatRun;
-  const resolveChatApproval = chatRunControls.resolveChatApproval;
 
   const composerHistoryNavigation = createComposerHistoryNavigation({
     getChatId: () => activeComposerHarnessKey,
@@ -875,8 +854,6 @@ function App() {
     setHistoryIndex: setComposerHistoryIndex,
     setLocalState: setComposerLocalState,
   });
-  const showPreviousComposerHistory = composerHistoryNavigation.showPrevious;
-  const showNextComposerHistory = composerHistoryNavigation.showNext;
 
 
 
@@ -890,16 +867,12 @@ function App() {
     labelReasoning: composerReasoningLabel,
     logEvent: logComposerHarnessEvent,
     now: Date.now,
-    updateConversation: updateChatConversation,
+    updateConversation: chatConversationActions.updateConversation,
     updateHarness: updateActiveComposerHarness,
     updateScopedSetting: (key, value) => key === "approvalMode"
       ? updateScopedSetting("chat", "approvalMode", value as AgentApprovalMode)
       : updateScopedSetting("chat", "agentProfileId", value as ChatProvider),
   });
-  const setComposerApprovalMode = composerSettingsActions.setApprovalMode;
-  const setComposerGoal = composerSettingsActions.setGoal;
-  const setComposerRuntime = composerSettingsActions.setRuntime;
-  const setComposerReasoningEffort = composerSettingsActions.setReasoningEffort;
 
   const terminalSurface = createTerminalSurfaceActions<Snapshot, SelectionRange>(terminalSurfaceDepsFromHook(terminal, {
     ...createTerminalPaneCommands({
@@ -928,8 +901,8 @@ function App() {
     promptWorktreeLabel: () => window.prompt("Worktree label (used for the branch name)"),
     readClipboard: readText,
     recordActivity: recordAgentActivity,
-    recordCreated: recordCreatedPaneActivity,
-    recordCreatedWorktree: recordCreatedWorktreePaneActivity,
+    recordCreated: paneActivityLog.recordCreated,
+    recordCreatedWorktree: paneActivityLog.recordCreatedWorktree,
     requestPaint: () => requestTerminalPaintRef.current(), savedLabel: savedPaneLabelForSlot,
     scheduleResize: () => setTimeout(sendTerminalResize, 0), selection,
     selectionText: (snap, snapSelection) => selectionToText(snap.cells, snap.cols, snapSelection),
@@ -938,23 +911,10 @@ function App() {
     updateProjectStatus: updateOpenProjectStatus,
     updateSessionStatus: (root, status) => updateActiveSessionStatus(root, status),
   }));
-  const closeTerminalPane = terminalSurface.closeTerminalPane;
-  const closeWorktreePane = terminalSurface.closeWorktreePane;
-  const createTerminalPane = terminalSurface.createTerminalPane;
-  const createWorktreePane = terminalSurface.createWorktreePane;
-  const focusTerminalPane = terminalSurface.focusTerminalPane;
-  const interruptActivePane = terminalSurface.interruptActivePane;
-  const terminateTerminalPane = terminalSurface.terminateTerminalPane;
-  const restartTerminalPane = terminalSurface.restartTerminalPane;
-  const terminalSelectedText = terminalSurface.terminalSelectedText;
-  const copyTerminalSelection = terminalSurface.copyTerminalSelection;
-  const copyActivePaneTail = terminalSurface.copyActivePaneTail;
-  const pasteIntoTerminal = terminalSurface.pasteIntoTerminal;
-  const clearActiveTerminal = terminalSurface.clearActiveTerminal;
 
   const utilityTrayControls = createUtilityTrayControls({
     closeSettings: () => setSettingsOpen(false),
-    createTerminalPane: (profile) => createTerminalPane(profile),
+    createTerminalPane: (profile) => terminalSurface.createTerminalPane(profile),
     defaultProfile: defaultTerminalLaunchProfile,
     getRoot: () => workspacePathRef.current ?? workspacePath,
     getSessionId: activeSessionForProject,
@@ -966,17 +926,13 @@ function App() {
     setSurfaceMode: setAgentSurfaceMode,
     setTrayMode: setUtilityTrayMode,
   });
-  const toggleRawTerminal = utilityTrayControls.toggleRawTerminal;
-  const openUtilityTray = utilityTrayControls.openUtilityTray;
-  const toggleUtilityTrayVisibility = utilityTrayControls.toggleUtilityTrayVisibility;
-  const openAgentConnection = utilityTrayControls.openAgentConnection;
 
   const activeAgentSessionHandle: AgentSessionHandle | null = activeAgentSessionDescriptor
     ? createActiveAgentSessionHandle({
         activePaneId: () => activeTerminalPaneIdRef.current,
-        closePane: closeTerminalPane,
+        closePane: terminalSurface.closeTerminalPane,
         descriptor: activeAgentSessionDescriptor,
-        focusPane: focusTerminalPane,
+        focusPane: terminalSurface.focusTerminalPane,
         recordClosed: (descriptor) => recordAgentActivity(descriptor, {
           kind: "process", label: "Closed pane", detail: descriptor.label, status: "exited",
         }),
@@ -1061,17 +1017,7 @@ function App() {
       scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
     },
   );
-  const reviewRunCardFile = editorSurface.reviewRunCardFile;
-  const editorHasUnsavedBufferForPath = editorSurface.editorHasUnsavedBufferForPath;
-  const openDiffFile = editorSurface.openDiffFile;
-  const reloadSelectedFileFromDisk = editorSurface.reloadFromDisk;
-  const overwriteSelectedFile = editorSurface.overwrite;
-  const openSelectedFileExternally = editorSurface.openExternally;
-  const revealSelectedFile = editorSurface.reveal;
-  const copyPathToClipboard = editorSurface.copyPath;
-  const openEditorSearch = editorSurface.openEditorSearch;
   const handleEditorUpdate = (update: ViewUpdate) => editorSurface.handleEditorUpdate(update);
-  const restoreEditorView = editorSurface.restoreEditorView;
 
   const {
     createFile: createFileInRail,
@@ -1096,7 +1042,7 @@ function App() {
 
   const workspaceContextMenuActions = {
     closeProject: requestCloseProject,
-    copyPath: copyPathToClipboard,
+    copyPath: editorSurface.copyPath,
     deleteNode: deleteRailNode,
     duplicateNode: duplicateRailNode,
     newFile: createFileInRail,
@@ -1126,9 +1072,6 @@ function App() {
     now: Date.now,
     persist: persistProjectSessions,
   });
-  const updateProjectSessionMetadata = projectSessionMetadataActions.updateSessionMetadata;
-  const archiveProjectSession = projectSessionMetadataActions.archiveSession;
-  const pinProjectSession = projectSessionMetadataActions.pinSession;
 
   const {
     capture: captureSessionCheckpoint,
@@ -1137,7 +1080,7 @@ function App() {
     gateAction: (action) => gateAppAction(action),
     getDirtyTabPaths: () => dirtyTabPaths,
     getWorkspacePath: () => workspacePathRef.current,
-    onMetadata: updateProjectSessionMetadata,
+    onMetadata: projectSessionMetadataActions.updateSessionMetadata,
     openFileDirect: (file) => openEditorFileDirect(file),
     refreshFiles: refreshFileTree,
     refreshGit: () => refreshGitStatus(),
@@ -1158,18 +1101,18 @@ function App() {
       }),
       session,
       actions: {
-        archive: () => archiveProjectSession(projectPath, session, !session.archived),
+        archive: () => projectSessionMetadataActions.archiveSession(projectPath, session, !session.archived),
         captureCheckpoint: () => captureSessionCheckpoint(projectPath, session),
         copyName: async () => { await writeText(session.title); setActionNotice("Copied chat name"); },
-        delete: () => deleteProjectSession(projectPath, session),
-        pin: () => pinProjectSession(projectPath, session, !session.pinnedAt),
-        removeChildWorktree: () => removeChildWorktree(projectPath, session),
-        rename: () => renameProjectSession(projectPath, session),
+        delete: () => projectSessionDeletionController.deleteProjectSession(projectPath, session),
+        pin: () => projectSessionMetadataActions.pinSession(projectPath, session, !session.pinnedAt),
+        removeChildWorktree: () => composerSurface.removeChildWorktree(projectPath, session),
+        rename: () => projectSessionNavigationActions.renameSession(projectPath, session),
         restoreCheckpoint: () => session.checkpointId ? restoreSessionCheckpoint(projectPath, session, session.checkpointId) : undefined,
         restoreRecoveryCheckpoint: () => session.recoveryCheckpointId ? restoreSessionCheckpoint(projectPath, session, session.recoveryCheckpointId) : undefined,
-        returnChildResult: () => returnChildResult(projectPath, session),
-        stopChildRun: () => stopChildChatRun(projectPath, session),
-        switchChat: () => switchProjectSession(projectPath, session.id),
+        returnChildResult: () => composerSurface.returnChildResult(projectPath, session),
+        stopChildRun: () => composerSurface.stopChildChatRun(projectPath, session),
+        switchChat: () => projectSessionNavigationActions.switchSession(projectPath, session.id),
       },
     });
   };
@@ -1178,13 +1121,13 @@ function App() {
     closeDiff: closeDiffReview,
     closeTab: (tab: FileTreeNode) => closeEditorTab(tab),
     copyDiff: copyShownDiff,
-    copyPath: copyPathToClipboard,
-    find: openEditorSearch,
-    openDiffFile,
-    openExternal: openSelectedFileExternally,
+    copyPath: editorSurface.copyPath,
+    find: editorSurface.openEditorSearch,
+    openDiffFile: editorSurface.openDiffFile,
+    openExternal: editorSurface.openExternally,
     openTab: (tab: FileTreeNode) => requestOpenEditorFile(tab, { focusEditor: true }),
     revealNode: revealRailNode,
-    revealSelected: revealSelectedFile,
+    revealSelected: editorSurface.reveal,
     runGitAction: runGitFileAction,
     save: saveEditorFile,
     shortcut: shortcutKeys,
@@ -1225,7 +1168,7 @@ function App() {
     activePaneState: activeTerminalPane?.state ?? null,
     hasActiveHandle: Boolean(activeAgentSessionHandle),
     hasActivePane: Boolean(activeTerminalPane),
-    hasSelection: Boolean(terminalSelectedText()),
+    hasSelection: Boolean(terminalSurface.terminalSelectedText()),
     hasWorkspace: Boolean(workspacePath),
     hasWorktreeForActivePane: Boolean(activeTerminalPane && worktreeForPaneId(worktrees, String(activeTerminalPane.id))),
     launchProfileChanging: profiles.changing,
@@ -1236,19 +1179,19 @@ function App() {
       paste: shortcutKeys("terminal.paste"),
     },
     actions: {
-      clear: () => clearActiveTerminal(),
+      clear: () => terminalSurface.clearActiveTerminal(),
       closePane: () => activeAgentSessionHandle?.close(),
-      copySelection: async () => { await copyTerminalSelection(); setActionNotice("Copied terminal selection"); },
-      copyTail: async () => { await copyActivePaneTail(); setActionNotice("Copied last 20 lines"); },
-      copyWorkingDirectory: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
-      createPane: () => createTerminalPane(profiles.terminalProfile),
-      createWorktreePane: () => createWorktreePane(profiles.terminalProfile),
-      interrupt: () => interruptActivePane(),
-      killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
-      paste: () => pasteIntoTerminal(),
-      removeWorktree: () => activeTerminalPane ? closeWorktreePane(activeTerminalPane.id) : undefined,
+      copySelection: async () => { await terminalSurface.copyTerminalSelection(); setActionNotice("Copied terminal selection"); },
+      copyTail: async () => { await terminalSurface.copyActivePaneTail(); setActionNotice("Copied last 20 lines"); },
+      copyWorkingDirectory: () => workspacePath ? editorSurface.copyPath(workspacePath) : undefined,
+      createPane: () => terminalSurface.createTerminalPane(profiles.terminalProfile),
+      createWorktreePane: () => terminalSurface.createWorktreePane(profiles.terminalProfile),
+      interrupt: () => terminalSurface.interruptActivePane(),
+      killPane: () => activeTerminalPane ? terminalSurface.terminateTerminalPane(activeTerminalPane) : undefined,
+      paste: () => terminalSurface.pasteIntoTerminal(),
+      removeWorktree: () => activeTerminalPane ? terminalSurface.closeWorktreePane(activeTerminalPane.id) : undefined,
       renamePane: () => activeTerminalPane ? renameTerminalPane(activeTerminalPane) : undefined,
-      restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
+      restartPane: () => activeTerminalPane ? terminalSurface.restartTerminalPane(activeTerminalPane) : undefined,
       saveTranscript: saveActivePaneTranscript,
     },
   });
@@ -1268,44 +1211,39 @@ function App() {
       canAttachCurrent: Boolean(selectedFile),
       canRunParallel: Boolean(workspacePath && activeSessionId && !activeChatConversation.activeRunId),
       clearDraft: () => setComposerLocalState(activeComposerHarnessKey, "", composerHistory),
-      copyWorkspace: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
+      copyWorkspace: () => workspacePath ? editorSurface.copyPath(workspacePath) : undefined,
       draft: composerDraft, hasWorkspace: Boolean(workspacePath),
       parallel: () => { setOrchestrationError(null); setOrchestrationOpen(true); },
-      send: () => submitComposerDraft(), sending: composerSending,
-      shortcut: shortcutKeys("composer.send"), stop: () => stopActiveChatRun(),
+      send: () => composerSurface.submitComposerDraft(), sending: composerSending,
+      shortcut: shortcutKeys("composer.send"), stop: () => chatRunControls.stopActiveChatRun(),
     },
     copyText: writeText,
     notify: setActionNotice,
     pane: {
       activePaneId: activeTerminalPaneId, changing: profiles.changing,
-      close: (pane) => closeTerminalPane(pane.id),
-      copyCwd: (pane) => copyPathToClipboard(pane.cwd),
-      focus: (pane) => focusTerminalPane(pane.id),
+      close: (pane) => terminalSurface.closeTerminalPane(pane.id),
+      copyCwd: (pane) => editorSurface.copyPath(pane.cwd),
+      focus: (pane) => terminalSurface.focusTerminalPane(pane.id),
       hasWorktree: (pane) => Boolean(worktreeForPaneId(worktrees, String(pane.id))),
-      kill: (pane) => terminateTerminalPane(pane),
-      removeWorktree: (pane) => closeWorktreePane(pane.id),
+      kill: (pane) => terminalSurface.terminateTerminalPane(pane),
+      removeWorktree: (pane) => terminalSurface.closeWorktreePane(pane.id),
       rename: (pane) => renameTerminalPane(pane),
-      restart: (pane) => restartTerminalPane(pane),
+      restart: (pane) => terminalSurface.restartTerminalPane(pane),
     },
-    setContextMenu,
+    setContextMenu: contextMenuHost.setContextMenu,
     tray: {
       activeMode: utilityTrayMode, activePaneState: activeTerminalPane?.state ?? null,
       activeSurface: agentSurfaceMode === "terminal",
-      closePane: () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined,
-      createShell: () => createTerminalPane(defaultTerminalLaunchProfile()),
+      closePane: () => activeTerminalPane ? terminalSurface.closeTerminalPane(activeTerminalPane.id) : undefined,
+      createShell: () => terminalSurface.createTerminalPane(defaultTerminalLaunchProfile()),
       hasActivePane: Boolean(activeTerminalPane), hasWorkspace: Boolean(workspacePath),
       hide: () => setAgentSurfaceMode("chat"),
-      killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
+      killPane: () => activeTerminalPane ? terminalSurface.terminateTerminalPane(activeTerminalPane) : undefined,
       launchProfileChanging: profiles.changing,
-      restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
+      restartPane: () => activeTerminalPane ? terminalSurface.restartTerminalPane(activeTerminalPane) : undefined,
       show: (nextMode) => { setUtilityTrayMode(nextMode); setAgentSurfaceMode("terminal"); },
     },
   });
-  const terminalPaneContextMenuItems = appMenuAssembly.terminalPaneContextMenuItems;
-  const utilityTrayTabContextMenuItems = appMenuAssembly.utilityTrayTabContextMenuItems;
-  const browserContextMenuItems = appMenuAssembly.browserContextMenuItems;
-  const composerContextMenuItems = appMenuAssembly.composerContextMenuItems;
-  const openComposerAddMenu = appMenuAssembly.openComposerAddMenu;
 
   const activeTerminalPaneLabelForCommands = activePaneDisplayLabel(terminalPanes, activeTerminalPane);
   const commandPaletteNavigation = {
@@ -1314,7 +1252,7 @@ function App() {
     files: searchableFiles,
     onFocusWorktree: (paneId: number) => {
       setAgentSurfaceMode("terminal");
-      void focusTerminalPane(paneId);
+      void terminalSurface.focusTerminalPane(paneId);
     },
     onLayoutChange: setWorkbenchLayout,
     onOpenFile: (file: FileTreeNode) => void requestOpenEditorFile(file, { focusEditor: true }),
@@ -1333,14 +1271,14 @@ function App() {
     activePaneLabel: activeTerminalPaneLabelForCommands,
     canClose: Boolean(activeAgentSessionHandle),
     launchProfileChanging: profiles.changing,
-    onClear: () => void clearActiveTerminal(),
+    onClear: () => void terminalSurface.clearActiveTerminal(),
     onClose: () => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); },
-    onCreatePane: (profile: LaunchProfile) => void createTerminalPane(profile),
-    onCreateWorktreePane: (profile: LaunchProfile) => void createWorktreePane(profile),
+    onCreatePane: (profile: LaunchProfile) => void terminalSurface.createTerminalPane(profile),
+    onCreateWorktreePane: (profile: LaunchProfile) => void terminalSurface.createWorktreePane(profile),
     onFind: () => terminalFind.setOpen(true),
-    onKill: (pane: ManagedTerminalPane) => void terminateTerminalPane(pane),
-    onRemoveWorktree: (paneId: number) => void closeWorktreePane(paneId),
-    onRestart: (pane: ManagedTerminalPane) => void restartTerminalPane(pane),
+    onKill: (pane: ManagedTerminalPane) => void terminalSurface.terminateTerminalPane(pane),
+    onRemoveWorktree: (paneId: number) => void terminalSurface.closeWorktreePane(paneId),
+    onRestart: (pane: ManagedTerminalPane) => void terminalSurface.restartTerminalPane(pane),
     shortcut: shortcutKeys,
     terminalProfile: profiles.terminalProfile,
     workspacePath,
@@ -1357,7 +1295,7 @@ function App() {
     onAttachPreview: () => void attachPreviewToComposer(),
     onCloseEditorTab: () => { if (selectedFile) void closeEditorTab(selectedFile); },
     onExportPerformance: () => void exportRenderPerfSnapshot(),
-    onFindEditor: openEditorSearch,
+    onFindEditor: editorSurface.openEditorSearch,
     onOpenDetectedBrowser: () => void browser.openDetectedServer(),
     onOpenSettings: () => setSettingsOpen(true),
     onOpenTranscripts: () => setTranscriptsOpen(true),
@@ -1374,7 +1312,7 @@ function App() {
     activeRun: Boolean(activeChatConversation.activeRunId),
     activeSessionId,
     onOpenSearchResult: (result: ChatSearchViewResult) => void openChatSearchResult(result),
-    onOpenSession: (projectPath: string, sessionId: string) => void switchProjectSession(projectPath, sessionId),
+    onOpenSession: (projectPath: string, sessionId: string) => void projectSessionNavigationActions.switchSession(projectPath, sessionId),
     onParallel: () => {
       setOrchestrationError(null);
       setOrchestrationOpen(true);
@@ -1388,7 +1326,7 @@ function App() {
     assembleCommandPaletteCommands({
       chats: commandPaletteChats,
       navigation: commandPaletteNavigation,
-      runAppCommand: runComposerAppCommand,
+      runAppCommand: composerSurface.runComposerAppCommand,
       terminal: commandPaletteTerminal,
       workbench: commandPaletteWorkbench,
     }),
@@ -1408,7 +1346,7 @@ function App() {
   } = useEditorNavigationLifecycle({
     activeFile: selectedFile,
     captureEditor: () => { captureCurrentEditorViewState(); captureCurrentEditorBuffer(); },
-    closeProject: async (projectPath) => { await closeProjectDirect(projectPath); },
+    closeProject: async (projectPath) => { await projectCloseController.closeProjectDirect(projectPath); },
     confirmClose: (message) => confirmDialog(message),
     editorTabs,
     isDirty: tabIsDirty,
@@ -1427,13 +1365,13 @@ function App() {
       resetEditor();
     },
     openFile: async (file, options) => { await openEditorFileDirect(file, options); },
-    openWorkspace: async (path) => { await openWorkspaceDirect(path); },
+    openWorkspace: async (path) => { await workspaceOpenActions.openWorkspaceDirect(path); },
     saveEditorFile: () => saveEditorFile(),
     setEditorTabs,
   });
 
   saveEditorFileRef.current = saveEditorFile;
-  openEditorSearchRef.current = openEditorSearch;
+  openEditorSearchRef.current = editorSurface.openEditorSearch;
   closeActiveEditorTabRef.current = closeActiveEditorTab;
 
   useEffect(() => {
@@ -1452,14 +1390,14 @@ function App() {
   useAgentHookRequests({
     setStatus: setAgentHookStatus,
     isPaneOpen: (paneId) => terminalPanesRef.current.some((pane) => pane.id === paneId),
-    focusPane: (paneId) => focusTerminalPane(paneId, "agent"),
+    focusPane: (paneId) => terminalSurface.focusTerminalPane(paneId, "agent"),
     getWorkspacePath: () => workspacePathRef.current,
     openFile: (root, path) => requestOpenEditorFile(
       fileTreeNodeFromPath(`${root}/${path}`, "file"),
       { focusEditor: true },
       "agent",
     ),
-    createShell: () => createTerminalPane(defaultTerminalLaunchProfile(), "agent"),
+    createShell: () => terminalSurface.createTerminalPane(defaultTerminalLaunchProfile(), "agent"),
     recordReport: (report) => recordAgentActivity(activeChatActivityHandle(), hookReportToActivity(report)),
   });
 
@@ -1491,7 +1429,7 @@ function App() {
   const workspaceBootstrapController = createWorkspaceBootstrapController({
     hydrateProfiles: profiles.hydrate,
     loadBootstrap: loadWorkspaceBootstrap,
-    openWorkspace: (folder, profile) => openWorkspaceDirect(folder, profile),
+    openWorkspace: (folder, profile) => workspaceOpenActions.openWorkspaceDirect(folder, profile),
     pickWorkspace,
     refreshSecretPresence: (settings) => { void refreshConnectionSecretPresence(settings); },
     refs: bootstrapRefsFromHooks({
@@ -1516,7 +1454,6 @@ function App() {
       },
     }),
   });
-  const initWorkspace = workspaceBootstrapController.initWorkspace;
 
   useTerminalCanvasRuntime({
     canvasRef,
@@ -1536,7 +1473,7 @@ function App() {
     onResize: sendTerminalResize,
     onReady: async () => {
       const staleLock = await invoke<boolean>("begin_session").catch(() => false);
-      await initWorkspace();
+      await workspaceBootstrapController.initWorkspace();
       setCrashNotice(crashRecoveryMessage(deriveCrashRecovery(staleLock, openProjectsRef.current.length)));
       window.addEventListener("beforeunload", () => { void invoke("end_session_clean").catch(() => {}); });
     },
@@ -1602,7 +1539,7 @@ function App() {
       workspacePathRef.current, activeSessionForProject(workspacePathRef.current),
     ),
     setBrowserLocation: browser.setLocation,
-    setComposerApprovalMode,
+    setComposerApprovalMode: composerSettingsActions.setApprovalMode,
     switchLaunchProfile: profiles.switchLaunchProfile,
     updateScopedSetting,
   });
@@ -1661,14 +1598,14 @@ function App() {
         terminalOpen={agentSurfaceMode === "terminal"}
         toolMode={toolTrayMode}
         toolsOpen={renderedWorkbenchLayout !== "hidden"}
-        onCreateChat={() => { if (workspacePath) void createProjectSession(workspacePath); }}
+        onCreateChat={() => { if (workspacePath) void projectSessionNavigationActions.createSession(workspacePath); }}
         onLayoutChange={setWorkbenchLayout}
         onOpenCommandPalette={commandPalette.openDialog}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenWorkspace={() => { if (workspacePath) void openPath(workspacePath); }}
         onResetInterface={resetInterface}
         onToggleSideDrawer={() => setSideDrawerCollapsed((collapsed) => !collapsed)}
-        onToggleTerminal={() => void toggleRawTerminal()}
+        onToggleTerminal={() => void utilityTrayControls.toggleRawTerminal()}
         onToggleTools={() => setWorkbenchLayout(nextToolsLayout(renderedWorkbenchLayout, workbenchLayout))}
         onToolModeChange={setToolTrayMode}
       />,
@@ -1683,10 +1620,10 @@ function App() {
           expandedProjects: expandedSessionProjects, projects: visibleOpenProjects,
           sessionsByProject: projectSessions, showArchived: showArchivedSessions,
           projectStatus: projectRailStatus, sessionStatus: projectSessionStatus,
-          onProjectContextMenu: (event, project) => openContextMenu(event, projectRailContextMenuItems(project)),
+          onProjectContextMenu: (event, project) => contextMenuHost.openContextMenu(event, projectRailContextMenuItems(project)),
           onSelectProject: (path) => void requestOpenWorkspace(path),
-          onSelectSession: (path, sessionId) => void switchProjectSession(path, sessionId),
-          onSessionContextMenu: (event, path, session) => openContextMenu(event, projectSessionContextMenuItems(path, session)),
+          onSelectSession: (path, sessionId) => void projectSessionNavigationActions.switchSession(path, sessionId),
+          onSessionContextMenu: (event, path, session) => contextMenuHost.openContextMenu(event, projectSessionContextMenuItems(path, session)),
           onToggleArchived: () => setShowArchivedSessions((show) => !show),
           onToggleExpanded: (path) => setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
         }}
@@ -1705,12 +1642,12 @@ function App() {
             canSetApproval: Boolean(activeComposerHarnessKey),
           },
           handlers: {
-            approvalChange: setComposerApprovalMode,
+            approvalChange: composerSettingsActions.setApprovalMode,
             layoutChange: setWorkbenchLayout,
             openFolder: () => pickWorkspace(),
             refreshFiles: refreshFileTree,
             setSurfaceMode: setAgentSurfaceMode,
-            toggleRawTerminal,
+            toggleRawTerminal: utilityTrayControls.toggleRawTerminal,
             toolModeChange: setToolTrayMode,
           },
           layout: {
@@ -1727,7 +1664,7 @@ function App() {
           onCreateFile: () => void createFileInRail(), onCreateFolder: () => void createFolderInRail(),
           onOpenFile: (file) => void requestOpenEditorFile(file, { focusEditor: true }),
           onOpenFolder: () => void pickWorkspace(),
-          onWorkspaceContextMenu: (event) => openContextMenu(event, workspaceContextMenuItems()),
+          onWorkspaceContextMenu: (event) => contextMenuHost.openContextMenu(event, workspaceContextMenuItems()),
         }}
       />,
         main: <>
@@ -1741,7 +1678,7 @@ function App() {
           handlers={{
             createFile: () => void createFileInRail(),
             createFolder: () => void createFolderInRail(),
-            gitFileContextMenu: (event, file) => openContextMenu(
+            gitFileContextMenu: (event, file) => contextMenuHost.openContextMenu(
               event, buildGitFileContextMenuItems(file, workspaceContextMenuActions),
             ),
             openDiff: (gitFile) => void openGitDiff(gitFile),
@@ -1776,21 +1713,21 @@ function App() {
             closeDiff: closeDiffReview,
             closeTab: (tab) => void closeEditorTab(tab),
             copyDiff: () => void copyShownDiff(),
-            find: openEditorSearch,
+            find: editorSurface.openEditorSearch,
             onChange: setEditorText,
-            onCreateEditor: restoreEditorView,
+            onCreateEditor: editorSurface.restoreEditorView,
             onUpdate: handleEditorUpdate,
-            openContextMenu: (kind, event) => openContextMenu(
+            openContextMenu: (kind, event) => contextMenuHost.openContextMenu(
               event, kind === "diff" ? diffContextMenuItems() : editorContextMenuItems(),
             ),
-            openDiff: (line = null) => void openDiffFile(line),
-            openExternally: () => void openSelectedFileExternally(),
-            overwrite: () => void overwriteSelectedFile(),
-            reload: () => void reloadSelectedFileFromDisk(),
+            openDiff: (line = null) => void editorSurface.openDiffFile(line),
+            openExternally: () => void editorSurface.openExternally(),
+            overwrite: () => void editorSurface.overwrite(),
+            reload: () => void editorSurface.reloadFromDisk(),
             runDiffAction: (action) => { if (diffReview) void runGitFileAction(action, diffReview.file); },
             save: () => void saveEditorFile(),
             selectTab: (tab) => void requestOpenEditorFile(tab, { focusEditor: true }),
-            tabContextMenu: (event, tab) => openContextMenu(event, editorTabContextMenuItems(tab)),
+            tabContextMenu: (event, tab) => contextMenuHost.openContextMenu(event, editorTabContextMenuItems(tab)),
           }}
           selectedFile={selectedFile}
           tabIsDirty={tabIsDirty}
@@ -1806,7 +1743,7 @@ function App() {
         />
 
         <BrowserPreviewPanel {...browserPreviewPropsFrom(browser, {
-          contextMenu: (event) => openContextMenu(event, browserContextMenuItems()),
+          contextMenu: (event) => contextMenuHost.openContextMenu(event, appMenuAssembly.browserContextMenuItems()),
           openExternal: openUrl,
         })} />
 
@@ -1817,11 +1754,11 @@ function App() {
             events: selectedAgentActivityLog,
             hidden: false,
             onSuggestion: (draft) => setComposerLocalState(activeComposerHarnessKey, draft, composerHistory),
-            onRetry: (prompt) => void submitComposerDraft(prompt),
-            onApprovalDecision: (message, decision) => void resolveChatApproval(message, decision),
-            onToggleBookmark: toggleChatMessageBookmark,
-            onForkMessage: (message) => void forkChatFromMessage(message),
-            onReviewFile: (path) => void reviewRunCardFile(path),
+            onRetry: (prompt) => void composerSurface.submitComposerDraft(prompt),
+            onApprovalDecision: (message, decision) => void chatRunControls.resolveChatApproval(message, decision),
+            onToggleBookmark: chatConversationActions.toggleBookmark,
+            onForkMessage: (message) => void chatConversationActions.forkFromMessage(message),
+            onReviewFile: (path) => void editorSurface.reviewRunCardFile(path),
             focusMessageId: focusedChatMessageId,
           }}
           composer={{
@@ -1837,31 +1774,31 @@ function App() {
             model: activeComposerHarness.model, notice: composerNotice,
             provider: activeComposerProvider,
             reasoningEffort: activeComposerHarness.reasoningEffort, sending: composerSending,
-            onApprovalChange: (mode) => void setComposerApprovalMode(mode),
+            onApprovalChange: (mode) => void composerSettingsActions.setApprovalMode(mode),
             onAttachMention: (file) => {
               setComposerLocalState(activeComposerHarnessKey, composerDraft.replace(/@[^\s@]*$/, ""), composerHistory);
               void attachWorkspaceFileToComposer(file);
             },
-            onClearGoal: () => void setComposerGoal(""),
-            onContextMenu: (event) => openContextMenu(event, composerContextMenuItems()),
+            onClearGoal: () => void composerSettingsActions.setGoal(""),
+            onContextMenu: (event) => contextMenuHost.openContextMenu(event, appMenuAssembly.composerContextMenuItems()),
             onDismissNotice: () => setComposerNotice(null),
             onDraftChange: (draft) => {
               setComposerLocalState(activeComposerHarnessKey, draft, composerHistory);
               setComposerHistoryIndex(null);
             },
-            onGoalChange: (goal) => void setComposerGoal(goal),
-            onGoalCommit: () => void setComposerGoal(activeComposerHarness.goal, { log: true }),
+            onGoalChange: (goal) => void composerSettingsActions.setGoal(goal),
+            onGoalCommit: () => void composerSettingsActions.setGoal(activeComposerHarness.goal, { log: true }),
             onManageModels: () => setSettingsOpen(true),
-            onNextHistory: showNextComposerHistory,
-            onOpenAddMenu: openComposerAddMenu,
+            onNextHistory: composerHistoryNavigation.showNext,
+            onOpenAddMenu: appMenuAssembly.openComposerAddMenu,
             onPasteImage: () => void pasteComposerImage(),
-            onPreviousHistory: showPreviousComposerHistory,
-            onReasoningChange: setComposerReasoningEffort,
+            onPreviousHistory: composerHistoryNavigation.showPrevious,
+            onReasoningChange: composerSettingsActions.setReasoningEffort,
             onRemoveAttachment: (attachment) => void removeComposerAttachmentById(attachment),
             onReviewContext: () => void reviewComposerContext(),
-            onRuntimeChange: setComposerRuntime,
-            onStop: () => void stopActiveChatRun(),
-            onSubmit: () => void submitComposerDraft(),
+            onRuntimeChange: composerSettingsActions.setRuntime,
+            onStop: () => void chatRunControls.stopActiveChatRun(),
+            onSubmit: () => void composerSurface.submitComposerDraft(),
           }}
         />
         <BottomUtilityTray
@@ -1874,22 +1811,22 @@ function App() {
           mode={utilityTrayMode} open={agentSurfaceMode === "terminal"} panes={terminalPanes}
           terminalHostRef={terminalHostRef}
           onClose={() => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); }}
-          onCreate={(profile) => void createTerminalPane(profile)} onFocus={(paneId) => void focusTerminalPane(paneId)}
-          onKill={() => { if (activeTerminalPane) void terminateTerminalPane(activeTerminalPane); }}
+          onCreate={(profile) => void terminalSurface.createTerminalPane(profile)} onFocus={(paneId) => void terminalSurface.focusTerminalPane(paneId)}
+          onKill={() => { if (activeTerminalPane) void terminalSurface.terminateTerminalPane(activeTerminalPane); }}
           onOpenFolder={() => void pickWorkspace({ openTerminal: true })}
-          onOpenTab={(mode) => void openUtilityTray(mode)}
-          onPaneContextMenu={(event, pane) => openContextMenu(event, terminalPaneContextMenuItems(pane))}
+          onOpenTab={(mode) => void utilityTrayControls.openUtilityTray(mode)}
+          onPaneContextMenu={(event, pane) => contextMenuHost.openContextMenu(event, appMenuAssembly.terminalPaneContextMenuItems(pane))}
           onPaste={(text) => { invoke("paste", { text }).catch(() => {}); }}
           onProfileChange={(profileId) => {
             void profiles.switchTerminalProfile(profiles.resolveProfile(profileId));
           }}
           onRename={(pane) => void renameTerminalPane(pane)}
           onResizeStart={(event) => { setAgentSurfaceMode("terminal"); beginUtilityTrayResize(event); }}
-          onRestart={() => { if (activeTerminalPane) void restartTerminalPane(activeTerminalPane); }}
-          onStartShell={() => void createTerminalPane(defaultTerminalLaunchProfile())}
-          onTabContextMenu={(event, mode) => openContextMenu(event, utilityTrayTabContextMenuItems(mode))}
-          onTerminalContextMenu={(event) => openContextMenu(event, terminalContextMenuItems())}
-          onToggleVisibility={toggleUtilityTrayVisibility}
+          onRestart={() => { if (activeTerminalPane) void terminalSurface.restartTerminalPane(activeTerminalPane); }}
+          onStartShell={() => void terminalSurface.createTerminalPane(defaultTerminalLaunchProfile())}
+          onTabContextMenu={(event, mode) => contextMenuHost.openContextMenu(event, appMenuAssembly.utilityTrayTabContextMenuItems(mode))}
+          onTerminalContextMenu={(event) => contextMenuHost.openContextMenu(event, terminalContextMenuItems())}
+          onToggleVisibility={utilityTrayControls.toggleUtilityTrayVisibility}
         />
         </>,
         overlays: <>
@@ -1903,7 +1840,7 @@ function App() {
         handlers={{
           close: () => setSettingsOpen(false),
           deleteConnectionSecret,
-          openAgentConnection,
+          openAgentConnection: utilityTrayControls.openAgentConnection,
           openSourceControlLink: (url) => openUrl(url).catch(() => {}),
           refreshAgentConnections,
           resetLayout: resetInterface,
@@ -1960,7 +1897,7 @@ function App() {
             sessions: projectSessions, workspacePath,
           }),
           error: orchestrationError,
-          launch: launchOrchestration,
+          launch: composerSurface.launchOrchestration,
           launching: orchestrationLaunching,
           open: orchestrationOpen,
           setError: setOrchestrationError,

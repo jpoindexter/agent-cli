@@ -188,7 +188,7 @@ assert(bottomUtilityTabs.includes('aria-label={open ? "Collapse utility tray" : 
 const utilityTrayControls = read("app/src/utilityTrayControls.ts");
 assert(utilityTrayControls.includes("toggleUtilityTrayVisibility: () => {"), "Bottom tray chevron must have a layout-only visibility toggle");
 assert(utilityTrayControls.includes('options.setSurfaceMode((current) => current === "terminal" ? "chat" : "terminal");'), "Bottom tray chevron must toggle tray visibility without launching a process");
-assert(appTsx.includes('onToggleVisibility={toggleUtilityTrayVisibility}'), "Bottom tray chevron must use the layout-only visibility toggle");
+assert(appTsx.includes('onToggleVisibility={utilityTrayControls.toggleUtilityTrayVisibility}'), "Bottom tray chevron must use the layout-only visibility toggle");
 assert(bottomUtilityTabs.includes('name={open ? "chevronDown" : "chevronUp"}'), "Bottom tray chevron direction must reflect tray state");
 assert(!appTsx.includes('utilityTrayMode === "browser"'), "Browser must not be duplicated in the bottom utility tray");
 assert(appTsx.includes("utilityTrayTabContextMenuItems"), "Bottom utility tabs must expose app-owned context menus");
@@ -197,7 +197,7 @@ assert(/\.terminal-pane-button--active\s*\{[^}]*border-bottom-color:\s*var\(--co
 assert(composerSurface.includes('aria-label="Composer permission mode"'), "Composer must expose the real approval-mode menu");
 assert(composerSurface.includes('aria-label="Composer goal"'), "Composer must expose its persisted goal control");
 assert(composerModelPopover.includes('aria-label="Search models"') && composerModelPopover.includes("Custom model ID"), "Composer must expose searchable provider models and custom model IDs");
-assert(composerSurface.includes("onSelect={props.onRuntimeChange}") && appTsx.includes("onRuntimeChange: setComposerRuntime"), "Composer model selection must persist through the runtime boundary");
+assert(composerSurface.includes("onSelect={props.onRuntimeChange}") && appTsx.includes("onRuntimeChange: composerSettingsActions.setRuntime"), "Composer model selection must persist through the runtime boundary");
 assert(composerReasoningPicker.includes("OPTIONS.map") && composerReasoningPicker.includes('role="menuitemradio"'), "Composer must expose separate accessible reasoning effort choices");
 assert(composerSubmission.includes('reasoningEffort: context.harness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
 assert(chatHarness.includes('params["effort"] = json!(effort);'), "Native chat runs must apply the selected Codex reasoning effort");
@@ -236,7 +236,7 @@ assert(appTitlebar.includes('aria-label="Toggle Tools"'), "Titlebar must expose 
 assert(!`${appTsx}\n${appTitlebar}`.includes('aria-label="Thread settings"'), "Titlebar must not duplicate the global settings action");
 assert(appTitlebar.includes('aria-label="Open settings and more"'), "Titlebar must keep one global settings and more entry point");
 assert(appTitlebar.includes('aria-label="Toggle Terminal tray"'), "Titlebar must expose the approved bottom terminal tray toggle");
-assert(appTsx.includes('onToggleTerminal={() => void toggleRawTerminal()}'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
+assert(appTsx.includes('onToggleTerminal={() => void utilityTrayControls.toggleRawTerminal()}'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
 assert(icons.includes("panelBottom: PanelBottom"), "Bottom terminal tray toggle must use the standard PanelBottom icon");
 assert(icons.includes("panelLeft: PanelLeft"), "Threads toggle must use the standard PanelLeft icon");
 assert(icons.includes("panelRight: PanelRight"), "Tools toggle must use the standard PanelRight icon");

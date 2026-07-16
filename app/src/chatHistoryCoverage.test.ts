@@ -29,8 +29,8 @@ describe("chat history discovery production wiring", () => {
   });
 
   it("exposes bookmark, pin, and archived-chat discovery controls", () => {
-    expect(app).toContain("toggleChatMessageBookmark");
-    expect(app).toContain("pinProjectSession(projectPath, session, !session.pinnedAt)");
+    expect(app).toContain("onToggleBookmark: chatConversationActions.toggleBookmark");
+    expect(app).toContain("pinSession(projectPath, session, !session.pinnedAt)");
     expect(productionWiring).toContain('session.archived ? " · Archived" : ""');
     expect(thread).toContain('aria-label={message.bookmarked ? "Remove bookmark" : "Bookmark message"}');
   });
