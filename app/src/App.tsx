@@ -69,13 +69,7 @@ import {
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
 import { useLaunchProfileController } from "./useLaunchProfileController";
-import {
-  defaultScopedSettings,
-  resetScopedSetting,
-  resolveScopedSetting,
-  setScopedSetting,
-} from "./scopedSettings";
-import type { ScopedSettingKey, ScopedSettingsState, SettingsScope } from "./scopedSettings";
+import { resolveScopedSetting } from "./scopedSettings";
 import {
   composerHistoryAt,
   nextComposerHistoryIndex,
@@ -84,7 +78,6 @@ import {
 } from "./agentComposer";
 import type { ComposerAppCommand } from "./agentComposer";
 import { runComposerAppCommand as runComposerAppCommandWithContext } from "./composerAppCommands";
-import type { ComposerHarnessRecords } from "./composerHarness";
 import { submitComposerDraft as submitComposerDraftWithContext } from "./composerSubmission";
 import {
   buildAgentSessionHandleDescriptor,
@@ -129,6 +122,7 @@ import {
 } from "./commandPaletteSources";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useAgentActivityController } from "./useAgentActivityController";
+import { useComposerWorkspaceState } from "./useComposerWorkspaceState";
 import {
   normalizeTerminalPaneLabel,
   terminalPaneLabelForDisplay,
@@ -230,7 +224,7 @@ import {
   applyChatRunEnvelope,
   chatProviderLabel,
 } from "./chatConversation";
-import type { ChatConversationRecords, ChatMessage, ChatProvider } from "./chatConversation";
+import type { ChatMessage, ChatProvider } from "./chatConversation";
 import { createChatConversationActions } from "./chatConversationActions";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
@@ -330,9 +324,6 @@ function App() {
   const openProjectsRef = useRef<OpenProject[]>([]);
   const projectSessionsRef = useRef<ProjectSessionsByProject>({});
   const activeSessionByProjectRef = useRef<ActiveSessionByProject>({});
-  const composerHarnessBySessionRef = useRef<ComposerHarnessRecords>({});
-  const scopedSettingsRef = useRef<ScopedSettingsState>(defaultScopedSettings());
-  const chatConversationsRef = useRef<ChatConversationRecords>({});
   const aiConnectionSettingsRef = useRef<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const activeAgentSessionDescriptorRef = useRef<AgentSessionHandleDescriptor | null>(null);
   const fileNodeContextMenuItemsRef = useRef<(node: FileTreeNode) => ContextMenuItem[]>(() => []);
@@ -345,6 +336,19 @@ function App() {
   const selecting = useRef(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
+  const {
+    chatConversations, chatConversationsRef, clearScopedSetting,
+    composerHarnessBySession, composerHarnessBySessionRef, persistComposerHarnessRecords,
+    scopedSettings, scopedSettingsRef, setChatConversations,
+    setComposerHarnessBySession, setScopedSettings, updateScopedSetting,
+  } = useComposerWorkspaceState({
+    getRoot: () => workspacePathRef.current,
+    getSessionId: (root) => activeProjectSessionId(
+      activeSessionByProjectRef.current, projectSessionsRef.current, root,
+    ),
+    saveStore: async () => { await storeRef.current?.save(); },
+    setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
+  });
   const {
     activeFilesByWorkspaceRef, captureCurrentEditorBuffer, captureCurrentEditorViewState,
     closeActiveEditorTabRef, editorBuffersRef, editorBytes, editorCursor, editorError,
@@ -394,19 +398,13 @@ function App() {
   const [activeSessionByProject, setActiveSessionByProjectState] = useState<ActiveSessionByProject>({});
   const [expandedSessionProjects, setExpandedSessionProjects] = useState<Record<string, boolean>>({});
   const [showArchivedSessions, setShowArchivedSessions] = useState(false);
-  const [composerHarnessBySession, setComposerHarnessBySession] = useState<ComposerHarnessRecords>({});
-  const [scopedSettings, setScopedSettings] = useState<ScopedSettingsState>(defaultScopedSettings);
-  const [chatConversations, setChatConversations] = useState<ChatConversationRecords>({});
   const profiles = useLaunchProfileController({
     getCurrentRoot: () => workspacePathRef.current,
     getCurrentSessionId: () => activeSessionForProject(workspacePathRef.current),
     randomId: () => crypto.randomUUID(),
     saveStore: async () => { await storeRef.current?.save(); },
     scopedSettings: scopedSettingsRef,
-    setScopedSettings: (settings) => {
-      scopedSettingsRef.current = settings;
-      setScopedSettings(settings);
-    },
+    setScopedSettings,
     setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
   });
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -560,10 +558,7 @@ function App() {
     ),
     saveStore: async () => { await storeRef.current?.save(); },
     scopedSettings: scopedSettingsRef,
-    setScopedSettings: (settings) => {
-      scopedSettingsRef.current = settings;
-      setScopedSettings(settings);
-    },
+    setScopedSettings,
     setStoreValue: async (key, value) => { await storeRef.current?.set(key, value); },
   });
   const {
@@ -668,8 +663,6 @@ function App() {
   useSyncRef(openProjectsRef, openProjects);
   useSyncRef(projectSessionsRef, projectSessions);
   useSyncRef(activeSessionByProjectRef, activeSessionByProject);
-  useSyncRef(composerHarnessBySessionRef, composerHarnessBySession);
-  useSyncRef(scopedSettingsRef, scopedSettings);
 
   useEffect(() => {
     if (!selectedFile) return;
@@ -756,10 +749,7 @@ function App() {
       void invoke("log_health_event", { message }).catch(() => {});
     },
     saveConversation: saveDurableChatConversation,
-    setConversations: (conversations) => {
-      chatConversationsRef.current = conversations;
-      setChatConversations(conversations);
-    },
+    setConversations: setChatConversations,
     setError: setLaunchError,
     setNotice: setActionNotice,
     switchSession: (root, sessionId) => switchProjectSession(root, sessionId),
@@ -772,45 +762,6 @@ function App() {
     updateChatConversation(envelope.chatId, (conversation) =>
       applyChatRunEnvelope(conversation, envelope));
   });
-
-  const persistComposerHarnessRecords = async (records: ComposerHarnessRecords) => {
-    composerHarnessBySessionRef.current = records;
-    setComposerHarnessBySession(records);
-    await storeRef.current?.set("composerHarnessBySession", records);
-    await storeRef.current?.save();
-  };
-
-  const persistScopedSettings = async (next: ScopedSettingsState) => {
-    scopedSettingsRef.current = next;
-    setScopedSettings(next);
-    await storeRef.current?.set("scopedSettings", next);
-    await storeRef.current?.save();
-  };
-
-  const updateScopedSetting = async <K extends ScopedSettingKey,>(
-    scope: SettingsScope,
-    key: K,
-    value: ScopedSettingsState["global"][K],
-  ) => {
-    const root = workspacePathRef.current;
-    const sessionId = activeSessionForProject(root);
-    const next = setScopedSetting(scopedSettingsRef.current, scope, key, value, root, sessionId);
-    if (next === scopedSettingsRef.current) return false;
-    await persistScopedSettings(next);
-    return true;
-  };
-
-  const clearScopedSetting = async (
-    scope: Exclude<SettingsScope, "global">,
-    key: ScopedSettingKey,
-  ) => {
-    const root = workspacePathRef.current;
-    const sessionId = activeSessionForProject(root);
-    const next = resetScopedSetting(scopedSettingsRef.current, scope, key, root, sessionId);
-    if (next === scopedSettingsRef.current) return false;
-    await persistScopedSettings(next);
-    return true;
-  };
 
   const logComposerHarnessEvent = (
     label: string,
@@ -1376,10 +1327,7 @@ function App() {
       chatIdForSession: composerHarnessSessionKey,
       gateAction: (action) => gateAppAction(action),
       updateConversation: updateChatConversation,
-      replaceConversations: (conversations) => {
-        chatConversationsRef.current = conversations;
-        setChatConversations(conversations);
-      },
+      replaceConversations: setChatConversations,
       persistHarnessRecords: persistComposerHarnessRecords,
       persistSessions: persistProjectSessions,
       setLaunching: setOrchestrationLaunching,
