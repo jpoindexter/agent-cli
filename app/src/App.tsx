@@ -76,7 +76,7 @@ import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
 import { fileTreeNodeFromPath, pathBasename } from "./fileTreeTypes";
 import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
 import { createChatSearchNavigation } from "./chatSearchNavigation";
-import { createSessionSnapshotCapture } from "./sessionSnapshotCapture";
+import { createSessionSnapshotCapture, createSessionSnapshotRestore } from "./sessionSnapshotCapture";
 import { createComposerHarnessEventLog } from "./composerHarnessEvents";
 import { createWorkspacePicker } from "./workspacePicker";
 import { createPaneActivityLog } from "./paneActivityLog";
@@ -632,12 +632,11 @@ function App() {
       activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root),
   });
 
-  const restoreSessionEditorSnapshot = (root: string, sessionId: string | null) => {
-    restoreEditorSessionSnapshot({
-      key: sessionId ? sessionSnapshotKey(root, sessionId) : null,
-      openFile: openEditorFileDirect,
-    });
-  };
+  const restoreSessionEditorSnapshot = createSessionSnapshotRestore({
+    makeKey: sessionSnapshotKey,
+    openFile: (...args: Parameters<typeof openEditorFileDirect>) => openEditorFileDirect(...args),
+    restore: restoreEditorSessionSnapshot,
+  });
 
   const workspaceOpenActions = createWorkspaceOpenSurface({
     actions: {

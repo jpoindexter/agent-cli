@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createSessionSnapshotCapture } from "./sessionSnapshotCapture";
+import { createSessionSnapshotCapture, createSessionSnapshotRestore } from "./sessionSnapshotCapture";
 
 const createOptions = () => ({
   capture: vi.fn(),
@@ -34,5 +34,23 @@ describe("createSessionSnapshotCapture", () => {
     captureSnapshot();
 
     expect(options.capture).not.toHaveBeenCalled();
+  });
+});
+
+describe("createSessionSnapshotRestore", () => {
+  it("restores with a scoped key when a session is provided", () => {
+    const restore = vi.fn();
+    const openFile = vi.fn();
+    const run = createSessionSnapshotRestore({
+      makeKey: (root: string, sessionId: string) => `${root}::${sessionId}`,
+      openFile,
+      restore,
+    });
+
+    run("/repo", "chat");
+    expect(restore).toHaveBeenCalledWith({ key: "/repo::chat", openFile });
+
+    run("/repo", null);
+    expect(restore).toHaveBeenLastCalledWith({ key: null, openFile });
   });
 });

@@ -29,3 +29,18 @@ export const createSessionSnapshotCapture = <TPersistLayout, TPersistSnapshots>(
     sessionId,
   });
 };
+
+type SessionSnapshotRestoreOptions<TOpenFile> = {
+  makeKey: (root: string, sessionId: string) => string;
+  openFile: TOpenFile;
+  restore: (input: { key: string | null; openFile: TOpenFile }) => void;
+};
+
+export const createSessionSnapshotRestore = <TOpenFile,>(
+  options: SessionSnapshotRestoreOptions<TOpenFile>,
+) => (root: string, sessionId: string | null) => {
+  options.restore({
+    key: sessionId ? options.makeKey(root, sessionId) : null,
+    openFile: options.openFile,
+  });
+};
