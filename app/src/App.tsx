@@ -79,7 +79,6 @@ import {
   createActiveAgentSessionHandle,
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
-import { executeAgentPaneInterrupt } from "./agentPaneInterrupt";
 import { AppIcon } from "./icons";
 import type { AppIconName } from "./icons";
 import {
@@ -174,8 +173,7 @@ import {
   buildComposerAddMenuItems,
   buildComposerContextMenuItems,
 } from "./browserComposerContextMenu";
-import { executeTerminalPaneRestart } from "./terminalPaneRestartWorkflow";
-import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
+import { createTerminalProcessActionsController } from "./terminalProcessActionsController";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import {
   clearBackgroundExitsForProject,
@@ -245,7 +243,6 @@ import { createTerminalPaneActionsController } from "./terminalPaneActionsContro
 import {
   buildCreatedPaneActivity,
   buildCreatedWorktreePaneActivity,
-  buildRestartedPaneActivity,
 } from "./paneActivityRecords";
 import "./App.css";
 import "./composerModelPicker.css";
@@ -959,19 +956,6 @@ function App() {
   });
   const deleteProjectSession = projectSessionDeletionController.deleteProjectSession;
 
-  const recordRestartedPaneActivity = (
-    restarted: ManagedTerminalPane | undefined,
-    previousPane: ManagedTerminalPane,
-    projectId: string,
-    projectSessionId: string,
-    label: string,
-  ) => {
-    const record = buildRestartedPaneActivity({
-      approvalMode: agentApprovalMode, label, previousPane, projectId, projectSessionId, restarted,
-    });
-    if (record) recordAgentActivity(record.handle, record.event);
-  };
-
   const recordCreatedPaneActivity = (pane: ManagedTerminalPane, projectId: string, projectSessionId: string) => {
     const record = buildCreatedPaneActivity({ approvalMode: agentApprovalMode, pane, projectId, projectSessionId });
     recordAgentActivity(record.handle, record.event);
@@ -1010,58 +994,36 @@ function App() {
     return true;
   };
 
-  const interruptActivePane = async () => {
-    if (!activeAgentSessionHandle) return;
-    return executeAgentPaneInterrupt({
-      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionHandle)).decision,
-      handle: activeAgentSessionHandle,
-      recordActivity: (activity) => recordAgentActivity(activeAgentSessionHandle, activity),
-      setError: setComposerError,
-    });
-  };
-
-  const terminateTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
-    const root = workspacePathRef.current;
-    if (!root || !pane) return false;
-    return executeTerminalPaneTerminate({
-      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionDescriptor)).decision,
-      markIntentionallyTerminated: (paneId) => intentionallyTerminatedPaneIdsRef.current.add(paneId),
-      pane,
-      projectStatus: () => projectStatusForRoot(root),
-      recordActivity: (activity) => recordAgentActivity(activeAgentSessionDescriptor, activity),
-      sessionStatus: terminalPaneProjectStatus,
-      setError: setLaunchError,
-      setPaneExited: (paneId) => setPaneState(paneId, "exited", null),
-      terminatePane: (paneId) => invoke("terminate_pane", { paneId }),
-      updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
-      updateSessionStatus: (status) => updateActiveSessionStatus(root, status),
-    });
-  };
-
-  const restartTerminalPane = async (pane: ManagedTerminalPane | null = activeTerminalPane) => {
-    const root = workspacePathRef.current;
-    const sessionId = activeSessionForProject(root);
-    if (!root || !sessionId || !pane || profiles.changing) return false;
-    return executeTerminalPaneRestart({
-      clearLatestSnapshot: () => { latest.current = null; },
-      clearPaneSnapshot: (paneId) => { delete terminalSnapshotsRef.current[paneId]; },
-      currentPanes: () => terminalPanesForSession(root, sessionId),
-      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionDescriptor)).decision,
-      now: Date.now,
-      pane,
-      projectStatus: () => projectStatusForRoot(root),
-      recordRestarted: (restarted, label) => recordRestartedPaneActivity(restarted, pane, root, sessionId, label),
-      requestPaint: () => requestTerminalPaintRef.current(),
-      restartPane: async () => (await invoke<OpenPaneResponse>("restart_pane", { path: root, paneId: pane.id, profile: pane.profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root) })).paneId,
-      scheduleResize: () => setTimeout(sendTerminalResize, 0),
-      sessionStatus: terminalPaneProjectStatus,
-      setChanging: profiles.setChanging,
-      setError: setLaunchError,
-      setSessionPanes: (panes, paneId) => setSessionTerminalPanes(root, sessionId, panes, paneId),
-      updateProjectStatus: (status) => updateOpenProjectStatus(root, status),
-      updateSessionStatus: (status) => updateActiveSessionStatus(root, status),
-    });
-  };
+  const terminalProcessActionsController = createTerminalProcessActionsController({
+    approvalMode: () => agentApprovalMode,
+    gateAction: async (action, handle) => (await gateAppAction(action, handle)).decision,
+    getActiveDescriptor: () => activeAgentSessionDescriptor,
+    getActiveHandle: () => activeAgentSessionHandle,
+    getActivePane: () => activeTerminalPane,
+    getChanging: () => profiles.changing, getPanes: terminalPanesForSession,
+    getProjectStatus: projectStatusForRoot, getSessionId: activeSessionForProject,
+    getWorkspacePath: () => workspacePathRef.current,
+    intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
+    latest, now: Date.now,
+    recordActivity: recordAgentActivity,
+    requestPaint: () => requestTerminalPaintRef.current(),
+    restartPane: async (root, pane) => (await invoke<OpenPaneResponse>("restart_pane", {
+      path: root, paneId: pane.id, profile: pane.profile,
+      environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root),
+    })).paneId,
+    scheduleResize: () => setTimeout(sendTerminalResize, 0),
+    setChanging: profiles.setChanging,
+    setComposerError, setLaunchError,
+    setPaneExited: (paneId) => setPaneState(paneId, "exited", null),
+    setSessionPanes: setSessionTerminalPanes,
+    snapshots: terminalSnapshotsRef, statusForPanes: terminalPaneProjectStatus,
+    terminatePane: (paneId) => invoke("terminate_pane", { paneId }),
+    updateProjectStatus: updateOpenProjectStatus,
+    updateSessionStatus: (root, status) => updateActiveSessionStatus(root, status),
+  });
+  const interruptActivePane = terminalProcessActionsController.interruptActivePane;
+  const terminateTerminalPane = terminalProcessActionsController.terminateTerminalPane;
+  const restartTerminalPane = terminalProcessActionsController.restartTerminalPane;
 
   const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
     return runComposerAppCommandWithContext(command, {
