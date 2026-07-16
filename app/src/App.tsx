@@ -34,21 +34,19 @@ import { useComposerLocalState } from "./useComposerLocalState";
 import { createComposerSettingsActions } from "./composerSettingsActions";
 import { useComposerAttachments } from "./useComposerAttachments";
 import { useEditorNavigationLifecycle } from "./useEditorNavigationLifecycle";
-import { createWorkspacePersistence } from "./workspacePersistence";
 import { useTerminalPaneController } from "./useTerminalPaneController";
 import { useEditorSessionController } from "./useEditorSessionController";
+import { useWorkspacePersistenceController } from "./useWorkspacePersistenceController";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import {
   activeProjectSessionId,
   planProjectClose,
   removeOpenProject,
-  setOpenProjectStatus,
-  setProjectSessionStatus,
   setProjectSessionArchived,
   setProjectSessionPinned,
 } from "./workspaceState";
-import type { ActiveSessionByProject, OpenProject, ProjectRailStatus, ProjectSession, ProjectSessionsByProject } from "./workspaceState";
+import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import {
   clampEditorViewState,
   findFileTreeNode,
@@ -320,13 +318,13 @@ function App() {
   const treeRef = useRef<TreeApi<FileTreeNode> | undefined>(undefined);
   const workspacePathRef = useRef<string | null>(null);
   const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
-  const recentProjectsRef = useRef<string[]>([]);
-  const openProjectsRef = useRef<OpenProject[]>([]);
-  const projectSessionsRef = useRef<ProjectSessionsByProject>({});
-  const activeSessionByProjectRef = useRef<ActiveSessionByProject>({});
   const aiConnectionSettingsRef = useRef<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const activeAgentSessionDescriptorRef = useRef<AgentSessionHandleDescriptor | null>(null);
   const fileNodeContextMenuItemsRef = useRef<(node: FileTreeNode) => ContextMenuItem[]>(() => []);
+  const activeSessionLookupRef = useRef<(root: string | null) => string | null>(() => null);
+  const persistPaneLayoutRef = useRef<(
+    root: string, sessionId: string, panes: ManagedTerminalPane[],
+  ) => void>(() => {});
   const latest = useRef<Snapshot | null>(null);
   const frame = useRef<number | null>(null);
   const metrics = useRef({ cw: 9, ch: 19 });
@@ -362,10 +360,10 @@ function App() {
     setSelectedFile,
   } = useEditorSessionController();
   const terminal = useTerminalPaneController<Snapshot>({
-    activeSessionForProject: (root) => activeSessionForProject(root),
+    activeSessionForProject: (root) => activeSessionLookupRef.current(root),
     activeWorkspace: workspacePathRef,
     persistPaneLayout: (root, sessionId, panes) => {
-      persistPaneLayoutForSession(root, sessionId, panes);
+      persistPaneLayoutRef.current(root, sessionId, panes);
     },
   });
   const {
@@ -391,13 +389,31 @@ function App() {
     onRootResolved: (root) => { workspacePathRef.current = root; },
     workspacePath,
   });
-  const [recentProjects, setRecentProjects] = useState<string[]>([]);
-  const [openProjects, setOpenProjects] = useState<OpenProject[]>([]);
+  const {
+    activeSessionByProject, activeSessionByProjectRef, activeSessionForProject,
+    clearActiveFile: clearPersistedActiveFile, expandedSessionProjects, openProjects,
+    openProjectsRef, persistActiveFile, persistOpenProjects,
+    persistPaneLabel, persistPaneLayout: persistPaneLayoutForSession,
+    persistProjectSessions, persistSessionSnapshots: persistSessionEditorSnapshots,
+    projectSessions, projectSessionsRef, recentProjectsRef,
+    removeSessionRestore: removePersistedSessionRestore,
+    savedPaneLabel: savedPaneLabelForSlot, sessionKey: sessionSnapshotKey,
+    setActiveSessionByProjectState, setExpandedSessionProjects, setOpenProjects,
+    setProjectSessions, setRecentProjects, setShowArchivedSessions,
+    showArchivedSessions, updateActiveSessionStatus, updateOpenProjectStatus,
+    updateSessionStatus,
+  } = useWorkspacePersistenceController({
+    activeFiles: activeFilesByWorkspaceRef,
+    getPanes: (root, sessionId) => terminalPanesForSession(root, sessionId),
+    paneLabels: paneLabelsBySessionRef,
+    paneLayouts: paneLayoutsBySessionRef,
+    sessionSnapshots: sessionEditorSnapshotsRef,
+    setPaneLabels: setPaneLabelsBySession,
+    store: storeRef,
+  });
+  activeSessionLookupRef.current = activeSessionForProject;
+  persistPaneLayoutRef.current = persistPaneLayoutForSession;
   const [agentHookStatus, setAgentHookStatus] = useState<AgentHookStatus | null>(null);
-  const [projectSessions, setProjectSessions] = useState<ProjectSessionsByProject>({});
-  const [activeSessionByProject, setActiveSessionByProjectState] = useState<ActiveSessionByProject>({});
-  const [expandedSessionProjects, setExpandedSessionProjects] = useState<Record<string, boolean>>({});
-  const [showArchivedSessions, setShowArchivedSessions] = useState(false);
   const profiles = useLaunchProfileController({
     getCurrentRoot: () => workspacePathRef.current,
     getCurrentSessionId: () => activeSessionForProject(workspacePathRef.current),
@@ -659,10 +675,6 @@ function App() {
     if (opened && line != null) focusEditorLine(line);
   };
 
-  useSyncRef(recentProjectsRef, recentProjects);
-  useSyncRef(openProjectsRef, openProjects);
-  useSyncRef(projectSessionsRef, projectSessions);
-  useSyncRef(activeSessionByProjectRef, activeSessionByProject);
 
   useEffect(() => {
     if (!selectedFile) return;
@@ -690,36 +702,6 @@ function App() {
     const syncedFile = reconcileActiveFileNode(fileTree, selectedFile);
     if (syncedFile !== selectedFile) setSelectedFile(syncedFile);
   }, [fileTree, selectedFile]);
-
-  const {
-    clearActiveFile: clearPersistedActiveFile,
-    persistActiveFile,
-    persistOpenProjects,
-    persistPaneLabel,
-    persistPaneLayout: persistPaneLayoutForSession,
-    persistProjectSessions,
-    persistSessionSnapshots: persistSessionEditorSnapshots,
-    removeSessionRestore: removePersistedSessionRestore,
-    savedPaneLabel: savedPaneLabelForSlot,
-    sessionKey: sessionSnapshotKey,
-  } = createWorkspacePersistence({
-    activeFiles: activeFilesByWorkspaceRef,
-    activeSessions: activeSessionByProjectRef,
-    getActiveSession: (root) => activeProjectSessionId(
-      activeSessionByProjectRef.current, projectSessionsRef.current, root,
-    ),
-    getPanes: (root, sessionId) => terminalPanesForSession(root, sessionId),
-    openProjects: openProjectsRef,
-    paneLabels: paneLabelsBySessionRef,
-    paneLayouts: paneLayoutsBySessionRef,
-    projectSessions: projectSessionsRef,
-    sessionSnapshots: sessionEditorSnapshotsRef,
-    setActiveSessions: setActiveSessionByProjectState,
-    setOpenProjects,
-    setPaneLabels: setPaneLabelsBySession,
-    setProjectSessions,
-    store: storeRef,
-  });
 
   const composerHarnessSessionKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
@@ -775,24 +757,6 @@ function App() {
       status,
     });
   };
-
-  const updateOpenProjectStatus = async (path: string | null, status: ProjectRailStatus) => {
-    if (!path) return;
-    const next = setOpenProjectStatus(openProjectsRef.current, path, status);
-    await persistOpenProjects(next);
-  };
-
-  const updateSessionStatus = async (path: string | null, sessionId: string | null, status: ProjectRailStatus) => {
-    if (!path || !sessionId) return;
-    const nextSessions = setProjectSessionStatus(projectSessionsRef.current, path, sessionId, status);
-    await persistProjectSessions(nextSessions, activeSessionByProjectRef.current);
-  };
-
-  const updateActiveSessionStatus = async (path: string | null, status: ProjectRailStatus) =>
-    updateSessionStatus(path, activeSessionForProject(path), status);
-
-  const activeSessionForProject = (root: string | null) =>
-    activeProjectSessionId(activeSessionByProjectRef.current, projectSessionsRef.current, root);
 
   const terminalPaneLabel = (pane: ManagedTerminalPane, index: number) => terminalPaneLabelForDisplay(pane.label, pane.profile.label, index);
 
