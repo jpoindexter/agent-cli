@@ -58,6 +58,7 @@ import { createChatRunControls } from "./chatRunControls";
 import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import { createUtilityTrayControls } from "./utilityTrayControls";
+import { createTerminalPaneRename } from "./terminalPaneRename";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -94,10 +95,7 @@ import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useAgentActivityController } from "./useAgentActivityController";
 import { useComposerWorkspaceState } from "./useComposerWorkspaceState";
 import { usePaneTranscriptController } from "./usePaneTranscriptController";
-import {
-  normalizeTerminalPaneLabel,
-  terminalPaneLabelForDisplay,
-} from "./terminalPane";
+import { terminalPaneLabelForDisplay } from "./terminalPane";
 import type { TerminalPaneState } from "./terminalPane";
 import { useGitStatus } from "./useGitStatus";
 import { useGitDiffReview } from "./useGitDiffReview";
@@ -1081,21 +1079,14 @@ function App() {
       })
     : null;
 
-  const renameTerminalPane = async (pane: ManagedTerminalPane) => {
-    const root = workspacePathRef.current;
-    const sessionId = activeSessionForProject(root);
-    if (!root || !sessionId) return;
-    const currentIndex = terminalPanesForSession(root, sessionId).findIndex((item) => item.id === pane.id);
-    const current = terminalPaneLabelForDisplay(pane.label, pane.profile.label, currentIndex >= 0 ? currentIndex : pane.slot);
-    const value = window.prompt("Pane name or task label", current);
-    if (value == null) return;
-    const nextLabel = normalizeTerminalPaneLabel(value);
-    const nextPanes = terminalPanesForSession(root, sessionId).map((item) =>
-      item.id === pane.id ? { ...item, label: nextLabel } : item,
-    );
-    setSessionTerminalPanes(root, sessionId, nextPanes, pane.id);
-    await persistPaneLabel(root, pane.slot, nextLabel);
-  };
+  const renameTerminalPane = createTerminalPaneRename({
+    getPanes: terminalPanesForSession,
+    getRoot: () => workspacePathRef.current,
+    getSessionId: activeSessionForProject,
+    persistLabel: persistPaneLabel,
+    promptLabel: (current) => window.prompt("Pane name or task label", current),
+    setSessionPanes: setSessionTerminalPanes,
+  });
 
   const terminalSize = () => {
     const rect = terminalHostRef.current?.getBoundingClientRect();
