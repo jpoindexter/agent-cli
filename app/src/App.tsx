@@ -66,6 +66,7 @@ import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
 import { deriveOrchestrationDialogState } from "./orchestrationDialogState";
 import { settingsAgentProfileOptions } from "./settingsModalData";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
+import { AppSettingsHost } from "./appSettingsHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -106,7 +107,6 @@ import { useSettingsRuntimeStatus } from "./useSettingsRuntimeStatus";
 import { useSyncRef } from "./useSyncRef";
 import { loadWorkspaceBootstrap } from "./workspaceBootstrap";
 import { terminalSnapshotText } from "./terminalTranscript";
-import { SettingsModal } from "./SettingsModal";
 import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
 import {
   addWorktree,
@@ -2031,62 +2031,47 @@ function App() {
         />
       </main>
 
-      {settingsOpen ? (
-        <SettingsModal
-          approvalSetting={activeApprovalSetting}
-          agentConnectionsStatus={agentConnectionsStatus}
-          agentConnectionsRefreshing={agentConnectionsRefreshing}
-          agentHookStatus={agentHookStatus}
-          browserSetting={activeBrowserSetting}
-          aiConnectionSettings={aiConnectionSettings}
-          connectionSecretPresence={connectionSecretPresence}
-          mcpOAuthStatuses={mcpOAuthStatuses}
-          commandPaletteSources={commandPaletteSources}
-          customTerminalProfiles={profiles.customProfiles}
-          gitBranch={gitStatus?.branch ?? null}
-          gitChangeCount={gitStatus ? gitStatus.files.length : null}
-          sourceControlStatus={sourceControlStatus}
-          repoLocation={repoLocation}
-          onOpenSourceControlLink={(url) => void openUrl(url).catch(() => {})}
-          layout={renderedWorkbenchLayout}
-          profileSetting={activeAgentProfileSetting}
-          profiles={settingsAgentProfileOptions(LAUNCH_PROFILES)}
-          sessionTitle={activeSessionTitle}
-          trayMode={toolTrayMode}
-          workspaceName={activeWorkspaceName}
-          workspacePath={workspacePath ?? ""}
-          onApprovalModeChange={settingsScopedActions.onApprovalModeChange}
-          onOpenAgentConnection={(providerId) => void openAgentConnection(providerId)}
-          onRefreshAgentConnections={refreshAgentConnections}
-          onBrowserUrlCommit={settingsScopedActions.onBrowserUrlCommit}
-          onAiConnectionSettingsChange={(next) => void saveAiConnectionSettings(next)}
-          onDeleteConnectionSecret={deleteConnectionSecret}
-          onSaveConnectionSecret={saveConnectionSecret}
-          onValidateConnectionTarget={settingsConnectionActions.validateConnectionTarget}
-          onBeginMcpOAuth={settingsConnectionActions.beginMcpOAuth}
-          onDisconnectMcpOAuth={settingsConnectionActions.disconnectMcpOAuth}
-          onCommandPaletteSourceChange={settingsPreferenceActions.onCommandPaletteSourceChange}
-          onAddCustomTerminalProfile={(label, command) => {
-            void profiles.addCustomProfile(label, command);
-          }}
-          keybindingOverrides={keybindingOverrides}
-          onResetLocalData={() => void settingsConnectionActions.resetLocalData()}
-          notificationsEnabled={notificationsEnabled}
-          onNotificationsChange={settingsPreferenceActions.onNotificationsChange}
-          onRemoveCustomTerminalProfile={(profileId) => {
-            void profiles.removeCustomProfile(profileId);
-          }}
-          theme={appTheme}
-          onThemeChange={settingsPreferenceActions.onThemeChange}
-          onKeybindingOverrideChange={settingsPreferenceActions.onKeybindingOverrideChange}
-          onClose={() => setSettingsOpen(false)}
-          onLayoutChange={setWorkbenchLayout}
-          onProfileChange={settingsScopedActions.onProfileChange}
-          onScopedSettingReset={settingsScopedActions.onScopedSettingReset}
-          onResetLayout={resetInterface}
-          onTrayModeChange={setToolTrayMode}
-        />
-      ) : null}
+      <AppSettingsHost
+        open={settingsOpen}
+        connectionActions={settingsConnectionActions}
+        preferenceActions={settingsPreferenceActions}
+        profilesController={profiles}
+        scopedActions={settingsScopedActions}
+        handlers={{
+          close: () => setSettingsOpen(false),
+          deleteConnectionSecret,
+          openAgentConnection,
+          openSourceControlLink: (url) => openUrl(url).catch(() => {}),
+          refreshAgentConnections,
+          resetLayout: resetInterface,
+          saveConnectionSecret,
+          saveConnectionSettings: saveAiConnectionSettings,
+          setLayout: setWorkbenchLayout,
+          setTrayMode: setToolTrayMode,
+        }}
+        modal={{
+          agentConnectionsRefreshing, agentConnectionsStatus, agentHookStatus,
+          aiConnectionSettings,
+          approvalSetting: activeApprovalSetting,
+          browserSetting: activeBrowserSetting,
+          commandPaletteSources, connectionSecretPresence,
+          customTerminalProfiles: profiles.customProfiles,
+          gitBranch: gitStatus?.branch ?? null,
+          gitChangeCount: gitStatus ? gitStatus.files.length : null,
+          keybindingOverrides,
+          layout: renderedWorkbenchLayout,
+          mcpOAuthStatuses, notificationsEnabled,
+          profileSetting: activeAgentProfileSetting,
+          profiles: settingsAgentProfileOptions(LAUNCH_PROFILES),
+          repoLocation,
+          sessionTitle: activeSessionTitle,
+          sourceControlStatus,
+          theme: appTheme,
+          trayMode: toolTrayMode,
+          workspaceName: activeWorkspaceName,
+          workspacePath: workspacePath ?? "",
+        }}
+      />
       <TranscriptsModal
         activeTranscriptId={openTranscriptId}
         onClose={() => setTranscriptsOpen(false)}
