@@ -117,3 +117,9 @@ Resolution 2026-07-16: switched vitest to the forks pool (vite.config.ts `test.p
 two consecutive full runs green; suite ~26s (was ~16s). Remove the rerun ritual.
 
 - 2026-07-16 recurrence: `SettingsWorkspace.interaction.test.tsx` failed once in a full run even with the forks pool, passed in isolation and in two consecutive full reruns. The forks pool reduced but did not eliminate the jsdom parallel flake class; on a single full-suite failure, rerun the file in isolation plus one full suite before treating it as real.
+
+## 2026-07-16 — alias-dissolution regex corrupted a persisted Store key
+What failed: batch "dissolve destructured aliases" regex (slice 78, `agentActivityHook`) replaced the bare word `agentActivityEvents` everywhere with `agentActivityHook.agentActivityEvents`, INCLUDING inside the string literal `storeRef.current?.set("agentActivityEvents", …)`. Activity events then persisted under `"agentActivityHook.agentActivityEvents"` while the loader (`workspaceBootstrap.ts`) still read `"agentActivityEvents"` — silent data loss across restarts. All gates were green because no test asserted the Store key.
+What worked: `agentActivityPersistence.test.ts` source-contract test asserting the write/read keys match; one-char fix restoring the literal.
+Why it failed: the dissolution regex `(?<![.\w])NAME\b(?!\s*:)(?!\w)` protects object keys and member access but NOT string-literal contents. Any dissolved alias that is also a substring of a persisted key / event name / CSS class / invoke-command string is silently corrupted.
+Next time: after any batch string-replacement across App.tsx, diff string literals against the pre-change commit (`diff <(git show REF:file | grep -oE '"[^"]*"' | sort -u) <(grep -oE '"[^"]*"' file | sort -u)`) and confirm every changed literal is intentional. Never let an alias-name substring reach a `.set("/.get("/invoke("/className=` string.

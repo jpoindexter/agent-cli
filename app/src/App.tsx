@@ -57,7 +57,6 @@ import { createTerminalPaneRename } from "./terminalPaneRename";
 import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
 import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
 import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
-import { deriveProjectSessionMenuState } from "./projectSessionMenuSurface";
 import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createDevServerDetection } from "./devServerDetectionSurface";
@@ -135,18 +134,14 @@ import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
-import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
 import {
-  buildFileNodeContextMenuItems,
   buildGitFileContextMenuItems,
-  buildProjectRailContextMenuItems,
-  buildWorkspaceContextMenuItems,
 } from "./workspaceContextMenus";
 import {
-  buildDiffContextMenuItems,
-  buildEditorContextMenuItems,
-  buildEditorTabContextMenuItems,
-} from "./editorContextMenus";
+  createEditorContextMenuAssembly,
+  createProjectSessionContextMenuAssembly,
+  createWorkspaceContextMenuAssembly,
+} from "./appContextMenuAssembly";
 import {
   clearBackgroundExitsForProject,
   notifyBackgroundExit,
@@ -302,7 +297,7 @@ function App() {
       persistence.activeSessionByProjectRef.current, persistence.projectSessionsRef.current, root,
     ),
     persistEvents: (events) => {
-      void storeRef.current?.set("agentActivityHook.agentActivityEvents", events);
+      void storeRef.current?.set("agentActivityEvents", events);
       void storeRef.current?.save();
     },
   });
@@ -837,7 +832,7 @@ function App() {
 
 
 
-  const workspaceContextMenuActions = {
+  const workspaceContextMenus = createWorkspaceContextMenuAssembly({
     closeProject: requestCloseProject,
     copyPath: editorSurface.copyPath,
     deleteNode: workspaceFileActions.delete,
@@ -852,15 +847,14 @@ function App() {
     runGitAction: diffReviewHook.runFileAction,
     shortcut: shortcutKeys,
     switchProject: (project: OpenProject) => requestOpenWorkspace(project.path),
-  };
-  const fileNodeContextMenuItems = (node: FileTreeNode) =>
-    buildFileNodeContextMenuItems(node, workspaceContextMenuActions);
+  });
+  const workspaceContextMenuActions = workspaceContextMenus.actions;
+  const fileNodeContextMenuItems = workspaceContextMenus.fileNodeItems;
   fileNodeContextMenuItemsRef.current = fileNodeContextMenuItems;
 
-  const workspaceContextMenuItems = () =>
-    buildWorkspaceContextMenuItems(workspacePath, workspaceContextMenuActions);
+  const workspaceContextMenuItems = () => workspaceContextMenus.workspaceItems(workspacePath);
   const projectRailContextMenuItems = (project: OpenProject) =>
-    buildProjectRailContextMenuItems(project, workspacePath, workspaceContextMenuActions);
+    workspaceContextMenus.projectRailItems(project, workspacePath);
 
   const projectSessionMetadataActions = createProjectSessionMetadataActions({
     getActiveSessions: () => persistence.activeSessionByProjectRef.current,
@@ -881,37 +875,28 @@ function App() {
     setError: setLaunchError,
     setNotice: chrome.setActionNotice,
   });
+  const projectSessionContextMenus = createProjectSessionContextMenuAssembly({
+    activeSessionId: activeChat.activeSessionId,
+    archiveSession: projectSessionMetadataActions.archiveSession,
+    captureCheckpoint: sessionCheckpoints.capture,
+    chatIdForSession: composerHarnessSessionKey,
+    conversations: () => composerWorkspace.chatConversationsRef.current,
+    copyText: writeText,
+    deleteSession: projectSessionDeletionController.deleteProjectSession,
+    notify: chrome.setActionNotice,
+    pinSession: projectSessionMetadataActions.pinSession,
+    projectSessionsFor: (projectPath) => persistence.projectSessionsRef.current[projectPath] ?? [],
+    removeChildWorktree: composerSurface.removeChildWorktree,
+    renameSession: projectSessionNavigationActions.renameSession,
+    restoreCheckpoint: sessionCheckpoints.restore,
+    returnChildResult: composerSurface.returnChildResult,
+    stopChildRun: composerSurface.stopChildChatRun,
+    switchSession: projectSessionNavigationActions.switchSession,
+    workspacePath,
+  });
+  const projectSessionContextMenuItems = projectSessionContextMenus.items;
 
-  const projectSessionContextMenuItems = (projectPath: string, session: ProjectSession): ContextMenuItem[] => {
-    return buildProjectSessionContextMenuItems({
-      ...deriveProjectSessionMenuState({
-        activeSessionId: activeChat.activeSessionId,
-        chatIdForSession: composerHarnessSessionKey,
-        conversations: composerWorkspace.chatConversationsRef.current,
-        projectPath,
-        session,
-        sessions: persistence.projectSessionsRef.current[projectPath] ?? [],
-        workspacePath,
-      }),
-      session,
-      actions: {
-        archive: () => projectSessionMetadataActions.archiveSession(projectPath, session, !session.archived),
-        captureCheckpoint: () => sessionCheckpoints.capture(projectPath, session),
-        copyName: async () => { await writeText(session.title); chrome.setActionNotice("Copied chat name"); },
-        delete: () => projectSessionDeletionController.deleteProjectSession(projectPath, session),
-        pin: () => projectSessionMetadataActions.pinSession(projectPath, session, !session.pinnedAt),
-        removeChildWorktree: () => composerSurface.removeChildWorktree(projectPath, session),
-        rename: () => projectSessionNavigationActions.renameSession(projectPath, session),
-        restoreCheckpoint: () => session.checkpointId ? sessionCheckpoints.restore(projectPath, session, session.checkpointId) : undefined,
-        restoreRecoveryCheckpoint: () => session.recoveryCheckpointId ? sessionCheckpoints.restore(projectPath, session, session.recoveryCheckpointId) : undefined,
-        returnChildResult: () => composerSurface.returnChildResult(projectPath, session),
-        stopChildRun: () => composerSurface.stopChildChatRun(projectPath, session),
-        switchChat: () => projectSessionNavigationActions.switchSession(projectPath, session.id),
-      },
-    });
-  };
-
-  const editorContextMenuActions = {
+  const editorContextMenus = createEditorContextMenuAssembly({
     closeDiff: diffReviewHook.close,
     closeTab: (tab: FileTreeNode) => editorNavigation.closeTab(tab),
     copyDiff: diffReviewHook.copy,
@@ -925,17 +910,16 @@ function App() {
     runGitAction: diffReviewHook.runFileAction,
     save: saveEditorFile,
     shortcut: shortcutKeys,
-  };
-  const editorTabContextMenuItems = (tab: FileTreeNode) =>
-    buildEditorTabContextMenuItems(tab, editorContextMenuActions);
-  const editorContextMenuItems = () => buildEditorContextMenuItems({
+  });
+  const editorTabContextMenuItems = editorContextMenus.editorTabItems;
+  const editorContextMenuItems = () => editorContextMenus.editorItems({
     editorDirty: editorWorkspace.editorDirty, editorLoading: editorSession.editorLoading, editorSaving: editorSession.editorSaving, selectedFile: editorSession.selectedFile,
-  }, editorContextMenuActions);
-  const diffContextMenuItems = () => buildDiffContextMenuItems({
+  });
+  const diffContextMenuItems = () => editorContextMenus.diffItems({
     canDiscard: editorWorkspace.diffReviewCanDiscard, canOpenFile: editorWorkspace.diffReviewCanOpenFile,
     canStage: editorWorkspace.diffReviewCanStage, canUnstage: editorWorkspace.diffReviewCanUnstage,
     loading: diffReviewHook.loading, review: diffReviewHook.review,
-  }, editorContextMenuActions);
+  });
 
   const saveActivePaneTranscript = createPaneTranscriptCapture({
     getActivePane: () => activeAgentSession.activeTerminalPane,
