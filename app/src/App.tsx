@@ -51,6 +51,7 @@ import { createSettingsConnectionActionsController } from "./settingsConnectionA
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import { createEditorSurfaceActions } from "./editorSurfaceActions";
 import type { GitStatusFile } from "./fileGitStatus";
+import { buildAgentHookSnapshot, hookReportToActivity } from "./agentHookIntegration";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -1831,19 +1832,14 @@ function App() {
 
   useEffect(() => {
     void invoke("update_agent_hook_snapshot", {
-      snapshot: {
-        projects: openProjects.map((project) => ({ path: project.path, status: project.status })),
-        activeProjectPath: workspacePath,
+      snapshot: buildAgentHookSnapshot({
         activeChatId: activeSessionId,
-        panes: terminalPanes.map((pane, index) => ({
-          id: pane.id,
-          label: terminalPaneLabelForDisplay(pane.label, pane.profile.label, index),
-          state: pane.state,
-          cwd: pane.cwd,
-        })),
-        openFiles: editorTabs.map((file) => file.path),
-        selectedFile: selectedFile?.path ?? null,
-      },
+        activeProjectPath: workspacePath,
+        editorTabs,
+        openProjects,
+        panes: terminalPanes,
+        selectedFilePath: selectedFile?.path ?? null,
+      }),
     }).catch(() => {});
   }, [activeSessionId, editorTabs, openProjects, selectedFile?.path, terminalPanes, workspacePath]);
 
@@ -1858,15 +1854,7 @@ function App() {
       "agent",
     ),
     createShell: () => createTerminalPane(defaultTerminalLaunchProfile(), "agent"),
-    recordReport: (report) => recordAgentActivity(activeChatActivityHandle(), {
-      kind: report.runCardKind === "file" ? "file" : report.runCardKind === "approval" ? "approval" : "tool",
-      label: report.status,
-      detail: report.detail || "Reported through the Keelhouse agent hook.",
-      status: report.runCardStatus,
-      provenance: "agent-hook",
-      runCardKind: report.runCardKind,
-      targets: report.targets,
-    }),
+    recordReport: (report) => recordAgentActivity(activeChatActivityHandle(), hookReportToActivity(report)),
   });
 
   useSyncRef(workspacePathRef, workspacePath);
