@@ -17,9 +17,7 @@ import { DRAWER_MODES, drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useConversationRuntime } from "./useConversationRuntime";
-import { useComposerLocalState } from "./useComposerLocalState";
 import { createComposerSettingsActions } from "./composerSettingsActions";
-import { useComposerAttachments } from "./useComposerAttachments";
 import { useEditorNavigationLifecycle } from "./useEditorNavigationLifecycle";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
@@ -69,7 +67,7 @@ import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
 import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
 import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
-import { composerMentionQuery as composerMentionQueryFrom } from "./agentComposer";
+import { useComposerRuntime } from "./useComposerRuntime";
 import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
 import { fileTreeNodeFromPath, pathBasename } from "./fileTreeTypes";
 import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
@@ -279,31 +277,15 @@ function App() {
     activeAgentSessionDescriptorRef, composerWorkspace, persistence, profiles,
     shellLayout, storeRef, workspacePath, workspacePathRef,
   });
-  const composerLocal = useComposerLocalState({
-    activeHarness: activeChat.activeComposerHarness, activeKey: activeChat.activeComposerHarnessKey,
-    getDefaultProfileId: () => profiles.launchProfileRef.current.id,
-    getRecords: () => composerWorkspace.composerHarnessBySessionRef.current,
-    persistRecords: (records) => composerWorkspace.persistComposerHarnessRecords(records),
-  });
-  const composerAttachments = useComposerAttachments({
-    active: shellLayout.agentSurfaceMode === "chat",
-    activeHarness: activeChat.activeComposerHarness,
-    activeKey: activeChat.activeComposerHarnessKey,
-    draft: composerLocal.draft,
-    gateAction: (action) => agentActivityHook.gateAppAction(action),
-    getBrowserUrl: () => browser.urlRef.current,
-    getRoot: () => workspacePathRef.current,
+  const {
+    attachSelectedFileToComposer, composerAttachments, composerLocal,
+    composerMentionQuery, composerMentionResults,
+  } = useComposerRuntime({
+    activeChat, agentActivityHook, browser, composerWorkspace, editorSession,
     logEvent: (label, detail) => logComposerHarnessEvent(label, detail),
-    setError: setComposerError,
-    setNotice: setComposerNotice,
-    updateHarness: composerLocal.updateHarness,
+    profiles, searchableFiles: editorWorkspace.searchableFiles,
+    setError: setComposerError, setNotice: setComposerNotice, shellLayout, workspacePathRef,
   });
-  const attachSelectedFileToComposer = async () => composerAttachments.attachWorkspaceFile(editorSession.selectedFile);
-  const composerMentionQuery = composerMentionQueryFrom(composerLocal.draft);
-  const composerMentionResults = useMemo(
-    () => composerMentionQuery == null ? [] : filterWorkspaceFiles(editorWorkspace.searchableFiles, composerMentionQuery, 8),
-    [composerMentionQuery, editorWorkspace.searchableFiles],
-  );
   const activeAgentSession = deriveActiveAgentSessionState({
     activeSessionId: activeChat.activeSessionId, activeTerminalPaneId: terminal.activePaneId, agentActivityEvents: agentActivityHook.agentActivityEvents, agentActivityFilter: agentActivityHook.agentActivityFilter,
     agentApprovalMode, terminalPanes: terminal.panes, workspacePath,
