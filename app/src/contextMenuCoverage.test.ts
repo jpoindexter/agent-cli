@@ -7,6 +7,7 @@ const sideRailHost = readFileSync(new URL("./workspaceSideRailHost.ts", import.m
 const editorSectionHost = readFileSync(new URL("./workbenchEditorSectionHost.ts", import.meta.url), "utf8");
 const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
 const trayHost = readFileSync(new URL("./bottomUtilityTrayHost.ts", import.meta.url), "utf8");
+const dockHost = readFileSync(new URL("./workbenchDockPanelsHost.ts", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const browserComposerContextMenu = readFileSync(new URL("./browserComposerContextMenu.ts", import.meta.url), "utf8");
 const editorContextMenus = readFileSync(new URL("./editorContextMenus.ts", import.meta.url), "utf8");
@@ -34,7 +35,7 @@ describe("production context-menu coverage", () => {
       "projectSessionContextMenuItems(path, session)",
       "editorTabContextMenuItems(tab)",
       "editorContextMenuItems()",
-      "buildGitFileContextMenuItems(file, workspaceContextMenuActions)",
+      "buildGitFileContextMenuItems(file, input.workspaceContextMenuActions)",
       "diffContextMenuItems()",
       "browserContextMenuItems()",
       "terminalContextMenuItems()",
@@ -42,7 +43,7 @@ describe("production context-menu coverage", () => {
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
     ]) {
-      expect(`${app}\n${sideRailHost}\n${editorSectionHost}\n${panelHost}\n${trayHost}`).toContain(marker);
+      expect(`${app}\n${sideRailHost}\n${editorSectionHost}\n${panelHost}\n${trayHost}\n${dockHost}`).toContain(marker);
     }
     expect(appMenuAssembly).toContain("buildComposerAddMenuItems(composerMenuInput(options))");
     const contextMenuHost = readFileSync(new URL("./useContextMenuHost.tsx", import.meta.url), "utf8");

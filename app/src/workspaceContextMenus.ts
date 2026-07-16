@@ -13,7 +13,7 @@ type MenuOptions = {
 
 type FileGitAction = "stage" | "unstage" | "discard";
 
-type WorkspaceContextMenuActions = {
+export type WorkspaceContextMenuActions = {
   closeProject: (project: OpenProject) => unknown;
   copyPath: (path: string) => unknown;
   deleteNode: (node: FileTreeNode) => unknown;

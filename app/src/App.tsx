@@ -68,6 +68,7 @@ import { settingsAgentProfileOptions } from "./settingsModalData";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
+import { workbenchDockPanelsPropsFrom } from "./workbenchDockPanelsHost";
 import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
@@ -135,7 +136,6 @@ import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import {
-  buildGitFileContextMenuItems,
 } from "./workspaceContextMenus";
 import {
   createEditorContextMenuAssembly,
@@ -1323,27 +1323,11 @@ function App() {
           workspaceFileActions, workspacePath, workspaceTree,
         })} />,
         main: <>
-        <WorkbenchDockPanels
-          files={{
-            error: workspaceTree.error, loading: workspaceTree.loading, query: drawerSearchQuery,
-            results: drawerSearchResults, searchable: editorWorkspace.searchableFiles,
-            selectedFilePath: editorSession.selectedFile?.path ?? null,
-          }}
-          git={{ error: gitStatusHook.error, loading: gitStatusHook.loading, status: gitStatusHook.status }}
-          handlers={{
-            createFile: () => void workspaceFileActions.createFile(),
-            createFolder: () => void workspaceFileActions.createFolder(),
-            gitFileContextMenu: (event, file) => contextMenuHost.openContextMenu(
-              event, buildGitFileContextMenuItems(file, workspaceContextMenuActions),
-            ),
-            openDiff: (gitFile) => void diffReviewHook.open(gitFile),
-            openFile: (treeFile) => void editorFileWorkflow.requestOpen(treeFile, { focusEditor: true }),
-            refreshFiles: workspaceTree.refresh,
-            refreshGit: () => void gitStatusHook.refresh(),
-            setQuery: setDrawerSearchQuery,
-          }}
-          workspacePath={workspacePath}
-        />
+        <WorkbenchDockPanels {...workbenchDockPanelsPropsFrom({
+          contextMenuHost, diffReviewHook, drawerSearchQuery, drawerSearchResults, editorFileWorkflow,
+          editorSession, editorWorkspace, gitStatusHook, setDrawerSearchQuery, workspaceContextMenuActions,
+          workspaceFileActions, workspacePath, workspaceTree,
+        })} />
         <WorkbenchEditorSection {...workbenchEditorSectionPropsFrom({
           contextMenuHost, diffContextMenuItems, diffReviewHook, editorContextMenuItems,
           editorFileWorkflow, editorNavigation, editorSession, editorSurface, editorTabContextMenuItems,
