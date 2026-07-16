@@ -60,16 +60,11 @@ import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import { createUtilityTrayControls } from "./utilityTrayControls";
 import { createTerminalPaneRename } from "./terminalPaneRename";
 import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
+import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
 } from "./projectChatStatus";
-import {
-  removeEditorBuffersWithin,
-  removeEditorTabsWithin,
-  retargetEditorBuffers,
-  retargetEditorTabs,
-} from "./editorTabs";
 import {
   LAUNCH_PROFILES,
   defaultTerminalLaunchProfile,
@@ -179,7 +174,6 @@ import {
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { ToolTrayTabs } from "./ToolTrayTabs";
 import type { FileTreeNode } from "./fileTreeTypes";
-import { createWorkspaceFileActions } from "./workspaceFileActions";
 import { StatusBar } from "./StatusBar";
 import type { ContextMenuItem } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
@@ -1187,41 +1181,15 @@ function App() {
     duplicate: duplicateRailNode,
     rename: renameRailNode,
     reveal: revealRailNode,
-  } = createWorkspaceFileActions({
-    editorDirty,
+  } = wireWorkspaceFileActions(editorSession, {
+    clearPersistedActiveFile,
+    getDirty: () => editorDirty,
+    getPersistRoot: () => workspacePathRef.current,
     getRoot: () => workspacePathRef.current ?? workspacePath,
     getSelectedFile: () => selectedFile,
-    onOpenFile: async (file) => { await requestOpenEditorFile(file, { focusEditor: true }); },
-    onRename: async (node, nextPath, affectedSelectedFile) => {
-      setEditorTabs((tabs) => retargetEditorTabs(tabs, node.path, nextPath, basename));
-      editorBuffersRef.current = retargetEditorBuffers(editorBuffersRef.current, node.path, nextPath);
-      editorViewStatesRef.current = retargetEditorBuffers(editorViewStatesRef.current, node.path, nextPath);
-      setEditorBufferRevision((value) => value + 1);
-      if (!affectedSelectedFile) return;
-      const selectedPath = affectedSelectedFile.path === node.path
-        ? nextPath : `${nextPath}${affectedSelectedFile.path.slice(node.path.length)}`;
-      selectedFileRef.current = null;
-      setSelectedFile(null);
-      await openEditorFileDirect({ id: selectedPath, kind: "file", name: basename(selectedPath), path: selectedPath }, { focusEditor: true });
-    },
-    onDelete: async (node, affectedSelectedFile) => {
-      const nextTabs = removeEditorTabsWithin(editorTabs, node.path);
-      editorBuffersRef.current = removeEditorBuffersWithin(editorBuffersRef.current, node.path);
-      editorViewStatesRef.current = removeEditorBuffersWithin(editorViewStatesRef.current, node.path);
-      setEditorTabs(nextTabs);
-      setEditorBufferRevision((value) => value + 1);
-      if (!affectedSelectedFile) return;
-      const nextTab = nextTabs[0] ?? null;
-      if (nextTab) {
-        selectedFileRef.current = null;
-        setSelectedFile(null);
-        await openEditorFileDirect(nextTab, { focusEditor: true });
-      } else {
-        if (workspacePathRef.current) void clearPersistedActiveFile(workspacePathRef.current);
-        resetEditor();
-      }
-    },
+    openFileDirect: (file, fileOptions) => openEditorFileDirect(file, fileOptions),
     refresh: refreshFileTree,
+    requestOpenFile: (file, fileOptions) => requestOpenEditorFile(file, fileOptions),
     setError: setFileOpError,
   });
 
