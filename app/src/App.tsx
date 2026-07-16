@@ -149,7 +149,6 @@ import {
   terminalPaneLabelForDisplay,
 } from "./terminalPane";
 import type { TerminalPaneState } from "./terminalPane";
-import type { GitStatusFile } from "./fileGitStatus";
 import { useGitStatus } from "./useGitStatus";
 import { useGitDiffReview } from "./useGitDiffReview";
 import { useShellLayout, type SideDrawerMode } from "./useShellLayout";
@@ -185,6 +184,12 @@ import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
 import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
+import {
+  buildFileNodeContextMenuItems,
+  buildGitFileContextMenuItems,
+  buildProjectRailContextMenuItems,
+  buildWorkspaceContextMenuItems,
+} from "./workspaceContextMenus";
 import {
   buildBrowserContextMenuItems,
   buildComposerAddMenuItems,
@@ -2078,72 +2083,30 @@ function App() {
 
 
 
-  const gitFileContextMenuItems = (file: GitStatusFile): ContextMenuItem[] => [
-    menuItem("git.diff", "Open Diff", () => openGitDiff(file), { icon: "git" }),
-    menuItem("git.stage", "Stage File", () => runGitFileAction("stage", file), {
-      icon: "git",
-      disabled: !(file.index === "?" || file.worktree !== " "),
-    }),
-    menuItem("git.unstage", "Unstage File", () => runGitFileAction("unstage", file), {
-      icon: "git",
-      disabled: file.index === " " || file.index === "?",
-    }),
-    menuItem("git.discard", "Discard Unstaged Changes", () => runGitFileAction("discard", file), {
-      icon: "error",
-      danger: true,
-      disabled: !(file.index === "?" || file.worktree !== " "),
-    }),
-  ];
-
-  const fileNodeContextMenuItems = (node: FileTreeNode): ContextMenuItem[] => {
-    const items = node.gitStatus
-      ? gitFileContextMenuItems({
-          path: node.gitStatus.relativePath,
-          index: node.gitStatus.index,
-          worktree: node.gitStatus.worktree,
-        })
-      : [];
-    return [
-      ...items,
-      menuItem("file.new", "New File", () => createFileInRail(node), { icon: "filePlus" }),
-      menuItem("folder.new", "New Folder", () => createFolderInRail(node), { icon: "folderPlus" }),
-      menuItem("file.rename", "Rename", () => renameRailNode(node), { icon: "file" }),
-      menuItem("file.duplicate", "Duplicate", () => duplicateRailNode(node), { icon: "file" }),
-      menuItem("file.reveal", "Reveal in Finder", () => revealRailNode(node), { icon: "folderOpen" }),
-      menuItem("file.copy-path", "Copy Path", () => copyPathToClipboard(node.path), { icon: "file" }),
-      menuItem("file.delete", "Delete", () => deleteRailNode(node), { icon: "error", danger: true }),
-    ];
+  const workspaceContextMenuActions = {
+    closeProject: requestCloseProject,
+    copyPath: copyPathToClipboard,
+    deleteNode: deleteRailNode,
+    duplicateNode: duplicateRailNode,
+    newFile: createFileInRail,
+    newFolder: createFolderInRail,
+    openDiff: openGitDiff,
+    openWorkspace: pickWorkspace,
+    renameNode: renameRailNode,
+    revealNode: revealRailNode,
+    revealPath: revealItemInDir,
+    runGitAction: runGitFileAction,
+    shortcut: shortcutKeys,
+    switchProject: (project: OpenProject) => requestOpenWorkspace(project.path),
   };
+  const fileNodeContextMenuItems = (node: FileTreeNode) =>
+    buildFileNodeContextMenuItems(node, workspaceContextMenuActions);
   fileNodeContextMenuItemsRef.current = fileNodeContextMenuItems;
 
-  const workspaceContextMenuItems = (): ContextMenuItem[] => [
-    menuItem("workspace.open", "Open Folder", () => pickWorkspace(), { icon: "folderOpen", shortcut: shortcutKeys("workspace.open") }),
-    menuItem("workspace.new-file", "New File", () => createFileInRail(), { icon: "filePlus", disabled: !workspacePath }),
-    menuItem("workspace.new-folder", "New Folder", () => createFolderInRail(), { icon: "folderPlus", disabled: !workspacePath }),
-    menuItem("workspace.reveal", "Reveal in Finder", () => workspacePath ? revealItemInDir(workspacePath) : undefined, {
-      icon: "folderOpen",
-      disabled: !workspacePath,
-    }),
-    menuItem("workspace.copy-path", "Copy Workspace Path", () => workspacePath ? copyPathToClipboard(workspacePath) : undefined, {
-      icon: "workspace",
-      disabled: !workspacePath,
-    }),
-  ];
-
-  const projectRailContextMenuItems = (project: OpenProject): ContextMenuItem[] => [
-    menuItem("project.switch", "Switch to Project", () => requestOpenWorkspace(project.path), {
-      icon: "workspace",
-      disabled: project.path === workspacePath,
-    }),
-    menuItem("project.reveal", "Reveal in Finder", () => revealItemInDir(project.path), { icon: "folderOpen" }),
-    menuItem("project.copy-path", "Copy Path", () => copyPathToClipboard(project.path), { icon: "file" }),
-    menuItem(
-      "project.close",
-      "Close Project",
-      () => requestCloseProject(project),
-      { icon: "close", danger: true },
-    ),
-  ];
+  const workspaceContextMenuItems = () =>
+    buildWorkspaceContextMenuItems(workspacePath, workspaceContextMenuActions);
+  const projectRailContextMenuItems = (project: OpenProject) =>
+    buildProjectRailContextMenuItems(project, workspacePath, workspaceContextMenuActions);
 
   const updateProjectSessionMetadata = async (
     projectPath: string,
@@ -3121,7 +3084,9 @@ function App() {
           staged={gitStatus?.staged ?? 0}
           untracked={gitStatus?.untracked ?? 0}
           workspacePath={workspacePath}
-          onFileContextMenu={(event, file) => openContextMenu(event, gitFileContextMenuItems(file))}
+          onFileContextMenu={(event, file) => openContextMenu(
+            event, buildGitFileContextMenuItems(file, workspaceContextMenuActions),
+          )}
           onOpenDiff={(file) => void openGitDiff(file)}
           onRefresh={() => void refreshGitStatus()}
         />

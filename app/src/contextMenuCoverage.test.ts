@@ -9,10 +9,11 @@ const projectSessionContextMenu = readFileSync(new URL("./projectSessionContextM
 const shellLayout = readFileSync(new URL("./useShellLayout.ts", import.meta.url), "utf8");
 const terminalViewport = readFileSync(new URL("./TerminalViewport.tsx", import.meta.url), "utf8");
 const terminalContextMenu = readFileSync(new URL("./terminalContextMenu.ts", import.meta.url), "utf8");
+const workspaceContextMenus = readFileSync(new URL("./workspaceContextMenus.ts", import.meta.url), "utf8");
 
 describe("production context-menu coverage", () => {
   it("registers unique commands for every promised surface", () => {
-    const menuSources = `${app}\n${browserComposerContextMenu}\n${projectSessionContextMenu}\n${terminalContextMenu}`;
+    const menuSources = `${app}\n${browserComposerContextMenu}\n${projectSessionContextMenu}\n${terminalContextMenu}\n${workspaceContextMenus}`;
     const ids = Array.from(menuSources.matchAll(/(?:menuItem|sessionItem|terminalItem)\("([^"]+)"/g), (match) => match[1]);
     expect(new Set(ids).size).toBe(ids.length);
     for (const prefix of ["workspace.", "project.", "session.", "file.", "tab.", "editor.", "git.", "diff.", "terminal.", "pane.", "utility.", "browser.", "composer."]) {
@@ -27,7 +28,7 @@ describe("production context-menu coverage", () => {
       "file-tree-context-menu",
       "editorTabContextMenuItems(tab)",
       "editorContextMenuItems()",
-      "gitFileContextMenuItems(file)",
+      "buildGitFileContextMenuItems(file, workspaceContextMenuActions)",
       "diffContextMenuItems()",
       "browserContextMenuItems()",
       "terminalContextMenuItems()",
@@ -58,9 +59,10 @@ describe("production context-menu coverage", () => {
   });
 
   it("allows active projects to close through the managed close lifecycle", () => {
-    const menu = app.slice(app.indexOf("const projectRailContextMenuItems"), app.indexOf("const projectSessionContextMenuItems"));
-    expect(menu).toContain("requestCloseProject(project)");
-    expect(menu.slice(menu.indexOf('"project.close"'))).not.toContain("disabled:");
+    expect(app).toContain("closeProject: requestCloseProject");
+    const projectMenu = workspaceContextMenus.slice(workspaceContextMenus.indexOf("buildProjectRailContextMenuItems"));
+    expect(projectMenu).toContain('menuItem("project.close"');
+    expect(projectMenu.slice(projectMenu.indexOf('"project.close"'))).not.toContain("disabled:");
     expect(app).toContain("intentionallyTerminatedPaneIdsRef.current.add(pane.id)");
   });
 
