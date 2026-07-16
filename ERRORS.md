@@ -113,3 +113,5 @@ What failed: ComposerModelPicker, ConnectionSettingsPanel, ContextMenu, EditorCo
 Note for next time: threshold reached — next session should add a dedicated slice pinning
 these files to their own pool/environment (vitest poolMatchGlobs or per-file threads
 isolation) instead of relying on reruns.
+Resolution 2026-07-16: switched vitest to the forks pool (vite.config.ts `test.pool`),
+two consecutive full runs green; suite ~26s (was ~16s). Remove the rerun ritual.

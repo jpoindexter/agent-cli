@@ -8,6 +8,12 @@ const host = process.env.TAURI_DEV_HOST;
 export default defineConfig(async () => ({
   plugins: [react()],
 
+  // jsdom render tests intermittently corrupted each other under the default
+  // worker-thread pool (see ERRORS.md 2026-07-16); process isolation is stable.
+  test: {
+    pool: "forks",
+  },
+
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
   // 1. prevent Vite from obscuring rust errors
