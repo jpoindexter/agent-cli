@@ -82,6 +82,7 @@ import { createWorkspacePicker } from "./workspacePicker";
 import { createPaneActivityLog } from "./paneActivityLog";
 import { createTerminalResize } from "./terminalResize";
 import { searchDialogPropsFrom } from "./searchCommandDialogHost";
+import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2007,15 +2008,10 @@ function App() {
           workspacePath: workspacePath ?? "",
         }}
       />
-      <TranscriptsModal
-        activeTranscriptId={openTranscriptId}
-        onClose={() => setTranscriptsOpen(false)}
-        onSelect={setOpenTranscriptId}
-        open={transcriptsOpen}
-        projectId={workspacePath}
-        projectSessionId={activeSessionId}
-        transcripts={paneTranscripts}
-      />
+      <TranscriptsModal {...transcriptsModalPropsFrom(
+        { openTranscriptId, paneTranscripts, setOpenTranscriptId, setTranscriptsOpen, transcriptsOpen },
+        { projectId: workspacePath, projectSessionId: activeSessionId },
+      )} />
       <AppRuntimeDialogs
         notices={{
           actionNotice,
