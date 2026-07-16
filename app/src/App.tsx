@@ -93,7 +93,6 @@ import type { ComposerHarnessRecords } from "./composerHarness";
 import { submitComposerDraft as submitComposerDraftWithContext } from "./composerSubmission";
 import {
   appActionAuditLabel,
-  createAppAction,
   resolveAppAction,
 } from "./appActions";
 import type { AppActionAuditEvent, AppActionDescriptor } from "./appActions";
@@ -198,6 +197,7 @@ import { executeTerminalPaneRestart } from "./terminalPaneRestartWorkflow";
 import { executeTerminalPaneTerminate } from "./terminalPaneTerminate";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import { executeTerminalWorktreePaneCreate } from "./terminalWorktreePaneCreateWorkflow";
+import { executeTerminalWorktreePaneClose } from "./terminalWorktreePaneCloseWorkflow";
 import { openWorkspaceTerminalPanes } from "./workspaceOpenPanes";
 import { prepareWorkspaceOpenSession } from "./workspaceOpenSession";
 import { persistMissingWorkspaceCleanup } from "./workspaceOpenRecoveryPersistence";
@@ -1786,27 +1786,20 @@ function App() {
     if (!root) return;
     const worktree = worktreeForPaneId(worktrees, String(paneId));
     if (!worktree) return;
-    const audit = await gateAppAction(createAppAction({
-      kind: "remove-worktree",
-      label: "Remove worktree",
-      target: worktree.branch,
-      risk: "destructive",
-      requestedBy: "user",
-      undoHint: "The worktree branch and files are deleted; recreate from the context menu if needed.",
-    }), activeAgentSessionDescriptor);
-    if (audit.decision !== "approved") return;
-    const closed = await closeTerminalPane(paneId);
-    if (!closed) return;
-    try {
-      await invoke("remove_project_worktree", { root, worktreePath: worktree.path, branch: worktree.branch });
-    } catch (err) {
-      setLaunchError(String(err));
-    }
-    setWorktrees((current) => {
-      const next = removeWorktreeByPaneId(current, String(paneId));
-      void storeRef.current?.set("worktrees", next);
-      void storeRef.current?.save();
-      return next;
+    await executeTerminalWorktreePaneClose({
+      closePane: () => closeTerminalPane(paneId),
+      gateAction: async (action) => (await gateAppAction(action, activeAgentSessionDescriptor)).decision,
+      persistRemoval: () => setWorktrees((current) => {
+        const next = removeWorktreeByPaneId(current, String(paneId));
+        void storeRef.current?.set("worktrees", next);
+        void storeRef.current?.save();
+        return next;
+      }),
+      removeWorktree: () => invoke("remove_project_worktree", {
+        root, worktreePath: worktree.path, branch: worktree.branch,
+      }),
+      setError: setLaunchError,
+      worktree,
     });
   };
 
