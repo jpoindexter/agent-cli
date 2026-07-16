@@ -61,6 +61,7 @@ import { createUtilityTrayControls } from "./utilityTrayControls";
 import { createTerminalPaneRename } from "./terminalPaneRename";
 import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
 import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
+import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -138,7 +139,6 @@ import {
   buildEditorContextMenuItems,
   buildEditorTabContextMenuItems,
 } from "./editorContextMenus";
-import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import {
   clearBackgroundExitsForProject,
   notifyBackgroundExit,
@@ -263,7 +263,7 @@ function App() {
     savedEditorText, selectedFile, selectedFileRef,
     sessionEditorSnapshotsRef, setEditorBufferRevision, setEditorCursor,
     setEditorRecoveryError,
-    setEditorTabs, setEditorText, setFileOpError, setSavedEditorText,
+    setEditorTabs, setEditorText, setFileOpError,
     setSelectedFile,
   } = editorSession;
   const terminal = useTerminalPaneController<Snapshot>({
@@ -1234,26 +1234,12 @@ function App() {
   const {
     capture: captureSessionCheckpoint,
     restore: restoreSessionCheckpoint,
-  } = createSessionCheckpointActions({
+  } = wireSessionCheckpointActions(editorSession, {
     gateAction: (action) => gateAppAction(action),
     getDirtyTabPaths: () => dirtyTabPaths,
-    getSelectedFile: () => selectedFileRef.current,
     getWorkspacePath: () => workspacePathRef.current,
-    onClearBuffers: (paths) => {
-      for (const path of paths) delete editorBuffersRef.current[path];
-      setEditorBufferRevision((revision) => revision + 1);
-    },
     onMetadata: updateProjectSessionMetadata,
-    onReconcile: async (activeFile, action) => {
-      if (!activeFile || !action) return;
-      if (action === "delete") {
-        setSelectedFile(null);
-        setEditorText("");
-        setSavedEditorText("");
-        return;
-      }
-      await openEditorFileDirect(activeFile);
-    },
+    openFileDirect: (file) => openEditorFileDirect(file),
     refreshFiles: refreshFileTree,
     refreshGit: () => refreshGitStatus(),
     setError: setLaunchError,

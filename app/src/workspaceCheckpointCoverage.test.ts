@@ -11,7 +11,9 @@ describe("safe workspace checkpoint production wiring", () => {
     expect(checkpointActions).toContain("services.preview(projectPath, checkpointId)");
     expect(checkpointActions).toContain("protectedDirtyPath");
     expect(checkpointActions).toContain("recoveryCheckpointId: result.recoveryCheckpointId");
-    expect(app).toContain("createSessionCheckpointActions");
+    expect(app).toContain("wireSessionCheckpointActions");
+    const checkpointSurface = readFileSync(new URL("./sessionCheckpointSurface.ts", import.meta.url), "utf8");
+    expect(checkpointSurface).toContain("createSessionCheckpointActions");
     expect(backend).toContain("preview.preview_token != preview_token");
     expect(backend).toContain("Recovery before checkpoint restore");
   });
