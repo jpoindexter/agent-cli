@@ -69,7 +69,7 @@ import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
 import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import { WorkbenchShell } from "./WorkbenchShell";
-import { browserPreviewPropsFrom } from "./browserPreviewHost";
+import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -1805,18 +1805,10 @@ function App() {
           status: gitStatus,
           onOpenDiff: (file) => void openGitDiff(file), onRefresh: () => void refreshGitStatus(),
         }}
-        browser={{
-          address: browser.address, canGoBack: browser.canGoBack, canGoForward: browser.canGoForward,
-          detectedPaneLabel: browser.activeDetectedServer?.paneLabel ?? null,
-          detectedUrl: browser.activeDetectedServer?.url ?? null,
-          error: browser.error, url: browser.url,
-          onAddressChange: (address) => { browser.setAddress(address); browser.setError(null); },
-          onBack: () => browser.goHistory(-1), onForward: () => browser.goHistory(1),
-          onOpenDetected: () => void browser.openDetectedServer(),
-          onOpenExternal: () => void openUrl(browser.url), onReload: browser.reload,
-          onShow: () => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout),
-          onSubmit: browser.submitAddress,
-        }}
+        browser={browserToolsDrawerPropsFrom(browser, {
+          openExternal: openUrl,
+          show: () => setWorkbenchLayout(workbenchLayout === "hidden" ? "right" : workbenchLayout),
+        })}
         settings={{
           approvalMode: activeComposerHarness.approvalMode,
           canSetApproval: Boolean(activeComposerHarnessKey), hasWorkspace: Boolean(workspacePath),
