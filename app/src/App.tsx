@@ -81,6 +81,7 @@ import { createComposerHarnessEventLog } from "./composerHarnessEvents";
 import { createWorkspacePicker } from "./workspacePicker";
 import { createPaneActivityLog } from "./paneActivityLog";
 import { createTerminalResize } from "./terminalResize";
+import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2045,20 +2046,12 @@ function App() {
       />
       {contextMenuHost.element}
       {commandPalette.open ? (
-        <SearchCommandDialog
-          commands={visiblePaletteCommands}
-          activeIndex={commandPalette.activeIndex}
-          query={commandPalette.query}
-          shortcut={shortcutKeys("chrome.command-palette")}
-          loading={chatSearchLoading}
-          error={chatSearchError}
-          inputRef={commandPalette.inputRef}
-          onClose={commandPalette.close}
-          onQueryChange={commandPalette.setQuery}
-          onKeyDown={(event) => commandPalette.onKeyDown(event, visiblePaletteCommands)}
-          onActiveIndexChange={commandPalette.setActiveIndex}
-          onRun={commandPalette.run}
-        />
+        <SearchCommandDialog {...searchDialogPropsFrom(commandPalette, {
+          commands: visiblePaletteCommands,
+          error: chatSearchError,
+          loading: chatSearchLoading,
+          shortcut: shortcutKeys("chrome.command-palette"),
+        })} />
       ) : null}
       <QuickOpenDialog
         controller={quickOpen}
