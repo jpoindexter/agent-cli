@@ -198,3 +198,44 @@ export const bootstrapRefsFromHooks = <H extends BootstrapHookShape>(hooks: H) =
   sessionSnapshots: hooks.editorSession.sessionEditorSnapshotsRef as H["editorSession"]["sessionEditorSnapshotsRef"],
   store: hooks.storeRef as H["storeRef"],
 });
+
+type BootstrapSetterHookShape = {
+  browser: { setProjectRecords: unknown; setSessionRecords: unknown };
+  chrome: { setAppTheme: unknown; setNotificationsEnabled: unknown };
+  composer: {
+    setChatConversations: unknown;
+    setComposerHarnessBySession: unknown;
+    setScopedSettings: unknown;
+  };
+  persistence: {
+    setActiveSessionByProjectState: unknown;
+    setOpenProjects: unknown;
+    setProjectSessions: unknown;
+    setRecentProjects: unknown;
+  };
+  rest: {
+    setAgentActivity: unknown;
+    setAiConnectionSettings: unknown;
+    setCommandPaletteSources: unknown;
+    setKeybindingOverrides: unknown;
+    setKeybindings: unknown;
+    setPaneLabels: unknown;
+    setPaneTranscripts: unknown;
+    setWorktrees: unknown;
+  };
+};
+
+export const bootstrapSettersFromHooks = <H extends BootstrapSetterHookShape>(hooks: H) => ({
+  ...(hooks.rest as H["rest"]),
+  setActiveSessions: hooks.persistence.setActiveSessionByProjectState as H["persistence"]["setActiveSessionByProjectState"],
+  setBrowserProjects: hooks.browser.setProjectRecords as H["browser"]["setProjectRecords"],
+  setBrowserSessions: hooks.browser.setSessionRecords as H["browser"]["setSessionRecords"],
+  setChatConversations: hooks.composer.setChatConversations as H["composer"]["setChatConversations"],
+  setComposerHarness: hooks.composer.setComposerHarnessBySession as H["composer"]["setComposerHarnessBySession"],
+  setNotificationsEnabled: hooks.chrome.setNotificationsEnabled as H["chrome"]["setNotificationsEnabled"],
+  setOpenProjects: hooks.persistence.setOpenProjects as H["persistence"]["setOpenProjects"],
+  setProjectSessions: hooks.persistence.setProjectSessions as H["persistence"]["setProjectSessions"],
+  setRecentProjects: hooks.persistence.setRecentProjects as H["persistence"]["setRecentProjects"],
+  setScopedSettings: hooks.composer.setScopedSettings as H["composer"]["setScopedSettings"],
+  setTheme: hooks.chrome.setAppTheme as H["chrome"]["setAppTheme"],
+});

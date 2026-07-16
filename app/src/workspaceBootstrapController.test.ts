@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { bootstrapRefsFromHooks, createWorkspaceBootstrapController } from "./workspaceBootstrapController";
+import { bootstrapRefsFromHooks, bootstrapSettersFromHooks, createWorkspaceBootstrapController } from "./workspaceBootstrapController";
 
 const ref = <T,>(current: T) => ({ current });
 
@@ -199,5 +199,48 @@ describe("bootstrapRefsFromHooks", () => {
     expect(refs.paneLayouts).toBe(options.refs.paneLayouts);
     expect(refs.recentProjects).toBe(options.refs.recentProjects);
     expect(refs.store).toBe(options.refs.store);
+  });
+});
+
+describe("bootstrapSettersFromHooks", () => {
+  it("collects the bootstrap setters from each owning hook bundle", () => {
+    const options = createOptions();
+    const setters = bootstrapSettersFromHooks({
+      browser: {
+        setProjectRecords: options.setters.setBrowserProjects,
+        setSessionRecords: options.setters.setBrowserSessions,
+      },
+      chrome: {
+        setAppTheme: options.setters.setTheme,
+        setNotificationsEnabled: options.setters.setNotificationsEnabled,
+      },
+      composer: {
+        setChatConversations: options.setters.setChatConversations,
+        setComposerHarnessBySession: options.setters.setComposerHarness,
+        setScopedSettings: options.setters.setScopedSettings,
+      },
+      persistence: {
+        setActiveSessionByProjectState: options.setters.setActiveSessions,
+        setOpenProjects: options.setters.setOpenProjects,
+        setProjectSessions: options.setters.setProjectSessions,
+        setRecentProjects: options.setters.setRecentProjects,
+      },
+      rest: {
+        setAgentActivity: options.setters.setAgentActivity,
+        setAiConnectionSettings: options.setters.setAiConnectionSettings,
+        setCommandPaletteSources: options.setters.setCommandPaletteSources,
+        setKeybindingOverrides: options.setters.setKeybindingOverrides,
+        setKeybindings: options.setters.setKeybindings,
+        setPaneLabels: options.setters.setPaneLabels,
+        setPaneTranscripts: options.setters.setPaneTranscripts,
+        setWorktrees: options.setters.setWorktrees,
+      },
+    });
+
+    expect(setters.setBrowserProjects).toBe(options.setters.setBrowserProjects);
+    expect(setters.setTheme).toBe(options.setters.setTheme);
+    expect(setters.setComposerHarness).toBe(options.setters.setComposerHarness);
+    expect(setters.setActiveSessions).toBe(options.setters.setActiveSessions);
+    expect(setters.setWorktrees).toBe(options.setters.setWorktrees);
   });
 });

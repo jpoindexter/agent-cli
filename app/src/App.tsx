@@ -33,7 +33,9 @@ import {
   findFileTreeNode,
   reconcileActiveFileNode,
 } from "./editorState";
-import { bootstrapRefsFromHooks, createWorkspaceBootstrapController } from "./workspaceBootstrapController";
+import {
+  bootstrapRefsFromHooks, bootstrapSettersFromHooks, createWorkspaceBootstrapController,
+} from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { createAppMenuAssembly } from "./appMenuAssembly";
 import {
@@ -354,10 +356,11 @@ function App() {
   const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const chrome = useAppChromeState();
   const {
     actionNotice, appTheme, crashNotice, notificationsEnabled, notificationsEnabledRef,
     setActionNotice, setAppTheme, setCrashNotice, setNotificationsEnabled,
-  } = useAppChromeState();
+  } = chrome;
   const {
     agentConnectionsRefreshing, agentConnectionsStatus, refreshAgentConnections,
     repoLocation, sourceControlStatus,
@@ -1536,27 +1539,22 @@ function App() {
       settingsRef: aiConnectionSettingsRef, storeRef, terminal,
     }),
     sendResize: sendTerminalResize,
-    setters: {
-      setActiveSessions: setActiveSessionByProjectState,
-      setAgentActivity: setAgentActivityEvents,
-      setAiConnectionSettings,
-      setBrowserProjects: browser.setProjectRecords,
-      setBrowserSessions: browser.setSessionRecords,
-      setChatConversations,
-      setCommandPaletteSources,
-      setComposerHarness: setComposerHarnessBySession,
-      setKeybindingOverrides,
-      setKeybindings: setActiveKeybindingOverrides,
-      setNotificationsEnabled,
-      setOpenProjects,
-      setPaneLabels: setPaneLabelsBySession,
-      setPaneTranscripts,
-      setProjectSessions,
-      setRecentProjects,
-      setScopedSettings,
-      setTheme: setAppTheme,
-      setWorktrees,
-    },
+    setters: bootstrapSettersFromHooks({
+      browser,
+      chrome,
+      composer: composerWorkspace,
+      persistence,
+      rest: {
+        setAgentActivity: setAgentActivityEvents,
+        setAiConnectionSettings,
+        setCommandPaletteSources,
+        setKeybindingOverrides,
+        setKeybindings: setActiveKeybindingOverrides,
+        setPaneLabels: setPaneLabelsBySession,
+        setPaneTranscripts,
+        setWorktrees,
+      },
+    }),
   });
   const initWorkspace = workspaceBootstrapController.initWorkspace;
 
