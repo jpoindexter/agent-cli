@@ -52,8 +52,8 @@ import { createEditorSurfaceActions } from "./editorSurfaceActions";
 import type { GitStatusFile } from "./fileGitStatus";
 import { buildAgentHookSnapshot, hookReportToActivity } from "./agentHookIntegration";
 import { AgentConversationPanel } from "./AgentConversationPanel";
-import { createTerminalClipboardActions } from "./terminalClipboardActions";
 import { useContextMenuHost } from "./useContextMenuHost";
+import { createTerminalSurfaceActions } from "./terminalSurfaceController";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -147,7 +147,6 @@ import {
   buildEditorContextMenuItems,
   buildEditorTabContextMenuItems,
 } from "./editorContextMenus";
-import { createTerminalProcessActionsController } from "./terminalProcessActionsController";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import {
   clearBackgroundExitsForProject,
@@ -206,7 +205,6 @@ import {
   type TerminalGridPayload,
   type TerminalPaneExitPayload,
 } from "./terminalRuntimeEventHandlers";
-import { createTerminalPaneActionsController } from "./terminalPaneActionsController";
 import {
   buildCreatedPaneActivity,
   buildCreatedWorktreePaneActivity,
@@ -895,37 +893,6 @@ function App() {
     return true;
   };
 
-  const terminalProcessActionsController = createTerminalProcessActionsController({
-    approvalMode: () => agentApprovalMode,
-    gateAction: async (action, handle) => (await gateAppAction(action, handle)).decision,
-    getActiveDescriptor: () => activeAgentSessionDescriptor,
-    getActiveHandle: () => activeAgentSessionHandle,
-    getActivePane: () => activeTerminalPane,
-    getChanging: () => profiles.changing, getPanes: terminalPanesForSession,
-    getProjectStatus: projectStatusForRoot, getSessionId: activeSessionForProject,
-    getWorkspacePath: () => workspacePathRef.current,
-    intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
-    latest, now: Date.now,
-    recordActivity: recordAgentActivity,
-    requestPaint: () => requestTerminalPaintRef.current(),
-    restartPane: async (root, pane) => (await invoke<OpenPaneResponse>("restart_pane", {
-      path: root, paneId: pane.id, profile: pane.profile,
-      environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root),
-    })).paneId,
-    scheduleResize: () => setTimeout(sendTerminalResize, 0),
-    setChanging: profiles.setChanging,
-    setComposerError, setLaunchError,
-    setPaneExited: (paneId) => setPaneState(paneId, "exited", null),
-    setSessionPanes: setSessionTerminalPanes,
-    snapshots: terminalSnapshotsRef, statusForPanes: terminalPaneProjectStatus,
-    terminatePane: (paneId) => invoke("terminate_pane", { paneId }),
-    updateProjectStatus: updateOpenProjectStatus,
-    updateSessionStatus: (root, status) => updateActiveSessionStatus(root, status),
-  });
-  const interruptActivePane = terminalProcessActionsController.interruptActivePane;
-  const terminateTerminalPane = terminalProcessActionsController.terminateTerminalPane;
-  const restartTerminalPane = terminalProcessActionsController.restartTerminalPane;
-
   const runComposerAppCommand = async (command: ComposerAppCommand): Promise<boolean> => {
     return runComposerAppCommandWithContext(command, {
       selectedFilePath: selectedFile?.path ?? null,
@@ -1075,11 +1042,16 @@ function App() {
   const setComposerRuntime = composerSettingsActions.setRuntime;
   const setComposerReasoningEffort = composerSettingsActions.setReasoningEffort;
 
-  const terminalPaneActionsController = createTerminalPaneActionsController({
-    activeAgentDescriptor: activeAgentSessionDescriptor, activePaneId: activeTerminalPaneIdRef,
+  const terminalSurface = createTerminalSurfaceActions<Snapshot, SelectionRange>({
+    activeAgentDescriptor: () => activeAgentSessionDescriptor,
+    activeAgentHandle: () => activeAgentSessionHandle,
+    activePane: () => activeTerminalPane,
+    activePaneId: activeTerminalPaneIdRef,
     activePaneIds: activeTerminalPaneByContextRef,
+    approvalMode: () => agentApprovalMode,
     closePane: async (paneId) =>
       (await invoke<{ activePaneId: number | null }>("close_pane", { paneId })).activePaneId,
+    copyText: writeText,
     createPane: async (root, profile) => (await invoke<OpenPaneResponse>("create_pane", {
       path: root, profile, environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root),
     })).paneId,
@@ -1094,10 +1066,12 @@ function App() {
     gateAction: async (action, handle) => (await gateAppAction(action, handle)).decision,
     getChanging: () => profiles.changing, getPanes: terminalPanesForSession,
     getProjectStatus: projectStatusForRoot, getSessionId: activeSessionForProject,
-    getWorkspacePath: () => workspacePathRef.current ?? workspacePath,
+    getWorkspacePath: () => workspacePathRef.current,
+    getWorkspacePathOrState: () => workspacePathRef.current ?? workspacePath,
     getWorktrees: () => worktrees,
     intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
     latest, now: Date.now,
+    paste: (text) => invoke("paste", { text }),
     persistWorktreeRecord: (record) => setWorktrees((current) => {
       const next = addWorktree(current, record);
       void storeRef.current?.set("worktrees", next); void storeRef.current?.save();
@@ -1109,24 +1083,46 @@ function App() {
       return next;
     }),
     promptWorktreeLabel: () => window.prompt("Worktree label (used for the branch name)"),
+    readClipboard: readText,
+    recordActivity: recordAgentActivity,
     recordCreated: recordCreatedPaneActivity,
     recordCreatedWorktree: recordCreatedWorktreePaneActivity,
     removeWorktree: (root, worktree) => invoke("remove_project_worktree", {
       root, worktreePath: worktree.path, branch: worktree.branch,
     }),
     requestPaint: () => requestTerminalPaintRef.current(), savedLabel: savedPaneLabelForSlot,
+    restartPane: async (root, pane) => (await invoke<OpenPaneResponse>("restart_pane", {
+      path: root, paneId: pane.id, profile: pane.profile,
+      environment: connectionEnvironmentInputs(aiConnectionSettingsRef.current, root),
+    })).paneId,
     scheduleResize: () => setTimeout(sendTerminalResize, 0), selection,
-    setChanging: profiles.setChanging, setError: setLaunchError,
-    setFocusedPane: setFocusedTerminalPane, setSessionPanes: setSessionTerminalPanes,
+    selectionText: (snap, snapSelection) => selectionToText(snap.cells, snap.cols, snapSelection),
+    sendClearKey: () => invoke("send_key", {
+      code: "KeyL", text: null, shift: false, alt: false, ctrl: true, sup: false,
+    }),
+    setChanging: profiles.setChanging,
+    setComposerError, setLaunchError,
+    setFocusedPane: setFocusedTerminalPane,
+    setPaneExited: (paneId) => setPaneState(paneId, "exited", null),
+    setSessionPanes: setSessionTerminalPanes,
     snapshots: terminalSnapshotsRef, statusForPanes: terminalPaneProjectStatus,
+    terminatePane: (paneId) => invoke("terminate_pane", { paneId }),
     updateProjectStatus: updateOpenProjectStatus,
     updateSessionStatus: (root, status) => updateActiveSessionStatus(root, status),
   });
-  const closeTerminalPane = terminalPaneActionsController.closeTerminalPane;
-  const closeWorktreePane = terminalPaneActionsController.closeWorktreePane;
-  const createTerminalPane = terminalPaneActionsController.createTerminalPane;
-  const createWorktreePane = terminalPaneActionsController.createWorktreePane;
-  const focusTerminalPane = terminalPaneActionsController.focusTerminalPane;
+  const closeTerminalPane = terminalSurface.closeTerminalPane;
+  const closeWorktreePane = terminalSurface.closeWorktreePane;
+  const createTerminalPane = terminalSurface.createTerminalPane;
+  const createWorktreePane = terminalSurface.createWorktreePane;
+  const focusTerminalPane = terminalSurface.focusTerminalPane;
+  const interruptActivePane = terminalSurface.interruptActivePane;
+  const terminateTerminalPane = terminalSurface.terminateTerminalPane;
+  const restartTerminalPane = terminalSurface.restartTerminalPane;
+  const terminalSelectedText = terminalSurface.terminalSelectedText;
+  const copyTerminalSelection = terminalSurface.copyTerminalSelection;
+  const copyActivePaneTail = terminalSurface.copyActivePaneTail;
+  const pasteIntoTerminal = terminalSurface.pasteIntoTerminal;
+  const clearActiveTerminal = terminalSurface.clearActiveTerminal;
 
   const toggleRawTerminal = async () => {
     if (agentSurfaceMode === "terminal" && utilityTrayMode === "terminal") {
@@ -1403,26 +1399,6 @@ function App() {
     refresh: refreshFileTree,
     setError: setFileOpError,
   });
-
-  const terminalClipboardActions = createTerminalClipboardActions({
-    copyText: writeText,
-    getActivePaneId: () => activeTerminalPaneIdRef.current,
-    getSnapshot: () => latest.current,
-    paste: (text) => invoke("paste", { text }),
-    readClipboard: readText,
-    readTail: async (lines) => activeAgentSessionHandle?.readTail(lines),
-    recordActivity: (event) => recordAgentActivity(activeAgentSessionHandle ?? null, event),
-    selection,
-    selectionText: (snap, snapSelection) => selectionToText(snap.cells, snap.cols, snapSelection),
-    sendClearKey: () => invoke("send_key", {
-      code: "KeyL", text: null, shift: false, alt: false, ctrl: true, sup: false,
-    }),
-  });
-  const terminalSelectedText = terminalClipboardActions.terminalSelectedText;
-  const copyTerminalSelection = terminalClipboardActions.copyTerminalSelection;
-  const copyActivePaneTail = terminalClipboardActions.copyActivePaneTail;
-  const pasteIntoTerminal = terminalClipboardActions.pasteIntoTerminal;
-  const clearActiveTerminal = terminalClipboardActions.clearActiveTerminal;
 
 
 
