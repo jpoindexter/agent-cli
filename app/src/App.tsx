@@ -55,6 +55,7 @@ import { AgentConversationPanel } from "./AgentConversationPanel";
 import { useContextMenuHost } from "./useContextMenuHost";
 import { createTerminalSurfaceActions } from "./terminalSurfaceController";
 import { createWorkspaceOpenSurface } from "./workspaceOpenSurface";
+import { createChatRunControls } from "./chatRunControls";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -166,7 +167,7 @@ import {
   applyChatRunEnvelope,
   chatProviderLabel,
 } from "./chatConversation";
-import type { ChatMessage, ChatProvider } from "./chatConversation";
+import type { ChatProvider } from "./chatConversation";
 import { createChatConversationActions } from "./chatConversationActions";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useWorkspaceTreeWatcher } from "./useWorkspaceTreeWatcher";
@@ -912,15 +913,15 @@ function App() {
     }, draftOverride);
   };
 
-  const stopActiveChatRun = async () => {
-    const runId = activeChatConversation.activeRunId;
-    if (!runId) return;
-    try {
-      await invoke("stop_chat_run", { runId });
-    } catch (err) {
-      setComposerError(String(err));
-    }
-  };
+  const chatRunControls = createChatRunControls({
+    getActiveRunId: () => activeChatConversation.activeRunId,
+    respondApproval: ({ decision, requestId, runId }) =>
+      invoke("respond_chat_approval", { runId, requestId, decision }),
+    setError: setComposerError,
+    stopRun: (runId) => invoke("stop_chat_run", { runId }),
+  });
+  const stopActiveChatRun = chatRunControls.stopActiveChatRun;
+  const resolveChatApproval = chatRunControls.resolveChatApproval;
 
   const launchOrchestration = async (drafts: OrchestrationChildDraft[]) => {
     await launchOrchestrationWithContext(drafts, {
@@ -954,27 +955,6 @@ function App() {
   const removeChildWorktree = orchestrationChildActions.removeChildWorktree;
   const returnChildResult = orchestrationChildActions.returnChildResult;
   const stopChildChatRun = orchestrationChildActions.stopChildRun;
-
-  const resolveChatApproval = async (
-    message: ChatMessage,
-    decision: "accept" | "acceptForSession" | "decline",
-  ) => {
-    const runId = message.approvalRunId ?? activeChatConversation.activeRunId;
-    if (!runId || message.approvalRequestId == null) return;
-    if (activeChatConversation.activeRunId !== runId) {
-      setComposerError("That approval belongs to a run that is no longer active.");
-      return;
-    }
-    try {
-      await invoke("respond_chat_approval", {
-        runId,
-        requestId: message.approvalRequestId,
-        decision,
-      });
-    } catch (err) {
-      setComposerError(String(err));
-    }
-  };
 
   const showPreviousComposerHistory = () => {
     const nextIndex = previousComposerHistoryIndex(composerHistory, composerHistoryIndex);

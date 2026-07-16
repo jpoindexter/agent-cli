@@ -95,3 +95,14 @@ Append-only failure log. Approaches that took >2 attempts, or that a 16-framewor
 **Root cause:** `tauri_plugin_dialog` intercepts the WebView confirmation path in the packaged app, while `app/src-tauri/capabilities/default.json` granted only `dialog:allow-open`. Browser/jsdom tests use the browser implementation and could not expose the native ACL boundary.
 
 **Fix:** Add `dialog:allow-confirm`, assert it in `tauriWindowConfig.test.ts`, rebuild the signed package, and verify the real approval path through the live MCP action. Future dialog-plugin additions need both plugin initialization and an explicit capability entry; frontend-only tests are insufficient.
+
+## 2026-07-16 — vitest parallel flakes in jsdom render tests
+What failed: SettingsWorkspace.interaction, ComposerModelPicker, ConnectionSettingsPanel
+tests intermittently fail under the full parallel `npm test -- --run` (twice this session),
+always pass in isolation and on full-suite rerun.
+What worked: rerun the full suite once before treating a red as real; run the suspect file
+isolated to confirm.
+Why it failed: unconfirmed — likely shared jsdom/global state or timer contention across
+workers, not product code (failures were in files untouched by the changes under test).
+Note for next time: if it recurs a third time, isolate with `poolOptions` or per-file
+environment instead of rerunning.
