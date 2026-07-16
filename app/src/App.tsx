@@ -69,6 +69,7 @@ import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
 import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import { WorkbenchShell } from "./WorkbenchShell";
+import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -1913,24 +1914,10 @@ function App() {
           trayMode={toolTrayMode}
         />
 
-        <BrowserPreviewPanel
-          address={browser.address}
-          canGoBack={browser.canGoBack}
-          canGoForward={browser.canGoForward}
-          detectedPaneLabel={browser.activeDetectedServer?.paneLabel ?? null}
-          detectedUrl={browser.activeDetectedServer?.url ?? null}
-          error={browser.error}
-          onAddressChange={(address) => { browser.setAddress(address); browser.setError(null); }}
-          onBack={() => browser.goHistory(-1)}
-          onContextMenu={(event) => openContextMenu(event, browserContextMenuItems())}
-          onForward={() => browser.goHistory(1)}
-          onOpenDetected={() => void browser.openDetectedServer()}
-          onOpenExternal={() => void openUrl(browser.url)}
-          onReload={browser.reload}
-          onSubmit={browser.submitAddress}
-          reloadNonce={browser.reloadNonce}
-          url={browser.url}
-        />
+        <BrowserPreviewPanel {...browserPreviewPropsFrom(browser, {
+          contextMenu: (event) => openContextMenu(event, browserContextMenuItems()),
+          openExternal: openUrl,
+        })} />
 
         <AgentConversationPanel
           surfaceMode={agentSurfaceMode}
