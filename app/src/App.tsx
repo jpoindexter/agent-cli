@@ -16,6 +16,7 @@ import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { WorkbenchResizers } from "./WorkbenchResizers";
 import { DRAWER_MODES, drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
+import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useConversationRuntime } from "./useConversationRuntime";
 import { createComposerSettingsActions } from "./composerSettingsActions";
@@ -63,7 +64,6 @@ import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createDevServerDetection } from "./devServerDetectionSurface";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
-import { deriveOrchestrationDialogState, orchestrationDialogPropsFrom } from "./orchestrationDialogState";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
 import { appSettingsHostPropsFrom } from "./appSettingsHostProps";
@@ -85,14 +85,12 @@ import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
 import { sourceRepoStatusTitleFrom, statusBarRepoPropsFrom } from "./statusBarHost";
 import { appTitlebarPropsFrom } from "./appTitlebarHost";
-import { appNoticesPropsFrom } from "./appNoticesHost";
 import { draftNavigationPropsFrom } from "./draftNavigationHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
 } from "./projectChatStatus";
 import {
-  LAUNCH_PROFILES,
   defaultTerminalLaunchProfile,
 } from "./launchProfiles";
 import type { LaunchProfile } from "./launchProfiles";
@@ -1375,35 +1373,11 @@ function App() {
         { openTranscriptId: paneTranscripts.openTranscriptId, paneTranscripts: paneTranscripts.paneTranscripts, setOpenTranscriptId: paneTranscripts.setOpenTranscriptId, setTranscriptsOpen: paneTranscripts.setTranscriptsOpen, transcriptsOpen: paneTranscripts.transcriptsOpen },
         { projectId: workspacePath, projectSessionId: activeChat.activeSessionId },
       )} />
-      <AppRuntimeDialogs
-        notices={appNoticesPropsFrom({
-          chrome: { actionNotice: chrome.actionNotice, crashNotice: chrome.crashNotice, setActionNotice: chrome.setActionNotice, setCrashNotice: chrome.setCrashNotice },
-          launchError,
-          openFolder: () => pickWorkspace(),
-          profiles: {
-            changing: profiles.changing,
-            launchProfile: profiles.launchProfile,
-            profilesList: LAUNCH_PROFILES,
-            switchLaunchProfile: profiles.switchLaunchProfile,
-          },
-        })}
-        orchestration={orchestrationDialogPropsFrom({
-          activeProvider: activeChat.activeComposerProvider,
-          approvalMode: activeChat.activeComposerHarness.approvalMode,
-          conversationProvider: activeChat.activeChatConversation.provider,
-          derived: deriveOrchestrationDialogState({
-            activeSessionId: activeChat.activeSessionId, conversations: composerWorkspace.chatConversations,
-            sessions: persistence.projectSessions, workspacePath,
-          }),
-          error: orchestrationError,
-          launch: composerSurface.launchOrchestration,
-          launching: orchestrationLaunching,
-          open: orchestrationOpen,
-          setError: setOrchestrationError,
-          setOpen: setOrchestrationOpen,
-          workspacePath,
-        })}
-      />
+      <AppRuntimeDialogs {...appRuntimeDialogsPropsFrom({
+        activeChat, chrome, composerSurface, composerWorkspace, launchError, orchestrationError,
+        orchestrationLaunching, orchestrationOpen, persistence, pickWorkspace, profiles,
+        setOrchestrationError, setOrchestrationOpen, workspacePath,
+      })} />
       {contextMenuHost.element}
       {commandPalette.open ? (
         <SearchCommandDialog {...searchDialogPropsFrom(commandPalette, {

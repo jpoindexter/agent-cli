@@ -3,7 +3,7 @@ import type { ComponentProps } from "react";
 import { AppNotices } from "./AppNotices";
 import { OrchestrationDialog } from "./OrchestrationDialog";
 
-type AppRuntimeDialogsProps = {
+export type AppRuntimeDialogsProps = {
   notices: ComponentProps<typeof AppNotices>;
   orchestration: ComponentProps<typeof OrchestrationDialog>;
 };
