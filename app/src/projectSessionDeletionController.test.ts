@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { emptyChatConversation } from "./chatConversation";
 import { defaultComposerHarnessState } from "./composerHarness";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
-import { createProjectSessionDeletionController } from "./projectSessionDeletionController";
+import { createProjectSessionDeletionController, projectSessionDeletionFromHook } from "./projectSessionDeletionController";
 
 const ref = <T,>(current: T) => ({ current });
 const session = (id: string) => ({ id, status: "exited" as const, title: id, updatedAt: 1 });
@@ -87,5 +87,26 @@ describe("createProjectSessionDeletionController", () => {
 
     expect(options.confirmDelete).not.toHaveBeenCalled();
     expect(options.closePane).not.toHaveBeenCalled();
+  });
+});
+
+describe("projectSessionDeletionFromHook", () => {
+  it("maps pane-hook refs onto the deletion controller names", () => {
+    const options = createOptions();
+    const hook = {
+      activePaneIdsRef: options.activePanes,
+      intentionallyTerminatedPaneIdsRef: { current: options.intentionallyTerminatedPaneIds },
+      panesByContextRef: options.projectPanes,
+      panesForSession: options.getPanes,
+      snapshotsRef: options.snapshots,
+    };
+
+    const mapped = projectSessionDeletionFromHook(hook, options);
+
+    expect(mapped.activePanes).toBe(options.activePanes);
+    expect(mapped.getPanes).toBe(options.getPanes);
+    expect(mapped.projectPanes).toBe(options.projectPanes);
+    expect(mapped.snapshots).toBe(options.snapshots);
+    expect(mapped.intentionallyTerminatedPaneIds).toBe(options.intentionallyTerminatedPaneIds);
   });
 });

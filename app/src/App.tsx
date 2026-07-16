@@ -198,7 +198,7 @@ import type { ContextMenuItem } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { createProjectCloseController } from "./projectCloseController";
 import { createProjectSessionNavigationActions } from "./projectSessionNavigationActions";
-import { createProjectSessionDeletionController } from "./projectSessionDeletionController";
+import { createProjectSessionDeletionController, projectSessionDeletionFromHook } from "./projectSessionDeletionController";
 import {
   createTerminalRuntimeEventHandlers,
   type TerminalGridPayload,
@@ -769,26 +769,24 @@ function App() {
   const createProjectSession = projectSessionNavigationActions.createSession;
   const renameProjectSession = projectSessionNavigationActions.renameSession;
 
-  const projectSessionDeletionController = createProjectSessionDeletionController({
-    activePanes: activeTerminalPaneByContextRef, activeSessionId,
+  const projectSessionDeletionController = createProjectSessionDeletionController(projectSessionDeletionFromHook(terminal, {
+    activeSessionId,
     activeSessions: activeSessionByProjectRef, browserSessions: browser.sessionRecordsRef,
     closePane: (paneId) => invoke("close_pane", { paneId }),
     composerHarness: composerHarnessBySessionRef, confirmDelete: confirmDialog,
     conversations: chatConversationsRef, deleteHistory: deleteDurableChatConversation,
-    getPanes: terminalPanesForSession,
-    intentionallyTerminatedPaneIds: intentionallyTerminatedPaneIdsRef.current,
     persistBrowserSessions: async (records) => {
       await storeRef.current?.set("browserPreviewBySession", records);
     },
     persistComposerHarness: persistComposerHarnessRecords, persistSessions: persistProjectSessions,
-    projectPanes: terminalPanesByContextRef, removePersistedRestore: removePersistedSessionRestore,
+    removePersistedRestore: removePersistedSessionRestore,
     reopenActiveWorkspace: (projectPath) => openWorkspaceDirect(
       projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
     ),
     sessions: projectSessionsRef, setBrowserSessions: browser.setSessionRecords,
     setConversations: setChatConversations, setError: setLaunchError,
-    snapshots: terminalSnapshotsRef, workspacePath: workspacePathRef,
-  });
+    workspacePath: workspacePathRef,
+  }));
   const deleteProjectSession = projectSessionDeletionController.deleteProjectSession;
 
   const paneActivityLog = createPaneActivityLog({

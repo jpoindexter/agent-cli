@@ -103,3 +103,26 @@ export const createProjectSessionDeletionController = <TSnapshot>(
   deleteProjectSession: (projectPath: string, session: ProjectSession) =>
     deleteSession(options, projectPath, session),
 });
+
+type DeletionHookBundle<TSnapshot> = {
+  activePaneIdsRef: Ref<Record<string, number>>;
+  intentionallyTerminatedPaneIdsRef: Ref<Set<number>>;
+  panesByContextRef: Ref<Record<string, ManagedTerminalPane[]>>;
+  panesForSession: (projectPath: string, sessionId: string) => ManagedTerminalPane[];
+  snapshotsRef: Ref<Record<number, TSnapshot>>;
+};
+
+type HookDerivedDeletionKeys =
+  | "activePanes" | "getPanes" | "intentionallyTerminatedPaneIds" | "projectPanes" | "snapshots";
+
+export const projectSessionDeletionFromHook = <TSnapshot,>(
+  hook: DeletionHookBundle<TSnapshot>,
+  rest: Omit<ProjectSessionDeletionControllerOptions<TSnapshot>, HookDerivedDeletionKeys>,
+): ProjectSessionDeletionControllerOptions<TSnapshot> => ({
+  ...rest,
+  activePanes: hook.activePaneIdsRef,
+  getPanes: hook.panesForSession,
+  intentionallyTerminatedPaneIds: hook.intentionallyTerminatedPaneIdsRef.current,
+  projectPanes: hook.panesByContextRef,
+  snapshots: hook.snapshotsRef,
+});
