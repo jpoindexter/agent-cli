@@ -11,3 +11,9 @@ export type FileTreeNode = {
 };
 
 export type FileTreeResponse = { root: string; nodes: FileTreeNode[]; truncated: boolean };
+
+export const pathBasename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
+
+export const fileTreeNodeFromPath = (path: string, kind: FileTreeNode["kind"]): FileTreeNode => ({
+  id: path, kind, name: pathBasename(path), path,
+});

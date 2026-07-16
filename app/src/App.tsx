@@ -73,6 +73,7 @@ import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserP
 import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
 import { composerMentionQuery as composerMentionQueryFrom } from "./agentComposer";
 import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
+import { fileTreeNodeFromPath, pathBasename } from "./fileTreeTypes";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -209,10 +210,6 @@ type Cell = { t: string; f: [number, number, number]; b: [number, number, number
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
 type OpenPaneResponse = { paneId: number };
 type SaveEditorFileOptions = { force?: boolean };
-const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
-const fileNodeFromPath = (path: string, kind: FileTreeNode["kind"]): FileTreeNode => ({
-  id: path, kind, name: basename(path), path,
-});
 const formatBytes = (bytes: number | null) => {
   if (bytes == null) return "--";
   if (bytes < 1024) return `${bytes} B`;
@@ -1134,7 +1131,7 @@ function App() {
       getDiffReviewPath: () => diffReview?.absolutePath ?? null,
       getGitFiles: () => gitStatus?.files ?? [],
       getRoot: () => workspacePathRef.current,
-      makeFileNode: (path) => fileNodeFromPath(path, "file"),
+      makeFileNode: (path) => fileTreeNodeFromPath(path, "file"),
       notify: setActionNotice,
       openExternal: openPath,
       openFileDirect: (file, fileOptions) => openEditorFileDirect(file, fileOptions),
@@ -1546,7 +1543,7 @@ function App() {
     focusPane: (paneId) => focusTerminalPane(paneId, "agent"),
     getWorkspacePath: () => workspacePathRef.current,
     openFile: (root, path) => requestOpenEditorFile(
-      fileNodeFromPath(`${root}/${path}`, "file"),
+      fileTreeNodeFromPath(`${root}/${path}`, "file"),
       { focusEditor: true },
       "agent",
     ),
@@ -1825,7 +1822,7 @@ function App() {
         files={{
           fileOpError, fileTree, fileTreeError, fileTreeLoading, fileTreeTruncated,
           railBodyRef, railHeight, selectedFileId: selectedFile?.id, treeRef, visibleFileTree,
-          workspaceName: workspacePath ? basename(workspacePath) : null, workspacePath,
+          workspaceName: workspacePath ? pathBasename(workspacePath) : null, workspacePath,
           onCreateFile: () => void createFileInRail(), onCreateFolder: () => void createFolderInRail(),
           onOpenFile: (file) => void requestOpenEditorFile(file, { focusEditor: true }),
           onOpenFolder: () => void pickWorkspace(),

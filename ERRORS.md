@@ -106,3 +106,10 @@ Why it failed: unconfirmed — likely shared jsdom/global state or timer content
 workers, not product code (failures were in files untouched by the changes under test).
 Note for next time: if it recurs a third time, isolate with `poolOptions` or per-file
 environment instead of rerunning.
+
+## 2026-07-16 — vitest parallel flakes, third occurrence
+What failed: ComposerModelPicker, ConnectionSettingsPanel, ContextMenu, EditorCodeSurface
+(4 jsdom render tests) failed one full parallel run, passed isolated and on rerun.
+Note for next time: threshold reached — next session should add a dedicated slice pinning
+these files to their own pool/environment (vitest poolMatchGlobs or per-file threads
+isolation) instead of relying on reruns.
