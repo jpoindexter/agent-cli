@@ -182,7 +182,10 @@ import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./r
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
-import { buildTerminalContextMenuItems } from "./terminalContextMenu";
+import {
+  buildTerminalContextMenuItems,
+  buildUtilityTrayTabContextMenuItems,
+} from "./terminalContextMenu";
 import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
 import {
   buildFileNodeContextMenuItems,
@@ -2354,56 +2357,25 @@ function App() {
     setActionNotice("Copied activity log");
   };
 
-  const utilityTrayTabContextMenuItems = (mode: UtilityTrayMode): ContextMenuItem[] => {
-    const label = mode.charAt(0).toUpperCase() + mode.slice(1);
-    const modeItems: ContextMenuItem[] = mode === "terminal"
-      ? [
-          menuItem("utility.terminal.new-shell", "New Shell Pane", () => createTerminalPane(defaultTerminalLaunchProfile()), {
-            icon: "terminal",
-            disabled: !workspacePath || profiles.changing,
-          }),
-          menuItem("utility.terminal.close-pane", "Close Selected Pane", () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined, {
-            icon: "close",
-            danger: true,
-            disabled: !activeTerminalPane,
-          }),
-        ]
-      : mode === "processes"
-        ? [
-            menuItem("utility.processes.restart", "Restart Selected Process", () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined, {
-              icon: "reload",
-              disabled: !activeTerminalPane || profiles.changing,
-            }),
-            menuItem("utility.processes.kill", "Kill Selected Process", () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined, {
-              icon: "stop",
-              danger: true,
-              disabled: !activeTerminalPane || activeTerminalPane.state === "exited",
-            }),
-          ]
-        : [
-            menuItem("utility.logs.copy", "Copy Activity Log", copySelectedActivityLog, {
-              icon: "logs",
-              disabled: selectedAgentActivityLog.length === 0,
-            }),
-          ];
-    return [
-      {
-        id: `utility.${mode}.show`,
-        label: `Show ${label}`,
-        icon: mode === "terminal" ? "terminal" : mode === "processes" ? "waiting" : "logs",
-        disabled: agentSurfaceMode === "terminal" && utilityTrayMode === mode,
-        onSelect: () => {
-          setUtilityTrayMode(mode);
-          setAgentSurfaceMode("terminal");
-        },
+  const utilityTrayTabContextMenuItems = (mode: UtilityTrayMode) =>
+    buildUtilityTrayTabContextMenuItems(mode, {
+      activeMode: utilityTrayMode,
+      activePaneState: activeTerminalPane?.state ?? null,
+      activeSurface: agentSurfaceMode === "terminal",
+      actions: {
+        closePane: () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined,
+        copyActivity: copySelectedActivityLog,
+        createShell: () => createTerminalPane(defaultTerminalLaunchProfile()),
+        hide: () => setAgentSurfaceMode("chat"),
+        killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
+        restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
+        show: (nextMode) => { setUtilityTrayMode(nextMode); setAgentSurfaceMode("terminal"); },
       },
-      ...modeItems,
-      menuItem("utility.hide", "Hide Bottom Panel", () => setAgentSurfaceMode("chat"), {
-        icon: "chevronDown",
-        disabled: agentSurfaceMode !== "terminal",
-      }),
-    ];
-  };
+      hasActivePane: Boolean(activeTerminalPane),
+      hasActivity: selectedAgentActivityLog.length > 0,
+      hasWorkspace: Boolean(workspacePath),
+      launchProfileChanging: profiles.changing,
+    });
 
   const browserContextMenuItems = (): ContextMenuItem[] => buildBrowserContextMenuItems({
     canGoBack: browser.canGoBack,

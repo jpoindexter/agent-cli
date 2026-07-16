@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildTerminalContextMenuItems } from "./terminalContextMenu";
+import {
+  buildTerminalContextMenuItems,
+  buildUtilityTrayTabContextMenuItems,
+} from "./terminalContextMenu";
 
 const buildMenu = (overrides: Partial<Parameters<typeof buildTerminalContextMenuItems>[0]> = {}) => buildTerminalContextMenuItems({
   activePaneState: "running",
@@ -64,5 +67,57 @@ describe("terminal context menu", () => {
       disabled: true,
     });
     expect(items.find((item) => item.id === "terminal.close-pane")?.danger).toBe(true);
+  });
+
+  it("builds utility-tab actions for terminal, process, and log modes", () => {
+    const actions = {
+      closePane: vi.fn(), copyActivity: vi.fn(), createShell: vi.fn(), hide: vi.fn(),
+      killPane: vi.fn(), restartPane: vi.fn(), show: vi.fn(),
+    };
+    const input = {
+      activeMode: "terminal" as const,
+      activePaneState: "running",
+      activeSurface: true,
+      actions,
+      hasActivePane: true,
+      hasActivity: true,
+      hasWorkspace: true,
+      launchProfileChanging: false,
+    };
+
+    const terminal = buildUtilityTrayTabContextMenuItems("terminal", input);
+    const processes = buildUtilityTrayTabContextMenuItems("processes", input);
+    const logs = buildUtilityTrayTabContextMenuItems("logs", input);
+    terminal.find((item) => item.id === "utility.terminal.new-shell")?.onSelect();
+    processes.find((item) => item.id === "utility.processes.kill")?.onSelect();
+    logs.find((item) => item.id === "utility.logs.copy")?.onSelect();
+    logs.find((item) => item.id === "utility.logs.show")?.onSelect();
+
+    expect(actions.createShell).toHaveBeenCalledOnce();
+    expect(actions.killPane).toHaveBeenCalledOnce();
+    expect(actions.copyActivity).toHaveBeenCalledOnce();
+    expect(actions.show).toHaveBeenCalledWith("logs");
+    expect(terminal.find((item) => item.id === "utility.terminal.show")?.disabled).toBe(true);
+    expect(processes.find((item) => item.id === "utility.processes.kill")?.danger).toBe(true);
+  });
+
+  it("disables utility actions when their runtime target is absent", () => {
+    const items = buildUtilityTrayTabContextMenuItems("processes", {
+      activeMode: "logs",
+      activePaneState: "exited",
+      activeSurface: false,
+      actions: {
+        closePane: vi.fn(), copyActivity: vi.fn(), createShell: vi.fn(), hide: vi.fn(),
+        killPane: vi.fn(), restartPane: vi.fn(), show: vi.fn(),
+      },
+      hasActivePane: false,
+      hasActivity: false,
+      hasWorkspace: false,
+      launchProfileChanging: true,
+    });
+
+    expect(items.find((item) => item.id === "utility.processes.restart")?.disabled).toBe(true);
+    expect(items.find((item) => item.id === "utility.processes.kill")?.disabled).toBe(true);
+    expect(items.find((item) => item.id === "utility.hide")?.disabled).toBe(true);
   });
 });
