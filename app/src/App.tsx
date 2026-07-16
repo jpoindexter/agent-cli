@@ -15,9 +15,6 @@ import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { FilesDock, SourceControlDock } from "./WorkbenchDocks";
 import { WorkbenchResizers } from "./WorkbenchResizers";
 import { DRAWER_MODES, drawerTitleFor } from "./drawerModes";
-import { EditorChrome } from "./EditorChrome";
-import { EditorDiffView } from "./EditorDiffView";
-import { EditorCodeSurface } from "./EditorCodeSurface";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useBrowserPreviewController } from "./useBrowserPreviewController";
@@ -63,6 +60,7 @@ import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
 import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
 import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
 import { deriveProjectSessionMenuState } from "./projectSessionMenuSurface";
+import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -1894,84 +1892,50 @@ function App() {
           onOpenDiff={(file) => void openGitDiff(file)}
           onRefresh={() => void refreshGitStatus()}
         />
-        <section
-          className="editor-area"
-          aria-label="Editor"
-          onKeyDown={(event) => {
-            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "w") {
-              event.preventDefault();
-              void closeActiveEditorTab();
-            }
+        <WorkbenchEditorSection
+          activeFileMissing={activeFileMissing}
+          code={{
+            conflict: editorSaveConflict, error: editorError, loading: editorLoading,
+            recoveryError: editorRecoveryError, saving: editorSaving, text: editorText,
           }}
-        >
-          <EditorChrome
-            activeFileMissing={activeFileMissing}
-            breadcrumbs={diffReview ? diffBreadcrumbs : editorBreadcrumbs}
-            canCopyDiff={Boolean(diffReview?.response.diff.length)}
-            canDiscardDiff={diffReviewCanDiscard}
-            canOpenDiff={diffReviewCanOpenFile}
-            canStageDiff={diffReviewCanStage}
-            canUnstageDiff={diffReviewCanUnstage}
-            cursorColumn={editorCursor.column}
-            cursorLine={editorCursor.line}
-            diff={diffReview ? { absolutePath: diffReview.absolutePath, hasDiff: Boolean(diffReview.response.diff.length), path: diffReview.response.path } : null}
-            diffError={diffReviewError}
-            diffLoading={diffReviewLoading}
-            editorBytesLabel={formatBytes(editorBytes)}
-            editorDirty={editorDirty}
-            editorLanguage={editorLanguage}
-            editorLoading={editorLoading}
-            editorSaving={editorSaving}
-            selectedFile={selectedFile}
-            tabs={editorTabs}
-            tabIsDirty={tabIsDirty}
-            onCloseDiff={closeDiffReview}
-            onCloseTab={(tab) => void closeEditorTab(tab)}
-            onCopyDiff={() => void copyShownDiff()}
-            onDiscardDiff={() => { if (diffReview) void runGitFileAction("discard", diffReview.file); }}
-            onFind={openEditorSearch}
-            onOpenDiff={() => void openDiffFile()}
-            onSave={() => void saveEditorFile()}
-            onSelectTab={(tab) => void requestOpenEditorFile(tab, { focusEditor: true })}
-            onStageDiff={() => { if (diffReview) void runGitFileAction("stage", diffReview.file); }}
-            onTabContextMenu={(event, tab) => openContextMenu(event, editorTabContextMenuItems(tab))}
-            onUnstageDiff={() => { if (diffReview) void runGitFileAction("unstage", diffReview.file); }}
-          />
-          {diffReview || diffReviewLoading || diffReviewError ? (
-            <EditorDiffView
-              canOpenFile={diffReviewCanOpenFile}
-              error={diffReviewError}
-              loading={diffReviewLoading}
-              review={diffReview}
-              onContextMenu={(event) => openContextMenu(event, diffContextMenuItems())}
-              onOpenFile={(line) => void openDiffFile(line)}
-            />
-          ) : selectedFile ? (
-            <EditorCodeSurface
-              conflict={editorSaveConflict}
-              error={editorError}
-              filePath={selectedFile.path}
-              loading={editorLoading}
-              recoveryError={editorRecoveryError}
-              saving={editorSaving}
-              value={editorText}
-              onChange={setEditorText}
-              onContextMenu={(event) => openContextMenu(event, editorContextMenuItems())}
-              onCreateEditor={restoreEditorView}
-              onOpenExternally={() => void openSelectedFileExternally()}
-              onOverwrite={() => void overwriteSelectedFile()}
-              onReload={() => void reloadSelectedFileFromDisk()}
-              onRetry={() => void saveEditorFile()}
-              onSave={() => void saveEditorFile()}
-              onUpdate={handleEditorUpdate}
-            />
-          ) : (
-            <div className="editor-empty">
-              <div className="editor-empty-title">Select a file</div>
-              <div className="editor-empty-path">Project editor surface</div>
-            </div>
-          )}
-        </section>
+          cursor={editorCursor}
+          diff={{
+            breadcrumbs: diffBreadcrumbs, canDiscard: diffReviewCanDiscard,
+            canOpenFile: diffReviewCanOpenFile, canStage: diffReviewCanStage,
+            canUnstage: diffReviewCanUnstage, error: diffReviewError,
+            loading: diffReviewLoading, review: diffReview,
+          }}
+          editorBreadcrumbs={editorBreadcrumbs}
+          editorBytesLabel={formatBytes(editorBytes)}
+          editorDirty={editorDirty}
+          editorLanguage={editorLanguage}
+          editorLoading={editorLoading}
+          editorSaving={editorSaving}
+          handlers={{
+            closeActiveTab: () => void closeActiveEditorTab(),
+            closeDiff: closeDiffReview,
+            closeTab: (tab) => void closeEditorTab(tab),
+            copyDiff: () => void copyShownDiff(),
+            find: openEditorSearch,
+            onChange: setEditorText,
+            onCreateEditor: restoreEditorView,
+            onUpdate: handleEditorUpdate,
+            openContextMenu: (kind, event) => openContextMenu(
+              event, kind === "diff" ? diffContextMenuItems() : editorContextMenuItems(),
+            ),
+            openDiff: (line = null) => void openDiffFile(line),
+            openExternally: () => void openSelectedFileExternally(),
+            overwrite: () => void overwriteSelectedFile(),
+            reload: () => void reloadSelectedFileFromDisk(),
+            runDiffAction: (action) => { if (diffReview) void runGitFileAction(action, diffReview.file); },
+            save: () => void saveEditorFile(),
+            selectTab: (tab) => void requestOpenEditorFile(tab, { focusEditor: true }),
+            tabContextMenu: (event, tab) => openContextMenu(event, editorTabContextMenuItems(tab)),
+          }}
+          selectedFile={selectedFile}
+          tabIsDirty={tabIsDirty}
+          tabs={editorTabs}
+        />
 
         <WorkbenchResizers
           layout={renderedWorkbenchLayout}
