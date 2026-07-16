@@ -13,14 +13,15 @@ never close a card without executing its real Done criterion.
 
 ## Current State
 
-- Branch: `main`, clean. Pushed checkpoint: `942ef7d refactor: extract composer history navigation`.
-- All gates green at `124f95d`: build=0, module-size ratchet=0, chrome-contract=0,
-  **212 test files / 672 tests**, `git diff --check`=0.
+- Branch: `main`, clean. Pushed checkpoint: `56fc711 refactor: extract tools layout toggle policy`.
+- All gates green at `56fc711`: build=0, module-size ratchet=0, chrome-contract=0,
+  **244 test files / 760 tests**, `git diff --check`=0. Vitest now uses the forks pool
+  (flake fix, ERRORS.md 2026-07-16) — no rerun ritual needed.
 - Module baseline:
 
 ```json
 {
-  "app/src/App.tsx": { "lines": 2369, "longFunctions": 1, "maxFunctionLines": 2144 }
+  "app/src/App.tsx": { "lines": 2082, "longFunctions": 1, "maxFunctionLines": 1855 }
 }
 ```
 
@@ -33,7 +34,17 @@ terminalClipboardActions, useContextMenuHost (first state-owning hook),
 terminalSurfaceController (consolidation of pane+process+clipboard),
 workspaceOpenSurface (target+lifecycle+actions with owned Tauri adapters),
 chatRunControls, composerSurfaceController (app-command+submit+orchestration+child actions),
-composerHistoryNavigation. Twenty slices total.
+composerHistoryNavigation, utilityTrayControls, terminalPaneRename, projectChatStatus,
+editorFileWorkflowSurface, workspaceFileActionsSurface, sessionCheckpointSurface,
+projectSessionMenuSurface, WorkbenchEditorSection, renderPerfExport, devServerDetectionSurface,
+paneTranscriptCapture, orchestrationDialogState, settingsAgentProfileOptions, appSurfaceLabels,
+appSettingsHost, WorkbenchDockPanels, shellProfileNotice, WorkbenchShell (slot-based app shell),
+browserPreviewHost (+ drawer mapping), quickSettingsHost, composerMentionQuery, projectRailView,
+activePaneDisplayLabel, fileTreeTypes helpers, vitest forks pool, terminalPaneFinalize,
+chatSearchNavigation, sessionSnapshotCapture (+restore), composerHarnessEvents, workspacePicker,
+paneActivityLog, terminalResize, connection saveSettings, searchCommandDialogHost,
+transcriptsModalHost, statusBarHost (repo link + title), appTitlebarHost (tools toggle).
+SIXTY slices total; every push behind the full five-part gate with explicit exit codes.
 
 ## Decisions carried forward
 
@@ -53,13 +64,16 @@ Cheap adapter extractions are exhausted. Remaining ~2150 lines in `App()` are:
 1. DONE: workspace-open consolidation (`workspaceOpenSurface.ts`).
 2. DONE: composer runtime consolidation (`composerSurfaceController.ts`);
    `logComposerHarnessEvent` and attachment actions still in App.
-3. **Render splits** — SettingsModal block (~90 lines) behind grouped props; overlays cluster
-   (TranscriptsModal/AppRuntimeDialogs/SearchCommandDialog/QuickOpenDialog/DraftNavigationDialog/StatusBar)
-   as `AppOverlays.tsx` (export the six Props types first); `<main>` docks + editor section.
-4. **State-owning hooks** — continue the useContextMenuHost pattern for remaining
-   useState/useEffect clusters (notices, transcripts open state, settings open state).
-5. Final pass: `App()` body ≤50 lines requires everything above plus splitting the JSX
-   return into <AppShell> composition.
+3. DONE: WorkbenchShell slot shell, WorkbenchEditorSection, WorkbenchDockPanels,
+   AppSettingsHost, host mappings for browser/search/transcripts/status-bar/titlebar.
+4. REMAINING (the hard part): App() is now ~1855-line hook-composition + option bags +
+   grouped-prop slots. Emptying the baseline requires repackaging hook APIs into domain
+   bundles (each hook returns one object App passes through, instead of destructured
+   pieces re-wired into factory bags) and splitting App into ~8 useXxxDomain hooks that
+   own their wiring. That is invasive multi-file work — plan it as its own arc with the
+   consolidation pattern (editorSurfaceActions/terminalSurfaceController) as the template.
+5. Then the packaged smoke (chat, trays, terminal, editor, browser, menus, session
+   restore) before closing MODULARITY-300-200-50.
 
 Done criterion (unchanged): empty violations object from
 `node scripts/check-module-size.mjs --print-baseline`, focused+full tests green, packaged
