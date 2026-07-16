@@ -53,3 +53,20 @@ The updated standalone demo should prove these behaviors at 1440px, 1024px, and 
 4. Repository, branch, dirty-file count, provider, and context usage sit directly beneath the composer.
 5. Terminal / Processes / Logs stay in a collapsible bottom tray.
 6. Every interactive control is a native button/input with visible keyboard focus and an accessible name.
+
+## Implementation status
+
+Implemented and packaged on 2026-07-16:
+
+- `4c0e774` anchors live repository, branch, changed-file, provider, and measured context metadata below the composer.
+- `bd5bae2` adds the live Session / Workspace / Tools Context dock; `622af86` corrects changed-file counting to unique files.
+- `55568c4` keeps chat rendered while Threads and Context become narrow-window overlays at 1024px and 900px.
+- `cabd7c5` gives all five tool modes flexible native-width cells so Context remains reachable in the 18% dock.
+
+Verification executed against the implementation, not only the standalone demo:
+
+- 819/819 frontend tests, `npm run build`, `npm run qa:module-size`, and `npm run qa:chrome-contract` pass.
+- Browser QA exercised populated 1280px, 1024px, and 900px states without horizontal overflow; selecting a chat closes the narrow Threads overlay while Context remains available.
+- A fresh `npm run tauri -- build` produced `Keelhouse.app`; computer-use confirmed the package painted normally, exposed the composer metadata, and opened Context with live session, repository, branch, working-tree, file, and preview values.
+
+The adaptation deliberately leaves Local Studio's generic navigation, top-terminal placement, rounded composer, and model-runtime branding rejected. `CHROME-EYEBALL-SIGNOFF` remains open until Jason gives an explicit verdict on the latest packaged implementation.

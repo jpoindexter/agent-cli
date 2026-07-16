@@ -119,7 +119,7 @@
       "size": "S",
       "launch": "v1",
       "summary": "Lock which external products are useful references so Keelhouse does not drift into a VS Code clone or generic orchestrator.",
-      "done": "Verified 2026-07-13: Zed remains the closest open-source chrome-quality reference, but Keelhouse translates that craft into an agent-first cockpit instead of copying an editor-first IDE. ConstellAgent, herdr, parallel-code, and Clave remain targeted workflow references; Orbit is useful for agent mechanics, not shell chrome. A live/package audit added Super Engineering as a closed-source reference for quiet persistent chrome, scoped settings, profiles, command sources, and worktree lifecycle policy. See docs/reference-products.md and docs/super-engineering-chrome-audit.md.",
+      "done": "Verified through 2026-07-16: Zed remains the closest open-source chrome-quality reference, but Keelhouse translates that craft into an agent-first cockpit instead of copying an editor-first IDE. ConstellAgent, herdr, parallel-code, and Clave remain targeted workflow references; Orbit is useful for agent mechanics, not shell chrome. Live/package audits added Super Engineering for quiet persistent chrome and Local Studio at 07be5be7 for true zero-width navigation, anchored composer metadata, and an on-demand context inspector. See docs/reference-products.md, docs/super-engineering-chrome-audit.md, and docs/local-studio-chrome-extraction-2026-07-16.md.",
       "buildOrder": 1
     },
     {
@@ -1410,8 +1410,20 @@
       "launch": "v2",
       "summary": "Keep the app repairable by limiting source files to 300 lines, React component files to 200 lines, and functions/components/hooks to 50 lines. Extract behavior along existing ownership boundaries without changing the approved chrome or runtime behavior.",
       "done": "npm run qa:module-size passes with an empty legacy baseline; App.tsx, App.css, settings, chat, context-menu, workbench-layout, and workspace-state owners all meet 300/200/50; focused tests and packaged smoke preserve chat, trays, terminal, editor, browser, menus, and session restore.",
-      "progress": "2026-07-15: the TypeScript-AST-backed qa:module-size ratchet passes without baseline growth. Workbench layout, workspace-session normalization, connection settings, transcript rendering/reduction, settings workspace, terminal search, Quick Open, command palette control, transcript modal, notices, browser preview, titlebar, utility navigation/views, terminal controls/viewport, and Browser/Git/Quick Settings drawers now live in bounded owners behind unchanged public APIs. App.tsx has fallen to 6,816 lines from the 7,187-line continuation checkpoint; the production build, chrome contract, and all 323 frontend tests pass with deterministic single-worker scheduling. Only App.tsx and App.css remain in the explicit baseline, so the card remains open.",
+      "progress": "2026-07-16: the TypeScript-AST-backed qa:module-size ratchet passes without baseline growth and reports one legacy-debt file. App.tsx is 1,366 lines, down from the 7,187-line continuation checkpoint; App.css is now a 36-line import manifest and has left the baseline. Extracted bounded owners cover workbench layout, workspace/session state, settings, transcripts, terminal controls, browser/editor/git surfaces, titlebar, utility trays, composer metadata, and the workspace Context dock. The production build, chrome contract, and all 819 frontend tests pass. Only App.tsx remains, so the card stays open until it is at most 300 lines and its components/hooks meet the 50-line limit.",
       "buildOrder": 90.15
+    },
+    {
+      "id": "LOCAL-STUDIO-CHROME-ADAPTATION",
+      "title": "Adapt Local Studio chrome strengths",
+      "column": "done",
+      "tier": "pebble",
+      "track": "ui",
+      "size": "M",
+      "launch": "v2",
+      "summary": "Translate the approved Local Studio-inspired demo into Keelhouse without copying its generic navigation or product model: true zero-width Threads collapse, live metadata under the composer, an on-demand Context mode in the existing tool dock, and overlay behavior that preserves chat at 1024px and 900px.",
+      "done": "Executed 2026-07-16 in commits 4c0e774, bd5bae2, 622af86, 55568c4, and cabd7c5. Repository, branch, unique changed-file count, provider, and measured context usage render under the composer. Context exposes live Session, Workspace, and Tools state inside the existing dock. Narrow layouts overlay Threads and Context without replacing chat, and the five-mode tab strip remains reachable in the native 18% dock. Verified by 819/819 frontend tests, production build, module-size and chrome gates, responsive browser QA at 1280/1024/900, and a freshly rebuilt packaged Keelhouse.app that painted normally and opened Context with live values.",
+      "buildOrder": 90.18
     },
     {
       "id": "CHROME-CONTRACT-V2",
@@ -1500,7 +1512,7 @@
       "buildOrder": 90.1,
       "summary": "Blind-audit 2026-07-11: the re-convergence loop was fully self-referential — the same session diagnosed, planned, implemented, and verified; Jason's eye never formally approved the result, and the demo's three-control grammar was never audited for whether it scales to a real app's control count. Jason reviews the running app side-by-side with the demo at 1440/1024/900 (populated states from RUN-CONTENT-DENSITY-QA), confirms or corrects the direction, and any grammar exceptions (surfaces that legitimately need more control density than the demo shows) are documented in docs/chrome-contract.md. Runs before CHROME-CONTRACT-V2 locks the gate.",
       "done": "Sign-off recorded (date + verdict + corrections) in docs/chrome-contract.md; grammar exceptions documented; any corrections filed as cards before CHROME-CONTRACT-V2 executes.",
-      "progress": "Jason rejected the first Codex-derived pass and the alternate-center terminal model, then pointed back to demo/keelhouse-chrome-demo.html as the literal shell contract. The corrected native package now matches its Threads/chat/right-dock/bottom-tray hierarchy and functional composer; live Terminal open, Processes switch, and collapse pass. A 2026-07-13 live Super Engineering comparison identified three corrections to judge in the next sign-off: less permanent titlebar information, compact non-blocking toast rhythm, and a dedicated settings workspace. The 2026-07-14 independent-context review confirmed the hierarchy, flagged stale visual evidence, and led to a recovery notice that clears after 12 seconds above the status bar. Keep the Keelhouse layout, dark palette, chat-first center, and resizable trays; reject Super's pale home, rounded action cards, and worktree-first center. Jason's explicit verdict on the latest package is still required, so this card remains next."
+      "progress": "Jason rejected the first Codex-derived pass and the alternate-center terminal model, then pointed back to demo/keelhouse-chrome-demo.html as the literal shell contract. The corrected native package matches its Threads/chat/right-dock/bottom-tray hierarchy and functional composer. A 2026-07-13 Super Engineering comparison produced quieter titlebar, toast, and settings corrections. On 2026-07-16 Jason approved the standalone Local Studio-inspired demo direction; the resulting package adds zero-width Threads collapse, anchored live composer metadata, a Context dock, and narrow overlays while preserving Keelhouse's chat-first center and bottom utility tray. The freshly rebuilt package painted normally and opened Context with live values. Jason's explicit verdict on this latest packaged implementation is still required before CHROME-CONTRACT-V2 locks it, so this card remains next."
     },
     {
       "id": "CHROME-FONT-LOCK",
