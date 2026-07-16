@@ -121,6 +121,7 @@ import {
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useAgentActivityController } from "./useAgentActivityController";
 import { useComposerWorkspaceState } from "./useComposerWorkspaceState";
+import { usePaneTranscriptController } from "./usePaneTranscriptController";
 import {
   normalizeTerminalPaneLabel,
   terminalPaneLabelForDisplay,
@@ -209,11 +210,6 @@ import { executeWorkspaceOpenFailure } from "./workspaceOpenFailureWorkflow";
 import { executeWorkspaceOpenDirect } from "./workspaceOpenDirectWorkflow";
 import { resolveWorkspaceOpenTarget } from "./workspaceOpenTarget";
 import { executeWorkspaceOpenSuccess } from "./workspaceOpenSuccessWorkflow";
-import {
-  addPaneTranscript,
-  buildPaneTranscript,
-  type PaneTranscript,
-} from "./paneTranscripts";
 import { TranscriptsModal } from "./TranscriptsModal";
 import { useTerminalFind } from "./useTerminalFind";
 import { ChatThreadSurface } from "./ChatThreadSurface";
@@ -448,9 +444,13 @@ function App() {
   } = useMcpOAuthStatus();
   const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
   const [backgroundExits, setBackgroundExits] = useState<BackgroundExit[]>([]);
-  const [paneTranscripts, setPaneTranscripts] = useState<PaneTranscript[]>([]);
-  const [transcriptsOpen, setTranscriptsOpen] = useState(false);
-  const [openTranscriptId, setOpenTranscriptId] = useState<string | null>(null);
+  const {
+    openTranscriptId, paneTranscripts, persistPaneTranscript, setOpenTranscriptId,
+    setPaneTranscripts, setTranscriptsOpen, transcriptsOpen,
+  } = usePaneTranscriptController({
+    saveStore: () => { void storeRef.current?.save(); },
+    setStoreValue: (key, value) => { void storeRef.current?.set(key, value); },
+  });
   const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
   const [composerSending, setComposerSending] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -1994,31 +1994,6 @@ function App() {
     canStage: diffReviewCanStage, canUnstage: diffReviewCanUnstage,
     loading: diffReviewLoading, review: diffReview,
   }, editorContextMenuActions);
-
-  const persistPaneTranscript = (
-    projectId: string,
-    projectSessionId: string,
-    pane: { label?: string | null; profile: { label: string } },
-    paneIndex: number,
-    text: string,
-    savedAt: number,
-  ) => {
-    const transcript = buildPaneTranscript({
-      id: `transcript-${savedAt.toString(36)}-${Math.max(0, paneIndex)}`,
-      projectId,
-      projectSessionId,
-      paneLabel: terminalPaneLabelForDisplay(pane.label, pane.profile.label, paneIndex),
-      profileLabel: pane.profile.label,
-      savedAt,
-      text,
-    });
-    setPaneTranscripts((current) => {
-      const next = addPaneTranscript(current, transcript);
-      void storeRef.current?.set("paneTranscripts", next);
-      void storeRef.current?.save();
-      return next;
-    });
-  };
 
   const saveActivePaneTranscript = () => {
     const pane = activeTerminalPane;
