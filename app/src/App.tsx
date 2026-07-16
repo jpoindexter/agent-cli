@@ -17,7 +17,6 @@ import { DRAWER_MODES, drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useBrowserPreviewController } from "./useBrowserPreviewController";
-import { useFilesRailHeight } from "./useFilesRailHeight";
 import { useComposerLocalState } from "./useComposerLocalState";
 import { createComposerSettingsActions } from "./composerSettingsActions";
 import { useComposerAttachments } from "./useComposerAttachments";
@@ -104,32 +103,24 @@ import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescripto
 import {
   setActiveKeybindingOverrides,
   shortcutKeys,
-  type KeybindingOverrides,
 } from "./shortcuts";
 import { SearchCommandDialog } from "./SearchCommandDialog";
 import { useCommandPalette } from "./useCommandPalette";
 import { QuickOpenDialog } from "./QuickOpenDialog";
 import { useQuickOpen } from "./useQuickOpen";
-import {
-  DEFAULT_COMMAND_PALETTE_SOURCES,
-} from "./commandPaletteSources";
 import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useAgentActivityController } from "./useAgentActivityController";
 import { useWorkspaceDomain } from "./useWorkspaceDomain";
-import { usePaneTranscriptController } from "./usePaneTranscriptController";
 import { activePaneDisplayLabel } from "./terminalPane";
-import { useGitStatus } from "./useGitStatus";
 import { useGitDiffReview } from "./useGitDiffReview";
-import { useShellLayout, type SideDrawerMode } from "./useShellLayout";
-import { useAppChromeState } from "./useAppChromeState";
-import { useSettingsRuntimeStatus } from "./useSettingsRuntimeStatus";
+import type { SideDrawerMode } from "./useShellLayout";
+import { useAppShellDomain } from "./useAppShellDomain";
 import { useSyncRef } from "./useSyncRef";
 import { loadWorkspaceBootstrap } from "./workspaceBootstrap";
 import { terminalSnapshotText } from "./terminalTranscript";
 import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
 import {
   worktreeForPaneId,
-  type WorktreeRecord,
 } from "./worktrees";
 import {
   DEFAULT_AI_CONNECTION_SETTINGS,
@@ -139,7 +130,6 @@ import {
   type McpOAuthStart,
   type McpOAuthStatus,
 } from "./connectionSettings";
-import { useMcpOAuthStatus } from "./useMcpOAuthStatus";
 import { createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
@@ -160,7 +150,6 @@ import {
 import {
   clearBackgroundExitsForProject,
   notifyBackgroundExit,
-  type BackgroundExit,
 } from "./backgroundExits";
 import { requestPermission } from "@tauri-apps/plugin-notification";
 import { createSettingsPreferenceActions } from "./settingsPreferenceActions";
@@ -184,7 +173,6 @@ import {
   resetDurableChatStore,
   saveDurableChatConversation,
 } from "./chatStore";
-import { useChatSearch } from "./useChatSearch";
 import {
   createWorkspaceCheckpoint,
 } from "./workspaceCheckpoints";
@@ -255,33 +243,18 @@ function App() {
     onActionError: (item, error) => setLaunchError(`${item.label} failed: ${String(error)}`),
   });
   const commandPalette = useCommandPalette(() => contextMenuHost.setContextMenu(null));
-  const [commandPaletteSources, setCommandPaletteSources] = useState({ ...DEFAULT_COMMAND_PALETTE_SOURCES });
-  const [orchestrationOpen, setOrchestrationOpen] = useState(false);
-  const [orchestrationLaunching, setOrchestrationLaunching] = useState(false);
-  const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
-  const [composerNotice, setComposerNotice] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const chrome = useAppChromeState();
-  const settingsRuntime = useSettingsRuntimeStatus(settingsOpen, workspacePath);
-  const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
-  const mcpOAuth = useMcpOAuthStatus();
-  const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
-  const [backgroundExits, setBackgroundExits] = useState<BackgroundExit[]>([]);
-  const paneTranscripts = usePaneTranscriptController({
-    saveStore: () => { void storeRef.current?.save(); },
-    setStoreValue: (key, value) => { void storeRef.current?.set(key, value); },
-  });
-  const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
-  const [composerSending, setComposerSending] = useState(false);
-  const [composerError, setComposerError] = useState<string | null>(null);
-  const shellLayout = useShellLayout(() => setSettingsOpen(false));
-  const railHeight = useFilesRailHeight(shellLayout.sideDrawerMode === "files", railBodyRef);
-  const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
-  const chatSearch = useChatSearch({ open: commandPalette.open, query: commandPalette.query });
-  const [focusedChatMessageId, setFocusedChatMessageId] = useState<string | null>(null);
-  const gitStatusHook = useGitStatus({
-    active: shellLayout.sideDrawerMode === "files" || shellLayout.sideDrawerMode === "git", refreshKey: workspaceTree.refreshKey,
-    resolveRoot: () => workspacePathRef.current ?? workspacePath, workspacePath,
+  const {
+    aiConnectionSettings, backgroundExits, chatSearch, chrome, commandPaletteSources,
+    composerError, composerNotice, composerSending, drawerSearchQuery, focusedChatMessageId,
+    gitStatusHook, keybindingOverrides, mcpOAuth, orchestrationError, orchestrationLaunching,
+    orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
+    setCommandPaletteSources, setComposerError, setComposerNotice, setComposerSending,
+    setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
+    setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
+    settingsOpen, settingsRuntime, shellLayout, worktrees,
+  } = useAppShellDomain({
+    commandPalette: { open: commandPalette.open, query: commandPalette.query },
+    railBodyRef, storeRef, treeRefreshKey: workspaceTree.refreshKey, workspacePath, workspacePathRef,
   });
   const diffReviewHook = useGitDiffReview({
     gateAction: (action) => agentActivityHook.gateAppAction(action),

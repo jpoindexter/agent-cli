@@ -16,7 +16,8 @@ const css = `${readCssSource(new URL("./App.css", import.meta.url))}\n${readCssS
 
 describe("chat history discovery production wiring", () => {
   it("searches durable history and opens stable message targets", () => {
-    expect(app).toContain("useChatSearch({ open: commandPalette.open");
+    expect(readFileSync(new URL("./useAppShellDomain.ts", import.meta.url), "utf8"))
+      .toContain("useChatSearch({ open: options.commandPalette.open");
     expect(chatSearch).toContain("searchDurableChatMessages(query, false, 80)");
     expect(app).toContain("openChatSearchResult(result)");
     const navigation = readFileSync(new URL("./chatSearchNavigation.ts", import.meta.url), "utf8");
