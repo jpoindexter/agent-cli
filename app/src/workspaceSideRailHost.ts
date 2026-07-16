@@ -55,18 +55,23 @@ type WorkspaceSideRailInput = {
   workspaceTree: WorkspaceDomain["workspaceTree"];
 };
 
-const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps["projects"] => ({
-  activeProjectPath: input.workspacePath, activeSessionId: input.activeChat.activeSessionId, backgroundExits: input.backgroundExits,
-  expandedProjects: input.persistence.expandedSessionProjects, projects: input.visibleOpenProjects,
-  sessionsByProject: input.persistence.projectSessions, showArchived: input.persistence.showArchivedSessions,
-  projectStatus: input.projectRailStatus, sessionStatus: input.projectSessionStatus,
-  onProjectContextMenu: (event, project) => input.contextMenuHost.openContextMenu(event, input.projectRailContextMenuItems(project)),
-  onSelectProject: (path) => void input.requestOpenWorkspace(path),
-  onSelectSession: (path, sessionId) => void input.projectSessionNavigationActions.switchSession(path, sessionId),
-  onSessionContextMenu: (event, path, session) => input.contextMenuHost.openContextMenu(event, input.projectSessionContextMenuItems(path, session)),
-  onToggleArchived: () => input.persistence.setShowArchivedSessions((show) => !show),
-  onToggleExpanded: (path) => input.persistence.setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
-});
+const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps["projects"] => {
+  const closeNarrowDrawer = () => {
+    if (input.shellLayout.viewportWidth <= 900) input.shellLayout.setSideDrawerCollapsed(true);
+  };
+  return {
+    activeProjectPath: input.workspacePath, activeSessionId: input.activeChat.activeSessionId, backgroundExits: input.backgroundExits,
+    expandedProjects: input.persistence.expandedSessionProjects, projects: input.visibleOpenProjects,
+    sessionsByProject: input.persistence.projectSessions, showArchived: input.persistence.showArchivedSessions,
+    projectStatus: input.projectRailStatus, sessionStatus: input.projectSessionStatus,
+    onProjectContextMenu: (event, project) => input.contextMenuHost.openContextMenu(event, input.projectRailContextMenuItems(project)),
+    onSelectProject: (path) => { void input.requestOpenWorkspace(path); closeNarrowDrawer(); },
+    onSelectSession: (path, sessionId) => { void input.projectSessionNavigationActions.switchSession(path, sessionId); closeNarrowDrawer(); },
+    onSessionContextMenu: (event, path, session) => input.contextMenuHost.openContextMenu(event, input.projectSessionContextMenuItems(path, session)),
+    onToggleArchived: () => input.persistence.setShowArchivedSessions((show) => !show),
+    onToggleExpanded: (path) => input.persistence.setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
+  };
+};
 
 const railGitFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps["git"] => ({
   error: input.gitStatusHook.error, hasWorkspace: Boolean(input.workspacePath), loading: input.gitStatusHook.loading,

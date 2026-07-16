@@ -13,6 +13,8 @@ describe("browser QA IPC fixture", () => {
     await expect(invoke("load_chat_conversations")).resolves.toEqual({
       [browserQaFixture.chatId]: browserQaFixture.conversation,
     });
+    expect(browserQaFixture.conversation.usage).toEqual({ inputTokens: 1200, cachedInputTokens: 400, outputTokens: 80 });
+    await expect(invoke("git_status")).resolves.toMatchObject({ branch: "main", files: [{ path: "app/src/App.tsx" }, { path: "ROADMAP.md" }] });
     await expect(invoke("take_agent_hook_requests")).resolves.toEqual([]);
   });
 

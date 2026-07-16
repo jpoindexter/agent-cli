@@ -38,8 +38,9 @@ const createOptions = () =>
     setSettingsOpen: vi.fn(),
     shellLayout: {
       agentSurfaceMode: "chat", renderedWorkbenchLayout: "hidden", setAgentSurfaceMode: vi.fn(),
-      setSideDrawerMode: vi.fn(), setToolTrayMode: vi.fn(), setWorkbenchLayout: vi.fn(),
+      setSideDrawerCollapsed: vi.fn(), setSideDrawerMode: vi.fn(), setToolTrayMode: vi.fn(), setWorkbenchLayout: vi.fn(),
       sideDrawerCollapsed: false, sideDrawerMode: "files", toolTrayMode: "files", workbenchLayout: "hidden",
+      viewportWidth: 900,
     },
     treeRef: ref(undefined),
     utilityTrayControls: { toggleRawTerminal: vi.fn() },
@@ -72,6 +73,7 @@ describe("workspaceSideRailPropsFrom", () => {
     expect(options.setSettingsOpen).toHaveBeenCalledWith(true);
     props.projects.onSelectSession("/repo", "chat");
     expect(options.projectSessionNavigationActions.switchSession).toHaveBeenCalledWith("/repo", "chat");
+    expect(options.shellLayout.setSideDrawerCollapsed).toHaveBeenCalledWith(true);
     void props.git.onRefresh();
     expect(options.gitStatusHook.refresh).toHaveBeenCalled();
   });

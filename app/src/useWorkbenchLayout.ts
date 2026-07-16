@@ -35,6 +35,7 @@ export const useWorkbenchLayout = () => {
     setWorkbenchLayout: state.setWorkbenchLayout,
     sideDrawerCollapsed: state.sideDrawerCollapsed,
     toolTrayMode: state.toolTrayMode,
+    viewportWidth: state.viewportWidth,
     workbenchLayout: state.workbenchLayout,
     workbenchRef,
     workbenchSizing: state.workbenchSizing,

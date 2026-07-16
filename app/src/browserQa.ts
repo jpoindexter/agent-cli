@@ -56,6 +56,7 @@ export const browserQaFixture = {
     updatedAt: QA_NOW,
     revision: 2,
     runStatus: "complete",
+    usage: { inputTokens: 1200, cachedInputTokens: 400, outputTokens: 80 },
   },
 } as const;
 
@@ -102,7 +103,14 @@ const handleQaAppCommand = (command: string, payload?: InvokeArgs): unknown => {
     case "migrate_chat_conversations":
       return { imported: 0, alreadyCompleted: true };
     case "git_status":
-      return { isRepository: true, branch: "main", ahead: 0, behind: 0, staged: 0, unstaged: 0, untracked: 0, files: [] };
+      return {
+        isRepository: true, branch: "main", ahead: 0, behind: 0,
+        staged: 0, unstaged: 2, untracked: 0,
+        files: [
+          { path: "app/src/App.tsx", index: " ", worktree: "M" },
+          { path: "ROADMAP.md", index: " ", worktree: "M" },
+        ],
+      };
     case "git_remote_url":
       return "https://github.com/example/keelhouse.git";
     case "source_control_status":

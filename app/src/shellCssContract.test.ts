@@ -43,4 +43,17 @@ describe("responsive shell CSS contract", () => {
     expect(css).toMatch(/\.workbench\.workbench--tools-context\.workbench--drawer-bottom\s*\{[^}]*"context"/s);
     expect(css).toMatch(/\.workbench--tools-context \.workspace-context-dock\s*\{[^}]*display:\s*flex;/s);
   });
+
+  it("overlays Context without replacing chat at narrow widths", () => {
+    const contextCss = css.slice(css.indexOf(".workspace-context-dock"));
+    expect(contextCss).toMatch(/@media \(max-width:\s*1120px\)[^{]*\{[\s\S]*\.workbench\.workbench--tools-context\.workbench--drawer-right[\s\S]*grid-template-areas:[^}]*"terminal"[^}]*"utility";/s);
+    expect(contextCss).toMatch(/@media \(max-width:\s*1120px\)[\s\S]*\.workbench--tools-context \.workspace-context-dock\s*\{[^}]*position:\s*absolute;[^}]*right:\s*0;[^}]*width:\s*min\(360px,\s*100%\);/s);
+    expect(contextCss).toMatch(/\.workbench--tools-context\.workbench--drawer-right \.terminal-panel[^}]*display:\s*flex;/s);
+  });
+
+  it("floats the open Threads drawer above the 900px conversation", () => {
+    expect(css).toMatch(/@media \(max-width:\s*900px\)[\s\S]*\.app-shell:not\(\.app-shell--side-drawer-collapsed\)\s*\{[^}]*grid-template-columns:\s*0 0 minmax\(0,\s*1fr\);/s);
+    expect(css).toMatch(/@media \(max-width:\s*900px\)[\s\S]*\.app-shell:not\(\.app-shell--side-drawer-collapsed\) \.file-rail\s*\{[^}]*position:\s*absolute;[^}]*width:\s*min\(272px,\s*calc\(100% - 48px\)\);/s);
+    expect(css).toMatch(/\.app-shell:not\(\.app-shell--side-drawer-collapsed\) \.file-rail\s*\{[^}]*grid-column:\s*1 \/ -1;[^}]*grid-row:\s*2;/s);
+  });
 });
