@@ -34,11 +34,7 @@ import { useEditorSessionController } from "./useEditorSessionController";
 import { useWorkspacePersistenceController } from "./useWorkspacePersistenceController";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
-import {
-  activeProjectSessionId,
-  setProjectSessionArchived,
-  setProjectSessionPinned,
-} from "./workspaceState";
+import { activeProjectSessionId } from "./workspaceState";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import {
   findFileTreeNode,
@@ -54,6 +50,7 @@ import {
 } from "./commandPaletteAssembly";
 import { createSettingsConnectionActionsController } from "./settingsConnectionActionsController";
 import { createEditorFileUtilityActions } from "./editorFileUtilityActions";
+import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -1509,19 +1506,16 @@ function App() {
   const projectRailContextMenuItems = (project: OpenProject) =>
     buildProjectRailContextMenuItems(project, workspacePath, workspaceContextMenuActions);
 
-  const updateProjectSessionMetadata = async (
-    projectPath: string,
-    sessionId: string,
-    metadata: Partial<ProjectSession>,
-  ) => {
-    const next = {
-      ...projectSessionsRef.current,
-      [projectPath]: (projectSessionsRef.current[projectPath] ?? []).map((session) =>
-        session.id === sessionId ? { ...session, ...metadata, updatedAt: Date.now() } : session,
-      ),
-    };
-    await persistProjectSessions(next, activeSessionByProjectRef.current);
-  };
+  const projectSessionMetadataActions = createProjectSessionMetadataActions({
+    getActiveSessions: () => activeSessionByProjectRef.current,
+    getSessions: () => projectSessionsRef.current,
+    notify: setActionNotice,
+    now: Date.now,
+    persist: persistProjectSessions,
+  });
+  const updateProjectSessionMetadata = projectSessionMetadataActions.updateSessionMetadata;
+  const archiveProjectSession = projectSessionMetadataActions.archiveSession;
+  const pinProjectSession = projectSessionMetadataActions.pinSession;
 
   const {
     capture: captureSessionCheckpoint,
@@ -1578,19 +1572,6 @@ function App() {
         switchChat: () => switchProjectSession(projectPath, session.id),
       },
     });
-  };
-
-  const archiveProjectSession = async (projectPath: string, session: ProjectSession, archived: boolean) => {
-    const next = setProjectSessionArchived(projectSessionsRef.current, projectPath, session.id, archived);
-    if (next === projectSessionsRef.current) return;
-    await persistProjectSessions(next, activeSessionByProjectRef.current);
-  };
-
-  const pinProjectSession = async (projectPath: string, session: ProjectSession, pinned: boolean) => {
-    const next = setProjectSessionPinned(projectSessionsRef.current, projectPath, session.id, pinned);
-    if (next === projectSessionsRef.current) return;
-    await persistProjectSessions(next, activeSessionByProjectRef.current);
-    setActionNotice(pinned ? `Pinned ${session.title}` : `Unpinned ${session.title}`);
   };
 
   const editorContextMenuActions = {
