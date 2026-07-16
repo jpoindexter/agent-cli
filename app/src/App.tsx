@@ -52,6 +52,7 @@ import { createEditorSurfaceActions } from "./editorSurfaceActions";
 import type { GitStatusFile } from "./fileGitStatus";
 import { buildAgentHookSnapshot, hookReportToActivity } from "./agentHookIntegration";
 import { AgentConversationPanel } from "./AgentConversationPanel";
+import { createTerminalClipboardActions } from "./terminalClipboardActions";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -1413,42 +1414,25 @@ function App() {
     setError: setFileOpError,
   });
 
-  const terminalSelectedText = () => {
-    const snap = latest.current;
-    return snap && selection.current ? selectionToText(snap.cells, snap.cols, selection.current) : "";
-  };
-
-  const copyTerminalSelection = async () => {
-    const selectedText = terminalSelectedText();
-    if (!selectedText) return;
-    await writeText(selectedText);
-  };
-
-  const copyActivePaneTail = async () => {
-    const tail = await activeAgentSessionHandle?.readTail(20);
-    if (!tail) return;
-    await writeText(tail);
-    recordAgentActivity(activeAgentSessionHandle ?? null, {
-      kind: "app",
-      label: "Copied output",
-      detail: "Last 20 lines",
-      status: "complete",
-    });
-  };
-
-  const pasteIntoTerminal = async () => {
-    if (activeTerminalPaneIdRef.current == null) return;
-    const text = await readText();
-    if (!text) return;
-    selection.current = null;
-    await invoke("paste", { text });
-  };
-
-  const clearActiveTerminal = async () => {
-    if (activeTerminalPaneIdRef.current == null) return;
-    selection.current = null;
-    await invoke("send_key", { code: "KeyL", text: null, shift: false, alt: false, ctrl: true, sup: false });
-  };
+  const terminalClipboardActions = createTerminalClipboardActions({
+    copyText: writeText,
+    getActivePaneId: () => activeTerminalPaneIdRef.current,
+    getSnapshot: () => latest.current,
+    paste: (text) => invoke("paste", { text }),
+    readClipboard: readText,
+    readTail: async (lines) => activeAgentSessionHandle?.readTail(lines),
+    recordActivity: (event) => recordAgentActivity(activeAgentSessionHandle ?? null, event),
+    selection,
+    selectionText: (snap, snapSelection) => selectionToText(snap.cells, snap.cols, snapSelection),
+    sendClearKey: () => invoke("send_key", {
+      code: "KeyL", text: null, shift: false, alt: false, ctrl: true, sup: false,
+    }),
+  });
+  const terminalSelectedText = terminalClipboardActions.terminalSelectedText;
+  const copyTerminalSelection = terminalClipboardActions.copyTerminalSelection;
+  const copyActivePaneTail = terminalClipboardActions.copyActivePaneTail;
+  const pasteIntoTerminal = terminalClipboardActions.pasteIntoTerminal;
+  const clearActiveTerminal = terminalClipboardActions.clearActiveTerminal;
 
   const openContextMenu = (event: ReactMouseEvent, items: ContextMenuItem[]) => {
     event.preventDefault();
