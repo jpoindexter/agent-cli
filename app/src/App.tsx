@@ -83,6 +83,7 @@ import { createPaneActivityLog } from "./paneActivityLog";
 import { createTerminalResize } from "./terminalResize";
 import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
+import { statusBarRepoPropsFrom } from "./statusBarHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -140,7 +141,7 @@ import {
   type McpOAuthStatus,
 } from "./connectionSettings";
 import { useMcpOAuthStatus } from "./useMcpOAuthStatus";
-import { buildRepoUrl, sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
+import { sourceRepoStatusLabel, type RepoLocation } from "./sourceControlLinks";
 import { createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
@@ -2070,11 +2071,8 @@ function App() {
         primarySurfaceState={primarySurfaceState}
         primarySurfaceLabel={primarySurfaceLabel}
         primarySurfaceStatusLabel={primarySurfaceStatusLabel}
-        repoLabel={repoLocation ? sourceRepoStatusLabel(repoLocation) : null}
+        {...statusBarRepoPropsFrom(repoLocation, openUrl)}
         repoTitle={sourceRepoStatusTitle}
-        onOpenRepo={() => {
-          if (repoLocation) void openUrl(buildRepoUrl(repoLocation)).catch(() => {});
-        }}
         surfaceMode={agentSurfaceMode}
         utilityLabel={utilityTrayStatusLabel}
       />
