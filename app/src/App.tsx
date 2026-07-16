@@ -51,6 +51,7 @@ import {
 import { createSettingsConnectionActionsController } from "./settingsConnectionActionsController";
 import { createEditorFileUtilityActions } from "./editorFileUtilityActions";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
+import { createEditorReviewNavigation } from "./editorReviewNavigation";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -558,52 +559,28 @@ function App() {
   const primarySurfaceLabel = "Codex";
   const primarySurfaceStatusLabel = activeChatConversation.activeRunId ? "Working" : "Ready";
   const utilityTrayStatusLabel = utilityTrayMode.charAt(0).toUpperCase() + utilityTrayMode.slice(1);
-  const focusEditorLine = (line: number) => {
-    const targetLine = Math.max(1, line);
-    window.setTimeout(() => {
-      const view = editorViewRef.current;
-      if (!view) return;
-      const docLine = view.state.doc.line(Math.min(targetLine, view.state.doc.lines));
-      view.dispatch({
-        selection: { anchor: docLine.from },
-        effects: EditorView.scrollIntoView(docLine.from, { y: "center" }),
-      });
-      view.focus();
-    }, 60);
-  };
-
-  const reviewRunCardFile = async (relativePath: string) => {
-    const normalized = relativePath.trim().replace(/^\.\//, "");
-    const changedFile = gitStatus?.files.find((file) => file.path === normalized);
-    if (changedFile) {
-      const opened = await openGitDiff(changedFile);
-      if (opened) {
-        if (workbenchLayout === "hidden") setWorkbenchLayout("right");
-        setToolTrayMode("editor");
-      }
-      return;
-    }
-    const root = workspacePathRef.current;
-    if (root && normalized) {
-      const opened = await requestOpenEditorFile(fileNodeFromPath(`${root}/${normalized}`, "file"), { focusEditor: true });
-      if (opened) {
-        if (workbenchLayout === "hidden") setWorkbenchLayout("right");
-        setToolTrayMode("editor");
-      }
-    }
-  };
-
-  const editorHasUnsavedBufferForPath = (path: string) => {
-    if (selectedFileRef.current?.path === path && editorText !== savedEditorText) return true;
-    const buffered = editorBuffersRef.current[path];
-    return Boolean(buffered && buffered.text !== buffered.savedText);
-  };
-
-  const openDiffFile = async (line: number | null = null) => {
-    if (!diffReview) return;
-    const opened = await requestOpenEditorFile(fileNodeFromPath(diffReview.absolutePath, "file"), { focusEditor: true });
-    if (opened && line != null) focusEditorLine(line);
-  };
+  const editorReviewNavigation = createEditorReviewNavigation({
+    buffers: editorBuffersRef,
+    getDiffReviewPath: () => diffReview?.absolutePath ?? null,
+    getEditorText: () => editorText,
+    getGitFiles: () => gitStatus?.files ?? [],
+    getRoot: () => workspacePathRef.current,
+    getSavedText: () => savedEditorText,
+    getSelectedPath: () => selectedFileRef.current?.path ?? null,
+    getView: () => editorViewRef.current,
+    makeFileNode: (path) => fileNodeFromPath(path, "file"),
+    openGitDiff: async (file) => Boolean(await openGitDiff(file)),
+    requestOpenFile: async (file, fileOptions) => Boolean(await requestOpenEditorFile(file, fileOptions)),
+    revealEditorTools: () => {
+      if (workbenchLayout === "hidden") setWorkbenchLayout("right");
+      setToolTrayMode("editor");
+    },
+    schedule: (callback, delayMs) => { window.setTimeout(callback, delayMs); },
+    scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
+  });
+  const reviewRunCardFile = editorReviewNavigation.reviewRunCardFile;
+  const editorHasUnsavedBufferForPath = editorReviewNavigation.hasUnsavedBufferForPath;
+  const openDiffFile = editorReviewNavigation.openDiffFile;
 
 
   useEffect(() => {

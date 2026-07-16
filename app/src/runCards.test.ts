@@ -63,10 +63,15 @@ describe("run card provenance", () => {
 
   it("reveals the editor tray after Review opens a file or diff", () => {
     const source = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const reviewAction = source.slice(source.indexOf("const reviewRunCardFile"), source.indexOf("const gitActionLabel"));
+    const reviewAction = source.slice(
+      source.indexOf("const editorReviewNavigation"), source.indexOf("const gitActionLabel"),
+    );
 
     expect(reviewAction).toContain('setToolTrayMode("editor")');
     expect(reviewAction).toContain('setWorkbenchLayout("right")');
+
+    const navigation = readFileSync(new URL("./editorReviewNavigation.ts", import.meta.url), "utf8");
+    expect(navigation).toContain("options.revealEditorTools()");
   });
 
   it("binds hook status cards to the durable chat handle", () => {
