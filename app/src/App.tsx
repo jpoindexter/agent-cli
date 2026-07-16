@@ -57,6 +57,7 @@ import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
 import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
 import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
 import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
+import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createDevServerDetection } from "./devServerDetectionSurface";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
@@ -192,13 +193,6 @@ import "./workbenchTransitions.css";
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
 type SaveEditorFileOptions = { force?: boolean };
-const formatBytes = (bytes: number | null) => {
-  if (bytes == null) return "--";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
-
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imeInputRef = useRef<HTMLTextAreaElement>(null);
@@ -1348,50 +1342,11 @@ function App() {
           }}
           workspacePath={workspacePath}
         />
-        <WorkbenchEditorSection
-          activeFileMissing={editorWorkspace.activeFileMissing}
-          code={{
-            conflict: editorWorkspace.editorSaveConflict, error: editorSession.editorError, loading: editorSession.editorLoading,
-            recoveryError: editorSession.editorRecoveryError, saving: editorSession.editorSaving, text: editorSession.editorText,
-          }}
-          cursor={editorSession.editorCursor}
-          diff={{
-            breadcrumbs: editorWorkspace.diffBreadcrumbs, canDiscard: editorWorkspace.diffReviewCanDiscard,
-            canOpenFile: editorWorkspace.diffReviewCanOpenFile, canStage: editorWorkspace.diffReviewCanStage,
-            canUnstage: editorWorkspace.diffReviewCanUnstage, error: diffReviewHook.error,
-            loading: diffReviewHook.loading, review: diffReviewHook.review,
-          }}
-          editorBreadcrumbs={editorWorkspace.editorBreadcrumbs}
-          editorBytesLabel={formatBytes(editorSession.editorBytes)}
-          editorDirty={editorWorkspace.editorDirty}
-          editorLanguage={editorWorkspace.editorLanguage}
-          editorLoading={editorSession.editorLoading}
-          editorSaving={editorSession.editorSaving}
-          handlers={{
-            closeActiveTab: () => void editorNavigation.closeActiveTab(),
-            closeDiff: diffReviewHook.close,
-            closeTab: (tab) => void editorNavigation.closeTab(tab),
-            copyDiff: () => void diffReviewHook.copy(),
-            find: editorSurface.openEditorSearch,
-            onChange: editorSession.setEditorText,
-            onCreateEditor: editorSurface.restoreEditorView,
-            onUpdate: handleEditorUpdate,
-            openContextMenu: (kind, event) => contextMenuHost.openContextMenu(
-              event, kind === "diff" ? diffContextMenuItems() : editorContextMenuItems(),
-            ),
-            openDiff: (line = null) => void editorSurface.openDiffFile(line),
-            openExternally: () => void editorSurface.openExternally(),
-            overwrite: () => void editorSurface.overwrite(),
-            reload: () => void editorSurface.reloadFromDisk(),
-            runDiffAction: (action) => { if (diffReviewHook.review) void diffReviewHook.runFileAction(action, diffReviewHook.review.file); },
-            save: () => void saveEditorFile(),
-            selectTab: (tab) => void editorFileWorkflow.requestOpen(tab, { focusEditor: true }),
-            tabContextMenu: (event, tab) => contextMenuHost.openContextMenu(event, editorTabContextMenuItems(tab)),
-          }}
-          selectedFile={editorSession.selectedFile}
-          tabIsDirty={tabIsDirty}
-          tabs={editorSession.editorTabs}
-        />
+        <WorkbenchEditorSection {...workbenchEditorSectionPropsFrom({
+          contextMenuHost, diffContextMenuItems, diffReviewHook, editorContextMenuItems,
+          editorFileWorkflow, editorNavigation, editorSession, editorSurface, editorTabContextMenuItems,
+          editorWorkspace, handleEditorUpdate, saveEditorFile, tabIsDirty,
+        })} />
 
         <WorkbenchResizers
           layout={shellLayout.renderedWorkbenchLayout}
