@@ -67,6 +67,7 @@ import { settingsAgentProfileOptions } from "./settingsModalData";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
+import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2076,12 +2077,13 @@ function App() {
       />
       <AppRuntimeDialogs
         notices={{
-          actionNotice, canUseShellProfile: !profiles.changing && profiles.launchProfile.id !== "shell",
+          actionNotice,
+          canUseShellProfile: canUseShellProfile(profiles.changing, profiles.launchProfile.id),
           crashNotice, launchError,
           onDismissAction: () => setActionNotice(null), onDismissCrash: () => setCrashNotice(null),
           onOpenFolder: () => void pickWorkspace(),
           onUseShellProfile: () => {
-            const shell = LAUNCH_PROFILES.find((profile) => profile.id === "shell");
+            const shell = findShellProfile(LAUNCH_PROFILES);
             if (shell) void profiles.switchLaunchProfile(shell);
           },
         }}
