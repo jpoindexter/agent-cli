@@ -47,6 +47,7 @@ import {
 import { createEditorViewLifecycle } from "./editorViewLifecycle";
 import { createWorkspaceBootstrapController } from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
+import { createAppMenuAssembly } from "./appMenuAssembly";
 import type { EditorFileLoadState } from "./editorFileLoadState";
 import { createEditorFileWorkflow } from "./editorFileWorkflow";
 import {
@@ -148,10 +149,7 @@ import { buildSnapshot, createRenderPerfState, recordIpcPayloadBytes } from "./r
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
-import {
-  buildTerminalContextMenuItems,
-  buildUtilityTrayTabContextMenuItems,
-} from "./terminalContextMenu";
+import { buildTerminalContextMenuItems } from "./terminalContextMenu";
 import { buildProjectSessionContextMenuItems } from "./projectSessionContextMenu";
 import {
   buildFileNodeContextMenuItems,
@@ -164,11 +162,6 @@ import {
   buildEditorContextMenuItems,
   buildEditorTabContextMenuItems,
 } from "./editorContextMenus";
-import {
-  buildBrowserContextMenuItems,
-  buildComposerAddMenuItems,
-  buildComposerContextMenuItems,
-} from "./browserComposerContextMenu";
 import { createTerminalProcessActionsController } from "./terminalProcessActionsController";
 import { createSessionCheckpointActions } from "./sessionCheckpointActions";
 import {
@@ -263,13 +256,6 @@ const formatBytes = (bytes: number | null) => {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
-const menuItem = (
-  id: string,
-  label: string,
-  onSelect: () => void,
-  options: Pick<ContextMenuItem, "shortcut" | "icon" | "disabled" | "danger"> = {},
-): ContextMenuItem => ({ id, label, onSelect, ...options });
-
 const sourceRepoStatusTitleFor = (repoLocation: RepoLocation | null, toolStatus: SourceControlStatus["gh"] | undefined) =>
   repoLocation ? `${sourceRepoStatusLabel(repoLocation)} · ${toolStatus ? formatCliToolStatus(toolStatus) : "Checking authentication"}` : "";
 
@@ -1742,109 +1728,59 @@ function App() {
     },
   });
 
-  const terminalPaneContextMenuItems = (pane: ManagedTerminalPane): ContextMenuItem[] => [
-    menuItem("pane.focus", "Focus Pane", () => focusTerminalPane(pane.id), {
-      icon: "terminal",
-      disabled: pane.id === activeTerminalPaneId,
-    }),
-    menuItem("pane.rename", "Rename Pane", () => renameTerminalPane(pane), { icon: "terminal" }),
-    menuItem("pane.restart", "Restart Process", () => restartTerminalPane(pane), {
-      icon: "reload",
-      disabled: profiles.changing,
-    }),
-    menuItem("pane.kill", "Kill Process", () => terminateTerminalPane(pane), {
-      icon: "stop",
-      danger: true,
-      disabled: pane.state === "exited",
-    }),
-    menuItem("pane.close", "Close Pane", () => closeTerminalPane(pane.id), {
-      icon: "close",
-      danger: true,
-    }),
-    menuItem("pane.remove-worktree", "Remove Worktree", () => closeWorktreePane(pane.id), {
-      icon: "close",
-      danger: true,
-      disabled: !worktreeForPaneId(worktrees, String(pane.id)),
-    }),
-    menuItem("pane.copy-cwd", "Copy Working Directory", () => copyPathToClipboard(pane.cwd), { icon: "workspace" }),
-  ];
-
-  const copySelectedActivityLog = async () => {
-    const text = selectedAgentActivityLog.map((event) => [
-      new Date(event.timestamp).toISOString(),
-      event.kind,
-      event.label,
-      event.detail ?? event.target ?? "",
-      event.status,
-    ].join("\t")).join("\n");
-    if (!text) return;
-    await writeText(text);
-    setActionNotice("Copied activity log");
-  };
-
-  const utilityTrayTabContextMenuItems = (mode: UtilityTrayMode) =>
-    buildUtilityTrayTabContextMenuItems(mode, {
-      activeMode: utilityTrayMode,
-      activePaneState: activeTerminalPane?.state ?? null,
-      activeSurface: agentSurfaceMode === "terminal",
-      actions: {
-        closePane: () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined,
-        copyActivity: copySelectedActivityLog,
-        createShell: () => createTerminalPane(defaultTerminalLaunchProfile()),
-        hide: () => setAgentSurfaceMode("chat"),
-        killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
-        restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
-        show: (nextMode) => { setUtilityTrayMode(nextMode); setAgentSurfaceMode("terminal"); },
-      },
-      hasActivePane: Boolean(activeTerminalPane),
-      hasActivity: selectedAgentActivityLog.length > 0,
-      hasWorkspace: Boolean(workspacePath),
-      launchProfileChanging: profiles.changing,
-    });
-
-  const browserContextMenuItems = (): ContextMenuItem[] => buildBrowserContextMenuItems({
-    canGoBack: browser.canGoBack,
-    canGoForward: browser.canGoForward,
-    actions: {
-      back: () => browser.goHistory(-1),
-      copyUrl: async () => { await writeText(browser.url); setActionNotice("Copied browser URL"); },
-      forward: () => browser.goHistory(1),
-      openExternal: () => openUrl(browser.url),
-      reload: browser.reload,
+  const appMenuAssembly = createAppMenuAssembly({
+    activityLog: () => selectedAgentActivityLog,
+    browser: {
+      back: () => browser.goHistory(-1), canGoBack: browser.canGoBack,
+      canGoForward: browser.canGoForward, forward: () => browser.goHistory(1),
+      openExternal: () => openUrl(browser.url), reload: browser.reload, url: browser.url,
     },
-  });
-
-  const composerMenuInput = () => ({
-    activeRun: Boolean(activeChatConversation.activeRunId),
-    canAttachCurrent: Boolean(selectedFile),
-    canRunParallel: Boolean(workspacePath && activeSessionId && !activeChatConversation.activeRunId),
-    draft: composerDraft,
-    hasWorkspace: Boolean(workspacePath),
-    sending: composerSending,
-    shortcut: shortcutKeys("composer.send"),
-    actions: {
+    composer: {
+      activeRun: Boolean(activeChatConversation.activeRunId),
       attachCurrent: () => attachSelectedFileToComposer(),
       attachLocal: () => attachLocalFileToComposer(),
       attachPreview: () => attachPreviewToComposer(),
+      canAttachCurrent: Boolean(selectedFile),
+      canRunParallel: Boolean(workspacePath && activeSessionId && !activeChatConversation.activeRunId),
       clearDraft: () => setComposerLocalState(activeComposerHarnessKey, "", composerHistory),
       copyWorkspace: () => workspacePath ? copyPathToClipboard(workspacePath) : undefined,
+      draft: composerDraft, hasWorkspace: Boolean(workspacePath),
       parallel: () => { setOrchestrationError(null); setOrchestrationOpen(true); },
-      send: () => submitComposerDraft(),
-      stop: () => stopActiveChatRun(),
+      send: () => submitComposerDraft(), sending: composerSending,
+      shortcut: shortcutKeys("composer.send"), stop: () => stopActiveChatRun(),
+    },
+    copyText: writeText,
+    notify: setActionNotice,
+    pane: {
+      activePaneId: activeTerminalPaneId, changing: profiles.changing,
+      close: (pane) => closeTerminalPane(pane.id),
+      copyCwd: (pane) => copyPathToClipboard(pane.cwd),
+      focus: (pane) => focusTerminalPane(pane.id),
+      hasWorktree: (pane) => Boolean(worktreeForPaneId(worktrees, String(pane.id))),
+      kill: (pane) => terminateTerminalPane(pane),
+      removeWorktree: (pane) => closeWorktreePane(pane.id),
+      rename: (pane) => renameTerminalPane(pane),
+      restart: (pane) => restartTerminalPane(pane),
+    },
+    setContextMenu,
+    tray: {
+      activeMode: utilityTrayMode, activePaneState: activeTerminalPane?.state ?? null,
+      activeSurface: agentSurfaceMode === "terminal",
+      closePane: () => activeTerminalPane ? closeTerminalPane(activeTerminalPane.id) : undefined,
+      createShell: () => createTerminalPane(defaultTerminalLaunchProfile()),
+      hasActivePane: Boolean(activeTerminalPane), hasWorkspace: Boolean(workspacePath),
+      hide: () => setAgentSurfaceMode("chat"),
+      killPane: () => activeTerminalPane ? terminateTerminalPane(activeTerminalPane) : undefined,
+      launchProfileChanging: profiles.changing,
+      restartPane: () => activeTerminalPane ? restartTerminalPane(activeTerminalPane) : undefined,
+      show: (nextMode) => { setUtilityTrayMode(nextMode); setAgentSurfaceMode("terminal"); },
     },
   });
-  const composerContextMenuItems = (): ContextMenuItem[] => buildComposerContextMenuItems(composerMenuInput());
-  const composerAddMenuItems = (): ContextMenuItem[] => buildComposerAddMenuItems(composerMenuInput());
-
-  const openComposerAddMenu = (event: ReactMouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    event.currentTarget.closest(".agent-composer__bar")
-      ?.querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")
-      .forEach((menu) => menu.removeAttribute("open"));
-    const items = composerAddMenuItems();
-    const rect = event.currentTarget.getBoundingClientRect();
-    setContextMenu({ x: rect.left, y: rect.top - (items.length * 28 + 20), items });
-  };
+  const terminalPaneContextMenuItems = appMenuAssembly.terminalPaneContextMenuItems;
+  const utilityTrayTabContextMenuItems = appMenuAssembly.utilityTrayTabContextMenuItems;
+  const browserContextMenuItems = appMenuAssembly.browserContextMenuItems;
+  const composerContextMenuItems = appMenuAssembly.composerContextMenuItems;
+  const openComposerAddMenu = appMenuAssembly.openComposerAddMenu;
 
   const activeTerminalPaneCommandIndex = activeTerminalPane ? terminalPanes.findIndex((pane) => pane.id === activeTerminalPane.id) : -1;
   const activeTerminalPaneLabelForCommands = activeTerminalPane

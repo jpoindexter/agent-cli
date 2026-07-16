@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const browserComposerContextMenu = readFileSync(new URL("./browserComposerContextMenu.ts", import.meta.url), "utf8");
 const editorContextMenus = readFileSync(new URL("./editorContextMenus.ts", import.meta.url), "utf8");
@@ -15,7 +16,7 @@ const workspaceContextMenus = readFileSync(new URL("./workspaceContextMenus.ts",
 
 describe("production context-menu coverage", () => {
   it("registers unique commands for every promised surface", () => {
-    const menuSources = `${app}\n${browserComposerContextMenu}\n${editorContextMenus}\n${projectSessionContextMenu}\n${terminalContextMenu}\n${workspaceContextMenus}`;
+    const menuSources = `${app}\n${appMenuAssembly}\n${browserComposerContextMenu}\n${editorContextMenus}\n${projectSessionContextMenu}\n${terminalContextMenu}\n${workspaceContextMenus}`;
     const ids = Array.from(menuSources.matchAll(/(?:menuItem|sessionItem|terminalItem)\("([^"]+)"/g), (match) => match[1]);
     expect(new Set(ids).size).toBe(ids.length);
     for (const prefix of ["workspace.", "project.", "session.", "file.", "tab.", "editor.", "git.", "diff.", "terminal.", "pane.", "utility.", "browser.", "composer."]) {
@@ -37,10 +38,10 @@ describe("production context-menu coverage", () => {
       "terminalPaneContextMenuItems(pane)",
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
-      "composerAddMenuItems()",
     ]) {
       expect(app).toContain(marker);
     }
+    expect(appMenuAssembly).toContain("buildComposerAddMenuItems(composerMenuInput(options))");
     expect(projectThreadsDrawer).toContain("props.onProjectContextMenu(event, project)");
     expect(projectThreadsDrawer).toContain("onContextMenu(event, path, session)");
   });
@@ -49,7 +50,7 @@ describe("production context-menu coverage", () => {
     expect(agentComposerSurface).toContain('aria-label="Add context or action"');
     expect(agentComposerSurface).toContain("onClick={props.onOpenAddMenu}");
     expect(app).toContain("onOpenAddMenu={openComposerAddMenu}");
-    expect(app).toContain('querySelectorAll<HTMLDetailsElement>("details.agent-composer__menu[open]")');
+    expect(appMenuAssembly).toContain('querySelectorAll("details.agent-composer__menu[open]")');
     expect(browserComposerContextMenu).toContain('menuItem("composer.add.files", "Files and folders"');
     expect(browserComposerContextMenu).toContain('menuItem("composer.add.parallel", "Parallel child chats"');
   });
