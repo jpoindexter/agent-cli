@@ -13,14 +13,14 @@ never close a card without executing its real Done criterion.
 
 ## Current State
 
-- Branch: `main`, clean. Pushed checkpoint: `124f95d refactor: consolidate terminal surface controller`.
+- Branch: `main`, clean. Pushed checkpoint: `942ef7d refactor: extract composer history navigation`.
 - All gates green at `124f95d`: build=0, module-size ratchet=0, chrome-contract=0,
-  **208 test files / 660 tests**, `git diff --check`=0.
+  **212 test files / 672 tests**, `git diff --check`=0.
 - Module baseline:
 
 ```json
 {
-  "app/src/App.tsx": { "lines": 2452, "longFunctions": 1, "maxFunctionLines": 2213 }
+  "app/src/App.tsx": { "lines": 2369, "longFunctions": 1, "maxFunctionLines": 2144 }
 }
 ```
 
@@ -30,7 +30,10 @@ WorkspaceSideRail, appMenuAssembly, commandPaletteAssembly, settingsConnectionAc
 editorFileUtilityActions, projectSessionMetadataActions, editorReviewNavigation,
 editorSurfaceActions (consolidation), agentHookIntegration, AgentConversationPanel,
 terminalClipboardActions, useContextMenuHost (first state-owning hook),
-terminalSurfaceController (consolidation of pane+process+clipboard).
+terminalSurfaceController (consolidation of pane+process+clipboard),
+workspaceOpenSurface (target+lifecycle+actions with owned Tauri adapters),
+chatRunControls, composerSurfaceController (app-command+submit+orchestration+child actions),
+composerHistoryNavigation. Twenty slices total.
 
 ## Decisions carried forward
 
@@ -47,11 +50,9 @@ terminalSurfaceController (consolidation of pane+process+clipboard).
 ## Next exact work (MODULARITY-300-200-50)
 
 Cheap adapter extractions are exhausted. Remaining ~2150 lines in `App()` are:
-1. **Workspace-open/persistence consolidation** — `workspaceOpenTargetController` +
-   `workspaceOpenLifecycleController` + `workspaceOpenActions` wirings (~700-800 region)
-   into `workspaceSurfaceController.ts`, same pattern as terminalSurfaceController.
-2. **Composer runtime consolidation** — `runComposerAppCommand`, `submitComposerDraft`,
-   `logComposerHarnessEvent`, composer attachment actions into `composerSurfaceController.ts`.
+1. DONE: workspace-open consolidation (`workspaceOpenSurface.ts`).
+2. DONE: composer runtime consolidation (`composerSurfaceController.ts`);
+   `logComposerHarnessEvent` and attachment actions still in App.
 3. **Render splits** — SettingsModal block (~90 lines) behind grouped props; overlays cluster
    (TranscriptsModal/AppRuntimeDialogs/SearchCommandDialog/QuickOpenDialog/DraftNavigationDialog/StatusBar)
    as `AppOverlays.tsx` (export the six Props types first); `<main>` docks + editor section.
