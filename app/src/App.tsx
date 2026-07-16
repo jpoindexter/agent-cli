@@ -98,7 +98,7 @@ import {
 import type { AppActionAuditEvent, AppActionDescriptor } from "./appActions";
 import {
   buildAgentSessionHandleDescriptor,
-  readTailFromSnapshot,
+  createActiveAgentSessionHandle,
 } from "./agentSessionHandle";
 import type { AgentApprovalMode, AgentSessionHandle, AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import { executeAgentPaneInterrupt } from "./agentPaneInterrupt";
@@ -1804,39 +1804,24 @@ function App() {
   };
 
   const activeAgentSessionHandle: AgentSessionHandle | null = activeAgentSessionDescriptor
-    ? {
-        ...activeAgentSessionDescriptor,
-        send: async (text: string) => {
-          if (activeTerminalPaneIdRef.current !== activeAgentSessionDescriptor.paneId) {
-            await focusTerminalPane(activeAgentSessionDescriptor.paneId);
-          }
-          await invoke("paste", { text });
-          await invoke("send_key", { code: "Enter", text: null, shift: false, alt: false, ctrl: false, sup: false });
-        },
-        interrupt: async () => {
-          if (activeTerminalPaneIdRef.current !== activeAgentSessionDescriptor.paneId) {
-            await focusTerminalPane(activeAgentSessionDescriptor.paneId);
-          }
-          await invoke("send_key", { code: "KeyC", text: null, shift: false, alt: false, ctrl: true, sup: false });
-        },
-        readTail: async (lines: number) =>
-          readTailFromSnapshot(
-            terminalSnapshotsRef.current[activeAgentSessionDescriptor.paneId] ??
-              (activeTerminalPaneIdRef.current === activeAgentSessionDescriptor.paneId ? latest.current : null),
-            lines,
-          ),
-        close: async () => {
-          const closed = await closeTerminalPane(activeAgentSessionDescriptor.paneId);
-          if (closed) {
-            recordAgentActivity(activeAgentSessionDescriptor, {
-              kind: "process",
-              label: "Closed pane",
-              detail: activeAgentSessionDescriptor.label,
-              status: "exited",
-            });
-          }
-        },
-      }
+    ? createActiveAgentSessionHandle({
+        activePaneId: () => activeTerminalPaneIdRef.current,
+        closePane: closeTerminalPane,
+        descriptor: activeAgentSessionDescriptor,
+        focusPane: focusTerminalPane,
+        recordClosed: (descriptor) => recordAgentActivity(descriptor, {
+          kind: "process", label: "Closed pane", detail: descriptor.label, status: "exited",
+        }),
+        sendEnter: () => invoke("send_key", {
+          code: "Enter", text: null, shift: false, alt: false, ctrl: false, sup: false,
+        }),
+        sendInterrupt: () => invoke("send_key", {
+          code: "KeyC", text: null, shift: false, alt: false, ctrl: true, sup: false,
+        }),
+        sendText: (text) => invoke("paste", { text }),
+        snapshot: (paneId) => terminalSnapshotsRef.current[paneId] ??
+          (activeTerminalPaneIdRef.current === paneId ? latest.current : null),
+      })
     : null;
 
   const renameTerminalPane = async (pane: ManagedTerminalPane) => {

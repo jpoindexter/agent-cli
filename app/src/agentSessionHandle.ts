@@ -39,6 +39,18 @@ export type AgentSessionHandle = AgentSessionHandleDescriptor & {
   close(): Promise<void>;
 };
 
+type ActiveAgentSessionHandleWorkflow = {
+  activePaneId: () => number | null;
+  closePane: (paneId: number) => Promise<boolean>;
+  descriptor: AgentSessionHandleDescriptor;
+  focusPane: (paneId: number) => Promise<unknown>;
+  recordClosed: (descriptor: AgentSessionHandleDescriptor) => void;
+  sendEnter: () => Promise<unknown>;
+  sendInterrupt: () => Promise<unknown>;
+  sendText: (text: string) => Promise<unknown>;
+  snapshot: (paneId: number) => AgentSessionSnapshot | null | undefined;
+};
+
 export const agentSessionHandleId = (paneId: number) => `pane:${paneId}`;
 
 export const processStateFromTerminalPane = (state: TerminalPaneState): AgentSessionProcessState => {
@@ -108,3 +120,33 @@ export const readTailFromSnapshot = (snapshot: AgentSessionSnapshot | null | und
   }
   return rows.join("\n").replace(/\n+$/, "");
 };
+
+const focusDescriptorPane = async (workflow: ActiveAgentSessionHandleWorkflow) => {
+  if (workflow.activePaneId() !== workflow.descriptor.paneId) {
+    await workflow.focusPane(workflow.descriptor.paneId);
+  }
+};
+
+export const createActiveAgentSessionHandle = (
+  workflow: ActiveAgentSessionHandleWorkflow,
+): AgentSessionHandle => ({
+  ...workflow.descriptor,
+  send: async (text) => {
+    await focusDescriptorPane(workflow);
+    await workflow.sendText(text);
+    await workflow.sendEnter();
+  },
+  interrupt: async () => {
+    await focusDescriptorPane(workflow);
+    await workflow.sendInterrupt();
+  },
+  readTail: async (lines) => readTailFromSnapshot(
+    workflow.snapshot(workflow.descriptor.paneId),
+    lines,
+  ),
+  close: async () => {
+    if (await workflow.closePane(workflow.descriptor.paneId)) {
+      workflow.recordClosed(workflow.descriptor);
+    }
+  },
+});
