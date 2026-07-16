@@ -75,6 +75,7 @@ import { composerMentionQuery as composerMentionQueryFrom } from "./agentCompose
 import { toggleExpandedProject, visibleProjectsFrom } from "./projectRailView";
 import { fileTreeNodeFromPath, pathBasename } from "./fileTreeTypes";
 import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
+import { createChatSearchNavigation } from "./chatSearchNavigation";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -770,17 +771,14 @@ function App() {
   });
   const switchProjectSession = projectSessionNavigationActions.switchSession;
 
-  const openChatSearchResult = async (result: ChatSearchViewResult) => {
-    const session = projectSessionsRef.current[result.projectPath]?.find((item) => item.id === result.sessionId);
-    if (!session) {
-      setChatSearchError("This chat's navigation metadata is unavailable. Open its project and try again.");
-      return;
-    }
-    if (session.archived) setShowArchivedSessions(true);
-    await switchProjectSession(result.projectPath, result.sessionId);
-    setFocusedChatMessageId(result.messageId ?? null);
-    setSideDrawerMode("projects");
-  };
+  const openChatSearchResult = createChatSearchNavigation({
+    focusMessage: setFocusedChatMessageId,
+    getSessions: () => projectSessionsRef.current,
+    setError: setChatSearchError,
+    showArchived: () => setShowArchivedSessions(true),
+    showProjectsDrawer: () => setSideDrawerMode("projects"),
+    switchSession: switchProjectSession,
+  });
 
   const createProjectSession = projectSessionNavigationActions.createSession;
   const renameProjectSession = projectSessionNavigationActions.renameSession;

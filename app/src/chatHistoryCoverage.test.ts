@@ -19,7 +19,9 @@ describe("chat history discovery production wiring", () => {
     expect(app).toContain("useChatSearch({ open: commandPalette.open");
     expect(chatSearch).toContain("searchDurableChatMessages(query, false, 80)");
     expect(app).toContain("openChatSearchResult(result)");
-    expect(app).toContain('setFocusedChatMessageId(result.messageId ?? null)');
+    const navigation = readFileSync(new URL("./chatSearchNavigation.ts", import.meta.url), "utf8");
+    expect(app).toContain("focusMessage: setFocusedChatMessageId");
+    expect(navigation).toContain("options.focusMessage(result.messageId ?? null)");
     expect(thread).toContain('data-message-id={message.id}');
     expect(thread).toContain("focusMessageId={focusMessageId}");
     expect(thread).toContain("focused={props.focusMessageId === message.id}");
