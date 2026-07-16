@@ -5,6 +5,7 @@ const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
 const sideRailHost = readFileSync(new URL("./workspaceSideRailHost.ts", import.meta.url), "utf8");
 const editorSectionHost = readFileSync(new URL("./workbenchEditorSectionHost.ts", import.meta.url), "utf8");
+const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
 const agentComposerSurface = readFileSync(new URL("./AgentComposerSurface.tsx", import.meta.url), "utf8");
 const browserComposerContextMenu = readFileSync(new URL("./browserComposerContextMenu.ts", import.meta.url), "utf8");
 const editorContextMenus = readFileSync(new URL("./editorContextMenus.ts", import.meta.url), "utf8");
@@ -40,7 +41,7 @@ describe("production context-menu coverage", () => {
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
     ]) {
-      expect(`${app}\n${sideRailHost}\n${editorSectionHost}`).toContain(marker);
+      expect(`${app}\n${sideRailHost}\n${editorSectionHost}\n${panelHost}`).toContain(marker);
     }
     expect(appMenuAssembly).toContain("buildComposerAddMenuItems(composerMenuInput(options))");
     const contextMenuHost = readFileSync(new URL("./useContextMenuHost.tsx", import.meta.url), "utf8");
@@ -52,7 +53,7 @@ describe("production context-menu coverage", () => {
   it("opens a Keelhouse add menu from the composer plus control", () => {
     expect(agentComposerSurface).toContain('aria-label="Add context or action"');
     expect(agentComposerSurface).toContain("onClick={props.onOpenAddMenu}");
-    expect(app).toContain("onOpenAddMenu: appMenuAssembly.openComposerAddMenu");
+    expect(panelHost).toContain("onOpenAddMenu: input.appMenuAssembly.openComposerAddMenu");
     expect(appMenuAssembly).toContain('querySelectorAll("details.agent-composer__menu[open]")');
     expect(browserComposerContextMenu).toContain('menuItem("composer.add.files", "Files and folders"');
     expect(browserComposerContextMenu).toContain('menuItem("composer.add.parallel", "Parallel child chats"');

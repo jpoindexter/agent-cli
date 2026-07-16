@@ -3,9 +3,11 @@ import { describe, expect, it } from "vitest";
 import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
 const chatPalette = readFileSync(new URL("./commandPaletteChats.ts", import.meta.url), "utf8");
 const chatSearch = readFileSync(new URL("./useChatSearch.ts", import.meta.url), "utf8");
-const productionWiring = `${app}\n${chatPalette}\n${chatSearch}`;
+const contextMenuAssembly = readFileSync(new URL("./appContextMenuAssembly.ts", import.meta.url), "utf8");
+const productionWiring = `${app}\n${chatPalette}\n${chatSearch}\n${contextMenuAssembly}`;
 const thread = [
   readFileSync(new URL("./ChatThreadSurface.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("./ChatTurn.tsx", import.meta.url), "utf8"),
@@ -30,8 +32,8 @@ describe("chat history discovery production wiring", () => {
   });
 
   it("exposes bookmark, pin, and archived-chat discovery controls", () => {
-    expect(app).toContain("onToggleBookmark: chatConversationActions.toggleBookmark");
-    expect(app).toContain("pinSession(projectPath, session, !session.pinnedAt)");
+    expect(panelHost).toContain("onToggleBookmark: input.chatConversationActions.toggleBookmark");
+    expect(contextMenuAssembly).toContain("pinSession(projectPath, session, !session.pinnedAt)");
     expect(productionWiring).toContain('session.archived ? " · Archived" : ""');
     expect(thread).toContain('aria-label={message.bookmarked ? "Remove bookmark" : "Bookmark message"}');
   });
