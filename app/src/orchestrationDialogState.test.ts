@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { emptyChatConversation } from "./chatConversationMutations";
-import { deriveOrchestrationDialogState } from "./orchestrationDialogState";
+import { deriveOrchestrationDialogState, orchestrationDialogPropsFrom } from "./orchestrationDialogState";
 import type { ProjectSession } from "./workspaceStateTypes";
 
 const session = (id: string, title: string): ProjectSession => ({
@@ -32,5 +32,42 @@ describe("deriveOrchestrationDialogState", () => {
     });
 
     expect(state).toEqual({ activeRunCount: 0, parentTitle: "Current chat" });
+  });
+});
+
+describe("orchestrationDialogPropsFrom", () => {
+  const base = () => ({
+    activeProvider: null as "codex" | null,
+    approvalMode: "ask" as const,
+    conversationProvider: "codex" as const,
+    derived: { activeRunCount: 1, parentTitle: "Parent" },
+    error: null as string | null,
+    launch: vi.fn(async () => {}),
+    launching: false,
+    open: true,
+    setError: vi.fn(),
+    setOpen: vi.fn(),
+    workspacePath: "/repo" as string | null,
+  });
+
+  it("falls back to the conversation provider and closes cleanly", () => {
+    const input = base();
+    const props = orchestrationDialogPropsFrom(input);
+
+    expect(props.provider).toBe("codex");
+    expect(props.projectPath).toBe("/repo");
+
+    props.onClose();
+    expect(input.setOpen).toHaveBeenCalledWith(false);
+    expect(input.setError).toHaveBeenCalledWith(null);
+  });
+
+  it("refuses to close while a launch is in flight", () => {
+    const input = base();
+    input.launching = true;
+    const props = orchestrationDialogPropsFrom(input);
+
+    props.onClose();
+    expect(input.setOpen).not.toHaveBeenCalled();
   });
 });

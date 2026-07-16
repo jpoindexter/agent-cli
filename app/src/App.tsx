@@ -62,7 +62,7 @@ import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createDevServerDetection } from "./devServerDetectionSurface";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
-import { deriveOrchestrationDialogState } from "./orchestrationDialogState";
+import { deriveOrchestrationDialogState, orchestrationDialogPropsFrom } from "./orchestrationDialogState";
 import { settingsAgentProfileOptions } from "./settingsModalData";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
@@ -2021,21 +2021,22 @@ function App() {
             switchLaunchProfile: profiles.switchLaunchProfile,
           },
         })}
-        orchestration={{
-          approvalMode: activeComposerHarness.approvalMode, error: orchestrationError,
-          ...deriveOrchestrationDialogState({
+        orchestration={orchestrationDialogPropsFrom({
+          activeProvider: activeComposerProvider,
+          approvalMode: activeComposerHarness.approvalMode,
+          conversationProvider: activeChatConversation.provider,
+          derived: deriveOrchestrationDialogState({
             activeSessionId, conversations: chatConversations,
             sessions: projectSessions, workspacePath,
           }),
-          launching: orchestrationLaunching, open: orchestrationOpen,
-          onClose: () => {
-            if (orchestrationLaunching) return;
-            setOrchestrationOpen(false);
-            setOrchestrationError(null);
-          },
-          onLaunch: (children) => void launchOrchestration(children), projectPath: workspacePath ?? "",
-          provider: activeComposerProvider ?? activeChatConversation.provider,
-        }}
+          error: orchestrationError,
+          launch: launchOrchestration,
+          launching: orchestrationLaunching,
+          open: orchestrationOpen,
+          setError: setOrchestrationError,
+          setOpen: setOrchestrationOpen,
+          workspacePath,
+        })}
       />
       {contextMenuHost.element}
       {commandPalette.open ? (
