@@ -237,3 +237,15 @@ export const settingsRowsForCategory = (
   rows: SettingsRowDef[],
   categoryId: SettingsCategoryId,
 ): SettingsRowDef[] => rows.filter((row) => row.categoryId === categoryId);
+
+const CHAT_PROVIDER_PROFILE_IDS = new Set(["codex", "claude"]);
+
+export const settingsAgentProfileOptions = (
+  profiles: { id: string; label: string }[],
+): { disabled: boolean; id: string; label: string }[] => profiles.map((profile) => ({
+  disabled: !CHAT_PROVIDER_PROFILE_IDS.has(profile.id),
+  id: profile.id,
+  label: CHAT_PROVIDER_PROFILE_IDS.has(profile.id)
+    ? profile.label
+    : `${profile.label} · ${profile.id === "shell" ? "not a chat provider" : "raw terminal only"}`,
+}));

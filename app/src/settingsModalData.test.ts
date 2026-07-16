@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   filterSettingsRows,
+  settingsAgentProfileOptions,
   SETTINGS_CATEGORIES,
   SETTINGS_CATEGORY_GROUPS,
   SETTINGS_ROWS,
@@ -33,5 +34,23 @@ describe("settings modal data", () => {
     expect(byLabel.map((row) => row.id)).toEqual(["agents.permission"]);
     expect(filterSettingsRows(SETTINGS_ROWS, "oauth").map((row) => row.id)).toEqual(["agents.connections", "connections.manage"]);
     expect(filterSettingsRows(SETTINGS_ROWS, "zzz-none")).toEqual([]);
+  });
+});
+
+describe("settingsAgentProfileOptions", () => {
+  it("keeps chat providers selectable and labels the rest as terminal-only", () => {
+    const options = settingsAgentProfileOptions([
+      { id: "codex", label: "Codex" },
+      { id: "claude", label: "Claude" },
+      { id: "shell", label: "Shell" },
+      { id: "gemini", label: "Gemini" },
+    ]);
+
+    expect(options).toEqual([
+      { disabled: false, id: "codex", label: "Codex" },
+      { disabled: false, id: "claude", label: "Claude" },
+      { disabled: true, id: "shell", label: "Shell · not a chat provider" },
+      { disabled: true, id: "gemini", label: "Gemini · raw terminal only" },
+    ]);
   });
 });

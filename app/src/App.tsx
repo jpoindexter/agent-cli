@@ -64,6 +64,7 @@ import { createRenderPerfExport } from "./renderPerfExport";
 import { createDevServerDetection } from "./devServerDetectionSurface";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
 import { deriveOrchestrationDialogState } from "./orchestrationDialogState";
+import { settingsAgentProfileOptions } from "./settingsModalData";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2047,13 +2048,7 @@ function App() {
           onOpenSourceControlLink={(url) => void openUrl(url).catch(() => {})}
           layout={renderedWorkbenchLayout}
           profileSetting={activeAgentProfileSetting}
-          profiles={LAUNCH_PROFILES.map((profile) => ({
-            id: profile.id,
-            label: profile.id === "codex" || profile.id === "claude"
-              ? profile.label
-              : `${profile.label} · ${profile.id === "shell" ? "not a chat provider" : "raw terminal only"}`,
-            disabled: profile.id !== "codex" && profile.id !== "claude",
-          }))}
+          profiles={settingsAgentProfileOptions(LAUNCH_PROFILES)}
           sessionTitle={activeSessionTitle}
           trayMode={toolTrayMode}
           workspaceName={activeWorkspaceName}
