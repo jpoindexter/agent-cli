@@ -67,7 +67,6 @@ import { settingsAgentProfileOptions } from "./settingsModalData";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
 import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
-import { canUseShellProfile, findShellProfile } from "./shellProfileNotice";
 import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom, browserToolsDrawerPropsFrom } from "./browserPreviewHost";
 import { quickSettingsDrawerPropsFrom } from "./quickSettingsHost";
@@ -85,6 +84,7 @@ import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
 import { sourceRepoStatusTitleFrom, statusBarRepoPropsFrom } from "./statusBarHost";
 import { nextToolsLayout } from "./appTitlebarHost";
+import { appNoticesPropsFrom } from "./appNoticesHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
@@ -2010,17 +2010,17 @@ function App() {
         { projectId: workspacePath, projectSessionId: activeSessionId },
       )} />
       <AppRuntimeDialogs
-        notices={{
-          actionNotice,
-          canUseShellProfile: canUseShellProfile(profiles.changing, profiles.launchProfile.id),
-          crashNotice, launchError,
-          onDismissAction: () => setActionNotice(null), onDismissCrash: () => setCrashNotice(null),
-          onOpenFolder: () => void pickWorkspace(),
-          onUseShellProfile: () => {
-            const shell = findShellProfile(LAUNCH_PROFILES);
-            if (shell) void profiles.switchLaunchProfile(shell);
+        notices={appNoticesPropsFrom({
+          chrome: { actionNotice, crashNotice, setActionNotice, setCrashNotice },
+          launchError,
+          openFolder: () => pickWorkspace(),
+          profiles: {
+            changing: profiles.changing,
+            launchProfile: profiles.launchProfile,
+            profilesList: LAUNCH_PROFILES,
+            switchLaunchProfile: profiles.switchLaunchProfile,
           },
-        }}
+        })}
         orchestration={{
           approvalMode: activeComposerHarness.approvalMode, error: orchestrationError,
           ...deriveOrchestrationDialogState({
