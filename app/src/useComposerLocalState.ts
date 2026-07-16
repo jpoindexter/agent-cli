@@ -27,13 +27,22 @@ type ComposerSetters = {
 const storedHarness = (options: ComposerLocalOptions, key: string) =>
   options.getRecords()[key] ?? defaultComposerHarnessState(options.getDefaultProfileId());
 
+const sameHistory = (left: string[], right: string[]) =>
+  left === right || (left.length === right.length && left.every((entry, index) => entry === right[index]));
+
 const useActiveComposerSync = (
   options: ComposerLocalOptions,
   localRef: MutableRefObject<ComposerLocalState>,
   setters: ComposerSetters,
 ) => {
+  const syncedRef = useRef<ComposerLocalState>({ key: null, draft: "", history: [] });
   useLayoutEffect(() => {
     const { activeHarness, activeKey } = options;
+    const synced = syncedRef.current;
+    if (synced.key === activeKey
+      && synced.draft === activeHarness.draft
+      && sameHistory(synced.history, activeHarness.history)) return;
+    syncedRef.current = { key: activeKey, draft: activeHarness.draft, history: activeHarness.history };
     localRef.current = { key: activeKey, draft: activeHarness.draft, history: activeHarness.history };
     setters.setDraft(activeHarness.draft);
     setters.setHistory(activeHarness.history);
