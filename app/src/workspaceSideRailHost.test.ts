@@ -37,6 +37,7 @@ const createOptions = () =>
     projectSessionNavigationActions: { switchSession: vi.fn() },
     projectSessionStatus: () => "running",
     projectSwitcherOpen: false,
+    projectEntryOpen: { status: { kind: "error", path: "/repo", message: "Failed" } },
     railBodyRef: ref(null),
     railHeight: 100,
     requestOpenWorkspace: vi.fn(),
@@ -59,12 +60,14 @@ const createOptions = () =>
 
 describe("workspaceSideRailPropsFrom", () => {
   it("assembles the rail drawer props from grouped bundles", () => {
-    const props = workspaceSideRailPropsFrom(createOptions());
+    const options = createOptions();
+    const props = workspaceSideRailPropsFrom(options);
 
     expect(props.activeTitle).toBe("Files");
     expect(props.collapsed).toBe(false);
     expect(props.mode).toBe("files");
     expect(props.projects.activeProjectPath).toBe("/repo");
+    expect(props.projects.entryStatus).toEqual(options.projectEntryOpen.status);
     expect(props.projects.activeSessionId).toBe("chat");
     expect(props.git.hasWorkspace).toBe(true);
     expect(props.files.workspaceName).toBe("repo");
@@ -82,6 +85,8 @@ describe("workspaceSideRailPropsFrom", () => {
     expect(options.shellLayout.setSideDrawerCollapsed).toHaveBeenCalledWith(true);
     void props.git.onRefresh();
     expect(options.gitStatusHook.refresh).toHaveBeenCalled();
+    props.projects.onRetryProjectOpen();
+    expect(options.requestOpenWorkspace).toHaveBeenCalledWith("/repo");
   });
 
   it("closes a narrow drawer only after a task is actually created", async () => {

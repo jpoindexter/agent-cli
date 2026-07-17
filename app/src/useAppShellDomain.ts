@@ -10,6 +10,7 @@ import { useGitStatus } from "./useGitStatus";
 import { useMcpOAuthStatus } from "./useMcpOAuthStatus";
 import { usePaneTranscriptController } from "./usePaneTranscriptController";
 import { useSettingsShellState } from "./useSettingsShellState";
+import { useProjectEntryOpenState } from "./useProjectEntryOpenState";
 import type { WorktreeRecord } from "./worktrees";
 
 type AppShellDomainOptions = {
@@ -32,6 +33,7 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
     openSettings, setSettingsOpen, settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout,
   } = useSettingsShellState(workspacePath);
   const chrome = useAppChromeState();
+  const projectEntryOpen = useProjectEntryOpenState();
   const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const mcpOAuth = useMcpOAuthStatus();
   const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
@@ -59,7 +61,7 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
     orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
     setCommandPaletteSources, setComposerError, setComposerNotice, setComposerSending,
     setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
-    openSettings, setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
+    openSettings, projectEntryOpen, setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
     settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout, worktrees,
   };
 };

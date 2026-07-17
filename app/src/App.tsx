@@ -230,7 +230,7 @@ function App() {
     aiConnectionSettings, backgroundExits, chatSearch, chrome, commandPaletteSources,
     composerError, composerNotice, composerSending, drawerSearchQuery, focusedChatMessageId,
     gitStatusHook, keybindingOverrides, mcpOAuth, orchestrationError, orchestrationLaunching,
-    openSettings, orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
+    openSettings, orchestrationOpen, paneTranscripts, projectEntryOpen, railHeight, setAiConnectionSettings, setBackgroundExits,
     setCommandPaletteSources, setComposerError, setComposerNotice, setComposerSending,
     setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
     setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
@@ -404,7 +404,7 @@ function App() {
       }),
       restoreBrowser: browser.restoreScopedUrl, restoreEditor: restoreSessionEditorSnapshot,
       sessionStatus: terminal.statusForPanes, setFocusedPane: terminal.setFocusedPane,
-      setLaunchError, setManagedPanes: terminal.setManagedPanes,
+      setLaunchError: (message) => { setLaunchError(message); projectEntryOpen.reportError(message); }, setManagedPanes: terminal.setManagedPanes,
     },
     target: workspaceOpenTargetFromHook(terminal, {
       activeSessions: persistence.activeSessionByProjectRef,
@@ -414,13 +414,13 @@ function App() {
       restoredActiveFileWorkspace: editorSession.restoredActiveFileWorkspaceRef,
       savedLabelForSlot: persistence.savedPaneLabel,
       scheduleResize: () => setTimeout(sendTerminalResize, 0), sessions: persistence.projectSessionsRef,
-      setLaunchError,
+      setLaunchError: (message) => { setLaunchError(message); projectEntryOpen.reportError(message); },
       setWorkspacePath, workspacePath: workspacePathRef,
     }),
   });
 
-  const requestOpenWorkspace = (path: string) => workspaceOpenActions.requestOpenWorkspace(
-    path, () => editorNavigation.requestNavigation({ kind: "workspace", path }),
+  const requestOpenWorkspace = (path: string) => projectEntryOpen.track(path, () =>
+    workspaceOpenActions.requestOpenWorkspace(path, () => editorNavigation.requestNavigation({ kind: "workspace", path })),
   );
 
   const projectCloseController = createProjectCloseController(projectCloseFromHook(terminal, {
@@ -1279,7 +1279,7 @@ function App() {
           diffReviewHook, drawerActiveTitle, editorFileWorkflow, editorSession, editorWorkspace,
           gitStatusHook, openUrl, persistence, pickWorkspace, profiles, projectEntryActions, projectRailContextMenuItems,
           projectRailStatus, projectSessionContextMenuItems, projectSessionNavigationActions,
-          projectSessionStatus, projectSwitcherOpen, railBodyRef, railHeight, requestOpenWorkspace,
+          projectEntryOpen, projectSessionStatus, projectSwitcherOpen, railBodyRef, railHeight, requestOpenWorkspace,
           setProjectSwitcherOpen, setSettingsOpen,
           shellLayout, treeRef, utilityTrayControls, visibleOpenProjects, workspaceContextMenuItems,
           workspaceFileActions, workspacePath, workspaceTree,

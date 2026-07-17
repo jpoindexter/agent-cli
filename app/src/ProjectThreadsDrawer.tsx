@@ -7,12 +7,14 @@ import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { activeSessionsForRail, archivedSessionCount, sessionRecencyLabel } from "./workspaceState";
 import type { OpenProject, ProjectRailStatus, ProjectSession, ProjectSessionsByProject } from "./workspaceState";
+import type { ProjectEntryOpenStatus } from "./useProjectEntryOpenState";
 
 export type ProjectThreadsDrawerProps = {
   activeProjectPath: string | null;
   activeSessionId: string | null;
   backgroundExits: BackgroundExit[];
   expandedProjects: Record<string, boolean>;
+  entryStatus: ProjectEntryOpenStatus;
   projects: OpenProject[];
   recentProjects: string[];
   newTaskShortcut: string;
@@ -22,6 +24,7 @@ export type ProjectThreadsDrawerProps = {
   projectStatus: (project: OpenProject) => ProjectRailStatus;
   sessionStatus: (projectPath: string, session: ProjectSession) => ProjectRailStatus;
   onProjectContextMenu: (event: MouseEvent<HTMLButtonElement>, project: OpenProject) => void;
+  onRetryProjectOpen: () => void;
   onNewProject: () => void;
   onNewTask: () => void;
   onOpenProject: () => void;
@@ -109,6 +112,14 @@ function EmptyProjectEntry({ firstUse, onNewProject, onOpenProject }: {
   </section>;
 }
 
+function ProjectEntryFeedback({ onRetry, status }: {
+  onRetry: () => void; status: Exclude<ProjectEntryOpenStatus, { kind: "idle" }>;
+}) {
+  const name = basename(status.path);
+  if (status.kind === "loading") return <div className="project-entry-feedback" role="status" aria-busy="true" aria-live="polite"><AppIcon name="loading" /><span>Opening {name}…</span></div>;
+  return <section className="project-entry-feedback project-entry-feedback--error" role="alert"><AppIcon name="error" /><div><h3>Couldn’t open {name}</h3><p>{status.message}</p></div><button type="button" aria-label="Retry opening project" onClick={onRetry}><AppIcon name="reload" /><span>Retry</span></button></section>;
+}
+
 export function ProjectThreadsDrawer(props: ProjectThreadsDrawerProps) {
   const activeName = props.activeProjectPath ? basename(props.activeProjectPath) : "Choose project";
   return (
@@ -120,7 +131,8 @@ export function ProjectThreadsDrawer(props: ProjectThreadsDrawerProps) {
         </div>
         <button className="project-new-task" type="button" aria-label={`${PROJECT_ENTRY_LABELS.newTask} (${props.newTaskShortcut})`} title={`${PROJECT_ENTRY_LABELS.newTask} (${props.newTaskShortcut})`} onClick={props.onNewTask}><AppIcon name="newChat" /><span>{PROJECT_ENTRY_LABELS.newTask}</span><kbd>{props.newTaskShortcut}</kbd></button>
       </div>
-      {props.projects.length === 0 ? <EmptyProjectEntry firstUse={props.recentProjects.length === 0} onNewProject={props.onNewProject} onOpenProject={props.onOpenProject} /> : (
+      {props.entryStatus.kind !== "idle" ? <ProjectEntryFeedback status={props.entryStatus} onRetry={props.onRetryProjectOpen} /> : null}
+      {props.projects.length === 0 ? (props.entryStatus.kind === "idle" ? <EmptyProjectEntry firstUse={props.recentProjects.length === 0} onNewProject={props.onNewProject} onOpenProject={props.onOpenProject} /> : null) : (
         <nav className="project-rail" aria-label="Open projects">
           <div className="project-rail__heading">Today</div>
           {props.projects.map((project) => <ProjectGroup key={project.path} project={project} props={props} />)}

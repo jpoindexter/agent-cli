@@ -113,6 +113,24 @@
 .project-entry-empty button:hover { background: var(--color-surface-hover); }
 .project-entry-empty__primary { background: var(--color-accent-muted) !important; }
 
+.project-entry-feedback {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  padding: 10px;
+  font-size: 11px;
+}
+
+.project-entry-feedback--error { align-items: flex-start; border-color: var(--color-danger); }
+.project-entry-feedback h3, .project-entry-feedback p { margin: 0; }
+.project-entry-feedback p { margin-top: 3px; color: var(--text-muted); }
+.project-entry-feedback button { margin-left: auto; min-height: 32px; border: 1px solid var(--control-border); border-radius: 6px; background: transparent; color: inherit; }
+
 .project-switcher {
   position: absolute;
   z-index: 45;

@@ -41,6 +41,7 @@ type WorkspaceSideRailInput = {
     newProject: () => Promise<unknown>; newTask: () => Promise<unknown>;
     openProject: () => Promise<unknown>;
   };
+  projectEntryOpen: { status: WorkspaceSideRailProps["projects"]["entryStatus"] };
   projectRailContextMenuItems: (project: OpenProject) => ContextMenuItem[];
   projectRailStatus: WorkspaceSideRailProps["projects"]["projectStatus"];
   projectSessionContextMenuItems: (path: string, session: ProjectSession) => ContextMenuItem[];
@@ -69,6 +70,7 @@ const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps
   return {
     activeProjectPath: input.workspacePath, activeSessionId: input.activeChat.activeSessionId, backgroundExits: input.backgroundExits,
     expandedProjects: input.persistence.expandedSessionProjects, projects: input.visibleOpenProjects,
+    entryStatus: input.projectEntryOpen.status,
     newTaskShortcut: shortcutKeys("task.new"), recentProjects: input.persistence.recentProjects,
     sessionsByProject: input.persistence.projectSessions, showArchived: input.persistence.showArchivedSessions,
     switcherOpen: input.projectSwitcherOpen,
@@ -77,6 +79,7 @@ const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps
     onNewTask: () => { void input.projectEntryActions.newTask().then((created) => { if (created) closeNarrowDrawer(); }); },
     onOpenProject: () => { void input.projectEntryActions.openProject(); },
     onProjectContextMenu: (event, project) => input.contextMenuHost.openContextMenu(event, input.projectRailContextMenuItems(project)),
+    onRetryProjectOpen: () => { const status = input.projectEntryOpen.status; if (status.kind !== "idle") void input.requestOpenWorkspace(status.path); },
     onSelectProject: (path) => { void input.requestOpenWorkspace(path); closeNarrowDrawer(); },
     onSelectSession: (path, sessionId) => { void input.projectSessionNavigationActions.switchSession(path, sessionId); closeNarrowDrawer(); },
     onSessionContextMenu: (event, path, session) => input.contextMenuHost.openContextMenu(event, input.projectSessionContextMenuItems(path, session)),
