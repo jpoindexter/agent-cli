@@ -7,10 +7,11 @@ describe("project entry production contract", () => {
   it("routes existing project doors through the shared action owner", () => {
     const app = source("./App.tsx");
     const menuRuntime = source("./appEditorMenuRuntime.ts");
-    const wiring = `${app}\n${menuRuntime}\n${source("./appCommandPaletteHost.ts")}`;
+    const projectRuntime = source("./appProjectSessionRuntime.ts");
+    const wiring = `${app}\n${menuRuntime}\n${projectRuntime}\n${source("./appCommandPaletteHost.ts")}`;
 
-    expect(app).toContain('import { createProjectEntryActions } from "./projectEntryActions"');
-    expect(app).toContain("const projectEntryActions = createProjectEntryActions({");
+    expect(projectRuntime).toContain('import { createProjectEntryActions } from "./projectEntryActions"');
+    expect(projectRuntime).toContain("const projectEntryActions = createProjectEntryActions({");
     expect(menuRuntime).toContain("openWorkspace: input.projectEntry.openProject");
     expect(app).toContain("newTask: projectEntryActions.newTask");
     expect(wiring).toContain("onOpenWorkspace: () => void input.projectEntryActions.openProject()");

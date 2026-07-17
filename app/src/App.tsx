@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
-import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
+import { open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
 import type { TreeApi } from "react-arborist";
@@ -15,7 +15,6 @@ import { WorkbenchResizers } from "./WorkbenchResizers";
 import { drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
-import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useConversationRuntime } from "./useConversationRuntime";
 import { createComposerSettingsActions } from "./composerSettingsActions";
 import { selectionToText } from "./selection";
@@ -26,7 +25,6 @@ import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
 import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
-import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import { AgentConversationPanel } from "./AgentConversationPanel";
 import { agentConversationPanelPropsFrom } from "./agentConversationPanelHost";
 import { useContextMenuHost } from "./useContextMenuHost";
@@ -51,11 +49,7 @@ import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
 import { visibleProjectsFrom } from "./projectRailView";
-import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
-import { createChatSearchNavigation } from "./chatSearchNavigation";
 import { createComposerHarnessEventLog } from "./composerHarnessEvents";
-import { createWorkspacePicker } from "./workspacePicker";
-import { createPaneActivityLog } from "./paneActivityLog";
 import { createTerminalResize } from "./terminalResize";
 import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
@@ -99,6 +93,7 @@ import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
 import { useAppEditorSurfaceRuntime } from "./useAppEditorSurfaceRuntime";
 import { appEditorMenusFrom } from "./appEditorMenuRuntime";
 import { appWorkspaceProjectRuntimeFrom } from "./appWorkspaceProjectRuntime";
+import { appProjectSessionRuntimeFrom } from "./appProjectSessionRuntime";
 import { buildSettingsActions } from "./settingsActionsHost";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
@@ -113,7 +108,6 @@ import { createChatConversationActions } from "./chatConversationActions";
 import { useChatRunEvents } from "./useChatRunEvents";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
 import {
-  deleteDurableChatConversation,
   resetDurableChatStore,
   saveDurableChatConversation,
 } from "./chatStore";
@@ -125,13 +119,10 @@ import type { FileTreeNode } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
 import type { ContextMenuItem } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
-import { createProjectSessionNavigationActions } from "./projectSessionNavigationActions";
-import { createProjectEntryActions } from "./projectEntryActions";
 import { ProjectCreationDialog } from "./ProjectCreationDialog";
 import { projectCreationCommands } from "./projectCreationCommands";
 import { WorktreeLabelDialog } from "./WorktreeLabelDialog";
 import { useWorktreeLabelRequest } from "./useWorktreeLabelRequest";
-import { createProjectSessionDeletionController, projectSessionDeletionFromHook } from "./projectSessionDeletionController";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -310,108 +301,18 @@ function App() {
     workspacePathRef, workspaceTree,
   });
 
-  const projectSessionNavigationActions = createProjectSessionNavigationActions({
-    captureCurrentSession: captureCurrentSessionSnapshot,
-    defaultBrowserUrl: DEFAULT_BROWSER_PREVIEW_URL,
-    flushComposer: composerLocal.flush,
-    getPreviousStatus: terminal.activeSessionStatus,
-    getState: () => ({
-      activeSessions: persistence.activeSessionByProjectRef.current,
-      browserUrl: browser.urlRef.current,
-      browserUrlsByProject: browser.projectRecordsRef.current,
-      currentRoot: workspacePathRef.current,
-      sessions: persistence.projectSessionsRef.current,
-    }),
-    getTargetStatus: (projectPath, sessionId) =>
-      terminal.statusForPanes(terminal.panesForSession(projectPath, sessionId)),
-    now: Date.now,
-    openProject: async (projectPath, sameProject) => {
-      if (sameProject) {
-        await workspaceOpenActions.openWorkspaceDirect(
-          projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
-        );
-      } else {
-        await requestOpenWorkspace(projectPath);
-      }
-    },
-    persistBrowserUrl: browser.persistUrl,
-    persistSessions: persistence.persistProjectSessions,
-    promptTitle: (title) => window.prompt("Chat name", title),
-    setFocusedMessage: setFocusedChatMessageId,
-  });
-
-  const openChatSearchResult = createChatSearchNavigation({
-    focusMessage: setFocusedChatMessageId,
-    getSessions: () => persistence.projectSessionsRef.current,
-    setError: chatSearch.setError,
-    showArchived: () => persistence.setShowArchivedSessions(true),
-    showProjectsDrawer: () => shellLayout.setSideDrawerMode("projects"),
-    switchSession: projectSessionNavigationActions.switchSession,
-  });
-
-
-  const projectSessionDeletionController = createProjectSessionDeletionController(projectSessionDeletionFromHook(terminal, {
-    activeSessionId: activeChat.activeSessionId,
-    activeSessions: persistence.activeSessionByProjectRef, browserSessions: browser.sessionRecordsRef,
-    closePane: (paneId) => invoke("close_pane", { paneId }),
-    composerHarness: composerWorkspace.composerHarnessBySessionRef, confirmDelete: confirmDialog,
-    conversations: composerWorkspace.chatConversationsRef, deleteHistory: deleteDurableChatConversation,
-    persistBrowserSessions: async (records) => {
-      await storeRef.current?.set("browserPreviewBySession", records);
-    },
-    persistComposerHarness: composerWorkspace.persistComposerHarnessRecords, persistSessions: persistence.persistProjectSessions,
-    removePersistedRestore: persistence.removeSessionRestore,
-    reopenActiveWorkspace: (projectPath) => workspaceOpenActions.openWorkspaceDirect(
-      projectPath, profiles.launchProfileRef.current, { captureCurrentSession: false },
-    ),
-    sessions: persistence.projectSessionsRef, setBrowserSessions: browser.setSessionRecords,
-    setConversations: composerWorkspace.setChatConversations, setError: setLaunchError,
-    workspacePath: workspacePathRef,
-  }));
-
-  const paneActivityLog = createPaneActivityLog({
-    approvalMode: () => agentApprovalMode,
-    recordActivity: agentActivityHook.recordAgentActivity,
-  });
-
-  const finalizeCreatedTerminalPane = createTerminalPaneFinalize({
-    getProjectStatus: terminal.projectStatusForRoot,
-    persistProfile: async (profile) => {
-      await storeRef.current?.set("terminalLaunchProfile", profile);
-      await storeRef.current?.save();
-    },
-    scheduleResize: () => setTimeout(sendTerminalResize, 0),
-    setError: setLaunchError,
-    setTerminalProfile: profiles.setTerminalProfile,
-    statusForPanes: terminal.statusForPanes,
-    updateProjectStatus: persistence.updateOpenProjectStatus,
-    updateSessionStatus: persistence.updateActiveSessionStatus,
-  });
-
-  const pickWorkspace = createWorkspacePicker({
+  const {
+    finalizeCreatedTerminalPane, openChatSearchResult, paneActivityLog, pickWorkspace,
+    projectEntryActions, projectSessionDeletionController, projectSessionMetadataActions,
+    projectSessionNavigationActions,
+  } = appProjectSessionRuntimeFrom({
+    activeChat, agentActivityHook, agentApprovalMode, browser, captureCurrentSession: captureCurrentSessionSnapshot,
+    chatSearch, chrome, composerLocal, composerWorkspace,
     createTerminalPane: (profile) => terminalSurface.createTerminalPane(profile),
-    defaultProfile: defaultTerminalLaunchProfile,
-    openDirectoryDialog: () => open({ directory: true }),
-    requestOpenWorkspace: (path) => requestOpenWorkspace(path),
-  });
-  const projectEntryActions = createProjectEntryActions({
-    beginCreateProject: async () => { setProjectCreationOpen(true); return true; },
-    createTask: projectSessionNavigationActions.createSession,
-    getActiveProject: () => workspacePathRef.current,
-    openProjectEntry: async () => {
-      shellLayout.setSideDrawerMode("projects");
-      shellLayout.setSideDrawerCollapsed(false);
-      setProjectSwitcherOpen(true);
-      return true;
-    },
-    openProjectPicker: pickWorkspace,
-    switchProjectPath: requestOpenWorkspace,
-  });
-
-  const projectSessionMetadataActions = createProjectSessionMetadataActions({
-    getActiveSessions: () => persistence.activeSessionByProjectRef.current,
-    getSessions: () => persistence.projectSessionsRef.current,
-    notify: chrome.setActionNotice, now: Date.now, persist: persistence.persistProjectSessions,
+    persistence, profiles, requestOpenWorkspace,
+    scheduleResize: () => setTimeout(sendTerminalResize, 0), setFocusedChatMessageId,
+    setLaunchError, setProjectCreationOpen, setProjectSwitcherOpen, shellLayout,
+    storeRef, terminal, workspaceOpenActions, workspacePathRef,
   });
 
   const composerSurface = createComposerSurface({

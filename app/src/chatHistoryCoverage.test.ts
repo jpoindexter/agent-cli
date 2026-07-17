@@ -4,6 +4,7 @@ import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const appCommandPaletteHost = readFileSync(new URL("./appCommandPaletteHost.ts", import.meta.url), "utf8");
+const appProjectSessionRuntime = readFileSync(new URL("./appProjectSessionRuntime.ts", import.meta.url), "utf8");
 const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
 const chatPalette = readFileSync(new URL("./commandPaletteChats.ts", import.meta.url), "utf8");
 const chatSearch = readFileSync(new URL("./useChatSearch.ts", import.meta.url), "utf8");
@@ -24,7 +25,7 @@ describe("chat history discovery production wiring", () => {
     expect(chatSearch).toContain("searchDurableChatMessages(query, false, 80)");
     expect(appCommandPaletteHost).toContain("input.openChatSearchResult(result)");
     const navigation = readFileSync(new URL("./chatSearchNavigation.ts", import.meta.url), "utf8");
-    expect(app).toContain("focusMessage: setFocusedChatMessageId");
+    expect(appProjectSessionRuntime).toContain("focusMessage: input.setFocusedChatMessageId");
     expect(navigation).toContain("options.focusMessage(result.messageId ?? null)");
     expect(thread).toContain('data-message-id={message.id}');
     expect(thread).toContain("focusMessageId={focusMessageId}");

@@ -5,6 +5,7 @@ const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
 const appEditorMenuRuntime = readFileSync(new URL("./appEditorMenuRuntime.ts", import.meta.url), "utf8");
 const appRuntimeMenuHost = readFileSync(new URL("./appRuntimeMenuHost.ts", import.meta.url), "utf8");
+const appProjectSessionRuntime = readFileSync(new URL("./appProjectSessionRuntime.ts", import.meta.url), "utf8");
 const sideRailHost = readFileSync(new URL("./workspaceSideRailHost.ts", import.meta.url), "utf8");
 const editorSectionHost = readFileSync(new URL("./workbenchEditorSectionHost.ts", import.meta.url), "utf8");
 const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
@@ -75,7 +76,7 @@ describe("production context-menu coverage", () => {
     const projectMenu = workspaceContextMenus.slice(workspaceContextMenus.indexOf("buildProjectRailContextMenuItems"));
     expect(projectMenu).toContain('menuItem("project.close"');
     expect(projectMenu.slice(projectMenu.indexOf('"project.close"'))).not.toContain("disabled:");
-    expect(app).toContain("createProjectSessionDeletionController");
+    expect(appProjectSessionRuntime).toContain("createProjectSessionDeletionController");
     expect(projectSessionDeletionController).toContain("options.intentionallyTerminatedPaneIds.add(pane.id)");
   });
 
@@ -84,7 +85,7 @@ describe("production context-menu coverage", () => {
     expect(appRuntimeMenuHost).toContain("createTerminalPane(defaultTerminalLaunchProfile())");
     expect(trayHost).toContain('pickWorkspace({ openTerminal: true })');
     expect(terminalViewport).toContain("Open a folder to start a terminal");
-    expect(app).toContain('set("terminalLaunchProfile", profile)');
+    expect(appProjectSessionRuntime).toContain('set("terminalLaunchProfile", profile)');
     expect(app).not.toContain("createTerminalPane(launchProfileRef.current)");
   });
 
