@@ -9,8 +9,7 @@ import { useFilesRailHeight } from "./useFilesRailHeight";
 import { useGitStatus } from "./useGitStatus";
 import { useMcpOAuthStatus } from "./useMcpOAuthStatus";
 import { usePaneTranscriptController } from "./usePaneTranscriptController";
-import { useSettingsRuntimeStatus } from "./useSettingsRuntimeStatus";
-import { useShellLayout } from "./useShellLayout";
+import { useSettingsShellState } from "./useSettingsShellState";
 import type { WorktreeRecord } from "./worktrees";
 
 type AppShellDomainOptions = {
@@ -29,9 +28,10 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
   const [orchestrationLaunching, setOrchestrationLaunching] = useState(false);
   const [orchestrationError, setOrchestrationError] = useState<string | null>(null);
   const [composerNotice, setComposerNotice] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const {
+    openSettings, setSettingsOpen, settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout,
+  } = useSettingsShellState(workspacePath);
   const chrome = useAppChromeState();
-  const settingsRuntime = useSettingsRuntimeStatus(settingsOpen, workspacePath);
   const [aiConnectionSettings, setAiConnectionSettings] = useState<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
   const mcpOAuth = useMcpOAuthStatus();
   const [worktrees, setWorktrees] = useState<WorktreeRecord[]>([]);
@@ -43,7 +43,6 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
   const [keybindingOverrides, setKeybindingOverrides] = useState<KeybindingOverrides>({});
   const [composerSending, setComposerSending] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
-  const shellLayout = useShellLayout(() => setSettingsOpen(false));
   const railHeight = useFilesRailHeight(shellLayout.sideDrawerMode === "files", options.railBodyRef);
   const [drawerSearchQuery, setDrawerSearchQuery] = useState("");
   const chatSearch = useChatSearch({ open: options.commandPalette.open, query: options.commandPalette.query });
@@ -60,7 +59,7 @@ export const useAppShellDomain = (options: AppShellDomainOptions) => {
     orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
     setCommandPaletteSources, setComposerError, setComposerNotice, setComposerSending,
     setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
-    setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
-    settingsOpen, settingsRuntime, shellLayout, worktrees,
+    openSettings, setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
+    settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout, worktrees,
   };
 };

@@ -1,0 +1,70 @@
+.composer-add-menu {
+  position: fixed;
+  z-index: 60;
+  overflow-y: auto;
+  border: 1px solid var(--control-border);
+  border-radius: 10px;
+  background: var(--color-surface-overlay);
+  box-shadow: 0 20px 56px rgba(0, 0, 0, 0.5);
+  color: var(--color-text);
+  outline: 0;
+  padding: 6px;
+}
+
+.composer-add-menu__group + .composer-add-menu__group {
+  margin-top: 5px;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 5px;
+}
+
+.composer-add-menu__group h3 {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 24px;
+  padding: 0 8px;
+  text-transform: uppercase;
+}
+
+.composer-add-menu__group button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text);
+  padding: 5px 8px;
+  text-align: left;
+}
+
+.composer-add-menu__group button:hover:not(:disabled),
+.composer-add-menu__group .composer-add-menu__item--active:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.composer-add-menu__group button:disabled {
+  opacity: 0.5;
+}
+
+.composer-add-menu__group button > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composer-add-menu__group strong {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.composer-add-menu__group small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.3;
+}

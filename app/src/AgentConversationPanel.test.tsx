@@ -18,7 +18,7 @@ const props = (overrides: Partial<AgentConversationPanelProps> = {}): AgentConve
     onToggleBookmark: vi.fn(),
   },
   composer: {
-    activeRun: false, approvalMode: "ask", attachments: [], configuredModels: {},
+    activeRun: false, addMenuItems: [], approvalMode: "ask", attachments: [], configuredModels: {},
     draft: "", error: null, goal: "", hasHarness: true, hasHistory: false,
     historyCursorActive: false, mentionResults: [], metadata: {
       branch: "main", changedFiles: 0, provider: "codex", repositoryPath: "/repo", usage: undefined,
@@ -27,7 +27,7 @@ const props = (overrides: Partial<AgentConversationPanelProps> = {}): AgentConve
     onApprovalChange: vi.fn(), onAttachMention: vi.fn(), onClearGoal: vi.fn(),
     onContextMenu: vi.fn(), onDismissNotice: vi.fn(), onDraftChange: vi.fn(),
     onGoalChange: vi.fn(), onGoalCommit: vi.fn(), onManageModels: vi.fn(),
-    onNextHistory: vi.fn(), onOpenAddMenu: vi.fn(), onPasteImage: vi.fn(),
+    onNextHistory: vi.fn(), onPasteImage: vi.fn(),
     onPreviousHistory: vi.fn(), onReasoningChange: vi.fn(),
     onRemoveAttachment: vi.fn(), onReviewContext: vi.fn(), onRuntimeChange: vi.fn(),
     onStop: vi.fn(), onSubmit: vi.fn(),

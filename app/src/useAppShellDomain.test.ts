@@ -39,6 +39,15 @@ describe("useAppShellDomain", () => {
     expect(result.current.settingsOpen).toBe(false);
   });
 
+  it("opens settings at a requested category", () => {
+    const { result } = renderHook(() => useAppShellDomain(createOptions()));
+
+    act(() => result.current.openSettings("connections"));
+
+    expect(result.current.settingsOpen).toBe(true);
+    expect(result.current.settingsInitialCategory).toBe("connections");
+  });
+
   it("keeps git metadata live while the project threads drawer is active", async () => {
     const options = createOptions();
     options.workspacePath = "/repo";

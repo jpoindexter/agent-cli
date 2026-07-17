@@ -230,11 +230,11 @@ function App() {
     aiConnectionSettings, backgroundExits, chatSearch, chrome, commandPaletteSources,
     composerError, composerNotice, composerSending, drawerSearchQuery, focusedChatMessageId,
     gitStatusHook, keybindingOverrides, mcpOAuth, orchestrationError, orchestrationLaunching,
-    orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
+    openSettings, orchestrationOpen, paneTranscripts, railHeight, setAiConnectionSettings, setBackgroundExits,
     setCommandPaletteSources, setComposerError, setComposerNotice, setComposerSending,
     setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
     setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
-    settingsOpen, settingsRuntime, shellLayout, worktrees,
+    settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout, worktrees,
   } = useAppShellDomain({
     commandPalette: { open: commandPalette.open, query: commandPalette.query },
     railBodyRef, storeRef, treeRefreshKey: workspaceTree.refreshKey, workspacePath, workspacePathRef,
@@ -1314,7 +1314,7 @@ function App() {
           chatRunControls, composerAttachments, composerError, composerHistoryNavigation, composerLocal,
           composerMentionQuery, composerMentionResults, composerNotice, composerSending,
           composerSettingsActions, composerSurface, contextMenuHost, editorSurface, focusedChatMessageId,
-          gitStatusHook, setComposerNotice, setSettingsOpen, shellLayout, workspacePath,
+          gitStatusHook, openSettings, setComposerNotice, shellLayout, workspacePath,
         })} />
         <BottomUtilityTray {...bottomUtilityTrayPropsFrom({
           activeAgentSession, activeAgentSessionHandle, activeTerminalProfile, appMenuAssembly, canvasRef,
@@ -1330,7 +1330,7 @@ function App() {
         activeChat, agentHookStatus, aiConnectionSettings, chrome, commandPaletteSources,
         connectionActions: settingsConnectionActions, gitStatusHook, keybindingOverrides, mcpOAuth,
         openUrl, preferenceActions: settingsPreferenceActions, profiles,
-        scopedActions: settingsScopedActions, setSettingsOpen, settingsOpen, settingsRuntime,
+        scopedActions: settingsScopedActions, setSettingsOpen, settingsInitialCategory, settingsOpen, settingsRuntime,
         shellLayout, surfaceLabels, utilityTrayControls, workspacePath,
       })} />
       <TranscriptsModal {...transcriptsModalPropsFrom(

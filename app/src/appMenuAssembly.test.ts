@@ -95,24 +95,4 @@ describe("createAppMenuAssembly", () => {
     expect(options.notify).toHaveBeenCalledWith("Copied browser URL");
   });
 
-  it("opens the composer add menu above the trigger button", () => {
-    const options = createOptions();
-    const assembly = createAppMenuAssembly(options);
-    const removeAttribute = vi.fn();
-    const event = {
-      currentTarget: {
-        closest: () => ({ querySelectorAll: () => [{ removeAttribute }] }),
-        getBoundingClientRect: () => ({ left: 40, top: 500 }),
-      },
-      stopPropagation: vi.fn(),
-    };
-
-    assembly.openComposerAddMenu(event);
-
-    expect(event.stopPropagation).toHaveBeenCalled();
-    expect(removeAttribute).toHaveBeenCalledWith("open");
-    const call = options.setContextMenu.mock.calls[0][0];
-    expect(call.x).toBe(40);
-    expect(call.y).toBe(500 - (call.items.length * 28 + 20));
-  });
 });

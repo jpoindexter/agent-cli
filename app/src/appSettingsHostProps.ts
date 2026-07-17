@@ -1,5 +1,6 @@
 import type { AppSettingsHostProps, SettingsHostBundles } from "./appSettingsHost";
 import { settingsAgentProfileOptions } from "./settingsModalData";
+import type { SettingsCategoryId } from "./settingsModalData";
 import { LAUNCH_PROFILES } from "./launchProfiles";
 
 type Modal = AppSettingsHostProps["modal"];
@@ -29,6 +30,7 @@ type AppSettingsHostInput = {
   profiles: SettingsHostBundles["profilesController"] & { customProfiles: Modal["customTerminalProfiles"] };
   scopedActions: SettingsHostBundles["scopedActions"];
   setSettingsOpen: (open: boolean) => void;
+  settingsInitialCategory: SettingsCategoryId;
   settingsOpen: boolean;
   settingsRuntime: {
     agentConnectionsRefreshing: Modal["agentConnectionsRefreshing"];
@@ -71,6 +73,7 @@ const settingsModalFrom = (input: AppSettingsHostInput): Modal => ({
   gitBranch: input.gitStatusHook.status?.branch ?? null,
   gitChangeCount: input.gitStatusHook.status ? input.gitStatusHook.status.files.length : null,
   keybindingOverrides: input.keybindingOverrides,
+  initialCategory: input.settingsInitialCategory,
   layout: input.shellLayout.renderedWorkbenchLayout,
   mcpOAuthStatuses: input.mcpOAuth.statuses, notificationsEnabled: input.chrome.notificationsEnabled,
   profileSetting: input.activeChat.activeAgentProfileSetting,

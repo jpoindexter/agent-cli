@@ -21,6 +21,7 @@ const createOptions = () =>
     scopedActions: {},
     setSettingsOpen: vi.fn(),
     settingsOpen: true,
+    settingsInitialCategory: "connections",
     settingsRuntime: {
       agentConnectionsRefreshing: false, agentConnectionsStatus: null, refreshAgentConnections: vi.fn(),
       repoLocation: null, sourceControlStatus: null,
@@ -43,6 +44,7 @@ describe("appSettingsHostPropsFrom", () => {
     expect(props.modal.gitChangeCount).toBe(2);
     expect(props.modal.workspacePath).toBe("/repo");
     expect(props.modal.sessionTitle).toBe("Chat");
+    expect(props.modal.initialCategory).toBe("connections");
   });
 
   it("routes settings handlers to their owning controllers", () => {

@@ -13,7 +13,7 @@ const createOptions = () =>
       activeComposerProvider: "codex",
     },
     aiConnectionSettings: { providerModels: {} },
-    appMenuAssembly: { composerContextMenuItems: () => [], openComposerAddMenu: vi.fn() },
+    appMenuAssembly: { composerAddMenuItems: () => [], composerContextMenuItems: () => [] },
     chatConversationActions: { forkFromMessage: vi.fn(), toggleBookmark: vi.fn() },
     chatRunControls: { resolveChatApproval: vi.fn(), stopActiveChatRun: vi.fn() },
     composerAttachments: {
@@ -37,6 +37,7 @@ const createOptions = () =>
       status: { branch: "main", staged: 1, unstaged: 2, untracked: 1, files: [{}, {}, {}] },
     },
     setComposerNotice: vi.fn(),
+    openSettings: vi.fn(),
     setSettingsOpen: vi.fn(),
     shellLayout: { agentSurfaceMode: "chat" },
     workspacePath: "/repo",
@@ -67,7 +68,7 @@ describe("agentConversationPanelPropsFrom", () => {
     props.composer.onSubmit();
     expect(options.composerSurface.submitComposerDraft).toHaveBeenCalled();
     props.composer.onManageModels();
-    expect(options.setSettingsOpen).toHaveBeenCalledWith(true);
+    expect(options.openSettings).toHaveBeenCalledWith("connections");
     props.composer.onStop();
     expect(options.chatRunControls.stopActiveChatRun).toHaveBeenCalled();
   });

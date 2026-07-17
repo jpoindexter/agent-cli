@@ -10,6 +10,7 @@ import type { FileTreeNode } from "./fileTreeTypes";
 import type { useComposerRuntime } from "./useComposerRuntime";
 import type { useConversationRuntime } from "./useConversationRuntime";
 import type { useShellLayout } from "./useShellLayout";
+import type { SettingsCategoryId } from "./settingsModalData";
 
 type ConversationRuntime = ReturnType<typeof useConversationRuntime>;
 type ComposerRuntime = ReturnType<typeof useComposerRuntime>;
@@ -19,7 +20,7 @@ type AgentConversationPanelInput = {
   activeAgentSession: { selectedAgentActivityLog: ChatThreadSurfaceProps["events"] };
   activeChat: ConversationRuntime["activeChat"];
   aiConnectionSettings: { providerModels: AgentComposerSurfaceProps["configuredModels"] };
-  appMenuAssembly: { composerContextMenuItems: () => ContextMenuItem[]; openComposerAddMenu: (event: MouseEvent) => void };
+  appMenuAssembly: { composerAddMenuItems: () => ContextMenuItem[]; composerContextMenuItems: () => ContextMenuItem[] };
   chatConversationActions: {
     forkFromMessage: (message: ChatThreadSurfaceProps["conversation"]["messages"][number]) => Promise<unknown>;
     toggleBookmark: ChatThreadSurfaceProps["onToggleBookmark"];
@@ -48,7 +49,7 @@ type AgentConversationPanelInput = {
   focusedChatMessageId: string | null;
   gitStatusHook: { status: { branch: string | null; files: unknown[] } | null };
   setComposerNotice: (notice: string | null) => void;
-  setSettingsOpen: (open: boolean) => void;
+  openSettings: (category?: SettingsCategoryId) => void;
   shellLayout: ReturnType<typeof useShellLayout>;
   workspacePath: string | null;
 };
@@ -68,6 +69,7 @@ const chatThreadPropsFrom = (input: AgentConversationPanelInput): ChatThreadSurf
 
 const composerStateFrom = (input: AgentConversationPanelInput) => ({
   activeRun: Boolean(input.activeChat.activeChatConversation.activeRunId),
+  addMenuItems: input.appMenuAssembly.composerAddMenuItems(),
   approvalMode: input.activeChat.activeComposerHarness.approvalMode,
   attachments: input.activeChat.activeComposerHarness.attachments,
   configuredModels: input.aiConnectionSettings.providerModels,
@@ -103,9 +105,8 @@ const composerHandlersFrom = (input: AgentConversationPanelInput) => ({
   },
   onGoalChange: (goal: string) => void input.composerSettingsActions.setGoal(goal),
   onGoalCommit: () => void input.composerSettingsActions.setGoal(input.activeChat.activeComposerHarness.goal, { log: true }),
-  onManageModels: () => input.setSettingsOpen(true),
+  onManageModels: () => input.openSettings("connections"),
   onNextHistory: input.composerHistoryNavigation.showNext,
-  onOpenAddMenu: input.appMenuAssembly.openComposerAddMenu,
   onPasteImage: () => void input.composerAttachments.pasteImage(),
   onPreviousHistory: input.composerHistoryNavigation.showPrevious,
   onReasoningChange: input.composerSettingsActions.setReasoningEffort,

@@ -15,18 +15,6 @@ type ActivityLogEvent = Pick<
 
 type PaneAction = (pane: ManagedTerminalPane) => unknown;
 
-type AddMenuEvent = {
-  currentTarget: {
-    closest: (selector: string) => {
-      querySelectorAll: (selector: string) => {
-        forEach: (callback: (element: { removeAttribute: (name: string) => void }) => void) => void;
-      };
-    } | null;
-    getBoundingClientRect: () => { left: number; top: number };
-  };
-  stopPropagation: () => void;
-};
-
 type AppMenuAssemblyOptions = {
   activityLog: () => ActivityLogEvent[];
   browser: {
@@ -156,22 +144,11 @@ const composerMenuInput = (options: AppMenuAssemblyOptions) => ({
   },
 });
 
-const openComposerAddMenu = (options: AppMenuAssemblyOptions, event: AddMenuEvent) => {
-  event.stopPropagation();
-  event.currentTarget.closest(".agent-composer__bar")
-    ?.querySelectorAll("details.agent-composer__menu[open]")
-    .forEach((menu) => menu.removeAttribute("open"));
-  const items = buildComposerAddMenuItems(composerMenuInput(options));
-  const rect = event.currentTarget.getBoundingClientRect();
-  options.setContextMenu({ x: rect.left, y: rect.top - (items.length * 28 + 20), items });
-};
-
 export const createAppMenuAssembly = (options: AppMenuAssemblyOptions) => ({
   browserContextMenuItems: () => browserContextMenuItems(options),
   composerAddMenuItems: () => buildComposerAddMenuItems(composerMenuInput(options)),
   composerContextMenuItems: () => buildComposerContextMenuItems(composerMenuInput(options)),
   copySelectedActivityLog: () => copySelectedActivityLog(options),
-  openComposerAddMenu: (event: AddMenuEvent) => openComposerAddMenu(options, event),
   terminalPaneContextMenuItems: (pane: ManagedTerminalPane) =>
     terminalPaneContextMenuItems(options, pane),
   utilityTrayTabContextMenuItems: (mode: UtilityTrayMode) =>

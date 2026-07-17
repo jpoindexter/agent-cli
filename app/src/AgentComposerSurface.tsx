@@ -1,19 +1,21 @@
-import type { ClipboardEvent, KeyboardEvent, MouseEvent } from "react";
+import { useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent, type RefObject } from "react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 
 import type { AgentApprovalMode } from "./agentSessionHandle";
 import type { ChatProvider } from "./chatConversation";
+import { ComposerAddMenu } from "./ComposerAddMenu";
 import { ComposerContextMetadata, type ComposerContextMetadataProps } from "./ComposerContextMetadata";
 import { ComposerModelPicker } from "./ComposerModelPicker";
 import { ComposerReasoningPicker } from "./ComposerReasoningPicker";
 import { handleComposerMenuToggle } from "./composerPopover";
 import type { ComposerAttachment, ComposerReasoningEffort } from "./composerHarness";
+import type { ContextMenuItem } from "./ContextMenu";
 import type { FileTreeNode } from "./fileTreeTypes";
 import { AppIcon } from "./icons";
 import { shortcutTitle } from "./shortcuts";
 
 export type AgentComposerSurfaceProps = {
-  activeRun: boolean; approvalMode: AgentApprovalMode; attachments: ComposerAttachment[];
+  activeRun: boolean; addMenuItems: ContextMenuItem[]; approvalMode: AgentApprovalMode; attachments: ComposerAttachment[];
   configuredModels: Partial<Record<ChatProvider, string>>; draft: string; error: string | null;
   goal: string; hasHarness: boolean; hasHistory: boolean; historyCursorActive: boolean;
   mentionResults: FileTreeNode[]; model: string; notice: string | null; provider: ChatProvider | null;
@@ -22,7 +24,7 @@ export type AgentComposerSurfaceProps = {
   onClearGoal: () => void; onContextMenu: (event: MouseEvent<HTMLDivElement>) => void;
   onDismissNotice: () => void; onDraftChange: (draft: string) => void; onGoalChange: (goal: string) => void;
   onGoalCommit: () => void; onManageModels: () => void; onNextHistory: () => void;
-  onOpenAddMenu: (event: MouseEvent<HTMLButtonElement>) => void; onPasteImage: () => void; onPreviousHistory: () => void;
+  onPasteImage: () => void; onPreviousHistory: () => void;
   onReasoningChange: (effort: ComposerReasoningEffort) => void; onRemoveAttachment: (attachment: ComposerAttachment) => void;
   onReviewContext: () => void; onRuntimeChange: (provider: ChatProvider, model: string) => void;
   onStop: () => void; onSubmit: () => void;
@@ -47,9 +49,9 @@ function PermissionMenu({ props }: { props: AgentComposerSurfaceProps }) {
   );
 }
 
-function GoalMenu({ props }: { props: AgentComposerSurfaceProps }) {
+function GoalMenu({ detailsRef, props }: { detailsRef: RefObject<HTMLDetailsElement | null>; props: AgentComposerSurfaceProps }) {
   return (
-    <details className="agent-composer__menu agent-composer__menu--goal" onToggle={handleComposerMenuToggle}>
+    <details ref={detailsRef} className="agent-composer__menu agent-composer__menu--goal" onToggle={handleComposerMenuToggle}>
       <summary className={`agent-composer__control ${props.goal ? "agent-composer__control--active" : ""}`}><AppIcon name="target" /><span>Goal</span></summary>
       <div className="agent-composer__popover agent-composer__popover--goal">
         <label className="agent-composer__popover-field"><span>Goal for this chat</span><input aria-label="Composer goal" value={props.goal} maxLength={160} placeholder="Optional outcome to keep in context" disabled={!props.hasHarness} onChange={(event) => props.onGoalChange(event.currentTarget.value)} onBlur={props.onGoalCommit} /></label>
@@ -60,15 +62,26 @@ function GoalMenu({ props }: { props: AgentComposerSurfaceProps }) {
 }
 
 function Attachments({ props }: { props: AgentComposerSurfaceProps }) {
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const goalDetailsRef = useRef<HTMLDetailsElement>(null);
+  const toggleAddMenu = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    event.currentTarget.closest(".agent-composer__bar")?.querySelectorAll("details.agent-composer__menu[open]").forEach((menu) => menu.removeAttribute("open"));
+    setAddMenuOpen((open) => !open);
+  };
   return (
-    <div className="agent-composer__attachments" aria-label="Composer context">
-      <button className="agent-composer__attachment-button" type="button" aria-label="Add context or action" title="Add context or action" disabled={!props.hasHarness} onClick={props.onOpenAddMenu}><AppIcon name="plus" /></button>
-      <PermissionMenu props={props} /><GoalMenu props={props} />
-      <div className="agent-composer__attachment-list">
-        {props.attachments.map((attachment) => <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>{attachment.kind === "image" ? <img src={convertFileSrc(attachment.target)} alt="" /> : null}<span>{attachment.label}</span><button type="button" aria-label={`Remove attachment ${attachment.label}`} onClick={() => props.onRemoveAttachment(attachment)}><AppIcon name="close" /></button></span>)}
+    <>
+      <div className="agent-composer__attachments" aria-label="Composer context">
+        <button ref={addButtonRef} className="agent-composer__attachment-button" type="button" aria-label="Add context or action" aria-expanded={addMenuOpen} title="Add context or action" disabled={!props.hasHarness} onClick={toggleAddMenu}><AppIcon name="plus" /></button>
+        <PermissionMenu props={props} /><GoalMenu detailsRef={goalDetailsRef} props={props} />
+        <div className="agent-composer__attachment-list">
+          {props.attachments.map((attachment) => <span className="agent-composer__attachment" key={attachment.id} title={attachment.target}>{attachment.kind === "image" ? <img src={convertFileSrc(attachment.target)} alt="" /> : null}<span>{attachment.label}</span><button type="button" aria-label={`Remove attachment ${attachment.label}`} onClick={() => props.onRemoveAttachment(attachment)}><AppIcon name="close" /></button></span>)}
+        </div>
+        {props.attachments.length > 0 || props.goal ? <button className="agent-composer__control" type="button" onClick={props.onReviewContext}><AppIcon name="search" /><span>Review context</span></button> : null}
       </div>
-      {props.attachments.length > 0 || props.goal ? <button className="agent-composer__control" type="button" onClick={props.onReviewContext}><AppIcon name="search" /><span>Review context</span></button> : null}
-    </div>
+      <ComposerAddMenu anchor={addButtonRef.current} items={props.addMenuItems} open={addMenuOpen} onClose={() => setAddMenuOpen(false)} onConnections={props.onManageModels} onGoal={() => goalDetailsRef.current?.setAttribute("open", "")} />
+    </>
   );
 }
 
