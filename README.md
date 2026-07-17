@@ -100,6 +100,7 @@ The normal pre-push gate is:
 ```bash
 cd app
 npm run build
+npm run qa:repo-hygiene
 npm run qa:module-size
 npm run qa:chrome-contract
 npm test -- --run

@@ -1,6 +1,6 @@
 # Superconductor (super.engineering) — UX reference notes
 
-The signed binary (`resources/super.engineering.app`, 117MB) was removed from git 2026-07-07 — see `DECISIONS.md`. You can't mine UX patterns from a compiled binary, so committing the executable had no benefit, only licensing exposure. Kept: `Info.plist`, `super.icns`, and the settings-key feature map below (extracted via `strings` on the binary before removal — this is the actually-useful part).
+The signed binary (`resources/super.engineering.app`, 117MB) was removed from git 2026-07-07 — see `DECISIONS.md`. The extracted `Info.plist` and third-party icon were removed in the 2026-07-17 public-repository cleanup. Only the settings-key feature map below remains because it is the reusable product evidence.
 
 The app itself is still installed at `/Applications/super.engineering.app` if you want to re-inspect it directly.
 

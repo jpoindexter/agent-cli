@@ -6,7 +6,8 @@ Keelhouse is the product and GitHub repository name. The package, binary, app id
 
 - Product name: **Keelhouse**
 - Category: native agent workbench
-- Repo/package/storage slug: `agent-cli`
+- Repository: `jpoindexter/keelhouse`
+- Internal package/binary/storage slug: `agent-cli`
 - Naming source of truth: `product-positioning.md`
 
 ## Start Here
