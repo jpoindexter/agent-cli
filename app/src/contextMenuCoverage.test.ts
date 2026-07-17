@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
 const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
+const appEditorMenuRuntime = readFileSync(new URL("./appEditorMenuRuntime.ts", import.meta.url), "utf8");
 const appRuntimeMenuHost = readFileSync(new URL("./appRuntimeMenuHost.ts", import.meta.url), "utf8");
 const sideRailHost = readFileSync(new URL("./workspaceSideRailHost.ts", import.meta.url), "utf8");
 const editorSectionHost = readFileSync(new URL("./workbenchEditorSectionHost.ts", import.meta.url), "utf8");
@@ -70,7 +71,7 @@ describe("production context-menu coverage", () => {
   });
 
   it("allows active projects to close through the managed close lifecycle", () => {
-    expect(app).toContain("closeProject: requestCloseProject");
+    expect(appEditorMenuRuntime).toContain("closeProject: input.requestCloseProject");
     const projectMenu = workspaceContextMenus.slice(workspaceContextMenus.indexOf("buildProjectRailContextMenuItems"));
     expect(projectMenu).toContain('menuItem("project.close"');
     expect(projectMenu.slice(projectMenu.indexOf('"project.close"'))).not.toContain("disabled:");

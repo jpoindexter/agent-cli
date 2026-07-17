@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
-import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
+import { openPath, openUrl } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
@@ -39,7 +39,6 @@ import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import { createUtilityTrayControls } from "./utilityTrayControls";
 import { createTerminalPaneRename } from "./terminalPaneRename";
-import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
 import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
 import { createRenderPerfExport } from "./renderPerfExport";
@@ -101,11 +100,7 @@ import type { AgentHookStatus } from "./useAgentHookRequests";
 import { useAgentHookRuntime } from "./useAgentHookRuntime";
 import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
 import { useAppEditorSurfaceRuntime } from "./useAppEditorSurfaceRuntime";
-import {
-  createEditorContextMenuAssembly,
-  createProjectSessionContextMenuAssembly,
-  createWorkspaceContextMenuAssembly,
-} from "./appContextMenuAssembly";
+import { appEditorMenusFrom } from "./appEditorMenuRuntime";
 import { clearBackgroundExitsForProject } from "./backgroundExits";
 import { buildSettingsActions } from "./settingsActionsHost";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
@@ -494,6 +489,12 @@ function App() {
     switchProjectPath: requestOpenWorkspace,
   });
 
+  const projectSessionMetadataActions = createProjectSessionMetadataActions({
+    getActiveSessions: () => persistence.activeSessionByProjectRef.current,
+    getSessions: () => persistence.projectSessionsRef.current,
+    notify: chrome.setActionNotice, now: Date.now, persist: persistence.persistProjectSessions,
+  });
+
   const composerSurface = createComposerSurface({
     chatIdForSession: composerHarnessSessionKey,
     clearTerminal: () => terminalSurface.clearActiveTerminal(),
@@ -676,105 +677,29 @@ function App() {
 
   const visibleOpenProjects = visibleProjectsFrom(persistence.openProjects, workspacePath, terminal.activeProjectStatus);
 
-  const {
-    editorFileWorkflow, editorNavigation, editorSurface, handleEditorUpdate,
-    saveEditorFile, tabIsDirty, workspaceFileActions,
-  } = useAppEditorSurfaceRuntime({
+  const editorRuntime = useAppEditorSurfaceRuntime({
     activeAgentSession, agentActivityHook, chrome, diffReview: diffReviewHook,
     editorSession, editorWorkspace, gitStatus: gitStatusHook, persistence,
     projectClose: projectCloseController, shellLayout, workspaceOpen: workspaceOpenActions,
     workspacePath, workspacePathRef, workspaceTree,
   });
+  const {
+    editorFileWorkflow, editorNavigation, editorSurface, handleEditorUpdate,
+    saveEditorFile, tabIsDirty, workspaceFileActions,
+  } = editorRuntime;
 
-
-
-  const workspaceContextMenus = createWorkspaceContextMenuAssembly({
-    closeProject: requestCloseProject,
-    copyPath: editorSurface.copyPath,
-    deleteNode: workspaceFileActions.delete,
-    duplicateNode: workspaceFileActions.duplicate,
-    newFile: workspaceFileActions.createFile,
-    newFolder: workspaceFileActions.createFolder,
-    openDiff: diffReviewHook.open,
-    openWorkspace: projectEntryActions.openProject,
-    renameNode: workspaceFileActions.rename,
-    revealNode: workspaceFileActions.reveal,
-    revealPath: revealItemInDir,
-    runGitAction: diffReviewHook.runFileAction,
-    shortcut: shortcutKeys,
-    switchProject: (project: OpenProject) => projectEntryActions.switchProject(project.path),
-  });
-  const workspaceContextMenuActions = workspaceContextMenus.actions;
-  const fileNodeContextMenuItems = workspaceContextMenus.fileNodeItems;
-  fileNodeContextMenuItemsRef.current = fileNodeContextMenuItems;
-
-  const workspaceContextMenuItems = () => workspaceContextMenus.workspaceItems(workspacePath);
-  const projectRailContextMenuItems = (project: OpenProject) =>
-    workspaceContextMenus.projectRailItems(project, workspacePath);
-
-  const projectSessionMetadataActions = createProjectSessionMetadataActions({
-    getActiveSessions: () => persistence.activeSessionByProjectRef.current,
-    getSessions: () => persistence.projectSessionsRef.current,
-    notify: chrome.setActionNotice,
-    now: Date.now,
-    persist: persistence.persistProjectSessions,
-  });
-
-  const sessionCheckpoints = wireSessionCheckpointActions(editorSession, {
-    gateAction: (action) => agentActivityHook.gateAppAction(action),
-    getDirtyTabPaths: () => editorWorkspace.dirtyTabPaths,
-    getWorkspacePath: () => workspacePathRef.current,
-    onMetadata: projectSessionMetadataActions.updateSessionMetadata,
-    openFileDirect: (file) => editorFileWorkflow.openDirect(file),
-    refreshFiles: workspaceTree.refresh,
-    refreshGit: () => gitStatusHook.refresh(),
-    setError: setLaunchError,
-    setNotice: chrome.setActionNotice,
-  });
-  const projectSessionContextMenus = createProjectSessionContextMenuAssembly({
-    activeSessionId: activeChat.activeSessionId,
-    archiveSession: projectSessionMetadataActions.archiveSession,
-    captureCheckpoint: sessionCheckpoints.capture,
-    chatIdForSession: composerHarnessSessionKey,
-    conversations: () => composerWorkspace.chatConversationsRef.current,
-    copyText: writeText,
-    deleteSession: projectSessionDeletionController.deleteProjectSession,
-    notify: chrome.setActionNotice,
-    pinSession: projectSessionMetadataActions.pinSession,
-    projectSessionsFor: (projectPath) => persistence.projectSessionsRef.current[projectPath] ?? [],
-    removeChildWorktree: composerSurface.removeChildWorktree,
-    renameSession: projectSessionNavigationActions.renameSession,
-    restoreCheckpoint: sessionCheckpoints.restore,
-    returnChildResult: composerSurface.returnChildResult,
-    stopChildRun: composerSurface.stopChildChatRun,
-    switchSession: projectSessionNavigationActions.switchSession,
-    workspacePath,
-  });
-  const projectSessionContextMenuItems = projectSessionContextMenus.items;
-
-  const editorContextMenus = createEditorContextMenuAssembly({
-    closeDiff: diffReviewHook.close,
-    closeTab: (tab: FileTreeNode) => editorNavigation.closeTab(tab),
-    copyDiff: diffReviewHook.copy,
-    copyPath: editorSurface.copyPath,
-    find: editorSurface.openEditorSearch,
-    openDiffFile: editorSurface.openDiffFile,
-    openExternal: editorSurface.openExternally,
-    openTab: (tab: FileTreeNode) => editorFileWorkflow.requestOpen(tab, { focusEditor: true }),
-    revealNode: workspaceFileActions.reveal,
-    revealSelected: editorSurface.reveal,
-    runGitAction: diffReviewHook.runFileAction,
-    save: saveEditorFile,
-    shortcut: shortcutKeys,
-  });
-  const editorTabContextMenuItems = editorContextMenus.editorTabItems;
-  const editorContextMenuItems = () => editorContextMenus.editorItems({
-    editorDirty: editorWorkspace.editorDirty, editorLoading: editorSession.editorLoading, editorSaving: editorSession.editorSaving, selectedFile: editorSession.selectedFile,
-  });
-  const diffContextMenuItems = () => editorContextMenus.diffItems({
-    canDiscard: editorWorkspace.diffReviewCanDiscard, canOpenFile: editorWorkspace.diffReviewCanOpenFile,
-    canStage: editorWorkspace.diffReviewCanStage, canUnstage: editorWorkspace.diffReviewCanUnstage,
-    loading: diffReviewHook.loading, review: diffReviewHook.review,
+  const {
+    diffContextMenuItems, editorContextMenuItems, editorTabContextMenuItems,
+    projectRailContextMenuItems, projectSessionContextMenuItems,
+    workspaceContextMenuActions, workspaceContextMenuItems,
+  } = appEditorMenusFrom({
+    activeChat, agentActivityHook, chrome, composerHarnessSessionKey, composerSurface,
+    composerWorkspace, deleteSession: projectSessionDeletionController.deleteProjectSession,
+    diffReview: diffReviewHook, editor: editorRuntime, editorSession, editorWorkspace,
+    fileNodeItemsRef: fileNodeContextMenuItemsRef, gitStatus: gitStatusHook, persistence,
+    projectEntry: projectEntryActions, projectSessionMetadata: projectSessionMetadataActions,
+    projectSessions: projectSessionNavigationActions,
+    requestCloseProject, setError: setLaunchError, workspacePath, workspacePathRef, workspaceTree,
   });
 
   const saveActivePaneTranscript = createPaneTranscriptCapture({

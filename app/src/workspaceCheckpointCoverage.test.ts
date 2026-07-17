@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const appEditorMenuRuntime = readFileSync(new URL("./appEditorMenuRuntime.ts", import.meta.url), "utf8");
 const checkpointActions = readFileSync(new URL("./sessionCheckpointActions.ts", import.meta.url), "utf8");
 const backend = readFileSync(new URL("../src-tauri/src/workspace_checkpoints.rs", import.meta.url), "utf8");
 const productionBackend = backend.split("#[cfg(test)]")[0];
@@ -11,7 +12,8 @@ describe("safe workspace checkpoint production wiring", () => {
     expect(checkpointActions).toContain("services.preview(projectPath, checkpointId)");
     expect(checkpointActions).toContain("protectedDirtyPath");
     expect(checkpointActions).toContain("recoveryCheckpointId: result.recoveryCheckpointId");
-    expect(app).toContain("wireSessionCheckpointActions");
+    expect(app).not.toContain("wireSessionCheckpointActions");
+    expect(appEditorMenuRuntime).toContain("wireSessionCheckpointActions");
     const checkpointSurface = readFileSync(new URL("./sessionCheckpointSurface.ts", import.meta.url), "utf8");
     expect(checkpointSurface).toContain("createSessionCheckpointActions");
     expect(backend).toContain("preview.preview_token != preview_token");
