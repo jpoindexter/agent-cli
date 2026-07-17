@@ -81,7 +81,7 @@ const editorSurfaceFrom = (
   revealInDir: revealItemInDir,
   saveFile: save,
   schedule: window.setTimeout,
-  scheduleFrame: requestAnimationFrame,
+  scheduleFrame: (callback) => window.requestAnimationFrame(callback),
   scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
 });
 

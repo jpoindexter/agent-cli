@@ -123,3 +123,9 @@ What failed: batch "dissolve destructured aliases" regex (slice 78, `agentActivi
 What worked: `agentActivityPersistence.test.ts` source-contract test asserting the write/read keys match; one-char fix restoring the literal.
 Why it failed: the dissolution regex `(?<![.\w])NAME\b(?!\s*:)(?!\w)` protects object keys and member access but NOT string-literal contents. Any dissolved alias that is also a substring of a persisted key / event name / CSS class / invoke-command string is silently corrupted.
 Next time: after any batch string-replacement across App.tsx, diff string literals against the pre-change commit (`diff <(git show REF:file | grep -oE '"[^"]*"' | sort -u) <(grep -oE '"[^"]*"' file | sort -u)`) and confirm every changed literal is intentional. Never let an alias-name substring reach a `.set("/.get("/invoke("/className=` string.
+
+## 2026-07-17 — packaged app launched to black screen from an unbound Web API method
+What failed: the signed release app opened a black window while the Vite development build rendered normally. WebKit's inspector showed `TypeError: Can only call Window.requestAnimationFrame on instances of Window`, and React never mounted into the empty `#root` element.
+Root cause: `useAppEditorSurfaceRuntime.ts` passed `requestAnimationFrame` as a bare callback. WebKit requires the method's `this` receiver to be `Window`; the development browser did not expose the same failure.
+Fix: pass a receiver-safe adapter, `scheduleFrame: (callback) => window.requestAnimationFrame(callback)`, and keep `useAppEditorSurfaceRuntimeFrame.test.ts` as a source-contract regression test.
+Next time: never pass receiver-sensitive Web APIs as bare callbacks. Wrap or explicitly bind `window` methods, and verify the freshly rebuilt signed binary rather than treating a dev build or an older running process as release evidence.
