@@ -1,21 +1,17 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { load } from "@tauri-apps/plugin-store";
-import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
 import { AppTitlebar } from "./AppTitlebar";
 import { BottomUtilityTray } from "./BottomUtilityTray";
 import { bottomUtilityTrayPropsFrom } from "./bottomUtilityTrayHost";
-import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { WorkbenchResizers } from "./WorkbenchResizers";
 import { drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
 import { useConversationRuntime } from "./useConversationRuntime";
-import type { SelectionRange } from "./selection";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
@@ -49,7 +45,6 @@ import {
 import {
   defaultTerminalLaunchProfile,
 } from "./launchProfiles";
-import type { AgentSessionHandleDescriptor } from "./agentSessionHandle";
 import {
   setActiveKeybindingOverrides,
   shortcutKeys,
@@ -64,12 +59,6 @@ import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitDiffReview } from "./useGitDiffReview";
 import { useAppShellDomain } from "./useAppShellDomain";
 import { useSyncRef } from "./useSyncRef";
-import {
-  DEFAULT_AI_CONNECTION_SETTINGS,
-  type AiConnectionSettings,
-} from "./connectionSettings";
-import { createRenderPerfState } from "./renderPerf";
-import type { AgentHookStatus } from "./useAgentHookRequests";
 import { useAgentHookRuntime } from "./useAgentHookRuntime";
 import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
 import { useAppEditorSurfaceRuntime } from "./useAppEditorSurfaceRuntime";
@@ -87,13 +76,11 @@ import { useTerminalFind } from "./useTerminalFind";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
 import { resetDurableChatStore } from "./chatStore";
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
-import type { FileTreeNode } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
-import type { ContextMenuItem } from "./ContextMenu";
 import { ProjectCreationDialog } from "./ProjectCreationDialog";
 import { projectCreationCommands } from "./projectCreationCommands";
 import { WorktreeLabelDialog } from "./WorktreeLabelDialog";
-import { useWorktreeLabelRequest } from "./useWorktreeLabelRequest";
+import { useAppRootState } from "./useAppRootState";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -105,38 +92,20 @@ import "./workbenchTransitions.css";
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imeInputRef = useRef<HTMLTextAreaElement>(null);
-  const terminalHostRef = useRef<HTMLDivElement>(null);
-  const railBodyRef = useRef<HTMLDivElement>(null);
-  const treeRef = useRef<TreeApi<FileTreeNode> | undefined>(undefined);
-  const workspacePathRef = useRef<string | null>(null);
-  const storeRef = useRef<Awaited<ReturnType<typeof load>> | null>(null);
-  const aiConnectionSettingsRef = useRef<AiConnectionSettings>(DEFAULT_AI_CONNECTION_SETTINGS);
-  const activeAgentSessionDescriptorRef = useRef<AgentSessionHandleDescriptor | null>(null);
-  const fileNodeContextMenuItemsRef = useRef<(node: FileTreeNode) => ContextMenuItem[]>(() => []);
-  const activeSessionLookupRef = useRef<(root: string | null) => string | null>(() => null);
-  const persistPaneLayoutRef = useRef<(
-    root: string, sessionId: string, panes: ManagedTerminalPane[],
-  ) => void>(() => {});
-  const latest = useRef<Snapshot | null>(null);
-  const frame = useRef<number | null>(null);
-  const metrics = useRef({ cw: 9, ch: 19 });
-  const renderPerfRef = useRef(createRenderPerfState());
-  const ipcSampleCounter = useRef(0);
-  const selection = useRef<SelectionRange | null>(null);
-  const selecting = useRef(false);
-  const [launchError, setLaunchError] = useState<string | null>(null);
-  const [projectCreationOpen, setProjectCreationOpen] = useState(false);
-  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
-  const worktreeLabelRequest = useWorktreeLabelRequest();
-  const [workspacePath, setWorkspacePath] = useState<string | null>(null);
+  const {
+    activeAgentSessionDescriptorRef, activeSessionLookupRef, agentHookStatus,
+    aiConnectionSettingsRef, canvasRef,
+    fileNodeContextMenuItemsRef, frame, imeInputRef, ipcSampleCounter, latest, launchError, metrics,
+    persistPaneLayoutRef, projectCreationOpen, projectSwitcherOpen, railBodyRef, renderPerfRef,
+    selection, selecting, setAgentHookStatus, setLaunchError, setProjectCreationOpen, setProjectSwitcherOpen,
+    setWorkspacePath, storeRef, terminalHostRef, treeRef, workspacePath, workspacePathRef,
+    worktreeLabelRequest,
+  } = useAppRootState<Snapshot>();
   const {
     composerWorkspace, editorSession, persistence, profiles, terminal, workspaceTree,
   } = useWorkspaceDomain<Snapshot>({
     activeSessionLookupRef, persistPaneLayoutRef, storeRef, workspacePath, workspacePathRef,
   });
-  const [agentHookStatus, setAgentHookStatus] = useState<AgentHookStatus | null>(null);
   const contextMenuHost = useContextMenuHost({
     buildFileNodeItems: (node) => fileNodeContextMenuItemsRef.current(node),
     onActionError: (item, error) => setLaunchError(`${item.label} failed: ${String(error)}`),
