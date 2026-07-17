@@ -77,6 +77,7 @@ const settingsWorkspace = [
 ].join("\n");
 const settingsModalData = read("app/src/settingsModalData.ts");
 const commandPaletteSources = read("app/src/commandPaletteSources.ts");
+const appCommandPaletteHost = read("app/src/appCommandPaletteHost.ts");
 const connectionSettings = read("app/src/connectionSettings.ts");
 const connectionSettingsPanel = read("app/src/ConnectionSettingsPanel.tsx");
 const connectionSecretControls = [
@@ -264,8 +265,8 @@ assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command pal
 assert(appTitlebar.includes('<div className="titlebar-identity"') && appTitlebar.includes('title="New Task"') && appTitlebar.includes('title="Search tasks or run a command"') && appTitlebar.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
 assert(!appTsx.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
 assert(
-  appTsx.includes("visibleCommandPaletteCommands(")
-    && appTsx.includes("commandPaletteSources,")
+  appCommandPaletteHost.includes("visibleCommandPaletteCommands(")
+    && appCommandPaletteHost.includes("input.commandPaletteSources,")
     && commandPaletteAssembly.includes("filterCommandPaletteCommands(commands, query, sources)"),
   "Command palette source settings must filter live results",
 );

@@ -14,7 +14,7 @@ import { BottomUtilityTray } from "./BottomUtilityTray";
 import { bottomUtilityTrayPropsFrom } from "./bottomUtilityTrayHost";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
 import { WorkbenchResizers } from "./WorkbenchResizers";
-import { DRAWER_MODES, drawerTitleFor } from "./drawerModes";
+import { drawerTitleFor } from "./drawerModes";
 import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
@@ -35,10 +35,7 @@ import {
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { createAppMenuAssembly } from "./appMenuAssembly";
-import {
-  assembleCommandPaletteCommands,
-  visibleCommandPaletteCommands,
-} from "./commandPaletteAssembly";
+import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import { createEditorSurfaceActions } from "./editorSurfaceActions";
 import type { GitStatusFile } from "./fileGitStatus";
@@ -92,7 +89,6 @@ import {
 import {
   defaultTerminalLaunchProfile,
 } from "./launchProfiles";
-import type { LaunchProfile } from "./launchProfiles";
 import {
   createActiveAgentSessionHandle,
 } from "./agentSessionHandle";
@@ -109,7 +105,6 @@ import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useWorkspaceDomain } from "./useWorkspaceDomain";
 import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitDiffReview } from "./useGitDiffReview";
-import type { SideDrawerMode } from "./useShellLayout";
 import { useAppShellDomain } from "./useAppShellDomain";
 import { useSyncRef } from "./useSyncRef";
 import { loadWorkspaceBootstrap } from "./workspaceBootstrap";
@@ -974,96 +969,17 @@ function App() {
     },
   });
 
-  const activeTerminalPaneLabelForCommands = activePaneDisplayLabel(terminal.panes, activeAgentSession.activeTerminalPane);
-  const commandPaletteNavigation = {
-    drawerModes: DRAWER_MODES,
-    editorTabs: editorSession.editorTabs,
-    files: editorWorkspace.searchableFiles,
-    onFocusWorktree: (paneId: number) => {
-      shellLayout.setAgentSurfaceMode("terminal");
-      void terminalSurface.focusTerminalPane(paneId);
-    },
-    onLayoutChange: shellLayout.setWorkbenchLayout,
-    onOpenFile: (file: FileTreeNode) => void editorFileWorkflow.requestOpen(file, { focusEditor: true }),
-    onShowDrawer: (mode: SideDrawerMode) => {
-      shellLayout.setSideDrawerCollapsed(false);
-      shellLayout.setSideDrawerMode(mode);
-    },
-    onTrayModeChange: shellLayout.setToolTrayMode,
-    terminalPanes: terminal.panes,
-    workbenchLayout: shellLayout.workbenchLayout,
-    workspacePath,
-    worktrees,
-  };
-  const commandPaletteTerminal = {
-    activePane: activeAgentSession.activeTerminalPane,
-    activePaneLabel: activeTerminalPaneLabelForCommands,
-    canClose: Boolean(activeAgentSessionHandle),
-    launchProfileChanging: profiles.changing,
-    onClear: () => void terminalSurface.clearActiveTerminal(),
-    onClose: () => { if (activeAgentSessionHandle) void activeAgentSessionHandle.close(); },
-    onCreatePane: (profile: LaunchProfile) => void terminalSurface.createTerminalPane(profile),
-    onCreateWorktreePane: (profile: LaunchProfile) => void terminalSurface.createWorktreePane(profile),
-    onFind: () => terminalFind.setOpen(true),
-    onKill: (pane: ManagedTerminalPane) => void terminalSurface.terminateTerminalPane(pane),
-    onRemoveWorktree: (paneId: number) => void terminalSurface.closeWorktreePane(paneId),
-    onRestart: (pane: ManagedTerminalPane) => void terminalSurface.restartTerminalPane(pane),
-    shortcut: shortcutKeys,
-    terminalProfile: profiles.terminalProfile,
-    workspacePath,
-    worktrees,
-  };
-  const commandPaletteWorkbench = {
-    activeComposerHarnessKey: activeChat.activeComposerHarnessKey,
-    browserUrl: browser.url,
-    detectedBrowserUrl: browser.activeDetectedServer?.url ?? null,
-    editorDirty: editorWorkspace.editorDirty,
-    editorLoading: editorSession.editorLoading,
-    editorSaving: editorSession.editorSaving,
-    onAttachCurrentFile: () => void attachSelectedFileToComposer(),
-    onAttachPreview: () => void composerAttachments.attachPreview(),
-    onCloseEditorTab: () => { if (editorSession.selectedFile) void editorNavigation.closeTab(editorSession.selectedFile); },
-    onExportPerformance: () => void exportRenderPerfSnapshot(),
-    onFindEditor: editorSurface.openEditorSearch,
-    onNewProject: () => void projectEntryActions.newProject(),
-    onNewTask: () => void projectEntryActions.newTask(),
-    onOpenDetectedBrowser: () => void browser.openDetectedServer(),
-    onOpenSettings: () => setSettingsOpen(true),
-    onOpenTranscripts: () => paneTranscripts.setTranscriptsOpen(true),
-    onOpenWorkspace: () => void projectEntryActions.openProject(),
-    onQuickOpen: quickOpen.openDialog,
-    onReloadBrowser: browser.reload,
-    onResetLayout: shellLayout.resetInterface,
-    onSaveEditor: () => void saveEditorFile(),
-    selectedFile: editorSession.selectedFile,
-    shortcut: shortcutKeys,
-    workspacePath,
-  };
-  const commandPaletteChats = {
-    activeRun: Boolean(activeChat.activeChatConversation.activeRunId),
-    activeSessionId: activeChat.activeSessionId,
-    onOpenSearchResult: (result: ChatSearchViewResult) => void openChatSearchResult(result),
-    onOpenSession: (projectPath: string, sessionId: string) => void projectSessionNavigationActions.switchSession(projectPath, sessionId),
-    onParallel: () => {
-      setOrchestrationError(null);
-      setOrchestrationOpen(true);
-    },
-    openProjects: visibleOpenProjects,
-    projectSessions: persistence.projectSessions,
-    searchResults: chatSearchViewResults,
-    workspacePath,
-  };
-  const visiblePaletteCommands = visibleCommandPaletteCommands(
-    assembleCommandPaletteCommands({
-      chats: commandPaletteChats,
-      navigation: commandPaletteNavigation,
-      runAppCommand: composerSurface.runComposerAppCommand,
-      terminal: commandPaletteTerminal,
-      workbench: commandPaletteWorkbench,
-    }),
-    commandPalette.query,
-    commandPaletteSources,
-  );
+  const visiblePaletteCommands = visibleAppCommandPaletteCommands({
+    activeAgentSession, activeAgentSessionHandle, activeChat, attachSelectedFileToComposer,
+    browser, chatSearchViewResults,
+    closeSelectedEditorTab: () => { if (editorSession.selectedFile) void editorNavigation.closeTab(editorSession.selectedFile); },
+    commandPalette, commandPaletteSources, composerAttachments, composerSurface,
+    editorFileWorkflow, editorSession, editorSurface, editorWorkspace, exportRenderPerfSnapshot,
+    openChatSearchResult, paneTranscripts, persistence, profiles, projectEntryActions,
+    projectSessionNavigationActions, quickOpen, saveEditorFile, setOrchestrationError,
+    setOrchestrationOpen, setSettingsOpen, shellLayout, terminal, terminalFind, terminalSurface,
+    visibleOpenProjects, workspacePath, worktrees,
+  });
   const tabIsDirty = (path: string) => editorWorkspace.dirtyTabPathSet.has(path);
   const editorNavigation = useEditorNavigationLifecycle({
     activeFile: editorSession.selectedFile,

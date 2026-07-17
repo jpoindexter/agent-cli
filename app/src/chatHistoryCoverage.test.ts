@@ -3,11 +3,12 @@ import { describe, expect, it } from "vitest";
 import { readCssSource } from "./readCssSource";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const appCommandPaletteHost = readFileSync(new URL("./appCommandPaletteHost.ts", import.meta.url), "utf8");
 const panelHost = readFileSync(new URL("./agentConversationPanelHost.ts", import.meta.url), "utf8");
 const chatPalette = readFileSync(new URL("./commandPaletteChats.ts", import.meta.url), "utf8");
 const chatSearch = readFileSync(new URL("./useChatSearch.ts", import.meta.url), "utf8");
 const contextMenuAssembly = readFileSync(new URL("./appContextMenuAssembly.ts", import.meta.url), "utf8");
-const productionWiring = `${app}\n${chatPalette}\n${chatSearch}\n${contextMenuAssembly}`;
+const productionWiring = `${app}\n${appCommandPaletteHost}\n${chatPalette}\n${chatSearch}\n${contextMenuAssembly}`;
 const thread = [
   readFileSync(new URL("./ChatThreadSurface.tsx", import.meta.url), "utf8"),
   readFileSync(new URL("./ChatTurn.tsx", import.meta.url), "utf8"),
@@ -21,7 +22,7 @@ describe("chat history discovery production wiring", () => {
     expect(readFileSync(new URL("./useAppShellDomain.ts", import.meta.url), "utf8"))
       .toContain("useChatSearch({ open: options.commandPalette.open");
     expect(chatSearch).toContain("searchDurableChatMessages(query, false, 80)");
-    expect(app).toContain("openChatSearchResult(result)");
+    expect(appCommandPaletteHost).toContain("input.openChatSearchResult(result)");
     const navigation = readFileSync(new URL("./chatSearchNavigation.ts", import.meta.url), "utf8");
     expect(app).toContain("focusMessage: setFocusedChatMessageId");
     expect(navigation).toContain("options.focusMessage(result.messageId ?? null)");
