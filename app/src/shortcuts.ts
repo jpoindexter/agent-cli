@@ -1,5 +1,7 @@
 export type ShortcutStatus = "active" | "native" | "planned" | "passthrough";
 
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
+
 export type Shortcut = {
   id: string;
   label: string;
@@ -13,11 +15,11 @@ export type Shortcut = {
 export const SHORTCUTS: Shortcut[] = [
   {
     id: "workspace.open",
-    label: "Open folder",
+    label: PROJECT_ENTRY_LABELS.openProject,
     scope: "Workspace",
     keys: ["Cmd+O"],
     status: "active",
-    behavior: "Open the native folder picker and switch the active workspace.",
+    behavior: "Open the native project picker and switch the active project.",
   },
   {
     id: "editor.save",

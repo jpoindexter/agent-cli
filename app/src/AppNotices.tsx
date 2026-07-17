@@ -1,4 +1,5 @@
 import { AppIcon } from "./icons";
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 
 type AppNoticesProps = {
   actionNotice: string | null;
@@ -35,7 +36,7 @@ export const AppNotices = ({ actionNotice, canUseShellProfile, crashNotice, laun
       <div className="launch-error" role="alert">
         <span className="launch-error__message">{launchError}</span>
         <span className="launch-error__actions">
-          <button className="editor-command" type="button" onClick={onOpenFolder}><AppIcon name="folderOpen" /><span>Open Folder</span></button>
+          <button className="editor-command" type="button" onClick={onOpenFolder}><AppIcon name="folderOpen" /><span>{PROJECT_ENTRY_LABELS.openProject}</span></button>
           <button className="editor-command" type="button" disabled={!canUseShellProfile} onClick={onUseShellProfile}><AppIcon name="terminal" /><span>Use Shell profile</span></button>
         </span>
       </div>

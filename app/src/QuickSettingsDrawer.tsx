@@ -1,5 +1,6 @@
 import type { AgentApprovalMode } from "./agentSessionHandle";
 import { AppIcon } from "./icons";
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 import type { LaunchProfile } from "./launchProfiles";
 import type { ToolTrayMode, WorkbenchLayoutMode } from "./workbenchLayout";
 
@@ -43,7 +44,7 @@ export const QuickSettingsDrawer = (props: QuickSettingsDrawerProps) => (
     <AgentSettings {...props} />
     <LayoutSettings {...props} />
     <div className="drawer-action-grid">
-      <button className="rail-open-button" type="button" onClick={props.onOpenFolder}><AppIcon name="folderOpen" /><span>Open Folder</span></button>
+      <button className="rail-open-button" type="button" onClick={props.onOpenFolder}><AppIcon name="folderOpen" /><span>{PROJECT_ENTRY_LABELS.openProject}</span></button>
       <button className="rail-open-button" type="button" disabled={!props.hasWorkspace} onClick={props.onRefreshFiles}><AppIcon name="reload" /><span>Refresh Files</span></button>
     </div>
   </section>

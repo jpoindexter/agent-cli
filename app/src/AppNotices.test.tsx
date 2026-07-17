@@ -14,7 +14,7 @@ describe("AppNotices", () => {
   it("renders launch recovery actions", () => {
     const html = renderToStaticMarkup(<AppNotices actionNotice={null} canUseShellProfile={false} crashNotice={null} launchError="Agent failed" onDismissAction={vi.fn()} onDismissCrash={vi.fn()} onOpenFolder={vi.fn()} onUseShellProfile={vi.fn()} />);
     expect(html).toContain("Agent failed");
-    expect(html).toContain("Open Folder");
+    expect(html).toContain("Open Project…");
     expect(html).toContain("disabled");
   });
 });

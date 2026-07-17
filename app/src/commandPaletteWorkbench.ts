@@ -1,5 +1,6 @@
 import type { FileTreeNode } from "./fileTreeTypes";
 import type { SearchDialogCommand } from "./SearchCommandDialog";
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 
 type WorkbenchCommandInput = {
   activeComposerHarnessKey: string | null;
@@ -28,8 +29,8 @@ type WorkbenchCommandInput = {
 
 export const buildWorkspaceOpenCommands = (input: WorkbenchCommandInput): SearchDialogCommand[] => [{
   id: "workspace.open",
-  label: "Open Folder",
-  detail: "Choose a project folder",
+  label: PROJECT_ENTRY_LABELS.openProject,
+  detail: "Choose an existing project folder",
   shortcut: input.shortcut("workspace.open"),
   icon: "folderOpen",
   keywords: ["project", "workspace"],

@@ -3,6 +3,7 @@ import type { GitStatusFile } from "./fileGitStatus";
 import type { FileTreeNode } from "./fileTreeTypes";
 import type { AppIconName } from "./icons";
 import type { OpenProject } from "./workspaceState";
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 
 type MenuOptions = {
   danger?: boolean;
@@ -78,7 +79,7 @@ export const buildWorkspaceContextMenuItems = (
   workspacePath: string | null,
   actions: WorkspaceContextMenuActions,
 ): ContextMenuItem[] => [
-  menuItem("workspace.open", "Open Folder", actions.openWorkspace, {
+  menuItem("workspace.open", PROJECT_ENTRY_LABELS.openProject, actions.openWorkspace, {
     icon: "folderOpen", shortcut: actions.shortcut("workspace.open"),
   }),
   menuItem("workspace.new-file", "New File", () => actions.newFile(), {

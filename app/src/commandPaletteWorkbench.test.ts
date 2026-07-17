@@ -68,6 +68,10 @@ describe("workbench command palette builders", () => {
     expect(input.onOpenDetectedBrowser).toHaveBeenCalledOnce();
     expect(input.onAttachCurrentFile).toHaveBeenCalledOnce();
     expect(input.onAttachPreview).toHaveBeenCalledOnce();
+    expect(commands.find((command) => command.id === "workspace.open")).toMatchObject({
+      label: "Open Project…",
+      detail: "Choose an existing project folder",
+    });
   });
 
   it("disables workspace and editor commands when their required context is absent", () => {

@@ -168,6 +168,7 @@ import type { ContextMenuItem } from "./ContextMenu";
 import { composerReasoningLabel } from "./ComposerReasoningPicker";
 import { createProjectCloseController, projectCloseFromHook } from "./projectCloseController";
 import { createProjectSessionNavigationActions } from "./projectSessionNavigationActions";
+import { createProjectEntryActions } from "./projectEntryActions";
 import { createProjectSessionDeletionController, projectSessionDeletionFromHook } from "./projectSessionDeletionController";
 import {
   createTerminalRuntimeEventHandlers,
@@ -524,6 +525,12 @@ function App() {
     openDirectoryDialog: () => open({ directory: true }),
     requestOpenWorkspace: (path) => requestOpenWorkspace(path),
   });
+  const projectEntryActions = createProjectEntryActions({
+    createTask: projectSessionNavigationActions.createSession,
+    getActiveProject: () => workspacePathRef.current,
+    openProjectPicker: pickWorkspace,
+    switchProjectPath: requestOpenWorkspace,
+  });
 
   const composerSurface = createComposerSurface({
     chatIdForSession: composerHarnessSessionKey,
@@ -770,13 +777,13 @@ function App() {
     newFile: workspaceFileActions.createFile,
     newFolder: workspaceFileActions.createFolder,
     openDiff: diffReviewHook.open,
-    openWorkspace: pickWorkspace,
+    openWorkspace: projectEntryActions.openProject,
     renameNode: workspaceFileActions.rename,
     revealNode: workspaceFileActions.reveal,
     revealPath: revealItemInDir,
     runGitAction: diffReviewHook.runFileAction,
     shortcut: shortcutKeys,
-    switchProject: (project: OpenProject) => requestOpenWorkspace(project.path),
+    switchProject: (project: OpenProject) => projectEntryActions.switchProject(project.path),
   });
   const workspaceContextMenuActions = workspaceContextMenus.actions;
   const fileNodeContextMenuItems = workspaceContextMenus.fileNodeItems;
@@ -1007,7 +1014,7 @@ function App() {
     onOpenDetectedBrowser: () => void browser.openDetectedServer(),
     onOpenSettings: () => setSettingsOpen(true),
     onOpenTranscripts: () => paneTranscripts.setTranscriptsOpen(true),
-    onOpenWorkspace: () => void pickWorkspace(),
+    onOpenWorkspace: () => void projectEntryActions.openProject(),
     onQuickOpen: quickOpen.openDialog,
     onReloadBrowser: browser.reload,
     onResetLayout: shellLayout.resetInterface,
@@ -1194,7 +1201,7 @@ function App() {
 
   useNativeAppEvents<TerminalGridPayload<Snapshot>, TerminalPaneExitPayload>({
     onGrid: terminalRuntimeEventHandlers.handleGridPayload,
-    onOpenFolder: () => { void pickWorkspace(); },
+    onOpenFolder: () => { void projectEntryActions.openProject(); },
     onSaveFile: () => { void editorSession.saveEditorFileRef.current(); },
     onFindInFile: () => editorSession.openEditorSearchRef.current(),
     onCloseEditorTab: () => { void editorSession.closeActiveEditorTabRef.current(); },

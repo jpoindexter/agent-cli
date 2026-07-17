@@ -2918,8 +2918,13 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .menu(|handle| {
             let menu = Menu::default(handle)?;
-            let open =
-                MenuItem::with_id(handle, MENU_OPEN, "Open Folder…", true, Some("CmdOrCtrl+O"))?;
+            let open = MenuItem::with_id(
+                handle,
+                MENU_OPEN,
+                "Open Project…",
+                true,
+                Some("CmdOrCtrl+O"),
+            )?;
             let save = MenuItem::with_id(handle, MENU_SAVE, "Save", true, Some("CmdOrCtrl+S"))?;
             let find = MenuItem::with_id(handle, MENU_FIND, "Find…", true, Some("CmdOrCtrl+F"))?;
             let close_tab = MenuItem::with_id(

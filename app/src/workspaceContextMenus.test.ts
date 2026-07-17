@@ -57,6 +57,7 @@ describe("workspace context menus", () => {
     const closed = buildWorkspaceContextMenuItems(null, actions);
     const open = buildWorkspaceContextMenuItems("/repo", actions);
 
+    expect(closed.find((item) => item.id === "workspace.open")?.label).toBe("Open Project…");
     expect(closed.find((item) => item.id === "workspace.new-file")?.disabled).toBe(true);
     expect(closed.find((item) => item.id === "workspace.reveal")?.disabled).toBe(true);
     open.find((item) => item.id === "workspace.reveal")?.onSelect();
