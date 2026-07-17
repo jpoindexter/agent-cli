@@ -34,7 +34,7 @@ import {
 } from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
-import { createAppMenuAssembly } from "./appMenuAssembly";
+import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
 import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import { createEditorSurfaceActions } from "./editorSurfaceActions";
@@ -111,9 +111,6 @@ import { loadWorkspaceBootstrap } from "./workspaceBootstrap";
 import { terminalSnapshotText } from "./terminalTranscript";
 import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
 import {
-  worktreeForPaneId,
-} from "./worktrees";
-import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
   type AiConnectionSettings,
@@ -122,9 +119,6 @@ import { createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
 import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
-import { buildTerminalContextMenuItems } from "./terminalContextMenu";
-import {
-} from "./workspaceContextMenus";
 import {
   createEditorContextMenuAssembly,
   createProjectSessionContextMenuAssembly,
@@ -888,85 +882,12 @@ function App() {
       invoke("write_text_file", { root, path, content, expectedModifiedMs }),
   });
 
-  const terminalContextMenuItems = (): ContextMenuItem[] => buildTerminalContextMenuItems({
-    activePaneState: activeAgentSession.activeTerminalPane?.state ?? null,
-    hasActiveHandle: Boolean(activeAgentSessionHandle),
-    hasActivePane: Boolean(activeAgentSession.activeTerminalPane),
-    hasSelection: Boolean(terminalSurface.terminalSelectedText()),
-    hasWorkspace: Boolean(workspacePath),
-    hasWorktreeForActivePane: Boolean(activeAgentSession.activeTerminalPane && worktreeForPaneId(worktrees, String(activeAgentSession.activeTerminalPane.id))),
-    launchProfileChanging: profiles.changing,
-    launchProfileLabel: profiles.terminalProfile.label,
-    shortcuts: {
-      clear: shortcutKeys("terminal.clear"),
-      copy: shortcutKeys("terminal.copy-selection"),
-      paste: shortcutKeys("terminal.paste"),
-    },
-    actions: {
-      clear: () => terminalSurface.clearActiveTerminal(),
-      closePane: () => activeAgentSessionHandle?.close(),
-      copySelection: async () => { await terminalSurface.copyTerminalSelection(); chrome.setActionNotice("Copied terminal selection"); },
-      copyTail: async () => { await terminalSurface.copyActivePaneTail(); chrome.setActionNotice("Copied last 20 lines"); },
-      copyWorkingDirectory: () => workspacePath ? editorSurface.copyPath(workspacePath) : undefined,
-      createPane: () => terminalSurface.createTerminalPane(profiles.terminalProfile),
-      createWorktreePane: () => terminalSurface.createWorktreePane(profiles.terminalProfile),
-      interrupt: () => terminalSurface.interruptActivePane(),
-      killPane: () => activeAgentSession.activeTerminalPane ? terminalSurface.terminateTerminalPane(activeAgentSession.activeTerminalPane) : undefined,
-      paste: () => terminalSurface.pasteIntoTerminal(),
-      removeWorktree: () => activeAgentSession.activeTerminalPane ? terminalSurface.closeWorktreePane(activeAgentSession.activeTerminalPane.id) : undefined,
-      renamePane: () => activeAgentSession.activeTerminalPane ? renameTerminalPane(activeAgentSession.activeTerminalPane) : undefined,
-      restartPane: () => activeAgentSession.activeTerminalPane ? terminalSurface.restartTerminalPane(activeAgentSession.activeTerminalPane) : undefined,
-      saveTranscript: saveActivePaneTranscript,
-    },
-  });
-
-  const appMenuAssembly = createAppMenuAssembly({
-    activityLog: () => activeAgentSession.selectedAgentActivityLog,
-    browser: {
-      back: () => browser.goHistory(-1), canGoBack: browser.canGoBack,
-      canGoForward: browser.canGoForward, forward: () => browser.goHistory(1),
-      openExternal: () => openUrl(browser.url), reload: browser.reload, url: browser.url,
-    },
-    composer: {
-      activeRun: Boolean(activeChat.activeChatConversation.activeRunId),
-      attachCurrent: () => attachSelectedFileToComposer(),
-      attachLocal: () => composerAttachments.attachLocalFiles(),
-      attachPreview: () => composerAttachments.attachPreview(),
-      canAttachCurrent: Boolean(editorSession.selectedFile),
-      canRunParallel: Boolean(workspacePath && activeChat.activeSessionId && !activeChat.activeChatConversation.activeRunId),
-      clearDraft: () => composerLocal.setLocalState(activeChat.activeComposerHarnessKey, "", composerLocal.history),
-      copyWorkspace: () => workspacePath ? editorSurface.copyPath(workspacePath) : undefined,
-      draft: composerLocal.draft, hasWorkspace: Boolean(workspacePath),
-      parallel: () => { setOrchestrationError(null); setOrchestrationOpen(true); },
-      send: () => composerSurface.submitComposerDraft(), sending: composerSending,
-      shortcut: shortcutKeys("composer.send"), stop: () => chatRunControls.stopActiveChatRun(),
-    },
-    copyText: writeText,
-    notify: chrome.setActionNotice,
-    pane: {
-      activePaneId: terminal.activePaneId, changing: profiles.changing,
-      close: (pane) => terminalSurface.closeTerminalPane(pane.id),
-      copyCwd: (pane) => editorSurface.copyPath(pane.cwd),
-      focus: (pane) => terminalSurface.focusTerminalPane(pane.id),
-      hasWorktree: (pane) => Boolean(worktreeForPaneId(worktrees, String(pane.id))),
-      kill: (pane) => terminalSurface.terminateTerminalPane(pane),
-      removeWorktree: (pane) => terminalSurface.closeWorktreePane(pane.id),
-      rename: (pane) => renameTerminalPane(pane),
-      restart: (pane) => terminalSurface.restartTerminalPane(pane),
-    },
-    setContextMenu: contextMenuHost.setContextMenu,
-    tray: {
-      activeMode: shellLayout.utilityTrayMode, activePaneState: activeAgentSession.activeTerminalPane?.state ?? null,
-      activeSurface: shellLayout.agentSurfaceMode === "terminal",
-      closePane: () => activeAgentSession.activeTerminalPane ? terminalSurface.closeTerminalPane(activeAgentSession.activeTerminalPane.id) : undefined,
-      createShell: () => terminalSurface.createTerminalPane(defaultTerminalLaunchProfile()),
-      hasActivePane: Boolean(activeAgentSession.activeTerminalPane), hasWorkspace: Boolean(workspacePath),
-      hide: () => shellLayout.setAgentSurfaceMode("chat"),
-      killPane: () => activeAgentSession.activeTerminalPane ? terminalSurface.terminateTerminalPane(activeAgentSession.activeTerminalPane) : undefined,
-      launchProfileChanging: profiles.changing,
-      restartPane: () => activeAgentSession.activeTerminalPane ? terminalSurface.restartTerminalPane(activeAgentSession.activeTerminalPane) : undefined,
-      show: (nextMode) => { shellLayout.setUtilityTrayMode(nextMode); shellLayout.setAgentSurfaceMode("terminal"); },
-    },
+  const { appMenuAssembly, terminalContextMenuItems } = appRuntimeMenusFrom({
+    activeAgentSession, activeAgentSessionHandle, activeChat, attachSelectedFileToComposer,
+    browser, chatRunControls, chrome, composerAttachments, composerLocal, composerSending,
+    composerSurface, contextMenuHost, editorSession, editorSurface, profiles, renameTerminalPane,
+    saveActivePaneTranscript, setOrchestrationError, setOrchestrationOpen, shellLayout, terminal,
+    terminalSurface, workspacePath, worktrees,
   });
 
   const visiblePaletteCommands = visibleAppCommandPaletteCommands({
