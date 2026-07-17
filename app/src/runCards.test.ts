@@ -62,10 +62,7 @@ describe("run card provenance", () => {
   });
 
   it("reveals the editor tray after Review opens a file or diff", () => {
-    const source = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const reviewAction = source.slice(
-      source.indexOf("const editorSurface"), source.indexOf("const gitActionLabel"),
-    );
+    const reviewAction = readFileSync(new URL("./useAppEditorSurfaceRuntime.ts", import.meta.url), "utf8");
 
     expect(reviewAction).toContain('setToolTrayMode("editor")');
     expect(reviewAction).toContain('setWorkbenchLayout("right")');

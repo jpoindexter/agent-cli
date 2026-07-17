@@ -4,8 +4,6 @@ import { readText, writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { confirm as confirmDialog, open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { load } from "@tauri-apps/plugin-store";
-import { EditorView, type ViewUpdate } from "@codemirror/view";
-import { openSearchPanel } from "@codemirror/search";
 import type { TreeApi } from "react-arborist";
 import { DraftNavigationDialog } from "./DraftNavigationDialog";
 import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
@@ -20,7 +18,6 @@ import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
 import { DEFAULT_BROWSER_PREVIEW_URL } from "./browserPreview";
 import { useConversationRuntime } from "./useConversationRuntime";
 import { createComposerSettingsActions } from "./composerSettingsActions";
-import { useEditorNavigationLifecycle } from "./useEditorNavigationLifecycle";
 import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import { activeProjectSessionId } from "./workspaceState";
@@ -30,8 +27,6 @@ import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
 import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
-import { createEditorSurfaceActions } from "./editorSurfaceActions";
-import type { GitStatusFile } from "./fileGitStatus";
 import { AgentConversationPanel } from "./AgentConversationPanel";
 import { agentConversationPanelPropsFrom } from "./agentConversationPanelHost";
 import { useContextMenuHost } from "./useContextMenuHost";
@@ -44,8 +39,6 @@ import { createComposerSurface } from "./composerSurfaceController";
 import { createComposerHistoryNavigation } from "./composerHistoryNavigation";
 import { createUtilityTrayControls } from "./utilityTrayControls";
 import { createTerminalPaneRename } from "./terminalPaneRename";
-import { wireEditorFileWorkflow } from "./editorFileWorkflowSurface";
-import { wireWorkspaceFileActions } from "./workspaceFileActionsSurface";
 import { wireSessionCheckpointActions } from "./sessionCheckpointSurface";
 import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
@@ -61,7 +54,6 @@ import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
 import { visibleProjectsFrom } from "./projectRailView";
-import { fileTreeNodeFromPath } from "./fileTreeTypes";
 import { createTerminalPaneFinalize } from "./terminalPaneFinalize";
 import { createChatSearchNavigation } from "./chatSearchNavigation";
 import { createSessionSnapshotCapture, createSessionSnapshotRestore } from "./sessionSnapshotCapture";
@@ -108,6 +100,7 @@ import { createRenderPerfState } from "./renderPerf";
 import type { AgentHookStatus } from "./useAgentHookRequests";
 import { useAgentHookRuntime } from "./useAgentHookRuntime";
 import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
+import { useAppEditorSurfaceRuntime } from "./useAppEditorSurfaceRuntime";
 import {
   createEditorContextMenuAssembly,
   createProjectSessionContextMenuAssembly,
@@ -159,7 +152,6 @@ import "./workbenchTransitions.css";
 
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
-type SaveEditorFileOptions = { force?: boolean };
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imeInputRef = useRef<HTMLTextAreaElement>(null);
@@ -684,57 +676,14 @@ function App() {
 
   const visibleOpenProjects = visibleProjectsFrom(persistence.openProjects, workspacePath, terminal.activeProjectStatus);
 
-  const editorFileWorkflow = wireEditorFileWorkflow(editorSession, {
-    closeDiffReview: () => diffReviewHook.close(),
-    gateAction: (action) => agentActivityHook.gateAppAction(action),
-    getDirty: () => editorWorkspace.editorDirty,
-    getRoot: () => workspacePathRef.current ?? workspacePath,
-    persistActiveFile: persistence.persistActiveFile,
-    recordEdit: (file) => agentActivityHook.recordAgentActivity(activeAgentSession.activeAgentSessionDescriptor, {
-      kind: "file", label: "Edited a file", detail: file.name, status: "complete",
-    }),
-  });
-  const saveEditorFile = (options: SaveEditorFileOptions = {}) => editorFileWorkflow.save(options.force ?? false);
-
-  const editorSurface = createEditorSurfaceActions<
-    FileTreeNode, EditorView, GitStatusFile, ReturnType<typeof EditorView.scrollIntoView>
-  >(
-    editorSession,
-    {
-      copyText: writeText,
-      getDiffReviewPath: () => diffReviewHook.review?.absolutePath ?? null,
-      getGitFiles: () => gitStatusHook.status?.files ?? [],
-      getRoot: () => workspacePathRef.current,
-      makeFileNode: (path) => fileTreeNodeFromPath(path, "file"),
-      notify: chrome.setActionNotice,
-      openExternal: openPath,
-      openFileDirect: (file, fileOptions) => editorFileWorkflow.openDirect(file, fileOptions),
-      openGitDiff: async (file) => Boolean(await diffReviewHook.open(file)),
-      openSearchPanel,
-      requestOpenFile: async (file, fileOptions) => Boolean(await editorFileWorkflow.requestOpen(file, fileOptions)),
-      revealEditorTools: () => {
-        if (shellLayout.workbenchLayout === "hidden") shellLayout.setWorkbenchLayout("right");
-        shellLayout.setToolTrayMode("editor");
-      },
-      revealInDir: revealItemInDir,
-      saveFile: (saveOptions) => saveEditorFile(saveOptions),
-      schedule: (callback, delayMs) => { window.setTimeout(callback, delayMs); },
-      scheduleFrame: (callback) => requestAnimationFrame(callback),
-      scrollEffect: (position) => EditorView.scrollIntoView(position, { y: "center" }),
-    },
-  );
-  const handleEditorUpdate = (update: ViewUpdate) => editorSurface.handleEditorUpdate(update);
-
-  const workspaceFileActions = wireWorkspaceFileActions(editorSession, {
-    clearPersistedActiveFile: persistence.clearActiveFile,
-    getDirty: () => editorWorkspace.editorDirty,
-    getPersistRoot: () => workspacePathRef.current,
-    getRoot: () => workspacePathRef.current ?? workspacePath,
-    getSelectedFile: () => editorSession.selectedFile,
-    openFileDirect: (file, fileOptions) => editorFileWorkflow.openDirect(file, fileOptions),
-    refresh: workspaceTree.refresh,
-    requestOpenFile: (file, fileOptions) => editorFileWorkflow.requestOpen(file, fileOptions),
-    setError: editorSession.setFileOpError,
+  const {
+    editorFileWorkflow, editorNavigation, editorSurface, handleEditorUpdate,
+    saveEditorFile, tabIsDirty, workspaceFileActions,
+  } = useAppEditorSurfaceRuntime({
+    activeAgentSession, agentActivityHook, chrome, diffReview: diffReviewHook,
+    editorSession, editorWorkspace, gitStatus: gitStatusHook, persistence,
+    projectClose: projectCloseController, shellLayout, workspaceOpen: workspaceOpenActions,
+    workspacePath, workspacePathRef, workspaceTree,
   });
 
 
@@ -868,38 +817,6 @@ function App() {
     setOrchestrationOpen, setSettingsOpen, shellLayout, terminal, terminalFind, terminalSurface,
     visibleOpenProjects, workspacePath, worktrees,
   });
-  const tabIsDirty = (path: string) => editorWorkspace.dirtyTabPathSet.has(path);
-  const editorNavigation = useEditorNavigationLifecycle({
-    activeFile: editorSession.selectedFile,
-    captureEditor: () => { editorSession.captureCurrentEditorViewState(); editorSession.captureCurrentEditorBuffer(); },
-    closeProject: async (projectPath) => { await projectCloseController.closeProjectDirect(projectPath); },
-    confirmClose: (message) => confirmDialog(message),
-    editorTabs: editorSession.editorTabs,
-    isDirty: tabIsDirty,
-    onActivateTab: async (tab) => {
-      editorSession.selectedFileRef.current = null;
-      editorSession.setSelectedFile(null);
-      await editorFileWorkflow.openDirect(tab, { focusEditor: true });
-    },
-    onRemoveTab: (path) => {
-      delete editorSession.editorBuffersRef.current[path];
-      delete editorSession.editorViewStatesRef.current[path];
-      editorSession.setEditorBufferRevision((value) => value + 1);
-    },
-    onResetAfterClose: () => {
-      if (workspacePathRef.current) void persistence.clearActiveFile(workspacePathRef.current);
-      editorSession.resetEditor();
-    },
-    openFile: async (file, options) => { await editorFileWorkflow.openDirect(file, options); },
-    openWorkspace: async (path) => { await workspaceOpenActions.openWorkspaceDirect(path); },
-    saveEditorFile: () => saveEditorFile(),
-    setEditorTabs: editorSession.setEditorTabs,
-  });
-
-  editorSession.saveEditorFileRef.current = saveEditorFile;
-  editorSession.openEditorSearchRef.current = editorSurface.openEditorSearch;
-  editorSession.closeActiveEditorTabRef.current = editorNavigation.closeActiveTab;
-
   useAgentHookRuntime({
     activeChat, agentActivityHook, editorFileWorkflow, editorSession, persistence,
     setStatus: setAgentHookStatus, terminal, terminalSurface, workspacePath, workspacePathRef,
