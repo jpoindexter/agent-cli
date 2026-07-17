@@ -1,6 +1,6 @@
 [package]
 name = "agent-cli"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lean macOS shell for real Claude/Codex terminal agents"
 authors = ["Jason Poindexter"]
 edition = "2021"

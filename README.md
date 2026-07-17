@@ -4,7 +4,7 @@
 
 Keelhouse keeps structured agent conversations at the center of the screen, then brings projects, files, editing, Git, browser preview, and real terminal sessions into resizable trays around them. It is built for developers who use tools such as Codex, Claude, Gemini, or OpenCode while relying on VS Code mainly as a project shell.
 
-> **Alpha:** Keelhouse is under active development. The [v0.1.0 prerelease](https://github.com/jpoindexter/keelhouse/releases/tag/v0.1.0) is Developer ID signed for Apple silicon, but it is not yet Apple-notarized.
+> **Alpha:** Keelhouse is under active development. The [v0.1.1 prerelease](https://github.com/jpoindexter/keelhouse/releases/tag/v0.1.1) is Developer ID signed for Apple silicon, but it is not yet Apple-notarized.
 
 ![Keelhouse workbench with project threads, agent activity, composer, and editor](docs/screenshots/keelhouse-workbench.jpg)
 

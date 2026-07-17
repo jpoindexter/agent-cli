@@ -1403,14 +1403,14 @@
     {
       "id": "MODULARITY-300-200-50",
       "title": "Eliminate 300/200/50 module debt",
-      "column": "now",
+      "column": "done",
       "tier": "rock",
       "track": "quality",
       "size": "L",
       "launch": "v2",
       "summary": "Keep the app repairable by limiting source files to 300 lines, React component files to 200 lines, and functions/components/hooks to 50 lines. Extract behavior along existing ownership boundaries without changing the approved chrome or runtime behavior.",
       "done": "npm run qa:module-size passes with an empty legacy baseline; App.tsx, App.css, settings, chat, context-menu, workbench-layout, and workspace-state owners all meet 300/200/50; focused tests and packaged smoke preserve chat, trays, terminal, editor, browser, menus, and session restore.",
-      "progress": "2026-07-17: the TypeScript-AST-backed qa:module-size gate now reports an empty violations object. App.tsx is a 14-line shell with a 3-line component, down from the 7,187-line continuation checkpoint; bounded useAppRuntime helpers now own the remaining orchestration, exports, menus, lifecycles, settings, and view-props assembly. The production build, chrome contract, repository hygiene, 892 frontend tests, and 107 Rust tests pass. The source acceptance criterion is executed; the card remains open only until the freshly rebuilt signed package passes the required native smoke across chat, project entry, trays, terminal, editor, browser, menus, and restore.",
+      "progress": "2026-07-17: complete. The TypeScript-AST-backed qa:module-size gate reports an empty violations object. App.tsx is a 14-line shell with a 3-line component, down from the 7,187-line continuation checkpoint; bounded useAppRuntime helpers own orchestration, exports, menus, lifecycles, settings, and view-props assembly. The production build, chrome contract, repository hygiene, 892 frontend tests, and 107 Rust tests pass. A freshly rebuilt Developer ID signed package launched and executed restored chat/editor/worktree state, composer-plus actions, project entry and cancellation, browser/editor tools, a live terminal tray, settings, and native menus. The mounted DMG app also passed strict codesign verification.",
       "buildOrder": 90.15
     },
     {
@@ -1521,15 +1521,15 @@
     {
       "id": "PROJECT-ENTRY-NATIVE-QA",
       "title": "Native project-entry coherence gate",
-      "column": "next",
+      "column": "done",
       "tier": "rock",
       "track": "quality",
       "size": "M",
       "launch": "v2",
-      "blocker": true,
+      "blocker": false,
       "summary": "Prove the entire project/task entry contract through every promised door before calling it discoverable: Threads, empty state, project switcher, composer context, composer plus menu, command palette, macOS File menu, and shortcuts. Lock consistent labels, shared routing, responsive containment, focus behavior, persistence, and error recovery.",
       "done": "The production build, empty module-size baseline, chrome contract, full frontend/Rust suites, diff check, accessibility integration checks, and 1440/1024/900 visual captures pass. A freshly built signed app executes New Project, Open Project, Switch Project, New Task, plus-menu actions, local/worktree/branch menus, cancel, failure recovery, relaunch persistence, and real cwd/branch checks. No sub-claim is accepted from a build-only proxy.",
-      "progress": "2026-07-17: every native behavior is now executed: New Project + Git + first task + relaunch persistence, Open Project from true first use, cancellation, cross-project switching and searched selection, two independent New Tasks, every enabled composer-plus row, composer Project/Local/worktree/Branch menus, real branch/worktree creation, dirty-tree refusal, and missing-path failure/retry. Native failures found and fixed include the worktree prompt no-op, 1024 metadata overlap, command-palette misranking, and side docks squeezing narrow chat. Evidence includes final signed-app captures plus production 1440/1180/1024/900 renders in docs/qa/. The final code gate is green at 871 frontend and 107 Rust tests except for the explicitly required empty module-size baseline: App.tsx remains the one ratcheted debt file at 1,404 lines with a 1,208-line component, so this aggregate card stays open until MODULARITY-300-200-50 completes.",
+      "progress": "2026-07-17: complete. Every native behavior is executed: New Project + Git + first task + relaunch persistence, Open Project from true first use, cancellation, cross-project switching and searched selection, two independent New Tasks, every enabled composer-plus row, composer Project/Local/worktree/Branch menus, real branch/worktree creation, dirty-tree refusal, and missing-path failure/retry. Native failures found and fixed include the worktree prompt no-op, 1024 metadata overlap, command-palette misranking, and side docks squeezing narrow chat. Final evidence includes signed-app captures, production 1440/1180/1024/900 renders, an empty module-size baseline, 892 frontend tests, 107 Rust tests, and a fresh signed-package smoke of restored state, composer-plus, project entry, browser, terminal, settings, and menus.",
       "buildOrder": 90.188
     },
     {
