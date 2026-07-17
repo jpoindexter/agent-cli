@@ -2,7 +2,7 @@
 
 **One-liner:** Keelhouse is a lean native macOS agent workbench for Jason's actual VS Code workflow: Codex-style project/chat history and structured agent conversations as the main surface, plus optional raw Codex/Gemini/Claude terminals and fast resizable file explorer, editor, Git, and browser trays — without the IDE chrome he does not use.
 
-**Naming:** `agent-cli` remains the repo/package slug while the product name is Keelhouse.
+**Naming:** The GitHub repository and product are named Keelhouse. Internal package, binary, app-identifier, and local-state slugs remain `agent-cli` until a separate migration.
 
 **Direction locked 2026-07-07** (see DECISIONS.md for the full trail): build our own app, leveraging open-source *components* (Ghostty's terminal engine, Tauri, CodeMirror) — not adopting a finished third-party app. cmux/Superconductor/hashmark were evaluated and are reference only. The core architecture (`libghostty-vt` in a Rust backend parsing a real pty) is **verified working** — see `spike-ghostty-vt/`.
 

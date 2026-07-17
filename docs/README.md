@@ -1,6 +1,6 @@
 # Keelhouse Docs
 
-Keelhouse is the product name. The repo, package, binary, app identifier, and local-state slug remain `agent-cli` until an explicit migration.
+Keelhouse is the product and GitHub repository name. The package, binary, app identifier, and local-state slug remain `agent-cli` until an explicit migration.
 
 ## Naming
 

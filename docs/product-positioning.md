@@ -2,7 +2,7 @@
 
 ## Name
 
-Use **Keelhouse** as the product name. Keep `agent-cli` as the repo, package, binary, identifier, and local-state slug until a later explicit migration.
+Use **Keelhouse** as the product and GitHub repository name. Keep `agent-cli` only as the internal package, binary, identifier, and local-state slug until a later explicit migration.
 
 Keelhouse is the structure around the work: projects, files, browser preview, real CLI agent panes, sessions, diffs, and review surfaces. The name should not imply another chat app, terminal emulator, plugin host, or VS Code clone.
 
@@ -24,7 +24,7 @@ Keelhouse replaces the useful shell of VS Code for agent-driven coding: open pro
 - Avoid calling it an IDE, chat client, terminal replacement, automation platform, or plugin marketplace.
 - Say it keeps VS Code muscle memory for supported workflows, not that it clones VS Code.
 - Say agent hooks are permissioned app-owned actions, not arbitrary extensions.
-- Use `agent-cli` only for repository/package/storage references.
+- Use `agent-cli` only for internal package, binary, identifier, or storage references.
 
 ## README Contract
 

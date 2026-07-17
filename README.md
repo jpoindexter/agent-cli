@@ -1,102 +1,148 @@
 # Keelhouse
 
-Keelhouse is a lean native macOS agent cockpit for real CLI coding agents. The main surface is a Codex-like chat/run view backed by real Codex/Gemini/Claude terminal panes; raw terminal is available when needed, and the VS Code parts Jason actually uses — project/session rail, file explorer, robust editor, and browser preview — stay close as resizable trays. It drops extension/plugin bloat, debugger sprawl, and account/chat chrome.
+**A native macOS workbench for running coding agents without the weight of a full IDE.**
 
-The repo/package slug remains `agent-cli` for now; **Keelhouse** is the locked product name.
+Keelhouse keeps structured agent conversations at the center of the screen, then brings projects, files, editing, Git, browser preview, and real terminal sessions into resizable trays around them. It is built for developers who use tools such as Codex, Claude, Gemini, or OpenCode while relying on VS Code mainly as a project shell.
 
-## What It Is
+> **Alpha:** Keelhouse is under active development. The source and local packaging path are public, but there is not yet a notarized public download.
 
-Keelhouse is the stable structure around heavy agent work: projects, files, terminal panes, browser context, sessions, and review surfaces stay aligned while real CLI agents do the work.
+![Keelhouse workbench with project threads, agent activity, composer, and editor](docs/screenshots/keelhouse-workbench.jpg)
 
-Use this language consistently:
+## Why Keelhouse
 
-- **Category:** native agent workbench
-- **Audience:** one developer running multiple CLI agents across multiple projects
-- **Promise:** keep terminal-agent speed without paying the VS Code window/resource tax
-- **Non-goals:** not a VS Code clone, generic terminal, plugin marketplace, or general-purpose consumer chat app
+Agent-driven development changes the center of gravity of an IDE. The primary loop becomes:
 
-Read the product language guide in `docs/product-positioning.md`.
+1. Open or switch a project.
+2. Give a coding agent a goal and the right context.
+3. Review activity, files, diffs, and local output.
+4. Keep independent projects and conversations recoverable.
 
-## Status
+Keelhouse is the native structure around that loop. It preserves the useful parts of a workbench while leaving out the extension marketplace, debugger sprawl, account chrome, and general-purpose chat features.
 
-Direction is locked: build our own app using open-source components, not a fork of cmux, Superconductor, hashmark, or zellij. The terminal foundation is verified: real pty -> `libghostty-vt` in Rust -> Tauri IPC -> Canvas 2D.
+## What Works Today
 
-Already working: keyboard input, paste, selection/copy, scrollback, folder picker, persisted workspace, project/session rail, browser preview, agent launch profiles, named terminal panes, drawer modes for Projects/Files, file rail, watcher, recent projects, CodeMirror editing, tabs, save protection, context menus, composer routing, shortcut docs, chrome token polish, and Keelhouse-specific title/sidebar/status shell chrome.
+- Project creation, folder opening, recent-project switching, and first-use recovery.
+- Multiple persisted chats per project with independent provider and run state.
+- Structured Codex conversations with Markdown, tool activity, stop/error handling, and permission decisions.
+- Real PTY-backed terminal panes for installed coding-agent CLIs and shells.
+- Project-scoped file explorer, CodeMirror editor, tabs, find/replace, dirty-state protection, and safe saving.
+- Git-aware review surfaces, worktree targets, browser preview, and detected local development servers.
+- Provider/model settings, local CLI health, macOS Keychain-backed secrets, and custom terminal profiles.
+- Responsive desktop chrome with movable tool trays and a compact layout at the native minimum width.
+- SQLite chat persistence, Tauri Store workspace preferences, crash recovery, and session restoration.
 
-Current active slice: see `STATE.md`. The roadmap source is `roadmap.json`, rendered to `roadmap.html`; `ROADMAP.md` is the readable companion.
+Codex is the most thoroughly exercised structured provider path. Claude and OpenCode integration are still being hardened, while Gemini and arbitrary installed CLIs remain available through real terminal panes.
 
-## Product Shape
+## Product Views
 
-- Agent-first workbench: chat/run activity, composer, and selected real agent pane own the main screen.
-- Project/session drawer for multiple workspaces and task contexts, with a separate Files drawer for the workspace tree.
-- VS Code/Codex-inspired shell structure adapted to Keelhouse: compact status/action bar, side drawer, resizable trays, and bottom status strip.
-- Dense file explorer with ignores, watching, and git-aware state.
-- CodeMirror editor tray with VS Code-style shortcuts, tabs, dirty state, find/replace, file operations, and file safety.
-- Ghostty-backed terminal panes running real `codex`, `gemini`, `claude`, or shell processes.
-- Lightweight browser preview tray for localhost apps, docs, auth flows, and generated pages.
-- Codex-quality chrome: icons, activity rows, permission-aware composer, settings, and source-control surfaces.
+| Responsive workbench | Scoped settings |
+|---|---|
+| ![Keelhouse at a compact window width](docs/screenshots/keelhouse-responsive.jpg) | ![Keelhouse settings workspace](docs/screenshots/keelhouse-settings.jpg) |
 
-Keelhouse is not a VS Code clone, generic terminal emulator, general browser, plugin marketplace, or general-purpose consumer chat app. Its chat model is project-scoped and built for coding-agent work.
+The screenshots above were captured from the packaged native macOS app, not the HTML demos.
 
-## Quick Start
+## Architecture
+
+Keelhouse separates structured agent events from terminal rendering instead of scraping terminal text into chat messages.
+
+```text
+Structured agent path
+composer -> Tauri command -> provider JSON events -> typed reducer -> SQLite chat timeline
+
+Raw terminal path
+CLI process <-> portable-pty -> libghostty-vt -> Tauri IPC -> Canvas terminal
+```
+
+| Layer | Technology | Responsibility |
+|---|---|---|
+| Native shell | Tauri 2 | Windowing, commands, events, packaging |
+| Backend | Rust | Provider processes, PTYs, terminal state, persistence, file operations |
+| Terminal | `portable-pty` + `libghostty-vt` | Real process sessions and VT/xterm parsing |
+| Frontend | React 19 + TypeScript + Vite | Workbench chrome, chat, trays, settings |
+| Editor | CodeMirror 6 | Source editing, search, tabs, view-state restoration |
+| Persistence | SQLite WAL + Tauri Store | Durable chats plus lightweight workspace preferences |
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the process and ownership boundaries, and [DECISIONS.md](DECISIONS.md) for the append-only decision trail.
+
+## Run From Source
+
+### Prerequisites
+
+- macOS on Apple silicon for the currently verified packaging path.
+- Node.js and npm.
+- Rust and Cargo.
+- Zig `0.15.2` for the Ghostty bridge. Zig `0.16` is not compatible with the pinned terminal dependency.
+- Any provider CLIs you want to run, already authenticated through their normal local login flow.
 
 ```bash
-cd app
+git clone https://github.com/jpoindexter/keelhouse.git
+cd keelhouse/app
 npm install
 PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" npm run tauri dev
 ```
 
-Useful checks:
+Keelhouse uses your installed provider tools. Credentials remain with those CLIs or in the macOS Keychain; do not commit API keys to this repository.
+
+## Build the macOS App
 
 ```bash
-cd app && npm run build
-cd app && npm test
-cd app/src-tauri && PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" cargo test
-cd app && npm run package:mac
+cd app
+npm run package:mac
+open src-tauri/target/release/bundle/macos/Keelhouse.app
 ```
 
-Zig must stay pinned to `0.15.2`; Homebrew's default `0.16` breaks the Ghostty bridge build.
-The package command creates the ad-hoc-signed app at `app/src-tauri/target/release/bundle/macos/Keelhouse.app`; see `docs/packaging.md`.
+The local package is arm64 and ad-hoc signed. Developer ID signing and Apple notarization are separate release gates, so macOS distribution is not represented as production-ready yet. See [docs/packaging.md](docs/packaging.md).
 
-## Work From The Docs
+## Verification
 
-For product or implementation decisions, read these in order:
+The normal pre-push gate is:
 
-1. `PRD.md` — scope, non-goals, and done criteria.
-2. `ROADMAP.md` — execution sequence and current product slices.
-3. `STATE.md` — latest verified handoff and next card.
-4. `DECISIONS.md` — append-only decision history.
-5. `docs/README.md` — topic index for deeper notes.
+```bash
+cd app
+npm run build
+npm run qa:module-size
+npm run qa:chrome-contract
+npm test -- --run
+git diff --check
+
+cd src-tauri
+PATH="/opt/homebrew/opt/zig@0.15/bin:$PATH" cargo test
+```
+
+The repository also keeps native screenshots, interaction records, packaged-app checks, provider approval evidence, and performance captures under [`docs/qa/`](docs/qa/).
+
+Source files follow a ratcheted **300/200/50** modularity contract: at most 300 lines per source file, 200 per React component file, and 50 per function, component, or hook. Existing debt cannot grow, and new files receive no exception.
 
 ## Repository Map
 
 | Path | Purpose |
 |---|---|
-| `app/` | Tauri 2 + React/TypeScript app, including terminal, rail, editor, and local state |
-| `app/src-tauri/` | Rust backend for pty/process/workspace/file commands |
-| `PRD.md` / `ROADMAP.md` / `STATE.md` | Product scope, sequence, and current handoff |
-| `ARCHITECTURE.md` / `DECISIONS.md` | Stack, terminal data flow, and append-only decisions |
-| `docs/` | Local state, parity research, audits, and implementation notes |
-| `roadmap.json` / `roadmap.html` | Rockmap source and generated roadmap board |
-| `spike-ghostty-vt/` | Verified Ghostty parser spike |
-| `ghostty/`, `zellij/`, `resources/` | Reference configs and parked research |
+| [`app/`](app/) | Tauri, React, TypeScript, and native application code |
+| [`app/src-tauri/`](app/src-tauri/) | Rust processes, PTYs, persistence, provider adapters, and filesystem commands |
+| [`docs/`](docs/) | Architecture notes, product research, packaging, and QA evidence |
+| [`demo/`](demo/) | Visual prototypes used to test shell direction before implementation |
+| [`PRD.md`](PRD.md) | Product scope, daily workflow, and non-goals |
+| [`ROADMAP.md`](ROADMAP.md) | Human-readable execution roadmap |
+| [`STATE.md`](STATE.md) | Current handoff and verified next step |
 
-## Documentation Map
+## Project Status
 
-| Document | Use |
-|---|---|
-| `docs/README.md` | Documentation index and product naming note |
-| `PRD.md` | Product requirements and scope boundaries |
-| `ROADMAP.md` | Human-readable roadmap and execution discipline |
-| `STATE.md` | Current handoff, verified slices, next step |
-| `DECISIONS.md` | Append-only decision log |
-| `docs/product-positioning.md` | Name, one-liner, language rules |
-| `docs/chrome-polish-system.md` / `docs/icon-system.md` | Current chrome token and icon contracts |
-| `docs/shortcuts.md` | Active shortcut map and planned exceptions |
-| `docs/*-parity.md` / `docs/*-scope.md` | Focused research and parity criteria |
+The terminal and workbench architecture is proven in the native app. Current work is focused on completing the 300/200/50 modularity migration, hardening provider/model selection, and preparing the first honest downloadable release.
 
-Rebuild the roadmap board after editing `roadmap.json`:
+- [Product requirements](PRD.md)
+- [Roadmap](ROADMAP.md)
+- [Current state](STATE.md)
+- [Packaging status](docs/packaging.md)
+- [GitHub releases](https://github.com/jpoindexter/keelhouse/releases)
 
-```bash
-node rockmap/build-roadmap.mjs roadmap.json roadmap.html
-```
+## Scope
+
+Keelhouse is intentionally not a VS Code clone, generic terminal emulator, plugin marketplace, hosted automation platform, or consumer chat app. Its scope is the local agent-workbench loop: projects, conversations, files, review, terminals, and preview.
+
+## License and Contributions
+
+Issues and technical feedback are welcome while the product is in alpha. This repository does not yet include an open-source license, so the published source is available for review but should not be assumed to grant redistribution or modification rights.
+
+Keelhouse builds on open-source work including [Tauri](https://tauri.app/), [Ghostty](https://ghostty.org/), [CodeMirror](https://codemirror.net/), React, and Rust. Their respective licenses remain with their projects.
+
+Built by [Jason Poindexter](https://github.com/jpoindexter).

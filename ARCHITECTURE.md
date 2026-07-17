@@ -1,6 +1,6 @@
 # ARCHITECTURE — Keelhouse
 
-The technical design that doesn't fit the one-page PRD. Stack is locked (DECISIONS.md 2026-07-07). The repository/package slug is still `agent-cli`; Keelhouse is the product name used in user-facing docs and app metadata.
+The technical design that doesn't fit the one-page PRD. Stack is locked (DECISIONS.md 2026-07-07). The GitHub repository and product are named Keelhouse; internal package, binary, app-identifier, and local-state slugs remain `agent-cli` until a separate migration.
 
 ## Stack
 
