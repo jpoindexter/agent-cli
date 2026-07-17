@@ -1428,7 +1428,7 @@
     {
       "id": "PROJECT-ENTRY-CONTRACT",
       "title": "Shared project entry actions",
-      "column": "now",
+      "column": "done",
       "tier": "rock",
       "track": "workspace",
       "size": "S",
@@ -1436,7 +1436,7 @@
       "blocker": true,
       "summary": "Create one typed owner for New Project, Open Project, Switch Project, and New Task so the Threads toolbar, empty state, composer, menu bar, command palette, and project switcher cannot drift. User-facing copy says Project consistently while existing workspace persistence remains internal.",
       "done": "Focused tests first fail then prove every entry surface calls the same guarded actions; Open Project reuses the native picker and dirty-draft/project lifecycle; cancelled actions are no-ops; New Task routes project-less users to project entry; menu/palette/shortcut labels match. See docs/project-entry-and-composer-menu-plan-2026-07-17.md.",
-      "progress": "2026-07-17: shared typed actions and exact Project vocabulary now own the workspace context menu, command palette, native events, launch recovery, Threads/titlebar controls, File menu, switcher, and composer project control. Fresh signed-app QA executed the native File menu labels, searchable switcher, Open Project picker cancellation, project switching, Cmd+N, and persistent Threads New Task. A native palette failure where New Project selected New Task was reproduced, fixed with exact-label relevance that ignores the action ellipsis, and executed through both New Project and Open Project in the final signed app. The card stays open only for the project-less titlebar execution pass.",
+      "progress": "2026-07-17: complete. Shared typed actions and exact Project vocabulary own the workspace context menu, command palette, native events, launch recovery, Threads/titlebar controls, File menu, switcher, and composer project control. Fresh signed-app QA executed the native File menu labels, searchable switcher, Open Project picker cancellation, project switching, Cmd+N, persistent Threads New Task, and the true project-less titlebar. A native palette failure where New Project selected New Task was reproduced, fixed with exact-label relevance that ignores the action ellipsis, and executed through both New Project and Open Project in the final signed app.",
       "buildOrder": 90.181
     },
     {
@@ -1456,14 +1456,14 @@
     {
       "id": "PROJECT-SWITCHER",
       "title": "Searchable project switcher",
-      "column": "next",
+      "column": "done",
       "tier": "pebble",
       "track": "workspace",
       "size": "M",
       "launch": "v2",
       "summary": "Add a Codex-style searchable project menu that combines open and recent projects, marks the current project, deduplicates canonical paths, and ends with New Project and Open Project actions. It is the shared picker for Threads, the composer project control, and project-less New Task.",
       "done": "Integration tests cover search, dedupe, current checkmark, missing-path pruning, keyboard navigation, Escape/focus return, selection, and both footer actions. Responsive captures at 1440/1024/900 show contained geometry with no clipped rows; signed-app smoke switches projects and opens both creation paths.",
-      "progress": "2026-07-17: RED/GREEN implementation adds the reusable searchable ProjectSwitcher, open/recent dedupe, current/open indicators, keyboard/focus behavior, and shared New Project… / Open Project… footer actions. Threads and composer reuse the same chooser. Signed-app QA opened it from both surfaces, switched agent cli → Greg → agent cli with repository/Git metadata refresh, launched New Project, and cancelled Open Project without false failure. The card stays open for persisted 1440/900 visual captures and a signed search-selection pass.",
+      "progress": "2026-07-17: complete. RED/GREEN implementation adds the reusable searchable ProjectSwitcher, open/recent dedupe, current/open indicators, keyboard/focus behavior, and shared New Project… / Open Project… footer actions. Threads and composer reuse the same chooser. Signed-app QA opened it from both surfaces, searched for Greg, selected the only result, verified project/path/branch/GitHub metadata refresh, switched back, launched New Project, and cancelled Open Project without false failure. Contained 1440/900 search renders are captured in docs/qa/project-entry/ alongside native-project-switcher-search-narrow.jpeg.",
       "buildOrder": 90.183
     },
     {
@@ -1508,14 +1508,14 @@
     {
       "id": "PROJECT-FIRST-USE",
       "title": "Project entry empty states",
-      "column": "next",
+      "column": "done",
       "tier": "sand",
       "track": "ui",
       "size": "S",
       "launch": "v2",
       "summary": "Replace the dead-end Threads message with intentional project entry. First use leads with Open Project and offers New Project; a cleared list stays neutral; loading and project-open failures are distinct. After a project opens, starter prompts remain scoped to that project and the persistent chrome stays available.",
       "done": "Integration tests distinguish first-use, cleared, loading, cancellation, and error states and route both CTAs through the shared actions. Keyboard and screen-reader labels pass; 1440/1024/900 captures show no blank or overlapping state; signed-app first launch reaches a usable project and task from each CTA.",
-      "progress": "2026-07-17: RED/GREEN implementation distinguishes true first use, cleared history, loading with stale rows, scoped failure/retry, and cancellation without false errors. Both CTAs and Retry route through shared actions with keyboard/screen-reader semantics. Fresh signed-app QA captured the real first-use surface at 1024 and used New Project to reach a persisted Git-backed project and first task; docs/qa/project-entry/native-first-use-1024.jpeg records the state. The card stays open for Open Project from first launch plus 1440/900 captures.",
+      "progress": "2026-07-17: complete. RED/GREEN implementation distinguishes true first use, cleared history, loading with stale rows, scoped failure/retry, and cancellation without false errors. Both CTAs and Retry route through shared actions with keyboard/screen-reader semantics. Fresh signed-app QA executed a zero-project launch, captured the No chat/Open workspace titlebar state, used Open Project through the native picker to reach a usable Current work task, then proved a missing disposable project error and successful Retry after restoration. New Project separately reached a persisted Git-backed project and first task. Native and 1440/1024/900 browser evidence lives in docs/qa/project-entry/.",
       "buildOrder": 90.187
     },
     {
@@ -1529,7 +1529,7 @@
       "blocker": true,
       "summary": "Prove the entire project/task entry contract through every promised door before calling it discoverable: Threads, empty state, project switcher, composer context, composer plus menu, command palette, macOS File menu, and shortcuts. Lock consistent labels, shared routing, responsive containment, focus behavior, persistence, and error recovery.",
       "done": "The production build, empty module-size baseline, chrome contract, full frontend/Rust suites, diff check, accessibility integration checks, and 1440/1024/900 visual captures pass. A freshly built signed app executes New Project, Open Project, Switch Project, New Task, plus-menu actions, local/worktree/branch menus, cancel, failure recovery, relaunch persistence, and real cwd/branch checks. No sub-claim is accepted from a build-only proxy.",
-      "progress": "2026-07-17: native execution now proves real New Project + Git + first task + relaunch persistence, Open Project cancellation, cross-project switching, two independent New Tasks, every enabled composer-plus row, composer Project/Local/worktree/Branch menus, real branch creation, dirty-tree refusal, and real worktree creation. Native failures found and fixed include the window.prompt worktree no-op, 1024 metadata overlap, command-palette misranking, and side docks squeezing the composer at narrow widths. Side tools now auto-hide or overlay below the content-derived 1360px breakpoint while chat and the bottom tray remain stable. Evidence includes final signed-app narrow captures plus production 1440/1180/1024/900 renders in docs/qa/. Full gate is green at 870 frontend and 107 Rust tests. Remaining gate: execute project-less titlebar, failure/retry, and signed switcher search selection.",
+      "progress": "2026-07-17: every native behavior is now executed: New Project + Git + first task + relaunch persistence, Open Project from true first use, cancellation, cross-project switching and searched selection, two independent New Tasks, every enabled composer-plus row, composer Project/Local/worktree/Branch menus, real branch/worktree creation, dirty-tree refusal, and missing-path failure/retry. Native failures found and fixed include the worktree prompt no-op, 1024 metadata overlap, command-palette misranking, and side docks squeezing narrow chat. Evidence includes final signed-app captures plus production 1440/1180/1024/900 renders in docs/qa/. The final code gate is green at 871 frontend and 107 Rust tests except for the explicitly required empty module-size baseline: App.tsx remains the one ratcheted debt file at 1,404 lines with a 1,208-line component, so this aggregate card stays open until MODULARITY-300-200-50 completes.",
       "buildOrder": 90.188
     },
     {

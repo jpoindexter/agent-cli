@@ -6,7 +6,10 @@ const QA_SESSION_ID = "qa-chrome-pass";
 const QA_CHAT_ID = `${QA_ROOT}\n${QA_SESSION_ID}`;
 const QA_NOW = Date.UTC(2026, 6, 14, 12, 0, 0);
 
-const qaStore = new Map<string, unknown>([
+type BrowserQaScene = "default" | "first-use";
+let activeQaScene: BrowserQaScene = "default";
+
+const createQaStore = (scene: BrowserQaScene) => new Map<string, unknown>([
   ["folder", QA_ROOT],
   ["recentFolders", [QA_ROOT]],
   ["openProjects", [{ path: QA_ROOT, status: "running" }]],
@@ -18,7 +21,12 @@ const qaStore = new Map<string, unknown>([
     ],
   }],
   ["activeSessionByProject", { [QA_ROOT]: QA_SESSION_ID }],
-]);
+].map(([key, value]) => {
+  if (scene !== "first-use") return [key, value];
+  if (key === "folder") return [key, null];
+  if (key === "recentFolders" || key === "openProjects") return [key, []];
+  return [key, {}];
+}) as Array<[string, unknown]>);
 
 export const browserQaFixture = {
   root: QA_ROOT,
@@ -63,24 +71,24 @@ export const browserQaFixture = {
 const payloadValue = <T>(payload: InvokeArgs | undefined, key: string): T | undefined =>
   payload && typeof payload === "object" ? (payload as Record<string, unknown>)[key] as T | undefined : undefined;
 
-const handleQaStoreCommand = (command: string, payload?: InvokeArgs): { matched: boolean; value: unknown } => {
+const handleQaStoreCommand = (store: Map<string, unknown>, command: string, payload?: InvokeArgs): { matched: boolean; value: unknown } => {
   switch (command) {
     case "plugin:store|load":
       return { matched: true, value: 1 };
     case "plugin:store|entries":
-      return { matched: true, value: Array.from(qaStore.entries()) };
+      return { matched: true, value: Array.from(store.entries()) };
     case "plugin:store|get": {
       const key = payloadValue<string>(payload, "key") ?? "";
-      return { matched: true, value: [qaStore.get(key), qaStore.has(key)] };
+      return { matched: true, value: [store.get(key), store.has(key)] };
     }
     case "plugin:store|set": {
       const key = payloadValue<string>(payload, "key");
-      if (key) qaStore.set(key, payloadValue(payload, "value"));
+      if (key) store.set(key, payloadValue(payload, "value"));
       return { matched: true, value: null };
     }
     case "plugin:store|delete": {
       const key = payloadValue<string>(payload, "key");
-      return { matched: true, value: key ? qaStore.delete(key) : false };
+      return { matched: true, value: key ? store.delete(key) : false };
     }
     case "plugin:store|save":
     case "plugin:store|reload":
@@ -142,12 +150,16 @@ const handleQaAppCommand = (command: string, payload?: InvokeArgs): unknown => {
   }
 };
 
-export const createBrowserQaIpcHandler = () => async (command: string, payload?: InvokeArgs): Promise<unknown> => {
-  const storeResult = handleQaStoreCommand(command, payload);
-  return storeResult.matched ? storeResult.value : handleQaAppCommand(command, payload);
+export const createBrowserQaIpcHandler = (scene: BrowserQaScene = activeQaScene) => {
+  const store = createQaStore(scene);
+  return async (command: string, payload?: InvokeArgs): Promise<unknown> => {
+    const storeResult = handleQaStoreCommand(store, command, payload);
+    return storeResult.matched ? storeResult.value : handleQaAppCommand(command, payload);
+  };
 };
 
 export const setupBrowserQa = () => {
+  activeQaScene = new URLSearchParams(window.location.search).get("scene") === "first-use" ? "first-use" : "default";
   mockWindows("main");
   mockConvertFileSrc("macos");
   mockIPC(createBrowserQaIpcHandler(), { shouldMockEvents: true });

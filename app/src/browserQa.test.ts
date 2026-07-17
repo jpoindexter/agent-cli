@@ -27,4 +27,14 @@ describe("browser QA IPC fixture", () => {
     await expect(invoke("plugin:store|get", { key: "qa-test" })).resolves.toEqual(["saved", true]);
     await invoke("plugin:store|delete", { key: "qa-test" });
   });
+
+  it("supports a project-less first-use capture scene", async () => {
+    const invoke = createBrowserQaIpcHandler("first-use");
+
+    await expect(invoke("plugin:store|get", { key: "folder" })).resolves.toEqual([null, true]);
+    await expect(invoke("plugin:store|get", { key: "recentFolders" })).resolves.toEqual([[], true]);
+    await expect(invoke("plugin:store|get", { key: "openProjects" })).resolves.toEqual([[], true]);
+    await expect(invoke("plugin:store|get", { key: "projectSessions" })).resolves.toEqual([{}, true]);
+    await expect(invoke("plugin:store|get", { key: "activeSessionByProject" })).resolves.toEqual([{}, true]);
+  });
 });
