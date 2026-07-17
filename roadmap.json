@@ -1476,6 +1476,7 @@
       "launch": "v2",
       "summary": "Put a labeled New task control in the Threads toolbar, backed by the existing project-session creation lifecycle and a visible Cmd+N shortcut. It creates and selects a fresh task in the active project; without a project it opens project entry.",
       "done": "Focused tests prove active-project creation, project-less routing, single-submit behavior, shortcut/menu/palette parity, active selection, narrow-drawer close behavior, and accessible labeling/focus. Signed-app smoke creates two independently selectable tasks without changing projects.",
+      "progress": "2026-07-17: RED/GREEN slice adds a labeled New Task control with visible Cmd+N in Threads, registers task.new in the shortcut registry and command palette, and adds File → New Task with CmdOrCtrl+N in the native menu. All surfaces route through the shared action owner, which now rejects duplicate in-flight creation. Without an active project, New Task opens the shared project switcher; successful creation closes only a narrow drawer. Focused action, palette, source-contract, rail, and narrow-drawer tests pass. Signed-app creation of two independently selectable tasks remains open.",
       "buildOrder": 90.184
     },
     {

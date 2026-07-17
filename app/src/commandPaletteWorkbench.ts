@@ -15,6 +15,7 @@ type WorkbenchCommandInput = {
   onExportPerformance: () => void;
   onFindEditor: () => void;
   onNewProject: () => void;
+  onNewTask: () => void;
   onOpenDetectedBrowser: () => void;
   onOpenSettings: () => void;
   onOpenTranscripts: () => void;
@@ -29,6 +30,14 @@ type WorkbenchCommandInput = {
 };
 
 export const buildWorkspaceOpenCommands = (input: WorkbenchCommandInput): SearchDialogCommand[] => [{
+  id: "task.new",
+  label: PROJECT_ENTRY_LABELS.newTask,
+  detail: input.workspacePath ? "Create a task in the active project" : "Choose a project before creating a task",
+  shortcut: input.shortcut("task.new"),
+  icon: "newChat",
+  keywords: ["task", "chat", "thread", "new"],
+  run: input.onNewTask,
+}, {
   id: "workspace.new-project",
   label: PROJECT_ENTRY_LABELS.newProject,
   detail: "Create a local project folder",

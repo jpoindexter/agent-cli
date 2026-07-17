@@ -75,6 +75,7 @@ const FALLBACK_BG: [u8; 3] = [16, 16, 16];
 const MENU_CLEAR: &str = "terminal.clear";
 const MENU_CLOSE_EDITOR_TAB: &str = "editor.closeTab";
 const MENU_FIND: &str = "editor.find";
+const MENU_NEW_TASK: &str = "task.new";
 const MENU_OPEN: &str = "workspace.open";
 const MENU_SAVE: &str = "editor.save";
 const MAX_TREE_ENTRIES: usize = 8_000;
@@ -2920,6 +2921,8 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .menu(|handle| {
             let menu = Menu::default(handle)?;
+            let new_task =
+                MenuItem::with_id(handle, MENU_NEW_TASK, "New Task", true, Some("CmdOrCtrl+N"))?;
             let open = MenuItem::with_id(
                 handle,
                 MENU_OPEN,
@@ -2937,8 +2940,12 @@ pub fn run() {
                 Some("CmdOrCtrl+W"),
             )?;
             let clear = MenuItem::with_id(handle, MENU_CLEAR, "Clear", true, Some("CmdOrCtrl+K"))?;
-            let file =
-                Submenu::with_items(handle, "File", true, &[&open, &save, &find, &close_tab])?;
+            let file = Submenu::with_items(
+                handle,
+                "File",
+                true,
+                &[&new_task, &open, &save, &find, &close_tab],
+            )?;
             let terminal = Submenu::with_items(handle, "Terminal", true, &[&clear])?;
             menu.append(&file)?;
             menu.append(&terminal)?;
@@ -2959,6 +2966,9 @@ pub fn run() {
             }
             MENU_OPEN => {
                 let _ = app.emit("menu-open-folder", ());
+            }
+            MENU_NEW_TASK => {
+                let _ = app.emit("menu-new-task", ());
             }
             MENU_SAVE => {
                 let _ = app.emit("menu-save-file", ());

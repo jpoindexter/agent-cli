@@ -13,6 +13,7 @@ import {
 describe("shortcut baseline", () => {
   it("covers the v0.5 active workspace, editor, terminal, and composer shortcuts", () => {
     expect(shortcutKeys("workspace.open")).toBe("Cmd+O");
+    expect(shortcutKeys("task.new")).toBe("Cmd+N");
     expect(shortcutKeys("editor.save")).toBe("Cmd+S");
     expect(shortcutKeys("editor.find")).toContain("Cmd+F");
     expect(shortcutKeys("editor.close-tab")).toBe("Cmd+W");

@@ -28,10 +28,10 @@ const props = (overrides: Partial<WorkspaceSideRailProps> = {}): WorkspaceSideRa
   onSelectMode: vi.fn(),
   projects: {
     activeProjectPath: null, activeSessionId: null, backgroundExits: [],
-    expandedProjects: {}, projects: [], recentProjects: [], sessionsByProject: {}, showArchived: false,
+    expandedProjects: {}, projects: [], recentProjects: [], newTaskShortcut: "Cmd+N", sessionsByProject: {}, showArchived: false, switcherOpen: false,
     projectStatus: () => "running" as const, sessionStatus: () => "running" as const,
-    onNewProject: vi.fn(), onOpenProject: vi.fn(), onProjectContextMenu: vi.fn(), onSelectProject: vi.fn(), onSelectSession: vi.fn(),
-    onSessionContextMenu: vi.fn(), onToggleArchived: vi.fn(), onToggleExpanded: vi.fn(),
+    onNewProject: vi.fn(), onNewTask: vi.fn(), onOpenProject: vi.fn(), onProjectContextMenu: vi.fn(), onSelectProject: vi.fn(), onSelectSession: vi.fn(),
+    onSessionContextMenu: vi.fn(), onSwitcherOpenChange: vi.fn(), onToggleArchived: vi.fn(), onToggleExpanded: vi.fn(),
   },
   settings: {
     approvalMode: "ask", canSetApproval: false, hasWorkspace: false,

@@ -29,6 +29,7 @@ const createInput = () => ({
   onExportPerformance: vi.fn(),
   onFindEditor: vi.fn(),
   onNewProject: vi.fn(),
+  onNewTask: vi.fn(),
   onOpenDetectedBrowser: vi.fn(),
   onOpenSettings: vi.fn(),
   onOpenTranscripts: vi.fn(),
@@ -58,6 +59,7 @@ describe("workbench command palette builders", () => {
 
     expect(input.onOpenWorkspace).toHaveBeenCalledOnce();
     expect(input.onNewProject).toHaveBeenCalledOnce();
+    expect(input.onNewTask).toHaveBeenCalledOnce();
     expect(input.onOpenTranscripts).toHaveBeenCalledOnce();
     expect(input.onOpenSettings).toHaveBeenCalledOnce();
     expect(input.onExportPerformance).toHaveBeenCalledOnce();
@@ -77,6 +79,10 @@ describe("workbench command palette builders", () => {
     expect(commands.find((command) => command.id === "workspace.new-project")).toMatchObject({
       label: "New Project…",
       detail: "Create a local project folder",
+    });
+    expect(commands.find((command) => command.id === "task.new")).toMatchObject({
+      label: "New Task",
+      shortcut: "shortcut:task.new",
     });
   });
 

@@ -213,6 +213,7 @@ function App() {
   const selecting = useRef(false);
   const [launchError, setLaunchError] = useState<string | null>(null);
   const [projectCreationOpen, setProjectCreationOpen] = useState(false);
+  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const {
     composerWorkspace, editorSession, persistence, profiles, terminal, workspaceTree,
@@ -532,6 +533,12 @@ function App() {
     beginCreateProject: async () => { setProjectCreationOpen(true); return true; },
     createTask: projectSessionNavigationActions.createSession,
     getActiveProject: () => workspacePathRef.current,
+    openProjectEntry: async () => {
+      shellLayout.setSideDrawerMode("projects");
+      shellLayout.setSideDrawerCollapsed(false);
+      setProjectSwitcherOpen(true);
+      return true;
+    },
     openProjectPicker: pickWorkspace,
     switchProjectPath: requestOpenWorkspace,
   });
@@ -1016,6 +1023,7 @@ function App() {
     onExportPerformance: () => void exportRenderPerfSnapshot(),
     onFindEditor: editorSurface.openEditorSearch,
     onNewProject: () => void projectEntryActions.newProject(),
+    onNewTask: () => void projectEntryActions.newTask(),
     onOpenDetectedBrowser: () => void browser.openDetectedServer(),
     onOpenSettings: () => setSettingsOpen(true),
     onOpenTranscripts: () => paneTranscripts.setTranscriptsOpen(true),
@@ -1206,6 +1214,7 @@ function App() {
 
   useNativeAppEvents<TerminalGridPayload<Snapshot>, TerminalPaneExitPayload>({
     onGrid: terminalRuntimeEventHandlers.handleGridPayload,
+    onNewTask: () => { void projectEntryActions.newTask(); },
     onOpenFolder: () => { void projectEntryActions.openProject(); },
     onSaveFile: () => { void editorSession.saveEditorFileRef.current(); },
     onFindInFile: () => editorSession.openEditorSearchRef.current(),
@@ -1270,7 +1279,8 @@ function App() {
           diffReviewHook, drawerActiveTitle, editorFileWorkflow, editorSession, editorWorkspace,
           gitStatusHook, openUrl, persistence, pickWorkspace, profiles, projectEntryActions, projectRailContextMenuItems,
           projectRailStatus, projectSessionContextMenuItems, projectSessionNavigationActions,
-          projectSessionStatus, railBodyRef, railHeight, requestOpenWorkspace, setSettingsOpen,
+          projectSessionStatus, projectSwitcherOpen, railBodyRef, railHeight, requestOpenWorkspace,
+          setProjectSwitcherOpen, setSettingsOpen,
           shellLayout, treeRef, utilityTrayControls, visibleOpenProjects, workspaceContextMenuItems,
           workspaceFileActions, workspacePath, workspaceTree,
         })} />,

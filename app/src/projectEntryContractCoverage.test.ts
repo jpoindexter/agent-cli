@@ -26,5 +26,7 @@ describe("project entry production contract", () => {
       expect(source(path), path).not.toContain("Open Folder");
     }
     expect(source("../src-tauri/src/lib.rs")).toContain('"Open Project…"');
+    expect(source("../src-tauri/src/lib.rs")).toContain('"New Task"');
+    expect(source("../src-tauri/src/lib.rs")).toContain('"menu-new-task"');
   });
 });

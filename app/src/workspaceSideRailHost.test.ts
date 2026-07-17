@@ -22,19 +22,25 @@ const createOptions = () =>
     gitStatusHook: { error: null, loading: false, refresh: vi.fn(), status: null },
     openUrl: vi.fn(),
     persistence: {
-      expandedSessionProjects: {}, projectSessions: {}, setExpandedSessionProjects: vi.fn(),
+      expandedSessionProjects: {}, projectSessions: {}, recentProjects: [], setExpandedSessionProjects: vi.fn(),
       setShowArchivedSessions: vi.fn(), showArchivedSessions: false,
     },
     pickWorkspace: vi.fn(),
     profiles: {},
+    projectEntryActions: {
+      newProject: vi.fn(async () => true), newTask: vi.fn(async () => true),
+      openProject: vi.fn(async () => true),
+    },
     projectRailContextMenuItems: () => [],
     projectRailStatus: () => "running",
     projectSessionContextMenuItems: () => [],
     projectSessionNavigationActions: { switchSession: vi.fn() },
     projectSessionStatus: () => "running",
+    projectSwitcherOpen: false,
     railBodyRef: ref(null),
     railHeight: 100,
     requestOpenWorkspace: vi.fn(),
+    setProjectSwitcherOpen: vi.fn(),
     setSettingsOpen: vi.fn(),
     shellLayout: {
       agentSurfaceMode: "chat", renderedWorkbenchLayout: "hidden", setAgentSurfaceMode: vi.fn(),
@@ -76,5 +82,19 @@ describe("workspaceSideRailPropsFrom", () => {
     expect(options.shellLayout.setSideDrawerCollapsed).toHaveBeenCalledWith(true);
     void props.git.onRefresh();
     expect(options.gitStatusHook.refresh).toHaveBeenCalled();
+  });
+
+  it("closes a narrow drawer only after a task is actually created", async () => {
+    const options = createOptions();
+    const props = workspaceSideRailPropsFrom(options);
+
+    props.projects.onNewTask();
+    await vi.waitFor(() => expect(options.shellLayout.setSideDrawerCollapsed).toHaveBeenCalledWith(true));
+
+    vi.mocked(options.shellLayout.setSideDrawerCollapsed).mockClear();
+    vi.mocked(options.projectEntryActions.newTask).mockResolvedValueOnce(false);
+    props.projects.onNewTask();
+    await vi.waitFor(() => expect(options.projectEntryActions.newTask).toHaveBeenCalledTimes(2));
+    expect(options.shellLayout.setSideDrawerCollapsed).not.toHaveBeenCalled();
   });
 });

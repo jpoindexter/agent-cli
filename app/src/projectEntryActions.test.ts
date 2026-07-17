@@ -5,6 +5,7 @@ const createDependencies = (activeProject: string | null = "/repo") => ({
   beginCreateProject: vi.fn(async () => true),
   createTask: vi.fn(async () => true),
   getActiveProject: vi.fn(() => activeProject),
+  openProjectEntry: vi.fn(async () => true),
   openProjectPicker: vi.fn(async () => true),
   switchProjectPath: vi.fn(async () => true),
 });
@@ -59,6 +60,22 @@ describe("createProjectEntryActions", () => {
 
     expect(result).toBe(false);
     expect(dependencies.createTask).not.toHaveBeenCalled();
-    expect(dependencies.openProjectPicker).toHaveBeenCalledOnce();
+    expect(dependencies.openProjectEntry).toHaveBeenCalledOnce();
+    expect(dependencies.openProjectPicker).not.toHaveBeenCalled();
+  });
+
+  it("prevents duplicate task creation while the first request is in flight", async () => {
+    let finish: ((value: boolean) => void) | undefined;
+    const dependencies = createDependencies();
+    dependencies.createTask.mockImplementation(() => new Promise<boolean>((resolve) => { finish = resolve; }));
+    const actions = createProjectEntryActions(dependencies);
+
+    const first = actions.newTask();
+    const second = actions.newTask();
+
+    expect(await second).toBe(false);
+    expect(dependencies.createTask).toHaveBeenCalledOnce();
+    finish?.(true);
+    expect(await first).toBe(true);
   });
 });

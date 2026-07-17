@@ -3,6 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 
 type NativeAppEventOptions<TGrid, TPaneExit> = {
   onGrid: (payload: TGrid) => void;
+  onNewTask: () => void;
   onOpenFolder: () => void;
   onSaveFile: () => void;
   onFindInFile: () => void;
@@ -14,6 +15,7 @@ export function useNativeAppEvents<TGrid, TPaneExit>(options: NativeAppEventOpti
   useEffect(() => {
     const listeners = [
       listen<TGrid>("grid", (event) => options.onGrid(event.payload)),
+      listen("menu-new-task", options.onNewTask),
       listen("menu-open-folder", options.onOpenFolder),
       listen("menu-save-file", options.onSaveFile),
       listen("menu-find-in-file", options.onFindInFile),

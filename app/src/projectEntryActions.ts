@@ -9,21 +9,32 @@ type ProjectEntryDependencies = {
   beginCreateProject?: () => Promise<unknown>;
   createTask: (projectPath: string) => Promise<unknown>;
   getActiveProject: () => string | null;
+  openProjectEntry?: () => Promise<unknown>;
   openProjectPicker: () => Promise<unknown>;
   switchProjectPath: (projectPath: string) => Promise<unknown>;
 };
 
-export const createProjectEntryActions = (dependencies: ProjectEntryDependencies) => ({
-  newProject: () => dependencies.beginCreateProject?.() ?? Promise.resolve(false),
-  openProject: () => dependencies.openProjectPicker(),
-  switchProject: (projectPath: string) => dependencies.switchProjectPath(projectPath),
-  newTask: async () => {
-    const projectPath = dependencies.getActiveProject();
-    if (!projectPath) {
-      await dependencies.openProjectPicker();
-      return false;
+export const createProjectEntryActions = (dependencies: ProjectEntryDependencies) => {
+  let newTaskInFlight = false;
+  const newTask = async () => {
+    if (newTaskInFlight) return false;
+    newTaskInFlight = true;
+    try {
+      const projectPath = dependencies.getActiveProject();
+      if (!projectPath) {
+        await (dependencies.openProjectEntry ?? dependencies.openProjectPicker)();
+        return false;
+      }
+      await dependencies.createTask(projectPath);
+      return true;
+    } finally {
+      newTaskInFlight = false;
     }
-    await dependencies.createTask(projectPath);
-    return true;
-  },
-});
+  };
+  return {
+    newProject: () => dependencies.beginCreateProject?.() ?? Promise.resolve(false),
+    newTask,
+    openProject: () => dependencies.openProjectPicker(),
+    switchProject: (projectPath: string) => dependencies.switchProjectPath(projectPath),
+  };
+};

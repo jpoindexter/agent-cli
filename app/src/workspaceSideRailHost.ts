@@ -13,6 +13,7 @@ import type { WorkspaceSideRailProps } from "./WorkspaceSideRail";
 import type { AgentApprovalMode } from "./agentSessionHandle";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import { toggleExpandedProject } from "./projectRailView";
+import { shortcutKeys } from "./shortcuts";
 
 type ConversationRuntime = ReturnType<typeof useConversationRuntime>;
 type WorkspaceDomain = ReturnType<typeof useWorkspaceDomain>;
@@ -36,15 +37,20 @@ type WorkspaceSideRailInput = {
   persistence: WorkspaceDomain["persistence"];
   pickWorkspace: () => Promise<unknown>;
   profiles: WorkspaceDomain["profiles"];
-  projectEntryActions: { newProject: () => Promise<unknown>; openProject: () => Promise<unknown> };
+  projectEntryActions: {
+    newProject: () => Promise<unknown>; newTask: () => Promise<unknown>;
+    openProject: () => Promise<unknown>;
+  };
   projectRailContextMenuItems: (project: OpenProject) => ContextMenuItem[];
   projectRailStatus: WorkspaceSideRailProps["projects"]["projectStatus"];
   projectSessionContextMenuItems: (path: string, session: ProjectSession) => ContextMenuItem[];
   projectSessionNavigationActions: { switchSession: (path: string, sessionId: string) => Promise<unknown> };
   projectSessionStatus: WorkspaceSideRailProps["projects"]["sessionStatus"];
+  projectSwitcherOpen: boolean;
   railBodyRef: RefObject<HTMLDivElement | null>;
   railHeight: number;
   requestOpenWorkspace: (path: string) => Promise<unknown>;
+  setProjectSwitcherOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   shellLayout: ReturnType<typeof useShellLayout>;
   treeRef: RefObject<TreeApi<FileTreeNode> | undefined>;
@@ -63,10 +69,12 @@ const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps
   return {
     activeProjectPath: input.workspacePath, activeSessionId: input.activeChat.activeSessionId, backgroundExits: input.backgroundExits,
     expandedProjects: input.persistence.expandedSessionProjects, projects: input.visibleOpenProjects,
-    recentProjects: input.persistence.recentProjects,
+    newTaskShortcut: shortcutKeys("task.new"), recentProjects: input.persistence.recentProjects,
     sessionsByProject: input.persistence.projectSessions, showArchived: input.persistence.showArchivedSessions,
+    switcherOpen: input.projectSwitcherOpen,
     projectStatus: input.projectRailStatus, sessionStatus: input.projectSessionStatus,
     onNewProject: () => { void input.projectEntryActions.newProject(); },
+    onNewTask: () => { void input.projectEntryActions.newTask().then((created) => { if (created) closeNarrowDrawer(); }); },
     onOpenProject: () => { void input.projectEntryActions.openProject(); },
     onProjectContextMenu: (event, project) => input.contextMenuHost.openContextMenu(event, input.projectRailContextMenuItems(project)),
     onSelectProject: (path) => { void input.requestOpenWorkspace(path); closeNarrowDrawer(); },
@@ -74,6 +82,7 @@ const railProjectsFrom = (input: WorkspaceSideRailInput): WorkspaceSideRailProps
     onSessionContextMenu: (event, path, session) => input.contextMenuHost.openContextMenu(event, input.projectSessionContextMenuItems(path, session)),
     onToggleArchived: () => input.persistence.setShowArchivedSessions((show) => !show),
     onToggleExpanded: (path) => input.persistence.setExpandedSessionProjects((expanded) => toggleExpandedProject(expanded, path)),
+    onSwitcherOpenChange: input.setProjectSwitcherOpen,
   };
 };
 

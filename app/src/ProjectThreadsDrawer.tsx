@@ -1,8 +1,9 @@
-import { useState, type MouseEvent } from "react";
+import type { MouseEvent } from "react";
 
 import { backgroundExitCountForProject, type BackgroundExit } from "./backgroundExits";
 import { chatProviderLabel } from "./chatConversationMutations";
 import { AppIcon, type AppIconName } from "./icons";
+import { PROJECT_ENTRY_LABELS } from "./projectEntryActions";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { activeSessionsForRail, archivedSessionCount, sessionRecencyLabel } from "./workspaceState";
 import type { OpenProject, ProjectRailStatus, ProjectSession, ProjectSessionsByProject } from "./workspaceState";
@@ -14,18 +15,22 @@ export type ProjectThreadsDrawerProps = {
   expandedProjects: Record<string, boolean>;
   projects: OpenProject[];
   recentProjects: string[];
+  newTaskShortcut: string;
+  switcherOpen: boolean;
   sessionsByProject: ProjectSessionsByProject;
   showArchived: boolean;
   projectStatus: (project: OpenProject) => ProjectRailStatus;
   sessionStatus: (projectPath: string, session: ProjectSession) => ProjectRailStatus;
   onProjectContextMenu: (event: MouseEvent<HTMLButtonElement>, project: OpenProject) => void;
   onNewProject: () => void;
+  onNewTask: () => void;
   onOpenProject: () => void;
   onSelectProject: (path: string) => void;
   onSelectSession: (path: string, sessionId: string) => void;
   onSessionContextMenu: (event: MouseEvent<HTMLButtonElement>, path: string, session: ProjectSession) => void;
   onToggleArchived: () => void;
   onToggleExpanded: (path: string) => void;
+  onSwitcherOpenChange: (open: boolean) => void;
 };
 
 const basename = (path: string) => path.split(/[\\/]/).filter(Boolean).pop() ?? path;
@@ -93,13 +98,15 @@ function ProjectGroup({ project, props }: { project: OpenProject; props: Project
 }
 
 export function ProjectThreadsDrawer(props: ProjectThreadsDrawerProps) {
-  const [switcherOpen, setSwitcherOpen] = useState(false);
   const activeName = props.activeProjectPath ? basename(props.activeProjectPath) : "Choose project";
   return (
     <div className="project-rail-shell">
-      <div className="project-picker">
-        <button className="project-picker__trigger" type="button" aria-label="Switch project" aria-expanded={switcherOpen} onClick={() => setSwitcherOpen((open) => !open)}><AppIcon name="workspace" /><span>{activeName}</span><AppIcon name="chevronDown" /></button>
-        <ProjectSwitcher activeProjectPath={props.activeProjectPath} open={switcherOpen} openProjects={props.projects} recentProjects={props.recentProjects} onClose={() => setSwitcherOpen(false)} onNewProject={props.onNewProject} onOpenProject={props.onOpenProject} onSelectProject={props.onSelectProject} />
+      <div className="project-picker-row">
+        <div className="project-picker">
+          <button className="project-picker__trigger" type="button" aria-label="Switch project" aria-expanded={props.switcherOpen} onClick={() => props.onSwitcherOpenChange(!props.switcherOpen)}><AppIcon name="workspace" /><span>{activeName}</span><AppIcon name="chevronDown" /></button>
+          <ProjectSwitcher activeProjectPath={props.activeProjectPath} open={props.switcherOpen} openProjects={props.projects} recentProjects={props.recentProjects} onClose={() => props.onSwitcherOpenChange(false)} onNewProject={props.onNewProject} onOpenProject={props.onOpenProject} onSelectProject={props.onSelectProject} />
+        </div>
+        <button className="project-new-task" type="button" aria-label={`${PROJECT_ENTRY_LABELS.newTask} (${props.newTaskShortcut})`} title={`${PROJECT_ENTRY_LABELS.newTask} (${props.newTaskShortcut})`} onClick={props.onNewTask}><AppIcon name="newChat" /><span>{PROJECT_ENTRY_LABELS.newTask}</span><kbd>{props.newTaskShortcut}</kbd></button>
       </div>
       {props.projects.length === 0 ? <div className="rail-status">Open or create a project to start a chat</div> : (
         <nav className="project-rail" aria-label="Open projects">

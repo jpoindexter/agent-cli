@@ -14,6 +14,14 @@ export type Shortcut = {
 
 export const SHORTCUTS: Shortcut[] = [
   {
+    id: "task.new",
+    label: PROJECT_ENTRY_LABELS.newTask,
+    scope: "Workspace",
+    keys: ["Cmd+N"],
+    status: "active",
+    behavior: "Create and select a task in the active project, or open project entry.",
+  },
+  {
     id: "workspace.open",
     label: PROJECT_ENTRY_LABELS.openProject,
     scope: "Workspace",
