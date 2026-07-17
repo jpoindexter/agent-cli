@@ -16,7 +16,6 @@ import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
 import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
 import { useConversationRuntime } from "./useConversationRuntime";
 import type { SelectionRange } from "./selection";
-import { activeProjectSessionId } from "./workspaceState";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
@@ -28,7 +27,6 @@ import { useContextMenuHost } from "./useContextMenuHost";
 import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
 import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
 import { createRenderPerfExport } from "./renderPerfExport";
-import { createDevServerDetection } from "./devServerDetectionSurface";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
 import { AppSettingsHost } from "./appSettingsHost";
@@ -39,7 +37,6 @@ import { WorkbenchShell } from "./WorkbenchShell";
 import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
 import { visibleProjectsFrom } from "./projectRailView";
-import { createComposerHarnessEventLog } from "./composerHarnessEvents";
 import { searchDialogPropsFrom } from "./searchCommandDialogHost";
 import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
 import { sourceRepoStatusTitleFrom, statusBarRepoPropsFrom } from "./statusBarHost";
@@ -81,22 +78,14 @@ import { appWorkspaceProjectRuntimeFrom } from "./appWorkspaceProjectRuntime";
 import { appProjectSessionRuntimeFrom } from "./appProjectSessionRuntime";
 import { appComposerSurfaceRuntimeFrom } from "./appComposerSurfaceRuntime";
 import { appTerminalSurfaceRuntimeFrom } from "./appTerminalSurfaceRuntime";
+import { useAppConversationBridge } from "./useAppConversationBridge";
 import { buildSettingsActions } from "./settingsActionsHost";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
 import { TranscriptsModal } from "./TranscriptsModal";
 import { useTerminalFind } from "./useTerminalFind";
-import { applyChatRunEnvelope } from "./chatConversation";
-import { createChatConversationActions } from "./chatConversationActions";
-import { useChatRunEvents } from "./useChatRunEvents";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
-import {
-  resetDurableChatStore,
-  saveDurableChatConversation,
-} from "./chatStore";
-import {
-  createWorkspaceCheckpoint,
-} from "./workspaceCheckpoints";
+import { resetDurableChatStore } from "./chatStore";
 import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import type { FileTreeNode } from "./fileTreeTypes";
 import { StatusBar } from "./StatusBar";
@@ -214,60 +203,14 @@ function App() {
   const activeTerminalProfile = activeAgentSession.activeTerminalPane?.profile ?? profiles.terminalProfile;
   const composerHarnessSessionKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
-  const chatConversationActions = createChatConversationActions({
-    createCheckpoint: createWorkspaceCheckpoint,
-    getActiveChatId: () => activeChat.activeComposerHarnessKey,
-    getConversations: () => composerWorkspace.chatConversationsRef.current,
-    getForkContext: () => {
-      const projectPath = workspacePathRef.current;
-      const sourceSessionId = activeProjectSessionId(
-        persistence.activeSessionByProjectRef.current, persistence.projectSessionsRef.current, projectPath,
-      );
-      return {
-        browserUrl: browser.urlRef.current,
-        projectPath,
-        sessions: projectPath ? persistence.projectSessionsRef.current[projectPath] ?? [] : [],
-        sessionsByProject: persistence.projectSessionsRef.current,
-        sourceSessionId,
-      };
-    },
-    now: Date.now,
-    persistBrowserUrl: browser.persistUrl,
-    persistSessions: (sessions) => persistence.persistProjectSessions(sessions, persistence.activeSessionByProjectRef.current),
-    refreshSearch: chatSearch.refresh,
-    reportPersistenceError: (message) => {
-      setLaunchError(message);
-      void invoke("log_health_event", { message }).catch(() => {});
-    },
-    saveConversation: saveDurableChatConversation,
-    setConversations: composerWorkspace.setChatConversations,
-    setError: setLaunchError,
-    setNotice: chrome.setActionNotice,
+  const {
+    chatConversationActions, detectLocalDevServerFromSnapshot, logComposerHarnessEvent,
+  } = useAppConversationBridge({
+    activeAgentSession, activeChat, agentActivityHook, browser,
+    chatIdForSession: composerHarnessSessionKey, chatSearch, chrome, composerWorkspace, persistence,
+    setLaunchError,
     switchSession: (root, sessionId) => projectSessionNavigationActions.switchSession(root, sessionId),
-  });
-
-  useChatRunEvents((envelope) => {
-    chatConversationActions.updateConversation(envelope.chatId, (conversation) =>
-      applyChatRunEnvelope(conversation, envelope));
-  });
-
-  const logComposerHarnessEvent = createComposerHarnessEventLog({
-    getDescriptor: () => activeAgentSession.activeAgentSessionDescriptor,
-    recordActivity: agentActivityHook.recordAgentActivity,
-  });
-
-
-  const detectLocalDevServerFromSnapshot = createDevServerDetection({
-    approvalMode: (root, sessionId) =>
-      composerWorkspace.composerHarnessBySessionRef.current[composerHarnessSessionKey(root, sessionId)]?.approvalMode ?? "ask",
-    contextForPane: terminal.contextForPaneId,
-    fallbackPanes: () => terminal.panesRef.current,
-    fallbackRoot: () => workspacePathRef.current,
-    fallbackSessionId: persistence.activeSessionForProject,
-    getPrevious: () => browser.detectedServerRef.current,
-    now: Date.now,
-    recordActivity: agentActivityHook.recordAgentActivity,
-    setDetectedServer: browser.setDetectedServer,
+    terminal, workspacePathRef,
   });
 
   const {
