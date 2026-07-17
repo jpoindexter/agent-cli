@@ -47,6 +47,12 @@ if [[ ! -d "$app_bundle" ]]; then
 fi
 
 # Tauri's local bundle can retain only the Mach-O linker signature. Seal the
-# complete app so Info.plist and icon resources are covered by the ad-hoc build.
-codesign --force --deep --sign - "$app_bundle"
+# complete app so Info.plist and icon resources are covered. Local builds stay
+# ad-hoc by default; release builds opt into a Developer ID identity.
+signing_identity="${APPLE_SIGNING_IDENTITY:--}"
+codesign_args=(--force --deep --sign "$signing_identity")
+if [[ "$signing_identity" != "-" ]]; then
+  codesign_args+=(--options runtime --timestamp)
+fi
+codesign "${codesign_args[@]}" "$app_bundle"
 codesign --verify --deep --strict "$app_bundle"

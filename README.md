@@ -4,7 +4,7 @@
 
 Keelhouse keeps structured agent conversations at the center of the screen, then brings projects, files, editing, Git, browser preview, and real terminal sessions into resizable trays around them. It is built for developers who use tools such as Codex, Claude, Gemini, or OpenCode while relying on VS Code mainly as a project shell.
 
-> **Alpha:** Keelhouse is under active development. The source and local packaging path are public, but there is not yet a notarized public download.
+> **Alpha:** Keelhouse is under active development. The [v0.1.0 prerelease](https://github.com/jpoindexter/keelhouse/releases/tag/v0.1.0) is Developer ID signed for Apple silicon, but it is not yet Apple-notarized.
 
 ![Keelhouse workbench with project threads, agent activity, composer, and editor](docs/screenshots/keelhouse-workbench.jpg)
 
@@ -91,7 +91,7 @@ npm run package:mac
 open src-tauri/target/release/bundle/macos/Keelhouse.app
 ```
 
-The local package is arm64 and ad-hoc signed. Developer ID signing and Apple notarization are separate release gates, so macOS distribution is not represented as production-ready yet. See [docs/packaging.md](docs/packaging.md).
+The default local package is arm64 and ad-hoc signed. Set `APPLE_SIGNING_IDENTITY` to create a hardened-runtime Developer ID build. Apple notarization remains a separate release gate, so the current prerelease is not represented as production-ready. See [docs/packaging.md](docs/packaging.md).
 
 ## Verification
 
