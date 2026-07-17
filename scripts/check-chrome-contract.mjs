@@ -66,6 +66,7 @@ const chatHarness = read("app/src-tauri/src/chat_harness.rs");
 const claudeAdapter = read("app/src-tauri/src/claude_adapter.rs");
 const agentHooks = read("app/src-tauri/src/agent_hooks.rs");
 const agentHookRenderer = read("app/src/useAgentHookRequests.ts");
+const agentHookRuntime = read("app/src/useAgentHookRuntime.ts");
 const toolDockMenu = read("app/src/ToolDockMenu.tsx");
 const toolTrayTabs = read("app/src/ToolTrayTabs.tsx");
 const icons = read("app/src/icons.tsx");
@@ -290,7 +291,7 @@ assert(connectionSecrets.includes('KEYCHAIN_SERVICE') && connectionSecrets.inclu
 assert(mcpOAuth.includes('code_challenge_method", "S256"') && mcpOAuth.includes('("resource", prepared.resource.clone())') && mcpOAuth.includes('write_connection_secret(&token_key(server_id)') && mcpOAuth.includes('refresh_tokens_request') && mcpOAuth.includes('revoke_tokens'), "MCP OAuth must preserve PKCE, resource binding, Keychain token storage, refresh, and revocation");
 assert(agentHooks.includes('TcpListener::bind("127.0.0.1:0")') && agentHooks.includes('format!("Bearer {token}")') && agentHooks.includes('fs::Permissions::from_mode(0o600)'), "Agent hooks must stay loopback-only with a private ephemeral bearer configuration");
 assert(agentHooks.includes('"list_projects"') && agentHooks.includes('"get_workspace_state"') && agentHooks.includes('"focus_pane"') && agentHooks.includes('"open_file"') && agentHooks.includes('"create_shell"') && agentHooks.includes('"report_status"'), "Agent-hook MCP must expose the documented minimal tool catalog");
-assert(agentHookRenderer.includes('invoke<AgentHookRequest[]>("take_agent_hook_requests")') && appTsx.includes('focusTerminalPane(paneId, "agent")') && appTsx.includes('createTerminalPane(defaultTerminalLaunchProfile(), "agent")') && appTsx.includes('"agent",\n    ),'), "Agent-hook actions must enter the renderer through the attributed app-action path");
+assert(agentHookRenderer.includes('invoke<AgentHookRequest[]>("take_agent_hook_requests")') && agentHookRuntime.includes('focusTerminalPane(paneId, "agent")') && agentHookRuntime.includes('createTerminalPane(defaultTerminalLaunchProfile(), "agent")') && agentHookRuntime.includes('"agent",\n    ),'), "Agent-hook actions must enter the renderer through the attributed app-action path");
 assert(statusBar.includes('className="status-bar__item status-bar__item--button"') && appTsx.includes("statusBarRepoPropsFrom(settingsRuntime.repoLocation") && read("app/src/statusBarHost.ts").includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
 assert(sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/merge_requests`') && sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/pipelines`'), "Self-hosted non-GitHub remotes must use GitLab merge-request and pipeline routes");
 assert(read("app/src/settingsActionsHost.ts").includes('input.storeRef.current?.set("aiConnectionSettings", next)') && !read("app/src/settingsActionsHost.ts").includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");

@@ -75,10 +75,9 @@ describe("run card provenance", () => {
   });
 
   it("binds hook status cards to the durable chat handle", () => {
-    const source = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
-    const hookHandler = source.slice(source.indexOf("useAgentHookRequests({"), source.indexOf("const continuePendingNavigation"));
+    const hookHandler = readFileSync(new URL("./useAgentHookRuntime.ts", import.meta.url), "utf8");
 
-    expect(hookHandler).toContain("agentActivityHook.recordAgentActivity(agentActivityHook.activeChatActivityHandle()");
+    expect(hookHandler).toContain("input.agentActivityHook.activeChatActivityHandle()");
     expect(hookHandler).not.toContain("recordAgentActivity(activeAgentActivityHandle()");
   });
 });

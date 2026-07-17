@@ -39,7 +39,6 @@ import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
 import { createProjectSessionMetadataActions } from "./projectSessionMetadataActions";
 import { createEditorSurfaceActions } from "./editorSurfaceActions";
 import type { GitStatusFile } from "./fileGitStatus";
-import { buildAgentHookSnapshot, hookReportToActivity } from "./agentHookIntegration";
 import { AgentConversationPanel } from "./AgentConversationPanel";
 import { agentConversationPanelPropsFrom } from "./agentConversationPanelHost";
 import { useContextMenuHost } from "./useContextMenuHost";
@@ -118,7 +117,8 @@ import {
 import { createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
 import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
 import { useNativeAppEvents } from "./useNativeAppEvents";
-import { useAgentHookRequests, type AgentHookStatus } from "./useAgentHookRequests";
+import type { AgentHookStatus } from "./useAgentHookRequests";
+import { useAgentHookRuntime } from "./useAgentHookRuntime";
 import {
   createEditorContextMenuAssembly,
   createProjectSessionContextMenuAssembly,
@@ -933,31 +933,9 @@ function App() {
   editorSession.openEditorSearchRef.current = editorSurface.openEditorSearch;
   editorSession.closeActiveEditorTabRef.current = editorNavigation.closeActiveTab;
 
-  useEffect(() => {
-    void invoke("update_agent_hook_snapshot", {
-      snapshot: buildAgentHookSnapshot({
-        activeChatId: activeChat.activeSessionId,
-        activeProjectPath: workspacePath,
-        editorTabs: editorSession.editorTabs,
-        openProjects: persistence.openProjects,
-        panes: terminal.panes,
-        selectedFilePath: editorSession.selectedFile?.path ?? null,
-      }),
-    }).catch(() => {});
-  }, [activeChat.activeSessionId, editorSession.editorTabs, persistence.openProjects, editorSession.selectedFile?.path, terminal.panes, workspacePath]);
-
-  useAgentHookRequests({
-    setStatus: setAgentHookStatus,
-    isPaneOpen: (paneId) => terminal.panesRef.current.some((pane) => pane.id === paneId),
-    focusPane: (paneId) => terminalSurface.focusTerminalPane(paneId, "agent"),
-    getWorkspacePath: () => workspacePathRef.current,
-    openFile: (root, path) => editorFileWorkflow.requestOpen(
-      fileTreeNodeFromPath(`${root}/${path}`, "file"),
-      { focusEditor: true },
-      "agent",
-    ),
-    createShell: () => terminalSurface.createTerminalPane(defaultTerminalLaunchProfile(), "agent"),
-    recordReport: (report) => agentActivityHook.recordAgentActivity(agentActivityHook.activeChatActivityHandle(), hookReportToActivity(report)),
+  useAgentHookRuntime({
+    activeChat, agentActivityHook, editorFileWorkflow, editorSession, persistence,
+    setStatus: setAgentHookStatus, terminal, terminalSurface, workspacePath, workspacePathRef,
   });
 
   useSyncRef(workspacePathRef, workspacePath);
