@@ -25,9 +25,6 @@ import { selectionToText } from "./selection";
 import type { SelectionRange } from "./selection";
 import { activeProjectSessionId } from "./workspaceState";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
-import {
-  bootstrapRefsFromHooks, bootstrapSettersFromHooks, createWorkspaceBootstrapController,
-} from "./workspaceBootstrapController";
 import { WorkspaceSideRail } from "./WorkspaceSideRail";
 import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
@@ -102,28 +99,21 @@ import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitDiffReview } from "./useGitDiffReview";
 import { useAppShellDomain } from "./useAppShellDomain";
 import { useSyncRef } from "./useSyncRef";
-import { loadWorkspaceBootstrap } from "./workspaceBootstrap";
-import { terminalSnapshotText } from "./terminalTranscript";
-import { crashRecoveryMessage, deriveCrashRecovery } from "./crashRecovery";
 import {
   DEFAULT_AI_CONNECTION_SETTINGS,
   connectionEnvironmentInputs,
   type AiConnectionSettings,
 } from "./connectionSettings";
-import { createRenderPerfState, recordIpcPayloadBytes } from "./renderPerf";
-import { useTerminalCanvasRuntime } from "./useTerminalCanvasRuntime";
-import { useNativeAppEvents } from "./useNativeAppEvents";
+import { createRenderPerfState } from "./renderPerf";
 import type { AgentHookStatus } from "./useAgentHookRequests";
 import { useAgentHookRuntime } from "./useAgentHookRuntime";
+import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
 import {
   createEditorContextMenuAssembly,
   createProjectSessionContextMenuAssembly,
   createWorkspaceContextMenuAssembly,
 } from "./appContextMenuAssembly";
-import {
-  clearBackgroundExitsForProject,
-  notifyBackgroundExit,
-} from "./backgroundExits";
+import { clearBackgroundExitsForProject } from "./backgroundExits";
 import { buildSettingsActions } from "./settingsActionsHost";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
@@ -159,12 +149,6 @@ import { projectCreationCommands } from "./projectCreationCommands";
 import { WorktreeLabelDialog } from "./WorktreeLabelDialog";
 import { useWorktreeLabelRequest } from "./useWorktreeLabelRequest";
 import { createProjectSessionDeletionController, projectSessionDeletionFromHook } from "./projectSessionDeletionController";
-import {
-  createTerminalRuntimeEventHandlers,
-  terminalRuntimeFromHook,
-  type TerminalGridPayload,
-  type TerminalPaneExitPayload,
-} from "./terminalRuntimeEventHandlers";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -926,82 +910,23 @@ function App() {
     workspacePath, workspacePathRef, workspaceTree,
   });
 
-  // Reopen the last folder on startup, otherwise ask for a workspace.
-  const workspaceBootstrapController = createWorkspaceBootstrapController({
-    hydrateProfiles: profiles.hydrate,
-    loadBootstrap: loadWorkspaceBootstrap,
-    openWorkspace: (folder, profile) => workspaceOpenActions.openWorkspaceDirect(folder, profile),
-    pickWorkspace,
-    refreshSecretPresence: (settings) => { void mcpOAuth.refreshSecretPresence(settings); },
-    refs: bootstrapRefsFromHooks({
-      browser, composer: composerWorkspace, editorSession, persistence,
-      settingsRef: aiConnectionSettingsRef, storeRef, terminal,
-    }),
-    sendResize: sendTerminalResize,
-    setters: bootstrapSettersFromHooks({
-      browser,
-      chrome,
-      composer: composerWorkspace,
-      persistence,
-      rest: {
-        setAgentActivity: agentActivityHook.setAgentActivityEvents,
-        setAiConnectionSettings,
-        setCommandPaletteSources,
-        setKeybindingOverrides,
-        setKeybindings: setActiveKeybindingOverrides,
-        setPaneLabels: terminal.setPaneLabels,
-        setPaneTranscripts: paneTranscripts.setPaneTranscripts,
-        setWorktrees,
-      },
-    }),
-  });
-
-  useTerminalCanvasRuntime({
-    canvasRef,
-    imeInputRef,
-    terminalHostRef,
-    activePaneIdRef: terminal.activePaneIdRef,
-    latest,
-    frame,
-    metrics,
-    selection,
-    selecting,
-    requestPaintRef: terminal.requestPaintRef,
-    renderPerfRef,
-    onCommandPalette: commandPalette.openDialog,
-    onQuickOpen: quickOpen.openDialog,
-    onSettings: () => setSettingsOpen(true),
-    onResize: sendTerminalResize,
-    onReady: async () => {
-      const staleLock = await invoke<boolean>("begin_session").catch(() => false);
-      await workspaceBootstrapController.initWorkspace();
-      chrome.setCrashNotice(crashRecoveryMessage(deriveCrashRecovery(staleLock, persistence.openProjectsRef.current.length)));
-      window.addEventListener("beforeunload", () => { void invoke("end_session_clean").catch(() => {}); });
+  useAppTerminalRuntime({
+    approvalMode: agentApprovalMode, browser, commandPalette,
+    detectLocalServer: detectLocalDevServerFromSnapshot, pickWorkspace, projectEntryActions,
+    quickOpen, recordActivity: agentActivityHook.recordAgentActivity,
+    sendResize: sendTerminalResize, setAgentActivity: agentActivityHook.setAgentActivityEvents,
+    setError: setLaunchError, setSettingsOpen,
+    shell: {
+      chrome, mcpOAuth, paneTranscripts, setAiConnectionSettings, setBackgroundExits,
+      setCommandPaletteSources, setKeybindingOverrides, setWorktrees,
     },
-  });
-
-  const terminalRuntimeEventHandlers = createTerminalRuntimeEventHandlers(terminalRuntimeFromHook(terminal, {
-    activeSessionForProject: persistence.activeSessionForProject,
-    approvalMode: agentApprovalMode,
-    detectLocalServer: detectLocalDevServerFromSnapshot,
-    ipcSampleCounter, latest, notificationsEnabled: chrome.notificationsEnabledRef,
-    notifyBackgroundExit, now: Date.now, persistTranscript: paneTranscripts.persistPaneTranscript,
-    recordActivity: agentActivityHook.recordAgentActivity,
-    recordIpcPayload: recordIpcPayloadBytes, renderPerf: renderPerfRef,
-    requestPaint: () => terminal.requestPaintRef.current(), setBackgroundExits,
-    setError: setLaunchError, snapshotText: terminalSnapshotText,
-    updateProjectStatus: persistence.updateOpenProjectStatus,
-    updateSessionStatus: persistence.updateSessionStatus, workspacePath: workspacePathRef,
-  }));
-
-  useNativeAppEvents<TerminalGridPayload<Snapshot>, TerminalPaneExitPayload>({
-    onGrid: terminalRuntimeEventHandlers.handleGridPayload,
-    onNewTask: () => { void projectEntryActions.newTask(); },
-    onOpenFolder: () => { void projectEntryActions.openProject(); },
-    onSaveFile: () => { void editorSession.saveEditorFileRef.current(); },
-    onFindInFile: () => editorSession.openEditorSearchRef.current(),
-    onCloseEditorTab: () => { void editorSession.closeActiveEditorTabRef.current(); },
-    onPaneExit: terminalRuntimeEventHandlers.handlePaneExit,
+    workspace: { composerWorkspace, editorSession, persistence, profiles, terminal },
+    workspaceOpenActions, workspacePathRef,
+    refs: {
+      aiConnectionSettings: aiConnectionSettingsRef, canvas: canvasRef, frame, imeInput: imeInputRef,
+      ipcSampleCounter, latest, metrics, renderPerf: renderPerfRef, selection, selecting,
+      store: storeRef, terminalHost: terminalHostRef,
+    },
   });
 
   const activeTerminalPaneLabel = activePaneDisplayLabel(terminal.panes, activeAgentSession.activeTerminalPane);
