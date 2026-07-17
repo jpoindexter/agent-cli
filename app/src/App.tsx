@@ -1,14 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useConversationRuntime } from "./useConversationRuntime";
+import type { AppActionAuditEvent, AppActionDescriptor } from "./appActions";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
 import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
 import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
-import { useContextMenuHost } from "./useContextMenuHost";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
-import { useComposerRuntime } from "./useComposerRuntime";
 import { visibleProjectsFrom } from "./projectRailView";
 import {
   projectRailStatusFromConversations,
@@ -17,12 +15,7 @@ import {
 import {
   setActiveKeybindingOverrides,
 } from "./shortcuts";
-import { useCommandPalette } from "./useCommandPalette";
-import { useWorkspaceDomain } from "./useWorkspaceDomain";
 import { activePaneDisplayLabel } from "./terminalPane";
-import { useGitDiffReview } from "./useGitDiffReview";
-import { useAppShellDomain } from "./useAppShellDomain";
-import { useSyncRef } from "./useSyncRef";
 import { useAgentHookRuntime } from "./useAgentHookRuntime";
 import { useAppTerminalRuntime } from "./useAppTerminalRuntime";
 import { useAppEditorSurfaceRuntime } from "./useAppEditorSurfaceRuntime";
@@ -33,13 +26,9 @@ import { appComposerSurfaceRuntimeFrom } from "./appComposerSurfaceRuntime";
 import { appTerminalSurfaceRuntimeFrom } from "./appTerminalSurfaceRuntime";
 import { useAppConversationBridge } from "./useAppConversationBridge";
 import { buildSettingsActions } from "./settingsActionsHost";
-import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
-import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
-import { useTerminalFind } from "./useTerminalFind";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
 import { resetDurableChatStore } from "./chatStore";
-import { useAppRootState } from "./useAppRootState";
-import { useAppSearchRuntime } from "./useAppSearchRuntime";
+import { useAppFoundationRuntime } from "./useAppFoundationRuntime";
 import { AppWorkbenchView } from "./AppWorkbenchView";
 import "./App.css";
 import "./composerModelPicker.css";
@@ -52,25 +41,24 @@ import "./workbenchTransitions.css";
 type Cell = { t: string; f: [number, number, number]; b: [number, number, number]; bold: boolean };
 type Snapshot = { cols: number; rows: number; cx: number; cy: number; cvis: boolean; sb: number; cells: Cell[] };
 function App() {
+  const foundation = useAppFoundationRuntime<Snapshot>({
+    gateAction: (action: AppActionDescriptor): Promise<AppActionAuditEvent> =>
+      agentActivityHook.gateAppAction(action),
+    hasUnsaved: (path) => editorSurface.editorHasUnsavedBufferForPath(path),
+    logComposerEvent: (label, detail) => logComposerHarnessEvent(label, detail),
+  });
   const {
-    activeAgentSessionDescriptorRef, activeSessionLookupRef, agentHookStatus,
-    aiConnectionSettingsRef, canvasRef,
+    agentHookStatus, aiConnectionSettingsRef, canvasRef,
     fileNodeContextMenuItemsRef, frame, imeInputRef, ipcSampleCounter, latest, launchError, metrics,
-    persistPaneLayoutRef, projectCreationOpen, projectSwitcherOpen, railBodyRef, renderPerfRef,
+    projectCreationOpen, projectSwitcherOpen, railBodyRef, renderPerfRef,
     selection, selecting, setAgentHookStatus, setLaunchError, setProjectCreationOpen, setProjectSwitcherOpen,
     setWorkspacePath, storeRef, terminalHostRef, treeRef, workspacePath, workspacePathRef,
     worktreeLabelRequest,
-  } = useAppRootState<Snapshot>();
+  } = foundation.root;
   const {
     composerWorkspace, editorSession, persistence, profiles, terminal, workspaceTree,
-  } = useWorkspaceDomain<Snapshot>({
-    activeSessionLookupRef, persistPaneLayoutRef, storeRef, workspacePath, workspacePathRef,
-  });
-  const contextMenuHost = useContextMenuHost({
-    buildFileNodeItems: (node) => fileNodeContextMenuItemsRef.current(node),
-    onActionError: (item, error) => setLaunchError(`${item.label} failed: ${String(error)}`),
-  });
-  const commandPalette = useCommandPalette(() => contextMenuHost.setContextMenu(null));
+  } = foundation.workspace;
+  const { contextMenuHost, commandPalette } = foundation;
   const {
     aiConnectionSettings, backgroundExits, chatSearch, chrome, commandPaletteSources,
     composerError, composerNotice, composerSending, drawerSearchQuery, focusedChatMessageId,
@@ -80,46 +68,15 @@ function App() {
     setDrawerSearchQuery, setFocusedChatMessageId, setKeybindingOverrides, setOrchestrationError,
     setOrchestrationLaunching, setOrchestrationOpen, setSettingsOpen, setWorktrees,
     settingsInitialCategory, settingsOpen, settingsRuntime, shellLayout, worktrees,
-  } = useAppShellDomain({
-    commandPalette: { open: commandPalette.open, query: commandPalette.query },
-    railBodyRef, storeRef, treeRefreshKey: workspaceTree.refreshKey, workspacePath, workspacePathRef,
-  });
-  const diffReviewHook = useGitDiffReview({
-    gateAction: (action) => agentActivityHook.gateAppAction(action),
-    getRoot: () => workspacePathRef.current ?? workspacePath,
-    hasUnsaved: (path) => editorSurface.editorHasUnsavedBufferForPath(path),
-    onRefreshFiles: workspaceTree.refresh,
-    onStatus: (status, root) => { gitStatusHook.setStatus(status); gitStatusHook.setRoot(root); },
-  });
-  const editorWorkspace = deriveEditorWorkspaceState({
-    diffReview: diffReviewHook.review, editorBuffers: editorSession.editorBuffersRef.current, editorError: editorSession.editorError, editorTabs: editorSession.editorTabs,
-    editorText: editorSession.editorText, fileTree: workspaceTree.tree, gitStatus: gitStatusHook.status, gitStatusRoot: gitStatusHook.root, savedEditorText: editorSession.savedEditorText,
-    selectedFile: editorSession.selectedFile, workspacePath,
-  });
-  const { chatSearchViewResults, drawerSearchResults, quickOpen } = useAppSearchRuntime<Snapshot>({
-    chatSearch, commandPalette, composerWorkspace, contextMenuHost, drawerSearchQuery,
-    editorWorkspace, persistence,
-  });
-  const { activeChat, agentApprovalMode, agentActivityHook, browser } = useConversationRuntime({
-    activeAgentSessionDescriptorRef, composerWorkspace, persistence, profiles,
-    shellLayout, storeRef, workspacePath, workspacePathRef,
-  });
+  } = foundation.shell;
+  const { diffReviewHook, editorWorkspace } = foundation;
+  const { chatSearchViewResults, drawerSearchResults, quickOpen } = foundation.search;
+  const { activeChat, agentApprovalMode, agentActivityHook, browser } = foundation.conversation;
   const {
     attachSelectedFileToComposer, composerAttachments, composerLocal,
     composerMentionQuery, composerMentionResults,
-  } = useComposerRuntime({
-    activeChat, agentActivityHook, browser, composerWorkspace, editorSession,
-    logEvent: (label, detail) => logComposerHarnessEvent(label, detail),
-    profiles, searchableFiles: editorWorkspace.searchableFiles,
-    setError: setComposerError, setNotice: setComposerNotice, shellLayout, workspacePathRef,
-  });
-  const activeAgentSession = deriveActiveAgentSessionState({
-    activeSessionId: activeChat.activeSessionId, activeTerminalPaneId: terminal.activePaneId, agentActivityEvents: agentActivityHook.agentActivityEvents, agentActivityFilter: agentActivityHook.agentActivityFilter,
-    agentApprovalMode, terminalPanes: terminal.panes, workspacePath,
-  });
-  const terminalFind = useTerminalFind(activeAgentSession.activeTerminalPane != null);
-  useSyncRef(activeAgentSessionDescriptorRef, activeAgentSession.activeAgentSessionDescriptor);
-  const activeTerminalProfile = activeAgentSession.activeTerminalPane?.profile ?? profiles.terminalProfile;
+  } = foundation.composer;
+  const { activeAgentSession, activeTerminalProfile, terminalFind } = foundation;
   const composerHarnessSessionKey = (root: string, sessionId: string) => `${root}\n${sessionId}`;
 
   const {
