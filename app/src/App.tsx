@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openPath, openUrl } from "@tauri-apps/plugin-opener";
@@ -52,8 +51,6 @@ import {
 import { SearchCommandDialog } from "./SearchCommandDialog";
 import { useCommandPalette } from "./useCommandPalette";
 import { QuickOpenDialog } from "./QuickOpenDialog";
-import { useQuickOpen } from "./useQuickOpen";
-import { filterWorkspaceFiles } from "./workspaceSearch";
 import { useWorkspaceDomain } from "./useWorkspaceDomain";
 import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitDiffReview } from "./useGitDiffReview";
@@ -75,12 +72,12 @@ import { TranscriptsModal } from "./TranscriptsModal";
 import { useTerminalFind } from "./useTerminalFind";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
 import { resetDurableChatStore } from "./chatStore";
-import { mergeChatDiscoveryResults, type ChatSearchViewResult } from "./chatDiscovery";
 import { StatusBar } from "./StatusBar";
 import { ProjectCreationDialog } from "./ProjectCreationDialog";
 import { projectCreationCommands } from "./projectCreationCommands";
 import { WorktreeLabelDialog } from "./WorktreeLabelDialog";
 import { useAppRootState } from "./useAppRootState";
+import { useAppSearchRuntime } from "./useAppSearchRuntime";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -136,20 +133,10 @@ function App() {
     editorText: editorSession.editorText, fileTree: workspaceTree.tree, gitStatus: gitStatusHook.status, gitStatusRoot: gitStatusHook.root, savedEditorText: editorSession.savedEditorText,
     selectedFile: editorSession.selectedFile, workspacePath,
   });
-  const drawerSearchResults = useMemo(() => {
-    return filterWorkspaceFiles(editorWorkspace.searchableFiles, drawerSearchQuery, drawerSearchQuery.trim() ? 80 : 40);
-  }, [drawerSearchQuery, editorWorkspace.searchableFiles]);
-  const chatSearchViewResults = useMemo<ChatSearchViewResult[]>(
-    () => mergeChatDiscoveryResults(
-      chatSearch.results,
-      persistence.projectSessions,
-      composerWorkspace.chatConversations,
-      commandPalette.query,
-      false,
-    ),
-    [composerWorkspace.chatConversations, chatSearch.results, commandPalette.query, persistence.projectSessions],
-  );
-  const quickOpen = useQuickOpen(editorWorkspace.searchableFiles, () => contextMenuHost.setContextMenu(null));
+  const { chatSearchViewResults, drawerSearchResults, quickOpen } = useAppSearchRuntime<Snapshot>({
+    chatSearch, commandPalette, composerWorkspace, contextMenuHost, drawerSearchQuery,
+    editorWorkspace, persistence,
+  });
   const { activeChat, agentApprovalMode, agentActivityHook, browser } = useConversationRuntime({
     activeAgentSessionDescriptorRef, composerWorkspace, persistence, profiles,
     shellLayout, storeRef, workspacePath, workspacePathRef,
