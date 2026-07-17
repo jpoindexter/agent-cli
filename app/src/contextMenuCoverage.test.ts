@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const app = readFileSync(new URL("./App.tsx", import.meta.url), "utf8");
+const appWorkbenchMain = readFileSync(new URL("./AppWorkbenchMain.tsx", import.meta.url), "utf8");
 const appMenuAssembly = readFileSync(new URL("./appMenuAssembly.ts", import.meta.url), "utf8");
 const appEditorMenuRuntime = readFileSync(new URL("./appEditorMenuRuntime.ts", import.meta.url), "utf8");
 const appRuntimeMenuHost = readFileSync(new URL("./appRuntimeMenuHost.ts", import.meta.url), "utf8");
@@ -46,7 +47,7 @@ describe("production context-menu coverage", () => {
       "utilityTrayTabContextMenuItems(mode)",
       "composerContextMenuItems()",
     ]) {
-      expect(`${app}\n${sideRailHost}\n${editorSectionHost}\n${panelHost}\n${trayHost}\n${dockHost}`).toContain(marker);
+      expect(`${app}\n${appWorkbenchMain}\n${sideRailHost}\n${editorSectionHost}\n${panelHost}\n${trayHost}\n${dockHost}`).toContain(marker);
     }
     expect(appMenuAssembly).toContain("buildComposerAddMenuItems(composerMenuInput(options))");
     const contextMenuHost = readFileSync(new URL("./useContextMenuHost.tsx", import.meta.url), "utf8");

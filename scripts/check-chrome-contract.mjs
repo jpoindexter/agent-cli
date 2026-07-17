@@ -20,6 +20,12 @@ const assert = (condition, message) => {
 
 const appCss = `${readCss("app/src/App.css")}\n${readCss("app/src/composerModelPicker.css")}\n${readCss("app/src/responsive-shell.css")}\n${readCss("app/src/SearchCommandDialog.css")}`;
 const appTsx = read("app/src/App.tsx");
+const appComposition = [
+  appTsx,
+  read("app/src/AppWorkbenchView.tsx"),
+  read("app/src/AppWorkbenchMain.tsx"),
+  read("app/src/AppWorkbenchOverlays.tsx"),
+].join("\n");
 const workspaceOpenTargetController = read("app/src/workspaceOpenTargetController.ts");
 const composerSubmission = read("app/src/composerSubmission.ts");
 const appTitlebar = read("app/src/AppTitlebar.tsx");
@@ -36,12 +42,12 @@ const searchCommandDialog = read("app/src/SearchCommandDialog.tsx");
 const commandPaletteController = read("app/src/useCommandPalette.ts");
 const commandPaletteAssembly = read("app/src/commandPaletteAssembly.ts");
 const commandPaletteSurface = [
-  appTsx,
+  appComposition,
   read("app/src/commandPaletteChats.ts"),
   read("app/src/commandPaletteNavigation.ts"),
 ].join("\n");
 const quickOpenSurface = [
-  appTsx,
+  appComposition,
   read("app/src/QuickOpenDialog.tsx"),
   read("app/src/useQuickOpen.ts"),
 ].join("\n");
@@ -193,7 +199,7 @@ assert(utilityTrayControls.includes("toggleUtilityTrayVisibility: () => {"), "Bo
 assert(utilityTrayControls.includes('options.setSurfaceMode((current) => current === "terminal" ? "chat" : "terminal");'), "Bottom tray chevron must toggle tray visibility without launching a process");
 assert(read("app/src/bottomUtilityTrayHost.ts").includes("onToggleVisibility: input.utilityTrayControls.toggleUtilityTrayVisibility"), "Bottom tray chevron must use the layout-only visibility toggle");
 assert(bottomUtilityTabs.includes('name={open ? "chevronDown" : "chevronUp"}'), "Bottom tray chevron direction must reflect tray state");
-assert(!appTsx.includes('utilityTrayMode === "browser"'), "Browser must not be duplicated in the bottom utility tray");
+assert(!appComposition.includes('utilityTrayMode === "browser"'), "Browser must not be duplicated in the bottom utility tray");
 assert(read("app/src/bottomUtilityTrayHost.ts").includes("utilityTrayTabContextMenuItems"), "Bottom utility tabs must expose app-owned context menus");
 assert(read("app/src/bottomUtilityTrayHost.ts").includes("terminalPaneContextMenuItems"), "Terminal pane tabs must expose lifecycle context menus");
 assert(/\.terminal-pane-button--active\s*\{[^}]*border-bottom-color:\s*var\(--color-accent-border\);[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s.test(appCss), "Active terminal pane tabs must use a flat underline, not rounded capsule chrome");
@@ -205,12 +211,12 @@ assert(composerReasoningPicker.includes("OPTIONS.map") && composerReasoningPicke
 assert(composerSubmission.includes('reasoningEffort: context.harness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");
 assert(chatHarness.includes('params["effort"] = json!(effort);'), "Native chat runs must apply the selected Codex reasoning effort");
 assert(claudeAdapter.includes('args.extend(["--effort".into(), effort.into()]);'), "Native Claude chat runs must apply the selected reasoning effort");
-assert(appTsx.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
-assert(!appTsx.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
+assert(appComposition.includes("drawerActiveTitle"), "App drawer header must be mode-aware, not a generic Drawer label");
+assert(!appComposition.includes("<span>Drawer</span>"), "App drawer header must not render a generic Drawer label");
 assert(drawerModes.includes("Project chats"), "Projects drawer must present independent chats under each project");
-assert(read("app/src/AgentConversationPanel.tsx").includes('aria-label="Agent conversation"') && appTsx.includes("<AgentConversationPanel"), "Center surface must remain the agent conversation");
-assert(!appTsx.includes('className="agent-surface-switcher"'), "The agent header must not duplicate the titlebar chat/terminal toggle");
-assert(!appTsx.includes('className="terminal-titlebar"'), "The conversation must not duplicate the active chat title below the native titlebar");
+assert(read("app/src/AgentConversationPanel.tsx").includes('aria-label="Agent conversation"') && appComposition.includes("<AgentConversationPanel"), "Center surface must remain the agent conversation");
+assert(!appComposition.includes('className="agent-surface-switcher"'), "The agent header must not duplicate the titlebar chat/terminal toggle");
+assert(!appComposition.includes('className="terminal-titlebar"'), "The conversation must not duplicate the active chat title below the native titlebar");
 assert((appTitlebar.match(/<span>\{props\.activeSessionTitle\}<\/span>/g) ?? []).length === 1, "The active chat title must render exactly once in application chrome");
 assert(!editorQaFixture.includes("agent-surface-switcher"), "Editor QA fixture must not retain the removed chat/terminal switcher");
 assert(!editorQaFixture.includes("agent-chat-terminal-hint"), "Editor QA fixture must not retain duplicate raw-terminal access");
@@ -234,12 +240,12 @@ assert(appTitlebar.includes('aria-label="Reset interface"'), "Threads header mus
 assert(appChromeState.includes("useTimedNotice(12_000)") && appChromeState.includes("window.setTimeout(() => setNotice(null), duration)"), "Crash recovery feedback must clear without permanently covering the workbench");
 assert(appTitlebar.includes('aria-label="Toggle Threads"'), "Titlebar must expose the approved Threads toggle");
 assert((appTitlebar.match(/aria-label="Toggle Threads"/g) ?? []).length === 1, "Threads must have one visible chrome toggle");
-assert(!`${appTsx}\n${appTitlebar}`.includes('aria-label="Hide Threads"'), "Threads header must not duplicate the titlebar toggle");
+assert(!`${appComposition}\n${appTitlebar}`.includes('aria-label="Hide Threads"'), "Threads header must not duplicate the titlebar toggle");
 assert(appTitlebar.includes('aria-label="Toggle Tools"'), "Titlebar must expose the approved tool tray toggle");
-assert(!`${appTsx}\n${appTitlebar}`.includes('aria-label="Thread settings"'), "Titlebar must not duplicate the global settings action");
+assert(!`${appComposition}\n${appTitlebar}`.includes('aria-label="Thread settings"'), "Titlebar must not duplicate the global settings action");
 assert(appTitlebar.includes('aria-label="Open settings and more"'), "Titlebar must keep one global settings and more entry point");
 assert(appTitlebar.includes('aria-label="Toggle Terminal tray"'), "Titlebar must expose the approved bottom terminal tray toggle");
-assert(appTsx.includes('toggleRawTerminal: utilityTrayControls.toggleRawTerminal') && read("app/src/appTitlebarHost.ts").includes('onToggleTerminal: () => void input.toggleRawTerminal()'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
+assert(appComposition.includes('toggleRawTerminal: input.utilityTrayControls.toggleRawTerminal') && read("app/src/appTitlebarHost.ts").includes('onToggleTerminal: () => void input.toggleRawTerminal()'), "Bottom terminal tray toggle must use the existing raw-terminal lifecycle path");
 assert(icons.includes("panelBottom: PanelBottom"), "Bottom terminal tray toggle must use the standard PanelBottom icon");
 assert(icons.includes("panelLeft: PanelLeft"), "Threads toggle must use the standard PanelLeft icon");
 assert(icons.includes("panelRight: PanelRight"), "Tools toggle must use the standard PanelRight icon");
@@ -262,9 +268,9 @@ assert(workbenchResizers.includes('props.trayMode === "split" ? ('), "Editor/bro
 assert(toolDockMenu.includes("Hide tools"), "Tool dock menu must expose a direct way to return to the agent-only layout");
 assert(toolDockMenu.includes('aria-label="Tools and dock position"'), "Tool dock controls must use one compact, labelled menu");
 assert(commandPaletteController.includes("const [open, setOpen] = useState(false)"), "App chrome must expose a command palette state");
-assert(appTsx.includes("shortcutKeys(\"chrome.command-palette\")"), "Command palette must show its shortcut label");
+assert(appComposition.includes("shortcutKeys(\"chrome.command-palette\")"), "Command palette must show its shortcut label");
 assert(appTitlebar.includes('<div className="titlebar-identity"') && appTitlebar.includes('title="New Task"') && appTitlebar.includes('title="Search tasks or run a command"') && appTitlebar.includes('title="Reset interface"'), "Thread actions must share the native titlebar lane with the traffic lights");
-assert(!appTsx.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
+assert(!appComposition.includes('className="drawer-collapse-button"'), "The Threads section header must not duplicate titlebar actions");
 assert(
   appCommandPaletteHost.includes("visibleCommandPaletteCommands(")
     && appCommandPaletteHost.includes("input.commandPaletteSources,")
@@ -276,7 +282,7 @@ assert(commandPaletteSources.includes('COMMAND_PALETTE_SOURCE_IDS = ["chats", "c
 assert(searchCommandDialog.includes('placeholder="Search tasks or run a command"'), "Search must use the centered task and command palette");
 assert(searchCommandDialog.includes('label="Tasks"') && searchCommandDialog.includes('label="Actions"'), "Centered search must separate tasks from actions");
 assert(commandPaletteAssembly.includes('command.source === "chats").slice(0, EMPTY_QUERY_GROUP_LIMIT)') && commandPaletteAssembly.includes('command.source !== "chats").slice(0, EMPTY_QUERY_GROUP_LIMIT)'), "Centered search must keep both tasks and actions visible before a query");
-assert(!appTsx.includes('sideDrawerMode === "search"'), "Search must not render as a duplicate side drawer");
+assert(!appComposition.includes('sideDrawerMode === "search"'), "Search must not render as a duplicate side drawer");
 assert(!appCss.includes(".search-scope-tabs"), "Removed search drawer tabs must not leave capsule styling behind");
 assert(settingsWorkspace.includes("onCommandPaletteSourceChange") && settingsWorkspace.includes("Toggle ${source.label} command palette source"), "Settings must expose functional command-palette source controls");
 assert(settingsModalData.includes('id: "agents.worktree-policy"') && settingsModalData.includes('id: "agents.hook-policy"') && settingsModalData.includes('id: "agents.environment-policy"'), "Settings must expose truthful worktree, lifecycle-hook, and environment policy rows");
@@ -292,7 +298,7 @@ assert(mcpOAuth.includes('code_challenge_method", "S256"') && mcpOAuth.includes(
 assert(agentHooks.includes('TcpListener::bind("127.0.0.1:0")') && agentHooks.includes('format!("Bearer {token}")') && agentHooks.includes('fs::Permissions::from_mode(0o600)'), "Agent hooks must stay loopback-only with a private ephemeral bearer configuration");
 assert(agentHooks.includes('"list_projects"') && agentHooks.includes('"get_workspace_state"') && agentHooks.includes('"focus_pane"') && agentHooks.includes('"open_file"') && agentHooks.includes('"create_shell"') && agentHooks.includes('"report_status"'), "Agent-hook MCP must expose the documented minimal tool catalog");
 assert(agentHookRenderer.includes('invoke<AgentHookRequest[]>("take_agent_hook_requests")') && agentHookRuntime.includes('focusTerminalPane(paneId, "agent")') && agentHookRuntime.includes('createTerminalPane(defaultTerminalLaunchProfile(), "agent")') && agentHookRuntime.includes('"agent",\n    ),'), "Agent-hook actions must enter the renderer through the attributed app-action path");
-assert(statusBar.includes('className="status-bar__item status-bar__item--button"') && appTsx.includes("statusBarRepoPropsFrom(settingsRuntime.repoLocation") && read("app/src/statusBarHost.ts").includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
+assert(statusBar.includes('className="status-bar__item status-bar__item--button"') && appComposition.includes("statusBarRepoPropsFrom(input.settingsRuntime.repoLocation") && read("app/src/statusBarHost.ts").includes("sourceRepoStatusLabel(repoLocation)"), "Active source-host status must be visible outside Settings");
 assert(sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/merge_requests`') && sourceControlLinks.includes('isGitLabLocation(location) ? `${repoBaseUrl(location)}/-/pipelines`'), "Self-hosted non-GitHub remotes must use GitLab merge-request and pipeline routes");
 assert(read("app/src/settingsActionsHost.ts").includes('input.storeRef.current?.set("aiConnectionSettings", next)') && !read("app/src/settingsActionsHost.ts").includes('storeRef.current?.set("connectionSecret'), "Tauri Store may persist non-secret connection metadata but never secret values");
 assert(composerSubmission.includes("context.settings.providerModels[provider].trim()"), "Provider model defaults must reach structured chat runs");

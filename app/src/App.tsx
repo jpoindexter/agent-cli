@@ -1,56 +1,23 @@
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
-import { openPath, openUrl } from "@tauri-apps/plugin-opener";
-import { DraftNavigationDialog } from "./DraftNavigationDialog";
-import { BrowserPreviewPanel } from "./BrowserPreviewPanel";
-import { AppTitlebar } from "./AppTitlebar";
-import { BottomUtilityTray } from "./BottomUtilityTray";
-import { bottomUtilityTrayPropsFrom } from "./bottomUtilityTrayHost";
-import { WorkbenchResizers } from "./WorkbenchResizers";
-import { drawerTitleFor } from "./drawerModes";
-import { AppRuntimeDialogs } from "./AppRuntimeDialogs";
-import { appRuntimeDialogsPropsFrom } from "./appRuntimeDialogsHost";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useConversationRuntime } from "./useConversationRuntime";
 import type { OpenProject, ProjectRailStatus, ProjectSession } from "./workspaceState";
-import { WorkspaceSideRail } from "./WorkspaceSideRail";
-import { workspaceSideRailPropsFrom } from "./workspaceSideRailHost";
 import { appRuntimeMenusFrom } from "./appRuntimeMenuHost";
 import { visibleAppCommandPaletteCommands } from "./appCommandPaletteHost";
-import { AgentConversationPanel } from "./AgentConversationPanel";
-import { agentConversationPanelPropsFrom } from "./agentConversationPanelHost";
 import { useContextMenuHost } from "./useContextMenuHost";
-import { WorkbenchEditorSection } from "./WorkbenchEditorSection";
-import { workbenchEditorSectionPropsFrom } from "./workbenchEditorSectionHost";
 import { createRenderPerfExport } from "./renderPerfExport";
 import { createPaneTranscriptCapture } from "./paneTranscriptCapture";
 import { deriveAppSurfaceLabels } from "./appSurfaceLabels";
-import { AppSettingsHost } from "./appSettingsHost";
-import { appSettingsHostPropsFrom } from "./appSettingsHostProps";
-import { WorkbenchDockPanels } from "./WorkbenchDockPanels";
-import { workbenchDockPanelsPropsFrom } from "./workbenchDockPanelsHost";
-import { WorkbenchShell } from "./WorkbenchShell";
-import { browserPreviewPropsFrom } from "./browserPreviewHost";
 import { useComposerRuntime } from "./useComposerRuntime";
 import { visibleProjectsFrom } from "./projectRailView";
-import { searchDialogPropsFrom } from "./searchCommandDialogHost";
-import { transcriptsModalPropsFrom } from "./transcriptsModalHost";
-import { sourceRepoStatusTitleFrom, statusBarRepoPropsFrom } from "./statusBarHost";
-import { appTitlebarPropsFrom } from "./appTitlebarHost";
-import { draftNavigationPropsFrom } from "./draftNavigationHost";
 import {
   projectRailStatusFromConversations,
   projectSessionStatusFromConversations,
 } from "./projectChatStatus";
 import {
-  defaultTerminalLaunchProfile,
-} from "./launchProfiles";
-import {
   setActiveKeybindingOverrides,
-  shortcutKeys,
 } from "./shortcuts";
-import { SearchCommandDialog } from "./SearchCommandDialog";
 import { useCommandPalette } from "./useCommandPalette";
-import { QuickOpenDialog } from "./QuickOpenDialog";
 import { useWorkspaceDomain } from "./useWorkspaceDomain";
 import { activePaneDisplayLabel } from "./terminalPane";
 import { useGitDiffReview } from "./useGitDiffReview";
@@ -68,16 +35,12 @@ import { useAppConversationBridge } from "./useAppConversationBridge";
 import { buildSettingsActions } from "./settingsActionsHost";
 import { deriveActiveAgentSessionState } from "./activeAgentSessionState";
 import { deriveEditorWorkspaceState } from "./editorWorkspaceState";
-import { TranscriptsModal } from "./TranscriptsModal";
 import { useTerminalFind } from "./useTerminalFind";
 import { useEditorWorkspaceRuntime } from "./useEditorWorkspaceRuntime";
 import { resetDurableChatStore } from "./chatStore";
-import { StatusBar } from "./StatusBar";
-import { ProjectCreationDialog } from "./ProjectCreationDialog";
-import { projectCreationCommands } from "./projectCreationCommands";
-import { WorktreeLabelDialog } from "./WorktreeLabelDialog";
 import { useAppRootState } from "./useAppRootState";
 import { useAppSearchRuntime } from "./useAppSearchRuntime";
+import { AppWorkbenchView } from "./AppWorkbenchView";
 import "./App.css";
 import "./composerModelPicker.css";
 import "./responsive-shell.css";
@@ -334,8 +297,6 @@ function App() {
     trayMode: shellLayout.utilityTrayMode,
     workspacePath,
   });
-  const drawerActiveTitle = drawerTitleFor(shellLayout.sideDrawerMode);
-  const sourceRepoStatusTitle = sourceRepoStatusTitleFrom(settingsRuntime.repoLocation, settingsRuntime.sourceControlStatus);
   const { settingsConnectionActions, settingsPreferenceActions, settingsScopedActions } = buildSettingsActions({
     aiConnectionSettingsRef, browser, chrome, commandPaletteSources, composerSettingsActions,
     composerWorkspace, keybindingOverrides, mcpOAuth, persistence, profiles,
@@ -343,162 +304,34 @@ function App() {
     setCommandPaletteSources, setKeybindingOverrides, storeRef, workspacePath, workspacePathRef,
   });
 
-  return (
-    <WorkbenchShell
-      handlers={{
-        beginSideDrawerResize: shellLayout.beginSideDrawerResize,
-        hideTools: () => shellLayout.setWorkbenchLayout("hidden"),
-        nudgeSideDrawerResize: shellLayout.nudgeSideDrawerResize,
-        setToolTrayMode: shellLayout.setToolTrayMode,
-      }}
-      layout={{
-        appShellStyle: shellLayout.appShellStyle, renderedWorkbenchLayout: shellLayout.renderedWorkbenchLayout, settingsOpen, sideDrawerCollapsed: shellLayout.sideDrawerCollapsed,
-        surfaceMode: shellLayout.agentSurfaceMode, toolTrayMode: shellLayout.toolTrayMode, utilityTrayHeight: shellLayout.utilityTrayHeight, workbenchStyle: shellLayout.workbenchStyle,
-      }}
-      refs={{ workbenchRef: shellLayout.workbenchRef }}
-      slots={{
-        titlebar: <AppTitlebar {...appTitlebarPropsFrom({
-        activeSessionTitle: surfaceLabels.activeSessionTitle,
-        newTask: projectEntryActions.newTask,
-        openCommandPalette: commandPalette.openDialog,
-        openSettings: () => setSettingsOpen(true),
-        openWorkspaceFolder: openPath,
-        renderedLayout: shellLayout.renderedWorkbenchLayout,
-        resetInterface: shellLayout.resetInterface,
-        setLayout: shellLayout.setWorkbenchLayout,
-        setToolMode: shellLayout.setToolTrayMode,
-        sideDrawerCollapsed: shellLayout.sideDrawerCollapsed,
-        storedLayout: shellLayout.workbenchLayout,
-        surfaceLabel: surfaceLabels.primarySurfaceLabel,
-        surfaceState: surfaceLabels.primarySurfaceState,
-        surfaceStatusLabel: surfaceLabels.primarySurfaceStatusLabel,
-        terminalOpen: shellLayout.agentSurfaceMode === "terminal",
-        toggleRawTerminal: utilityTrayControls.toggleRawTerminal,
-        toggleSideDrawer: () => shellLayout.setSideDrawerCollapsed((collapsed) => !collapsed),
-        toolMode: shellLayout.toolTrayMode,
-        workspacePath,
-      })} />,
-        rail: <WorkspaceSideRail {...workspaceSideRailPropsFrom({
-          activeChat, backgroundExits, browser, composerSettingsActions, contextMenuHost,
-          diffReviewHook, drawerActiveTitle, editorFileWorkflow, editorSession, editorWorkspace,
-          gitStatusHook, openUrl, persistence, pickWorkspace, profiles, projectEntryActions, projectRailContextMenuItems,
-          projectRailStatus, projectSessionContextMenuItems, projectSessionNavigationActions,
-          projectEntryOpen, projectSessionStatus, projectSwitcherOpen, railBodyRef, railHeight, requestOpenWorkspace,
-          setProjectSwitcherOpen, setSettingsOpen,
-          shellLayout, treeRef, utilityTrayControls, visibleOpenProjects, workspaceContextMenuItems,
-          workspaceFileActions, workspacePath, workspaceTree,
-        })} />,
-        main: <>
-        <WorkbenchDockPanels {...workbenchDockPanelsPropsFrom({
-          activeChat, browser, contextMenuHost, diffReviewHook, drawerSearchQuery, drawerSearchResults, editorFileWorkflow,
-          editorSession, editorWorkspace, gitStatusHook, setDrawerSearchQuery, workspaceContextMenuActions,
-          surfaceLabels, workspaceFileActions, workspacePath, workspaceTree,
-        })} />
-        <WorkbenchEditorSection {...workbenchEditorSectionPropsFrom({
-          contextMenuHost, diffContextMenuItems, diffReviewHook, editorContextMenuItems,
-          editorFileWorkflow, editorNavigation, editorSession, editorSurface, editorTabContextMenuItems,
-          editorWorkspace, handleEditorUpdate, saveEditorFile, tabIsDirty,
-        })} />
-
-        <WorkbenchResizers
-          layout={shellLayout.renderedWorkbenchLayout}
-          onKeyDown={shellLayout.nudgeWorkbenchResize}
-          onPointerDown={shellLayout.beginWorkbenchResize}
-          sizing={shellLayout.workbenchSizing}
-          trayMode={shellLayout.toolTrayMode}
-        />
-
-        <BrowserPreviewPanel {...browserPreviewPropsFrom(browser, {
-          contextMenu: (event) => contextMenuHost.openContextMenu(event, appMenuAssembly.browserContextMenuItems()),
-          openExternal: openUrl,
-        })} />
-
-        <AgentConversationPanel {...agentConversationPanelPropsFrom({
-          activeAgentSession, activeChat, aiConnectionSettings, appMenuAssembly, chatConversationActions,
-          chatRunControls, composerAttachments, composerError, composerHistoryNavigation, composerLocal,
-          composerMentionQuery, composerMentionResults, composerNotice, composerSending,
-          composerSettingsActions, composerSurface, contextMenuHost, editorSurface, focusedChatMessageId,
-          gitStatusHook, openSettings, profiles, projectEntryActions, setComposerNotice, shellLayout, terminal, terminalSurface, worktrees, workspacePath,
-        })} />
-        <BottomUtilityTray {...bottomUtilityTrayPropsFrom({
-          activeAgentSession, activeAgentSessionHandle, activeTerminalProfile, appMenuAssembly, canvasRef,
-          contextMenuHost, defaultTerminalLaunchProfile, imeInputRef,
-          paste: (text) => { invoke("paste", { text }).catch(() => {}); },
-          pickWorkspace, profiles, renameTerminalPane, shellLayout, terminal, terminalContextMenuItems,
-          terminalFind, terminalHostRef, terminalSurface, utilityTrayControls, workspacePath,
-        })} />
-        </>,
-        overlays: <>
-
-      <AppSettingsHost {...appSettingsHostPropsFrom({
-        activeChat, agentHookStatus, aiConnectionSettings, chrome, commandPaletteSources,
-        connectionActions: settingsConnectionActions, gitStatusHook, keybindingOverrides, mcpOAuth,
-        openUrl, preferenceActions: settingsPreferenceActions, profiles,
-        scopedActions: settingsScopedActions, setSettingsOpen, settingsInitialCategory, settingsOpen, settingsRuntime,
-        shellLayout, surfaceLabels, utilityTrayControls, workspacePath,
-      })} />
-      <TranscriptsModal {...transcriptsModalPropsFrom(
-        { openTranscriptId: paneTranscripts.openTranscriptId, paneTranscripts: paneTranscripts.paneTranscripts, setOpenTranscriptId: paneTranscripts.setOpenTranscriptId, setTranscriptsOpen: paneTranscripts.setTranscriptsOpen, transcriptsOpen: paneTranscripts.transcriptsOpen },
-        { projectId: workspacePath, projectSessionId: activeChat.activeSessionId },
-      )} />
-      <ProjectCreationDialog
-        open={projectCreationOpen}
-        onClose={() => setProjectCreationOpen(false)}
-        onCreateProject={projectCreationCommands.create}
-        onInitializeGit={projectCreationCommands.initializeGit}
-        onOpenProject={projectSessionNavigationActions.createSession}
-        onPickParent={async () => {
-          const parent = await open({ directory: true });
-          return typeof parent === "string" ? parent : null;
-        }}
-      />
-      <WorktreeLabelDialog {...worktreeLabelRequest.dialog} />
-      <AppRuntimeDialogs {...appRuntimeDialogsPropsFrom({
-        activeChat, chrome, composerSurface, composerWorkspace, launchError, orchestrationError,
-        orchestrationLaunching, orchestrationOpen, persistence, pickWorkspace, profiles,
-        setOrchestrationError, setOrchestrationOpen, workspacePath,
-      })} />
-      {contextMenuHost.element}
-      {commandPalette.open ? (
-        <SearchCommandDialog {...searchDialogPropsFrom(commandPalette, {
-          commands: visiblePaletteCommands,
-          error: chatSearch.error,
-          loading: chatSearch.loading,
-          shortcut: shortcutKeys("chrome.command-palette"),
-        })} />
-      ) : null}
-      <QuickOpenDialog
-        controller={quickOpen}
-        shortcut={shortcutKeys("workspace.quick-open")}
-        workspacePath={workspacePath}
-        onOpenFile={(file) => void editorFileWorkflow.requestOpen(file, { focusEditor: true })}
-      />
-      {(() => {
-        const draftProps = draftNavigationPropsFrom({
-          cancel: editorNavigation.cancelNavigation,
-          discard: editorNavigation.discardAndContinue,
-          error: editorNavigation.draftDialogError,
-          hasPendingNavigation: Boolean(editorNavigation.pendingNavigation),
-          save: editorNavigation.saveAndContinue,
-          saving: editorSession.editorSaving,
-          selectedFile: editorSession.selectedFile,
-        });
-        return draftProps ? <DraftNavigationDialog {...draftProps} /> : null;
-      })()}
-      <StatusBar
-        workspaceName={surfaceLabels.activeWorkspaceName}
-        primarySurfaceState={surfaceLabels.primarySurfaceState}
-        primarySurfaceLabel={surfaceLabels.primarySurfaceLabel}
-        primarySurfaceStatusLabel={surfaceLabels.primarySurfaceStatusLabel}
-        {...statusBarRepoPropsFrom(settingsRuntime.repoLocation, openUrl)}
-        repoTitle={sourceRepoStatusTitle}
-        surfaceMode={shellLayout.agentSurfaceMode}
-        utilityLabel={surfaceLabels.utilityTrayStatusLabel}
-      />
-        </>,
-      }}
-    />
-  );
+  return <AppWorkbenchView {...{
+    activeAgentSession, activeAgentSessionHandle, activeChat, activeTerminalProfile,
+    agentHookStatus, aiConnectionSettings, appMenuAssembly, backgroundExits, browser,
+    chatConversationActions, chatRunControls, chatSearch, chrome, commandPalette,
+    commandPaletteSources, composerAttachments, composerError, composerHistoryNavigation,
+    composerLocal, composerMentionQuery, composerMentionResults, composerNotice, composerSending,
+    composerSettingsActions, composerSurface, composerWorkspace,
+    connectionActions: settingsConnectionActions,
+    contextMenuElement: contextMenuHost.element, contextMenuHost, diffContextMenuItems,
+    diffReviewHook, drawerSearchQuery, drawerSearchResults, editorContextMenuItems,
+    editorFileWorkflow, editorNavigation, editorSession, editorSurface, editorTabContextMenuItems,
+    editorWorkspace, focusedChatMessageId, gitStatusHook, handleEditorUpdate, imeInputRef,
+    keybindingOverrides, launchError, mcpOAuth, openSettings, openUrl, orchestrationError,
+    orchestrationLaunching, orchestrationOpen, paneTranscripts, persistence, pickWorkspace,
+    preferenceActions: settingsPreferenceActions, profiles, projectCreationOpen,
+    projectEntryActions, projectEntryOpen, projectRailContextMenuItems, projectRailStatus,
+    projectSessionContextMenuItems, projectSessionNavigationActions, projectSessionStatus,
+    projectSwitcherOpen, quickOpen, railBodyRef, railHeight, renameTerminalPane,
+    requestOpenWorkspace, saveEditorFile, scopedActions: settingsScopedActions,
+    setComposerNotice, setDrawerSearchQuery, setOrchestrationError, setOrchestrationOpen,
+    setProjectCreationOpen, setProjectSwitcherOpen, setSettingsOpen, settingsInitialCategory,
+    settingsOpen, settingsRuntime, shellLayout, surfaceLabels, tabIsDirty, terminal,
+    terminalContextMenuItems, terminalFind, terminalHostRef, terminalSurface, treeRef,
+    utilityTrayControls, visibleOpenProjects, visiblePaletteCommands,
+    workspaceContextMenuActions, workspaceContextMenuItems, workspaceFileActions,
+    workspacePath, workspaceTree, worktreeLabelDialog: worktreeLabelRequest.dialog, worktrees,
+    canvasRef,
+  }} />;
 }
 
 export default App;
