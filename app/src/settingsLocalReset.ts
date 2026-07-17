@@ -1,5 +1,5 @@
 import {
-  CONNECTION_PROVIDER_IDS,
+  KEYCHAIN_PROVIDER_IDS,
   environmentSecretKey,
   mcpOauthClientSecretKey,
   mcpOauthTokenKey,
@@ -9,7 +9,7 @@ import {
 } from "./connectionSettings";
 
 export const connectionSecretKeys = (settings: AiConnectionSettings) => [
-  ...CONNECTION_PROVIDER_IDS.map(providerSecretKey),
+  ...KEYCHAIN_PROVIDER_IDS.map(providerSecretKey),
   ...settings.mcpServers.filter((server) => server.authMode === "bearer").map((server) => mcpSecretKey(server.id)),
   ...settings.mcpServers.filter((server) => server.authMode === "oauth")
     .flatMap((server) => [mcpOauthTokenKey(server.id), mcpOauthClientSecretKey(server.id)]),

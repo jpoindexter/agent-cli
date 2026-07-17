@@ -1,6 +1,6 @@
 import type { RunCardKind, RunCardProvenance } from "./runCards";
 
-export type ChatProvider = "codex" | "claude";
+export type ChatProvider = "codex" | "claude" | "opencode";
 export type ChatMessageRole = "user" | "assistant" | "tool" | "status" | "error";
 
 export type ChatMessage = {

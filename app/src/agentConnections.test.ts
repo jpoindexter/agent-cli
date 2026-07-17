@@ -32,6 +32,7 @@ describe("agent connection health", () => {
     expect(structuredChatProviderId("codex")).toBe("codex");
     expect(structuredChatProviderId("gemini")).toBeNull();
     expect(structuredChatProviderId("claude")).toBe("claude");
+    expect(structuredChatProviderId("opencode")).toBe("opencode");
     expect(structuredChatProviderId("shell")).toBeNull();
   });
 });
@@ -42,6 +43,7 @@ describe("normalizeAgentConnectionsStatus", () => {
       provider(),
       provider({ id: "gemini", label: "Gemini", authenticated: null, structuredChat: false }),
       provider({ id: "claude", label: "Claude", structuredChat: false }),
+      provider({ id: "opencode", label: "OpenCode", authenticated: null }),
     ],
   };
 

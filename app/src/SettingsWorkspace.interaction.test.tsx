@@ -109,6 +109,7 @@ describe("Settings workspace interactions", () => {
           { id: "codex", label: "Codex", installed: true, version: "codex-cli 0.141.0", authenticated: true, structuredChat: true },
           { id: "gemini", label: "Gemini", installed: true, version: "0.47.0", authenticated: null, structuredChat: false },
           { id: "claude", label: "Claude", installed: false, version: null, authenticated: null, structuredChat: true },
+          { id: "opencode", label: "OpenCode", installed: true, version: "1.4.3", authenticated: null, structuredChat: true },
         ],
       },
     });

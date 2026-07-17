@@ -8,7 +8,9 @@ import {
 } from "./connectionSettings";
 import { connectionErrorText } from "./connectionSettingsPanelHelpers";
 
-const LABELS: Record<ConnectionProviderId, string> = { codex: "Codex", gemini: "Gemini", claude: "Claude" };
+const LABELS: Record<ConnectionProviderId, string> = {
+  codex: "Codex", gemini: "Gemini", claude: "Claude", opencode: "OpenCode",
+};
 
 type ProviderRowProps = {
   provider: ConnectionProviderId;
@@ -43,13 +45,15 @@ function ProviderRow({ provider, settings, secretPresent, onChange, onDeleteSecr
   };
   return <div className="connection-settings__provider">
     <strong>{label}</strong>
-    <label><span>Default model</span><input aria-label={`${label} default model`} value={settings.providerModels[provider]} onChange={(event) => onChange({ ...settings, providerModels: { ...settings.providerModels, [provider]: event.currentTarget.value.slice(0, 128) } })} placeholder="Provider default" /></label>
-    <label><span>API key</span><input aria-label={`${label} API key`} type="password" autoComplete="off" value={secret} onChange={(event) => setSecret(event.currentTarget.value)} placeholder={secretPresent ? "Stored in Keychain" : "Not configured"} /></label>
-    <div className="connection-settings__actions">
-      <span>{secretPresent ? "Keychain: configured" : "Keychain: empty"}</span>
-      <button type="button" disabled={!secret} onClick={() => void save()}>Save key</button>
-      <button type="button" disabled={!secretPresent} onClick={() => void clear()}>Clear</button>
-    </div>
+    <label><span>Default model</span><input aria-label={`${label} default model`} value={settings.providerModels[provider]} onChange={(event) => onChange({ ...settings, providerModels: { ...settings.providerModels, [provider]: event.currentTarget.value.slice(0, 128) } })} placeholder={provider === "opencode" ? "provider/model" : "Provider default"} /></label>
+    {provider === "opencode" ? <div className="connection-settings__managed-auth"><span>Authentication</span><strong>Managed by OpenCode</strong></div> : <>
+      <label><span>API key</span><input aria-label={`${label} API key`} type="password" autoComplete="off" value={secret} onChange={(event) => setSecret(event.currentTarget.value)} placeholder={secretPresent ? "Stored in Keychain" : "Not configured"} /></label>
+      <div className="connection-settings__actions">
+        <span>{secretPresent ? "Keychain: configured" : "Keychain: empty"}</span>
+        <button type="button" disabled={!secret} onClick={() => void save()}>Save key</button>
+        <button type="button" disabled={!secretPresent} onClick={() => void clear()}>Clear</button>
+      </div>
+    </>}
   </div>;
 }
 
@@ -60,7 +64,7 @@ type ProviderSettingsProps = Omit<ProviderRowProps, "provider" | "secretPresent"
 export function ConnectionProviderSettings(props: ProviderSettingsProps) {
   return <section aria-labelledby="connection-provider-heading">
     <h3 id="connection-provider-heading">Provider defaults</h3>
-    <p>Models are stored locally. API keys are write-only in macOS Keychain.</p>
+    <p>Native provider keys stay write-only in Keychain. OpenCode accepts any configured provider/model and manages its own credentials.</p>
     {CONNECTION_PROVIDER_IDS.map((provider) => <ProviderRow
       {...props}
       provider={provider}

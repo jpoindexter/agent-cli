@@ -36,7 +36,7 @@ describe("AI connection settings", () => {
         ],
       },
     })).toEqual({
-      providerModels: { codex: "gpt-5", gemini: "", claude: "" },
+      providerModels: { codex: "gpt-5", gemini: "", claude: "", opencode: "" },
       mcpServers: [server()],
       environmentByProject: {
         "/repo": [
@@ -63,6 +63,12 @@ describe("AI connection settings", () => {
   it("uses opaque identifiers for Keychain accounts", () => {
     expect(providerSecretKey("gemini")).toBe("provider:gemini:api-key");
     expect(environmentSecretKey("secret-1")).toBe("environment:secret-1");
+  });
+
+  it("keeps universal OpenCode model addresses as provider/model IDs", () => {
+    expect(normalizeAiConnectionSettings({
+      providerModels: { opencode: "openrouter/anthropic/claude-sonnet-4" },
+    }).providerModels.opencode).toBe("openrouter/anthropic/claude-sonnet-4");
   });
 
   it("builds launch inputs without materializing secret values", () => {

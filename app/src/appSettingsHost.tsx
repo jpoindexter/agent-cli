@@ -23,7 +23,7 @@ export type SettingsHostBundles = {
   handlers: {
     close: () => void;
     deleteConnectionSecret: NonNullable<ModalProps["onDeleteConnectionSecret"]>;
-    openAgentConnection: (providerId: "codex" | "gemini" | "claude") => Promise<unknown>;
+    openAgentConnection: (providerId: "codex" | "gemini" | "claude" | "opencode") => Promise<unknown>;
     openSourceControlLink: (url: string) => Promise<unknown>;
     refreshAgentConnections: NonNullable<ModalProps["onRefreshAgentConnections"]>;
     resetLayout: NonNullable<ModalProps["onResetLayout"]>;

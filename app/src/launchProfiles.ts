@@ -32,6 +32,13 @@ export const LAUNCH_PROFILES: LaunchProfile[] = [
     useLoginShell: true,
   },
   {
+    id: "opencode",
+    label: "OpenCode",
+    command: "opencode",
+    args: [],
+    useLoginShell: true,
+  },
+  {
     id: "shell",
     label: "Shell",
     command: "/bin/zsh",

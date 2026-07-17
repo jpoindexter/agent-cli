@@ -16,7 +16,7 @@ const settings: AiConnectionSettings = {
     args: [], authMode: "oauth", enabled: true, id: "oauth", name: "OAuth",
     oauthClientId: "client", oauthIssuer: "", oauthScopes: [], target: "https://mcp.test", transport: "http",
   }],
-  providerModels: { claude: "", codex: "", gemini: "" },
+  providerModels: { claude: "", codex: "", gemini: "", opencode: "" },
 };
 
 describe("settings local reset", () => {

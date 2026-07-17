@@ -5,6 +5,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { ComposerModelPicker } from "./ComposerModelPicker";
 
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(async (command: string) => command === "opencode_models"
+    ? { models: ["google/gemini-3.5-flash", "openai/gpt-5.4", "openai/gpt-5.4-mini"] }
+    : null),
+}));
+
 afterEach(cleanup);
 
 const renderPicker = () => {
@@ -33,6 +39,24 @@ describe("ComposerModelPicker", () => {
     expect(screen.getByText("Claude default")).toBeTruthy();
   });
 
+  it("browses live OpenCode models by provider and identifies the saved default", async () => {
+    render(
+      <ComposerModelPicker
+        provider="opencode"
+        model="openai/gpt-5.4-mini"
+        configuredModels={{ opencode: "google/gemini-3.5-flash" }}
+        onManageModels={vi.fn()}
+        onSelect={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /gpt-5.4-mini/i }));
+    expect(await screen.findByRole("button", { name: /OpenAI.*2 models/i })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Google.*1 model/i }));
+    expect(screen.getByText("gemini-3.5-flash")).toBeTruthy();
+    expect(screen.getByText("Default")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Refresh OpenCode models" })).toBeTruthy();
+  });
+
   it("selects a model with the keyboard and restores trigger focus", async () => {
     const { onSelect } = renderPicker();
     const trigger = screen.getByRole("button", { name: /gpt-5.6-sol/i });
@@ -46,7 +70,7 @@ describe("ComposerModelPicker", () => {
   it("accepts a custom model ID and opens provider settings", async () => {
     const { onManageModels, onSelect } = renderPicker();
     fireEvent.click(screen.getByRole("button", { name: /gpt-5.6-sol/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Custom model ID" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use another model ID" }));
     fireEvent.change(screen.getByLabelText("Custom Codex model ID"), { target: { value: "local-model" } });
     fireEvent.click(screen.getByRole("button", { name: "Use model" }));
     await waitFor(() => expect(onSelect).toHaveBeenCalledWith("codex", "local-model"));

@@ -1,3 +1,5 @@
+import type { ChatProvider } from "./chatConversation";
+
 export const MAX_RECENT_PROJECTS = 8;
 export const MAX_OPEN_PROJECTS = 8;
 export const MAX_PROJECT_SESSIONS = 100;
@@ -11,7 +13,7 @@ export type ProjectSessionOrchestration = {
   index: number;
   count: number;
   task: string;
-  provider: "codex" | "claude";
+  provider: ChatProvider;
   model?: string;
   approvalMode: "ask" | "approveSafe" | "fullAccess";
   budgetSeconds: number;

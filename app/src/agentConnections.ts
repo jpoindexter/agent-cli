@@ -1,5 +1,5 @@
 export type AgentConnectionStatus = {
-  id: "codex" | "gemini" | "claude";
+  id: "codex" | "gemini" | "claude" | "opencode";
   label: string;
   installed: boolean;
   version: string | null;
@@ -11,7 +11,7 @@ export type AgentConnectionsStatus = {
   providers: AgentConnectionStatus[];
 };
 
-const PROVIDER_IDS = new Set<AgentConnectionStatus["id"]>(["codex", "gemini", "claude"]);
+const PROVIDER_IDS = new Set<AgentConnectionStatus["id"]>(["codex", "gemini", "claude", "opencode"]);
 
 const isAgentConnectionStatus = (value: unknown): value is AgentConnectionStatus => {
   if (typeof value !== "object" || value == null) return false;
@@ -30,7 +30,7 @@ const isAgentConnectionStatus = (value: unknown): value is AgentConnectionStatus
 export const normalizeAgentConnectionsStatus = (value: unknown): AgentConnectionsStatus | null => {
   if (typeof value !== "object" || value == null) return null;
   const providers = (value as Record<string, unknown>).providers;
-  if (!Array.isArray(providers) || providers.length !== 3 || !providers.every(isAgentConnectionStatus)) return null;
+  if (!Array.isArray(providers) || providers.length !== PROVIDER_IDS.size || !providers.every(isAgentConnectionStatus)) return null;
   return { providers };
 };
 
@@ -44,5 +44,5 @@ export const formatAgentConnectionHealth = (status: AgentConnectionStatus): stri
 export const formatAgentConnectionCapability = (status: AgentConnectionStatus): string =>
   status.structuredChat ? "Structured chat" : "Raw terminal only";
 
-export const structuredChatProviderId = (profileId: string): "codex" | "claude" | null =>
-  profileId === "codex" || profileId === "claude" ? profileId : null;
+export const structuredChatProviderId = (profileId: string): "codex" | "claude" | "opencode" | null =>
+  profileId === "codex" || profileId === "claude" || profileId === "opencode" ? profileId : null;

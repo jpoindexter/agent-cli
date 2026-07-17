@@ -1,3 +1,5 @@
+@import "./composerModelBrowser.css";
+
 .composer-model-picker {
   position: relative;
   min-width: 0;
@@ -19,15 +21,55 @@
   bottom: calc(100% + 6px);
   z-index: 1000;
   border: 1px solid #3a3c48;
-  border-radius: 6px;
+  border-radius: 7px;
   background: #23242d;
   box-shadow: var(--shadow-overlay);
   color: #ececf4;
 }
 
+.composer-model-picker__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  background: #08090d99;
+  padding: 16px;
+}
+
 .composer-model-picker__popover {
-  width: min(284px, calc(100vw - 32px));
+  position: relative;
+  right: auto;
+  bottom: auto;
+  display: grid;
+  width: min(680px, calc(100vw - 32px));
+  height: min(520px, calc(100vh - 140px));
+  min-height: 340px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   overflow: hidden;
+}
+
+.composer-model-picker__title {
+  display: flex;
+  min-height: 46px;
+  align-items: center;
+  padding: 9px 12px 7px;
+}
+
+.composer-model-picker__title > span,
+.composer-model-picker__detail header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.composer-model-picker__title strong {
+  font: 600 13px/1.2 var(--font-ui);
+}
+
+.composer-model-picker__title small,
+.composer-model-picker__detail header small {
+  color: #9295a3;
+  font: 10px/1.2 var(--font-ui);
 }
 
 .composer-model-picker__search {
@@ -36,8 +78,8 @@
   grid-template-columns: 18px minmax(0, 1fr) 24px;
   align-items: center;
   gap: 5px;
-  border-bottom: 1px solid #363844;
-  padding: 0 8px;
+  border-block: 1px solid #363844;
+  padding: 0 10px;
 }
 
 .composer-model-picker__search > .app-icon {
@@ -58,7 +100,9 @@
 .composer-model-picker__search button,
 .composer-model-picker__footer button,
 .composer-model-picker__custom button,
-.composer-model-picker__group button,
+.composer-model-picker__providers button,
+.composer-model-picker__detail header button,
+.composer-model-picker__model,
 .composer-reasoning-picker__popover button {
   border: 0;
   border-radius: 4px;
@@ -67,88 +111,24 @@
   font: 12px/1.25 var(--font-ui);
 }
 
-.composer-model-picker__search button {
+.composer-model-picker__search button,
+.composer-model-picker__detail header button {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   place-items: center;
 }
 
-.composer-model-picker__search button .app-icon {
-  width: 13px;
-}
-
-.composer-model-picker__list {
-  max-height: min(330px, calc(100vh - 180px));
-  overflow: auto;
-  padding: 5px;
-}
-
-.composer-model-picker__heading,
-.composer-reasoning-picker__heading {
-  color: #858896;
-  font: 600 10px/1 var(--font-ui);
-  padding: 7px 7px 5px;
-  text-transform: uppercase;
-}
-
-.composer-model-picker__group button {
-  display: grid;
-  width: 100%;
-  min-height: 42px;
-  grid-template-columns: minmax(0, 1fr) 18px;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 7px;
-  text-align: left;
-}
-
-.composer-model-picker__group button:hover,
-.composer-model-picker__group button:focus-visible,
-.composer-model-picker__group button.is-active,
-.composer-reasoning-picker__popover button:hover,
-.composer-reasoning-picker__popover button:focus-visible {
-  background: #30323d;
-}
-
-.composer-model-picker__group button > span {
-  display: grid;
-  min-width: 0;
-  gap: 2px;
-}
-
-.composer-model-picker__group strong,
-.composer-model-picker__group small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.composer-model-picker__group strong {
-  font-weight: 550;
-}
-
-.composer-model-picker__group small {
-  color: #9295a3;
-  font-size: 10px;
-}
-
-.composer-model-picker__group .app-icon,
-.composer-reasoning-picker__popover .app-icon {
+.composer-model-picker__search button .app-icon,
+.composer-model-picker__detail header button .app-icon {
   width: 14px;
-  color: #9bd9e3;
 }
 
-.composer-model-picker__empty {
-  color: #9295a3;
-  font: 12px/1.4 var(--font-ui);
-  padding: 22px 10px;
-  text-align: center;
-}
 
 .composer-model-picker__footer {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
   border-top: 1px solid #363844;
   padding: 5px;
 }
@@ -157,16 +137,8 @@
   display: flex;
   height: 30px;
   align-items: center;
-  gap: 8px;
-  padding: 0 7px;
-  text-align: left;
-}
-
-.composer-model-picker__footer button:hover,
-.composer-model-picker__footer button:focus-visible,
-.composer-model-picker__custom button:hover,
-.composer-model-picker__custom button:focus-visible {
-  background: #30323d;
+  gap: 7px;
+  padding: 0 8px;
 }
 
 .composer-model-picker__footer .app-icon {
@@ -176,8 +148,9 @@
 
 .composer-model-picker__custom {
   display: grid;
-  gap: 8px;
-  padding: 12px;
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
 }
 
 .composer-model-picker__custom label {
@@ -186,11 +159,11 @@
 }
 
 .composer-model-picker__custom input {
-  height: 30px;
+  height: 34px;
   border: 1px solid #4a4c59;
   border-radius: 4px;
   background: #1a1b22;
-  padding: 0 8px;
+  padding: 0 9px;
 }
 
 .composer-model-picker__custom input:focus {
@@ -227,6 +200,12 @@
   .composer-model-picker__trigger {
     max-width: 132px;
   }
+
+  .composer-model-picker__popover {
+    height: min(560px, calc(100dvh - 100px));
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
 
   .composer-reasoning-picker summary span {
     display: none;

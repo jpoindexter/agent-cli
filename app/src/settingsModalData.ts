@@ -238,7 +238,7 @@ export const settingsRowsForCategory = (
   categoryId: SettingsCategoryId,
 ): SettingsRowDef[] => rows.filter((row) => row.categoryId === categoryId);
 
-const CHAT_PROVIDER_PROFILE_IDS = new Set(["codex", "claude"]);
+const CHAT_PROVIDER_PROFILE_IDS = new Set(["codex", "claude", "opencode"]);
 
 export const settingsAgentProfileOptions = (
   profiles: { id: string; label: string }[],

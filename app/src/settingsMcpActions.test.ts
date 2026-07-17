@@ -24,7 +24,7 @@ const settings: AiConnectionSettings = {
     "/repo": [{ id: "env", name: "NODE_ENV", secret: false, value: "test" }],
   },
   mcpServers: [server],
-  providerModels: { claude: "", codex: "", gemini: "" },
+  providerModels: { claude: "", codex: "", gemini: "", opencode: "" },
 };
 
 describe("settings MCP actions", () => {

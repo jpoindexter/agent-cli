@@ -30,7 +30,8 @@ function SettingsRow({ row, content }: { row: SettingsRowDef; content: SettingsC
     <SettingsShortcutTable keybindingOverrides={content.props.keybindingOverrides ?? {}} onKeybindingOverrideChange={content.props.onKeybindingOverrideChange} />
   </div>;
   const scoped = ["agents.profile", "agents.permission", "browser.url"].includes(row.id);
-  return <div className="settings-modal__row">
+  const block = row.id === "connections.manage" ? " settings-modal__row--block" : "";
+  return <div className={`settings-modal__row${block}`}>
     <div className="settings-modal__copy"><strong>{row.label}</strong><span>{row.hint}</span></div>
     <div className="settings-workspace__row-control">
       <SettingsRowControl row={row} props={content.props} scope={content.selectedScope(row)} browserDraft={content.browserDraft} commitBrowserUrl={content.commitBrowserUrl} setBrowserDraft={content.setBrowserDraft} />

@@ -27,6 +27,7 @@ const bottomUtilityTabs = read("app/src/BottomUtilityTabs.tsx");
 const bottomUtilityTray = read("app/src/BottomUtilityTray.tsx");
 const composerModelPicker = read("app/src/ComposerModelPicker.tsx");
 const composerModelPopover = read("app/src/ComposerModelPopover.tsx");
+const composerModelMenu = read("app/src/ComposerModelMenu.tsx");
 const composerReasoningPicker = read("app/src/ComposerReasoningPicker.tsx");
 const composerSurface = read("app/src/AgentComposerSurface.tsx");
 const appChromeState = read("app/src/useAppChromeState.ts");
@@ -196,7 +197,7 @@ assert(read("app/src/bottomUtilityTrayHost.ts").includes("terminalPaneContextMen
 assert(/\.terminal-pane-button--active\s*\{[^}]*border-bottom-color:\s*var\(--color-accent-border\);[^}]*background:\s*transparent;[^}]*box-shadow:\s*none;/s.test(appCss), "Active terminal pane tabs must use a flat underline, not rounded capsule chrome");
 assert(composerSurface.includes('aria-label="Composer permission mode"'), "Composer must expose the real approval-mode menu");
 assert(composerSurface.includes('aria-label="Composer goal"'), "Composer must expose its persisted goal control");
-assert(composerModelPopover.includes('aria-label="Search models"') && composerModelPopover.includes("Custom model ID"), "Composer must expose searchable provider models and custom model IDs");
+assert(composerModelPopover.includes('aria-label="Search models"') && composerModelPopover.includes("Use another model ID") && composerModelMenu.includes('aria-label="Model providers"'), "Composer must expose searchable provider models and custom model IDs");
 assert(composerSurface.includes("onSelect={props.onRuntimeChange}") && read("app/src/agentConversationPanelHost.ts").includes("onRuntimeChange: input.composerSettingsActions.setRuntime"), "Composer model selection must persist through the runtime boundary");
 assert(composerReasoningPicker.includes("OPTIONS.map") && composerReasoningPicker.includes('role="menuitemradio"'), "Composer must expose separate accessible reasoning effort choices");
 assert(composerSubmission.includes('reasoningEffort: context.harness.reasoningEffort'), "Composer reasoning selection must reach the native chat request");

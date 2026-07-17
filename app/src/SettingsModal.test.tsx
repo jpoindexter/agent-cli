@@ -83,4 +83,11 @@ describe("SettingsModal", () => {
     expect(html).toContain("Open tabs");
     expect(html).toContain("Active isolated worktree panes");
   });
+
+  it("renders Connections as a full-width row instead of crushing its description", () => {
+    const html = render({ initialCategory: "connections" });
+    expect(html).toContain('settings-modal__row settings-modal__row--block');
+    expect(html).toContain("OpenCode");
+    expect(html).toContain("provider/model");
+  });
 });

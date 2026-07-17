@@ -66,7 +66,7 @@ const normalizeRecordEntry = (key: string, entry: Record<string, unknown>) => {
     .map((message) => staleActiveRun && message.status === "running" ? { ...message, text: "Interrupted when Keelhouse last closed.", status: "error" as const } : message) : [];
   const updatedAt = typeof entry.updatedAt === "number" && Number.isFinite(entry.updatedAt) ? entry.updatedAt : messages[messages.length - 1]?.timestamp ?? Date.now();
   return [key, {
-    provider: entry.provider === "claude" ? "claude" as const : "codex" as const,
+    provider: entry.provider === "claude" || entry.provider === "opencode" ? entry.provider : "codex",
     providerThreadId: textValue(entry.providerThreadId) || undefined,
     activeRunId: undefined,
     messages, updatedAt,

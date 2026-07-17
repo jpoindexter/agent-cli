@@ -125,8 +125,10 @@ const handleQaAppCommand = (command: string, payload?: InvokeArgs): unknown => {
           { id: "codex", label: "Codex", installed: true, version: "qa", authenticated: true, structuredChat: true },
           { id: "gemini", label: "Gemini", installed: true, version: "qa", authenticated: false, structuredChat: false },
           { id: "claude", label: "Claude", installed: true, version: "qa", authenticated: false, structuredChat: true },
+          { id: "opencode", label: "OpenCode", installed: true, version: "qa", authenticated: null, structuredChat: true },
         ],
       };
+    case "opencode_models": return { models: ["google/gemini-3.5-flash", "openai/gpt-5.4", "openai/gpt-5.4-mini", "openrouter/anthropic/claude-sonnet-4", "opencode/big-pickle"] };
     case "connection_secret_status":
       return { key: payloadValue<string>(payload, "key") ?? "", present: false };
     case "agent_hook_status":

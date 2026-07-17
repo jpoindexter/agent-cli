@@ -19,70 +19,70 @@ use crate::claude_adapter::{
 };
 use crate::connection_secrets::{resolve_connection_environment, ConnectionEnvironmentInput};
 
-const CHAT_RUN_EVENT: &str = "chat-run-event";
+pub(crate) const CHAT_RUN_EVENT: &str = "chat-run-event";
 const APPROVAL_TIMEOUT_MS: u64 = 5 * 60 * 1000;
 
 #[derive(Clone, Debug, PartialEq)]
-struct PendingApproval {
+pub(crate) struct PendingApproval {
     method: String,
     requested_at_ms: u64,
     claude_request: Option<ClaudeApprovalRequest>,
 }
 
-struct ChatRunControl {
-    base: ChatRunEnvelope,
-    stdin: Arc<Mutex<ChildStdin>>,
-    stop: Sender<()>,
-    thread_id: Arc<Mutex<Option<String>>>,
-    turn_id: Arc<Mutex<Option<String>>>,
-    pending_approvals: Arc<Mutex<BTreeMap<u64, PendingApproval>>>,
-    next_request_id: AtomicU64,
+pub(crate) struct ChatRunControl {
+    pub(crate) base: ChatRunEnvelope,
+    pub(crate) stdin: Arc<Mutex<ChildStdin>>,
+    pub(crate) stop: Sender<()>,
+    pub(crate) thread_id: Arc<Mutex<Option<String>>>,
+    pub(crate) turn_id: Arc<Mutex<Option<String>>>,
+    pub(crate) pending_approvals: Arc<Mutex<BTreeMap<u64, PendingApproval>>>,
+    pub(crate) next_request_id: AtomicU64,
 }
 
 #[derive(Default)]
 pub(crate) struct ChatRunState {
-    runs: Arc<Mutex<BTreeMap<String, Arc<ChatRunControl>>>>,
+    pub(crate) runs: Arc<Mutex<BTreeMap<String, Arc<ChatRunControl>>>>,
 }
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ChatRunRequest {
-    run_id: String,
-    chat_id: String,
-    project_path: String,
-    provider: String,
-    provider_thread_id: Option<String>,
-    prompt: String,
+    pub(crate) run_id: String,
+    pub(crate) chat_id: String,
+    pub(crate) project_path: String,
+    pub(crate) provider: String,
+    pub(crate) provider_thread_id: Option<String>,
+    pub(crate) prompt: String,
     #[serde(default)]
-    images: Vec<String>,
-    approval_mode: String,
-    model: Option<String>,
-    reasoning_effort: Option<String>,
-    budget_seconds: Option<u64>,
+    pub(crate) images: Vec<String>,
+    pub(crate) approval_mode: String,
+    pub(crate) model: Option<String>,
+    pub(crate) reasoning_effort: Option<String>,
+    pub(crate) budget_seconds: Option<u64>,
     #[serde(default)]
-    environment: Vec<ConnectionEnvironmentInput>,
+    pub(crate) environment: Vec<ConnectionEnvironmentInput>,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ChatRunStarted {
-    run_id: String,
+    pub(crate) run_id: String,
 }
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct ChatRunEnvelope {
-    run_id: String,
-    chat_id: String,
-    provider: String,
-    stream: String,
+pub(crate) struct ChatRunEnvelope {
+    pub(crate) run_id: String,
+    pub(crate) chat_id: String,
+    pub(crate) provider: String,
+    pub(crate) stream: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    event: Option<Value>,
+    pub(crate) event: Option<Value>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    line: Option<String>,
+    pub(crate) line: Option<String>,
 }
 
-fn validate_thread_id(value: &str) -> Result<&str, String> {
+pub(crate) fn validate_thread_id(value: &str) -> Result<&str, String> {
     if !value.is_empty()
         && value.len() <= 128
         && value
@@ -95,7 +95,7 @@ fn validate_thread_id(value: &str) -> Result<&str, String> {
     }
 }
 
-fn validate_run_id(value: &str) -> Result<&str, String> {
+pub(crate) fn validate_run_id(value: &str) -> Result<&str, String> {
     if !value.is_empty()
         && value.len() <= 128
         && value
@@ -108,7 +108,7 @@ fn validate_run_id(value: &str) -> Result<&str, String> {
     }
 }
 
-fn validate_runtime_overrides(request: &ChatRunRequest) -> Result<(), String> {
+pub(crate) fn validate_runtime_overrides(request: &ChatRunRequest) -> Result<(), String> {
     if let Some(model) = request
         .model
         .as_deref()
@@ -127,7 +127,7 @@ fn validate_runtime_overrides(request: &ChatRunRequest) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_run_budget(budget_seconds: Option<u64>) -> Result<(), String> {
+pub(crate) fn validate_run_budget(budget_seconds: Option<u64>) -> Result<(), String> {
     if let Some(seconds) = budget_seconds {
         if !(30..=3600).contains(&seconds) {
             return Err("Chat run budget must be between 30 and 3600 seconds.".into());
@@ -136,7 +136,7 @@ fn validate_run_budget(budget_seconds: Option<u64>) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_image_inputs(request: &ChatRunRequest) -> Result<(), String> {
+pub(crate) fn validate_image_inputs(request: &ChatRunRequest) -> Result<(), String> {
     if request.images.len() > 6 {
         return Err("A chat turn can include at most 6 images.".into());
     }
@@ -235,12 +235,12 @@ fn turn_start_request(request: &ChatRunRequest, thread_id: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": 3, "method": "turn/start", "params": params })
 }
 
-fn isolate_chat_process(command: &mut Command) {
+pub(crate) fn isolate_chat_process(command: &mut Command) {
     #[cfg(unix)]
     command.process_group(0);
 }
 
-fn terminate_chat_process(child: &mut Child, process_group_id: u32) {
+pub(crate) fn terminate_chat_process(child: &mut Child, process_group_id: u32) {
     #[cfg(unix)]
     {
         let result = unsafe { libc::kill(-(process_group_id as i32), libc::SIGTERM) };
@@ -261,7 +261,7 @@ fn write_rpc(stdin: &Arc<Mutex<ChildStdin>>, message: &Value) -> Result<(), Stri
         .map_err(|error| format!("Could not send a request to the provider: {error}"))
 }
 
-fn emit_event(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, event: Value) {
+pub(crate) fn emit_event(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, event: Value) {
     let _ = app.emit(
         CHAT_RUN_EVENT,
         ChatRunEnvelope {
@@ -273,7 +273,7 @@ fn emit_event(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, event: Valu
     );
 }
 
-fn emit_raw_line(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, line: String) {
+pub(crate) fn emit_raw_line(app: &AppHandle, base: &ChatRunEnvelope, stream: &str, line: String) {
     let _ = app.emit(
         CHAT_RUN_EVENT,
         ChatRunEnvelope {
@@ -417,6 +417,7 @@ pub(crate) fn start_chat_run(
     match request.provider.as_str() {
         "codex" => start_codex_chat_run(app, state, request),
         "claude" => start_claude_chat_run(app, state, request),
+        "opencode" => crate::opencode_chat_run::start_opencode_chat_run(app, state, request),
         provider => Err(format!(
             "Structured chat is not available for {provider} yet. Open the raw terminal for that provider."
         )),

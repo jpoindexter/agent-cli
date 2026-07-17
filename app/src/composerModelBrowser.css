@@ -1,0 +1,206 @@
+.composer-model-picker__browser {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: 180px minmax(0, 1fr);
+  overflow: hidden;
+}
+
+.composer-model-picker__providers {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  align-content: start;
+  gap: 2px;
+  border-right: 1px solid #363844;
+  overflow: auto;
+  padding: 6px;
+}
+
+.composer-model-picker__providers button {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 7px;
+  text-align: left;
+}
+
+.composer-model-picker__providers button:hover,
+.composer-model-picker__providers button:focus-visible,
+.composer-model-picker__providers button.is-active,
+.composer-model-picker__model:hover,
+.composer-model-picker__model:focus-visible,
+.composer-model-picker__model.is-active,
+.composer-model-picker__footer button:hover,
+.composer-model-picker__footer button:focus-visible,
+.composer-model-picker__custom button:hover,
+.composer-model-picker__custom button:focus-visible,
+.composer-model-picker__detail header button:hover,
+.composer-model-picker__detail header button:focus-visible,
+.composer-reasoning-picker__popover button:hover,
+.composer-reasoning-picker__popover button:focus-visible {
+  background: #30323d;
+}
+
+.composer-model-picker__providers button.is-active {
+  box-shadow: inset 2px 0 #67c3d1;
+}
+
+.composer-model-picker__providers button > span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.composer-model-picker__providers strong,
+.composer-model-picker__providers small,
+.composer-model-picker__model-copy strong,
+.composer-model-picker__model-copy small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composer-model-picker__providers strong {
+  font-weight: 550;
+}
+
+.composer-model-picker__providers small,
+.composer-model-picker__providers b {
+  color: #858896;
+  font-size: 10px;
+}
+
+.composer-model-picker__detail {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  padding: 8px;
+}
+
+.composer-model-picker__detail header {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 3px 7px;
+}
+
+.composer-model-picker__detail header strong {
+  font-weight: 600;
+}
+
+.composer-model-picker__detail header button:disabled {
+  opacity: .5;
+}
+
+.composer-model-picker__error {
+  margin: 0 0 7px;
+  border: 1px solid #6b5135;
+  border-radius: 5px;
+  background: #352b22;
+  color: #d7c2a6;
+  padding: 6px 8px;
+  font: 10px/1.35 var(--font-ui);
+}
+
+.composer-model-picker__models {
+  display: grid;
+  min-height: 0;
+  align-content: start;
+  gap: 3px;
+  overflow: auto;
+}
+
+.composer-model-picker__model {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  text-align: left;
+}
+
+.composer-model-picker__model[aria-selected="true"] {
+  background: #29363a;
+}
+
+.composer-model-picker__model-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.composer-model-picker__model-copy strong {
+  font: 550 12px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.composer-model-picker__model-copy small {
+  color: #858896;
+  font-size: 10px;
+}
+
+.composer-model-picker__badges {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.composer-model-picker__badges > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 650;
+  text-transform: uppercase;
+}
+
+.composer-model-picker__badges .app-icon {
+  width: 12px;
+}
+
+.composer-model-picker__badges .is-current {
+  color: #9bd9e3;
+}
+
+.composer-model-picker__badges .is-default {
+  color: #dcbf7a;
+}
+
+.composer-model-picker__empty {
+  color: #9295a3;
+  font: 12px/1.4 var(--font-ui);
+  padding: 28px 10px;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+    .composer-model-picker__browser {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: 66px minmax(0, 1fr);
+    }
+
+    .composer-model-picker__providers {
+      grid-auto-flow: column;
+      grid-auto-columns: 132px;
+      border-right: 0;
+      border-bottom: 1px solid #363844;
+      overflow-x: auto;
+      overflow-y: hidden;
+    }
+
+    .composer-model-picker__providers button.is-active {
+      box-shadow: inset 0 -2px #67c3d1;
+    }
+}

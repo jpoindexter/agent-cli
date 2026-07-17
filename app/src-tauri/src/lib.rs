@@ -16,6 +16,10 @@ mod claude_adapter;
 mod connection_secrets;
 mod mcp_oauth;
 mod mcp_probe;
+mod opencode_adapter;
+mod opencode_chat_run;
+mod opencode_models;
+mod opencode_process;
 mod workspace_checkpoints;
 
 use agent_hooks::{
@@ -2293,6 +2297,7 @@ fn agent_connections_status() -> AgentConnectionsStatusResponse {
             agent_connection_status("codex", "Codex", Some(&["login", "status"]), true),
             agent_connection_status("gemini", "Gemini", None, false),
             agent_connection_status("claude", "Claude", Some(&["auth", "status"]), true),
+            agent_connection_status("opencode", "OpenCode", None, true),
         ],
     }
 }
@@ -2662,6 +2667,7 @@ fn provider_for_profile(profile: &LaunchProfile) -> Option<&'static str> {
         "codex" => Some("codex"),
         "gemini" => Some("gemini"),
         "claude" => Some("claude"),
+        "opencode" => Some("opencode"),
         _ => None,
     }
 }
@@ -3000,6 +3006,7 @@ pub fn run() {
             remove_project_worktree,
             source_control_status,
             agent_connections_status,
+            opencode_models::opencode_models,
             connection_secret_status,
             set_connection_secret,
             delete_connection_secret,

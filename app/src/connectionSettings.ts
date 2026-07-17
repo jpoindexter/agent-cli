@@ -1,4 +1,5 @@
-export const CONNECTION_PROVIDER_IDS = ["codex", "gemini", "claude"] as const;
+export const CONNECTION_PROVIDER_IDS = ["codex", "gemini", "claude", "opencode"] as const;
+export const KEYCHAIN_PROVIDER_IDS = ["codex", "gemini", "claude"] as const;
 
 export type ConnectionProviderId = (typeof CONNECTION_PROVIDER_IDS)[number];
 export type McpTransport = "stdio" | "http";
@@ -48,7 +49,7 @@ export type McpOAuthStart = { authorizationUrl: string; clientId: string; messag
 export type McpOAuthStatus = { serverId: string; state: "idle" | "pending" | "connected" | "error"; message: string };
 
 export const DEFAULT_AI_CONNECTION_SETTINGS: AiConnectionSettings = {
-  providerModels: { codex: "", gemini: "", claude: "" },
+  providerModels: { codex: "", gemini: "", claude: "", opencode: "" },
   mcpServers: [],
   environmentByProject: {},
 };

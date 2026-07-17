@@ -53,7 +53,7 @@ const openUtilityTray = async (options: UtilityTrayControlsOptions, mode: Utilit
 
 const openAgentConnection = async (
   options: UtilityTrayControlsOptions,
-  providerId: "codex" | "gemini" | "claude",
+  providerId: "codex" | "gemini" | "claude" | "opencode",
 ) => {
   options.closeSettings();
   const created = await options.createTerminalPane(options.resolveProfile(providerId));
@@ -63,7 +63,7 @@ const openAgentConnection = async (
 };
 
 export const createUtilityTrayControls = (options: UtilityTrayControlsOptions) => ({
-  openAgentConnection: (providerId: "codex" | "gemini" | "claude") =>
+  openAgentConnection: (providerId: "codex" | "gemini" | "claude" | "opencode") =>
     openAgentConnection(options, providerId),
   openUtilityTray: (mode: UtilityTrayMode) => openUtilityTray(options, mode),
   toggleRawTerminal: () => toggleRawTerminal(options),

@@ -12,11 +12,12 @@ import {
 } from "./launchProfiles";
 
 describe("launch profiles", () => {
-  it("defines Codex, Gemini, Claude, and shell profiles", () => {
-    expect(LAUNCH_PROFILES.map((profile) => profile.id)).toEqual(["codex", "gemini", "claude", "shell"]);
+  it("defines native, universal OpenCode, and shell profiles", () => {
+    expect(LAUNCH_PROFILES.map((profile) => profile.id)).toEqual(["codex", "gemini", "claude", "opencode", "shell"]);
     expect(launchProfileById("codex").command).toBe("codex");
     expect(launchProfileById("gemini").command).toBe("gemini");
     expect(launchProfileById("claude").command).toBe("claude");
+    expect(launchProfileById("opencode").command).toBe("opencode");
     expect(launchProfileById("shell")).toMatchObject({ command: "/bin/zsh", args: ["-l"], useLoginShell: false });
   });
 

@@ -1,4 +1,5 @@
 import type { ChatProvider } from "./chatConversation";
+import { createPortal } from "react-dom";
 import { chatProviderLabel } from "./chatConversation";
 import { ComposerModelPopover } from "./ComposerModelPopover";
 import { AppIcon } from "./icons";
@@ -29,15 +30,20 @@ export function ComposerModelPicker(props: ComposerModelPickerProps) {
       >
         <AppIcon name="agent" /><span>{activeModel}</span><AppIcon name="chevronDown" />
       </button>
-      {state.open ? (
+      {state.open ? createPortal(
         <ComposerModelPopover
-          activeIndex={state.activeIndex} choices={state.filtered} customMode={state.customMode} customModel={state.customModel}
-          model={props.model} provider={props.provider} query={state.query} searchRef={state.searchRef}
+          activeGroup={state.activeGroup} activeGroupId={state.activeGroupId} activeIndex={state.activeIndex}
+          catalogError={state.catalog.error} catalogLoading={state.catalog.loading} customMode={state.customMode}
+          customModel={state.customModel} groups={state.filteredGroups} query={state.query} searchRef={state.searchRef}
+          onActiveGroupChange={state.setActiveGroupId}
           onActiveIndexChange={state.setActiveIndex} onChoose={(provider, model) => void state.choose(provider, model)}
           onCustomModeChange={(value) => { state.setCustomMode(value); if (value) state.setCustomModel(props.model); }}
           onCustomModelChange={state.setCustomModel} onQueryChange={(query) => { state.setQuery(query); state.setActiveIndex(0); }}
+          onRefresh={() => void state.catalog.refresh()}
+          onDismiss={() => state.close()}
           onManageModels={() => { state.close(false); props.onManageModels(); }}
-        />
+        />,
+        document.body,
       ) : null}
     </div>
   );

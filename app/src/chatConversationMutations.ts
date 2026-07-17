@@ -1,7 +1,8 @@
 import type { ChatConversation, ChatMessage, ChatProvider } from "./chatConversationTypes";
 import { messageId } from "./chatConversationValues";
 
-export const chatProviderLabel = (provider: ChatProvider) => provider === "claude" ? "Claude" : "Codex";
+export const chatProviderLabel = (provider: ChatProvider) =>
+  provider === "claude" ? "Claude" : provider === "opencode" ? "OpenCode" : "Codex";
 
 export const emptyChatConversation = (now = Date.now(), provider: ChatProvider = "codex"): ChatConversation => ({
   provider, messages: [], updatedAt: now, revision: 0, runStatus: "idle",

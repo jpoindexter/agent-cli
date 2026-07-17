@@ -16,6 +16,7 @@ const repositoryName = (path: string | null) => {
 const providerLabel = (provider: ChatProvider | null) => {
   if (provider === "codex") return "Codex";
   if (provider === "claude") return "Claude";
+  if (provider === "opencode") return "OpenCode";
   return "Provider unavailable";
 };
 

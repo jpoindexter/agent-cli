@@ -34,7 +34,7 @@ const normalizeOrchestration = (value: unknown): ProjectSessionOrchestration | u
   const valid = dispatchId && parentSessionId && task
     && index >= 0
     && count >= 2 && count <= 8
-    && (provider === "codex" || provider === "claude")
+    && (provider === "codex" || provider === "claude" || provider === "opencode")
     && (approvalMode === "ask" || approvalMode === "approveSafe" || approvalMode === "fullAccess")
     && budgetSeconds >= 30 && budgetSeconds <= 3600
     && targetValues
