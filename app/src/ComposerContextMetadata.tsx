@@ -1,5 +1,6 @@
 import type { ChatProvider, ChatUsage } from "./chatConversation";
 import { ComposerWorktreeTarget } from "./ComposerWorktreeTarget";
+import { ComposerBranchTarget } from "./ComposerBranchTarget";
 import type { ComponentProps } from "react";
 
 export type ComposerContextMetadataProps = {
@@ -10,6 +11,7 @@ export type ComposerContextMetadataProps = {
   usage: ChatUsage | undefined;
   onProjectSelect: () => void;
   worktreeTarget?: ComponentProps<typeof ComposerWorktreeTarget>;
+  branchTarget?: ComponentProps<typeof ComposerBranchTarget>;
 };
 
 const repositoryName = (path: string | null) => {
@@ -36,7 +38,7 @@ export function ComposerContextMetadata(props: ComposerContextMetadataProps) {
     <dl className="composer-context-metadata" aria-label="Composer context metadata">
       <div title={props.repositoryPath ?? undefined}><dt>Project</dt><dd><button type="button" aria-label={`Switch project, ${repositoryName(props.repositoryPath)}`} onClick={props.onProjectSelect}>{repositoryName(props.repositoryPath)}</button></dd></div>
       {props.worktreeTarget ? <div><dt>Start in</dt><dd><ComposerWorktreeTarget {...props.worktreeTarget} /></dd></div> : null}
-      <div><dt>Branch</dt><dd>{props.branch ?? "No branch"}</dd></div>
+      <div><dt>Branch</dt><dd>{props.branchTarget ? <ComposerBranchTarget {...props.branchTarget} /> : props.branch ?? "No branch"}</dd></div>
       <div><dt>Changes</dt><dd>{props.changedFiles === 1 ? "1 change" : `${props.changedFiles} changes`}</dd></div>
       <div><dt>Provider</dt><dd>{providerLabel(props.provider)}</dd></div>
       <div><dt>Context</dt><dd>{contextLabel(props.usage)}</dd></div>

@@ -14,6 +14,7 @@ import type { SettingsCategoryId } from "./settingsModalData";
 import type { LaunchProfile } from "./launchProfiles";
 import type { ManagedTerminalPane } from "./managedTerminalPane";
 import type { WorktreeRecord } from "./worktrees";
+import { checkoutGitBranch, createGitBranch, listLocalBranches } from "./branchCommands";
 
 type ConversationRuntime = ReturnType<typeof useConversationRuntime>;
 type ComposerRuntime = ReturnType<typeof useComposerRuntime>;
@@ -50,7 +51,7 @@ type AgentConversationPanelInput = {
   contextMenuHost: { openContextMenu: (event: MouseEvent, items: ContextMenuItem[]) => void };
   editorSurface: { reviewRunCardFile: (path: string) => Promise<unknown> };
   focusedChatMessageId: string | null;
-  gitStatusHook: { status: { branch: string | null; files: unknown[] } | null };
+  gitStatusHook: { refresh: () => Promise<unknown>; status: { branch: string | null; files: unknown[] } | null };
   projectEntryActions: { chooseProject: () => Promise<unknown> };
   profiles: { terminalProfile: LaunchProfile };
   setComposerNotice: (notice: string | null) => void;
@@ -81,6 +82,21 @@ const worktreeTargetFrom = (input: AgentConversationPanelInput) => {
       const local = input.terminal.panesForSession(root, sessionId).find((pane) => !worktreeIds.has(String(pane.id)));
       if (local) focus(local.id); else void input.terminalSurface.createTerminalPane(input.profiles.terminalProfile);
     },
+  };
+};
+
+const branchTargetFrom = (input: AgentConversationPanelInput) => {
+  const root = input.workspacePath!;
+  const run = async (action: (root: string, name: string) => Promise<unknown>, name: string) => {
+    const result = await action(root, name);
+    await input.gitStatusHook.refresh();
+    return result;
+  };
+  return {
+    currentBranch: input.gitStatusHook.status?.branch ?? null,
+    load: () => listLocalBranches(root),
+    onCheckout: (name: string) => run(checkoutGitBranch, name),
+    onCreate: (name: string) => run(createGitBranch, name),
   };
 };
 
@@ -119,6 +135,7 @@ const composerStateFrom = (input: AgentConversationPanelInput) => ({
     usage: input.activeChat.activeChatConversation.usage,
     onProjectSelect: input.projectEntryActions.chooseProject,
     worktreeTarget: input.workspacePath ? worktreeTargetFrom(input) : undefined,
+    branchTarget: input.workspacePath && input.gitStatusHook.status?.branch ? branchTargetFrom(input) : undefined,
   },
 });
 

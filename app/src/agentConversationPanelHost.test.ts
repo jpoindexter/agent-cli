@@ -2,6 +2,13 @@ import { describe, expect, it, vi } from "vitest";
 import { agentConversationPanelPropsFrom } from "./agentConversationPanelHost";
 import { defaultComposerHarnessState } from "./composerHarness";
 import { emptyChatConversation } from "./chatConversation";
+import { checkoutGitBranch, createGitBranch, listLocalBranches } from "./branchCommands";
+
+vi.mock("./branchCommands", () => ({
+  checkoutGitBranch: vi.fn(async (_root: string, name: string) => name),
+  createGitBranch: vi.fn(async (_root: string, name: string) => name),
+  listLocalBranches: vi.fn(async () => [{ name: "main", current: true }]),
+}));
 
 const createOptions = () =>
   ({
@@ -35,6 +42,7 @@ const createOptions = () =>
     editorSurface: { reviewRunCardFile: vi.fn() },
     focusedChatMessageId: null,
     gitStatusHook: {
+      refresh: vi.fn(async () => {}),
       status: { branch: "main", staged: 1, unstaged: 2, untracked: 1, files: [{}, {}, {}] },
     },
     projectEntryActions: { chooseProject: vi.fn() },
@@ -73,10 +81,11 @@ describe("agentConversationPanelPropsFrom", () => {
         activePaneId: 8,
         worktrees: [options.worktrees[0]],
       },
+      branchTarget: { currentBranch: "main" },
     });
   });
 
-  it("routes composer and chat handlers to their controllers", () => {
+  it("routes composer and chat handlers to their controllers", async () => {
     const options = createOptions();
     const props = agentConversationPanelPropsFrom(options);
 
@@ -92,5 +101,12 @@ describe("agentConversationPanelPropsFrom", () => {
     expect(options.terminalSurface.focusTerminalPane).toHaveBeenCalledWith(8);
     props.composer.metadata.worktreeTarget?.onNew();
     expect(options.terminalSurface.createWorktreePane).toHaveBeenCalledWith(options.profiles.terminalProfile);
+    await props.composer.metadata.branchTarget?.load();
+    expect(listLocalBranches).toHaveBeenCalledWith("/repo");
+    await props.composer.metadata.branchTarget?.onCheckout("release");
+    expect(checkoutGitBranch).toHaveBeenCalledWith("/repo", "release");
+    await props.composer.metadata.branchTarget?.onCreate("feature/api");
+    expect(createGitBranch).toHaveBeenCalledWith("/repo", "feature/api");
+    expect(options.gitStatusHook.refresh).toHaveBeenCalledTimes(2);
   });
 });

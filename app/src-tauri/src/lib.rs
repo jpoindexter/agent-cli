@@ -10,6 +10,7 @@
 // the live terminal's modes) and writes to the pty. Nothing non-Send escapes.
 
 mod agent_hooks;
+mod branch_management;
 mod chat_harness;
 mod chat_store;
 mod claude_adapter;
@@ -27,6 +28,7 @@ use agent_hooks::{
     agent_hook_status, resolve_agent_hook_request, start_agent_hook_server,
     take_agent_hook_requests, update_agent_hook_snapshot,
 };
+use branch_management::{checkout_git_branch, create_git_branch, list_local_branches};
 use chat_harness::{respond_chat_approval, start_chat_run, stop_chat_run, ChatRunState};
 use chat_store::{
     delete_chat_conversation, delete_project_chat_conversations, load_chat_conversations,
@@ -3021,6 +3023,9 @@ pub fn run() {
             log_health_event,
             create_local_project,
             initialize_project_git,
+            list_local_branches,
+            create_git_branch,
+            checkout_git_branch,
             create_project_worktree,
             remove_project_worktree,
             source_control_status,
